@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Godgrave Builder — обработай PNG одной кнопкой</title>
+    <style>
+        * { box-sizing: border-box; user-select: none; }
+        body {
+            background: #1a1a2a;
+            color: #ccc;
+            font-family: monospace;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        .container {
+            max-width: 900px;
+            width: 100%;
+            background: #0a0a12;
+            border-radius: 20px;
+            padding: 24px;
+            border: 1px solid #3a3a4a;
+        }
+        h1 { color: #ffaa44; margin-bottom: 10px; }
+        .dropzone {
+            border: 3px dashed #5a5a6a;
+            border-radius: 16px;
+            padding: 40px;
+            text-align: center;
+            margin: 20px 0;
+            background: #12121a;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .dropzone.drag { border-color: #ffaa44; background: #1a1a2a; }
+        .file-list {
+            background: #0a0a12;
+            border-radius: 12px;
+            padding: 12px;
+            margin: 15px 0;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .file-item {
+            padding: 6px 10px;
+            border-bottom: 1px solid #2a2a3a;
+            font-size: 12px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .file-name { color: #88ff88; }
+        .file-size { color: #888; }
+        button {
+            background: #3a2a3a;
+            border: none;
+            color: #ffdd99;
+            padding: 12px 24px;
+            font-size: 16px;
+            font-family: monospace;
+            cursor: pointer;
+            border-radius: 40px;
+            margin: 10px 5px;
+        }
+        button:hover { background: #5a3a5a; }
+        .log {
+            background: #0a0a12;
+            border-radius: 12px;
+            padding: 12px;
+            margin-top: 20px;
+            height: 200px;
+            overflow-y: auto;
+            font-size: 11px;
+            font-family: monospace;
+        }
+        .log-entry { padding: 3px 0; border-bottom: 1px solid #1a1a2a; }
+        .success { color: #88ff88; }
+        .error { color: #ff8888; }
+        .warning { color: #ffaa44; }
+        .progress {
+            width: 100%;
+            height: 4px;
+            background: #2a2a3a;
+            border-radius: 4px;
+            margin: 15px 0;
+            overflow: hidden;
+        }
+        .progress-bar {
+            width: 0%;
+            height: 100%;
+            background: #ffaa44;
+            transition: width 0.2s;
+        }
+        .pivot-mark { display: inline-block; width: 12px; height: 12px; background: #ff00ff; border-radius: 2px; margin-left: 8px; vertical-align: middle; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>⚔️ GODGRAVE BUILDER ⚔️</h1>
+    <p>Перетащи PNG сюда (или выбери папку)</p>
+    
+    <div class="dropzone" id="dropzone">
+        📁 Перетащи файлы или папку<br>
+        <small>(PNG с розовой точкой в месте пивота)</small>
+    </div>
+    
+    <div class="file-list" id="fileList"></div>
+    
+    <div class="progress" id="progress"><div class="progress-bar" id="progressBar"></div></div>
+    
+    <div style="text-align: center;">
+        <button id="processBtn">🔧 ОБРАБОТАТЬ ВСЕ PNG</button>
+        <button id="downloadAllBtn" style="background:#2a4a2a;">📦 СКАЧАТЬ ВСЁ (ZIP)</button>
+    </div>
+    
+    <div class="log" id="log"></div>
+    
+    <div style="margin-top: 15px; font-size: 11px; color: #888; text-align: center;">
+        🎯 Розовая точка <span class="pivot-mark"></span> — место пивота<br>
+        После обработки PNG обрежутся, а розовая точка исчезнет
+    </div>
+</div>
+
+<script>
+    // ============================================================
+    // GODGRAVE BUILDER — ПРОСТО ОТКРОЙ И ПЕРЕТАЩИ PNG
+    // ============================================================
+    
+    let files = [];
+    let processedResults = {};
+    
+    const dropzone = document.getElementById('dropzone');
+    const fileList = document.getElementById('fileList');
+    const logDiv = document.getElementById('log');
+    const progressBar = document.getElementById('progressBar');
+    const processBtn = document.getElementById('processBtn');
+    const downloadAllBtn = document.getElementById('downloadAllBtn');
+    
+    function addLog(msg, type = 'info') {
+        const entry = document.createElement('div');
+        entry.className = 'log-entry';
+        entry.innerHTML = `<span class="${type}">${msg}</span>`;
+        logDiv.appendChild(entry);
+        entry.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+    
+    function updateFileList() {
+        fileList.innerHTML = '';
+        files.forEach(f => {
+            const div = document.createElement('div');
+            div.className = 'file-item';
+            div.innerHTML = `<span class="file-name">📄 ${f.name}</span><span class="file-size">${(f.size/1024).toFixed(1)} KB</span>`;
+            fileList.appendChild(div);
+        });
+        if (files.length === 0) {
+            fileList.innerHTML = '<div style="padding: 12px; text-align: center; color: #666;">Нет файлов</div>';
+        }
+        processBtn.disabled = files.length === 0;
+    }
+    
+    function updateProgress(current, total) {
+        const percent = total > 0 ? (current / total) * 100 : 0;
+        progressBar.style.width = `${percent}%`;
+    }
+    
+    // Поиск маркера (маджента 255,0,255)
+    function findMarker(imageData, width, height) {
+        const data = imageData.data;
+        for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+                const idx = (y * width + x) * 4;
+                if (data[idx] === 255 && data[idx+1] === 0 && data[idx+2] === 255 && data[idx+3] > 200) {
+                    return { x, y };
+                }
+            }
+        }
+        return null;
+    }
+    
+    // Найти границы непрозрачных пикселей
+    function findBounds(imageData, width, height, marker) {
+        const data = imageData.data;
+        let minX = width, minY = height, maxX = 0, maxY = 0;
+        
+        for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+                const idx = (y * width + x) * 4;
+                // Пропускаем маркер (его временно сделаем непрозрачным)
+                if (marker && x === marker.x && y === marker.y) continue;
+                if (data[idx+3] > 0) {
+                    minX = Math.min(minX, x);
+                    minY = Math.min(minY, y);
+                    maxX = Math.max(maxX, x);
+                    maxY = Math.max(maxY, y);
+                }
+            }
+        }
+        
+        return { minX, minY, maxX, maxY };
+    }
+    
+    // Обработка одного PNG
+    async function processPNG(file) {
+        return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    // Создаём канвас
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0);
+                    
+                    const imageData = ctx.getImageData(0, 0, img.width, img.height);
+                    
+                    // Ищем маркер
+                    const marker = findMarker(imageData, img.width, img.height);
+                    
+                    if (!marker) {
+                        // Нет маркера — оставляем как есть, пивот в центре
+                        const id = file.name.replace('.png', '');
+                        addLog(`⚠️ ${file.name}: нет маркера, пивот в центре`, 'warning');
+                        resolve({
+                            id,
+                            blob: canvas,
+                            pivotX: Math.floor(img.width / 2),
+                            pivotY: Math.floor(img.height / 2),
+                            width: img.width,
+                            height: img.height
+                        });
+                        return;
+                    }
+                    
+                    addLog(`🔍 ${file.name}: маркер найден (${marker.x}, ${marker.y})`, 'info');
+                    
+                    // Временно делаем маркер непрозрачным
+                    const markerIdx = (marker.y * img.width + marker.x) * 4;
+                    const imageDataCopy = ctx.getImageData(0, 0, img.width, img.height);
+                    imageDataCopy.data[markerIdx+3] = 255;
+                    ctx.putImageData(imageDataCopy, 0, 0);
+                    
+                    // Находим границы
+                    const bounds = findBounds(imageDataCopy, img.width, img.height, marker);
+                    
+                    if (bounds.minX > bounds.maxX) {
+                        // Нет границ — оставляем как есть
+                        resolve({
+                            id: file.name.replace('.png', ''),
+                            blob: canvas,
+                            pivotX: marker.x,
+                            pivotY: marker.y,
+                            width: img.width,
+                            height: img.height
+                        });
+                        return;
+                    }
+                    
+                    // Обрезаем
+                    const croppedWidth = bounds.maxX - bounds.minX + 1;
+                    const croppedHeight = bounds.maxY - bounds.minY + 1;
+                    const croppedCanvas = document.createElement('canvas');
+                    croppedCanvas.width = croppedWidth;
+                    croppedCanvas.height = croppedHeight;
+                    const croppedCtx = croppedCanvas.getContext('2d');
+                    croppedCtx.drawImage(canvas, bounds.minX, bounds.minY, croppedWidth, croppedHeight, 0, 0, croppedWidth, croppedHeight);
+                    
+                    // Удаляем маркер из обрезанного
+                    const newMarkerX = marker.x - bounds.minX;
+                    const newMarkerY = marker.y - bounds.minY;
+                    const croppedData = croppedCtx.getImageData(0, 0, croppedWidth, croppedHeight);
+                    const newMarkerIdx = (newMarkerY * croppedWidth + newMarkerX) * 4;
+                    croppedData.data[newMarkerIdx+3] = 0;
+                    croppedCtx.putImageData(croppedData, 0, 0);
+                    
+                    const id = file.name.replace('.png', '');
+                    addLog(`✅ ${file.name}: обрезан до ${croppedWidth}x${croppedHeight}, пивот (${newMarkerX}, ${newMarkerY})`, 'success');
+                    
+                    resolve({
+                        id,
+                        blob: croppedCanvas,
+                        pivotX: newMarkerX,
+                        pivotY: newMarkerY,
+                        width: croppedWidth,
+                        height: croppedHeight
+                    });
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+    
+    // Обработка всех файлов
+    async function processAllFiles() {
+        if (files.length === 0) {
+            addLog('❌ Нет файлов для обработки', 'error');
+            return;
+        }
+        
+        addLog(`\n🚀 НАЧАЛО ОБРАБОТКИ (${files.length} файлов)\n`, 'info');
+        processedResults = {};
+        
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            updateProgress(i + 1, files.length);
+            const result = await processPNG(file);
+            processedResults[result.id] = result;
+        }
+        
+        updateProgress(files.length, files.length);
+        addLog(`\n✅ ГОТОВО! Обработано ${Object.keys(processedResults).length} файлов`, 'success');
+        
+        // Сохраняем JSON отдельно в памяти
+        const jsonData = {};
+        for (const [id, result] of Object.entries(processedResults)) {
+            jsonData[id] = {
+                pivotX: result.pivotX,
+                pivotY: result.pivotY,
+                width: result.width,
+                height: result.height
+            };
+        }
+        processedResults._json = jsonData;
+        
+        addLog(`📄 JSON с метаданными готов (${Object.keys(jsonData).length} спрайтов)`, 'success');
+    }
+    
+    // Скачать всё ZIP-ом
+    async function downloadAll() {
+        if (Object.keys(processedResults).length === 0 && files.length > 0) {
+            addLog('⚠️ Сначала обработай файлы (кнопка ОБРАБОТАТЬ)', 'warning');
+            return;
+        }
+        
+        addLog('📦 Создаю ZIP архив...', 'info');
+        
+        // Динамически загружаем JSZip
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+        script.onload = async () => {
+            const zip = new JSZip();
+            
+            // Группируем по папкам (по расширению имени?)
+            // Просто кладём всё в корень ZIP
+            for (const [id, result] of Object.entries(processedResults)) {
+                if (id === '_json') continue;
+                const blob = await new Promise(resolve => result.blob.toBlob(resolve, 'image/png'));
+                zip.file(`${id}.png`, blob);
+            }
+            
+            // Добавляем JSON
+            const jsonStr = JSON.stringify(processedResults._json, null, 2);
+            zip.file('sprites.json', jsonStr);
+            
+            const content = await zip.generateAsync({ type: 'blob' });
+            const link = document.createElement('a');
+            link.download = 'godgrave_build.zip';
+            link.href = URL.createObjectURL(content);
+            link.click();
+            URL.revokeObjectURL(link.href);
+            
+            addLog(`✅ ZIP скачан: ${Object.keys(processedResults).length - 1} PNG + sprites.json`, 'success');
+        };
+        document.head.appendChild(script);
+    }
+    
+    // Drag & Drop
+    dropzone.addEventListener('click', () => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.multiple = true;
+        input.accept = 'image/png';
+        input.onchange = (e) => {
+            const newFiles = Array.from(e.target.files).filter(f => f.name.endsWith('.png'));
+            files.push(...newFiles);
+            updateFileList();
+        };
+        input.click();
+    });
+    
+    dropzone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropzone.classList.add('drag');
+    });
+    
+    dropzone.addEventListener('dragleave', () => {
+        dropzone.classList.remove('drag');
+    });
+    
+    dropzone.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        dropzone.classList.remove('drag');
+        
+        const items = e.dataTransfer.items;
+        const newFiles = [];
+        
+        for (const item of items) {
+            const entry = item.webkitGetAsEntry();
+            if (entry) {
+                // Рекурсивно читаем папку
+                const readDir = (dirEntry, path = '') => {
+                    return new Promise((resolve) => {
+                        const reader = dirEntry.createReader();
+                        reader.readEntries(async (entries) => {
+                            for (const ent of entries) {
+                                if (ent.isFile && ent.name.endsWith('.png')) {
+                                    newFiles.push(await new Promise(res => ent.file(res)));
+                                } else if (ent.isDirectory) {
+                                    await readDir(ent);
+                                }
+                            }
+                            resolve();
+                        });
+                    });
+                };
+                if (entry.isDirectory) {
+                    await readDir(entry);
+                } else if (entry.isFile && entry.name.endsWith('.png')) {
+                    newFiles.push(await new Promise(res => entry.file(res)));
+                }
+            } else if (item.kind === 'file' && item.type === 'image/png') {
+                const file = item.getAsFile();
+                if (file.name.endsWith('.png')) newFiles.push(file);
+            }
+        }
+        
+        if (newFiles.length > 0) {
+            files.push(...newFiles);
+            updateFileList();
+            addLog(`📁 Добавлено ${newFiles.length} PNG файлов`, 'success');
+        }
+    });
+    
+    processBtn.onclick = processAllFiles;
+    downloadAllBtn.onclick = downloadAll;
+    
+    addLog('🎯 Перетащи PNG файлы или папку сюда', 'info');
+    addLog('🎨 PNG должны содержать РОЗОВУЮ ТОЧКУ (255,0,255) в месте пивота', 'info');
+    updateFileList();
+</script>
+</body>
+</html>
