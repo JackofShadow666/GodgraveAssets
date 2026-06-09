@@ -1,10 +1,4 @@
 {
-  "body_abyss": {
-    "pivotX": 27,
-    "pivotY": 61,
-    "width": 54,
-    "height": 63
-  },
   "body_black": {
     "pivotX": 27,
     "pivotY": 61,
@@ -162,39 +156,39 @@
     "height": 23
   },
   "legs_bone": {
-    "pivotX": 17,
-    "pivotY": 1,
-    "width": 36,
-    "height": 28
+    "pivotX": 200,
+    "pivotY": 200,
+    "width": 400,
+    "height": 400
   },
   "legs_cloth": {
-    "pivotX": 16,
-    "pivotY": 2,
-    "width": 34,
+    "pivotX": 15,
+    "pivotY": 0,
+    "width": 33,
     "height": 28
   },
   "legs_heavy": {
-    "pivotX": 17,
-    "pivotY": 2,
-    "width": 32,
+    "pivotX": 15,
+    "pivotY": 0,
+    "width": 33,
     "height": 28
   },
   "legs_leather": {
-    "pivotX": 13,
+    "pivotX": 15,
+    "pivotY": 0,
+    "width": 33,
+    "height": 28
+  },
+  "legs_plate": {
+    "pivotX": 15,
     "pivotY": 0,
     "width": 32,
     "height": 28
   },
-  "legs_plate": {
-    "pivotX": 17,
-    "pivotY": 1,
-    "width": 32,
-    "height": 28
-  },
   "legs_spiked": {
-    "pivotX": 18,
-    "pivotY": -6,
-    "width": 33,
+    "pivotX": 15,
+    "pivotY": 0,
+    "width": 32,
     "height": 28
   },
   "mstaff_arcane": {
@@ -240,28 +234,28 @@
     "height": 24
   },
   "sh_ang_spikes": {
-    "pivotX": 50,
-    "pivotY": 39,
-    "width": 84,
-    "height": 12
+    "pivotX": 2,
+    "pivotY": 19,
+    "width": 32,
+    "height": 25
   },
   "sh_asym": {
-    "pivotX": 33,
-    "pivotY": 54,
-    "width": 67,
+    "pivotX": 2,
+    "pivotY": 30,
+    "width": 41,
     "height": 36
   },
   "sh_blocky": {
-    "pivotX": 41,
-    "pivotY": 39,
-    "width": 72,
-    "height": 22
+    "pivotX": 2,
+    "pivotY": 19,
+    "width": 32,
+    "height": 25
   },
   "sh_jagged(1)": {
-    "pivotX": 31,
-    "pivotY": 32,
-    "width": 66,
-    "height": 16
+    "pivotX": 2,
+    "pivotY": 19,
+    "width": 32,
+    "height": 25
   },
   "sh_mh": {
     "pivotX": 14,
@@ -276,40 +270,40 @@
     "height": 50
   },
   "sh_ribbed": {
-    "pivotX": 34,
-    "pivotY": 37,
-    "width": 66,
-    "height": 21
+    "pivotX": 2,
+    "pivotY": 19,
+    "width": 32,
+    "height": 25
   },
   "sh_ribs": {
-    "pivotX": 26,
-    "pivotY": 25,
-    "width": 50,
-    "height": 10
+    "pivotX": 2,
+    "pivotY": 19,
+    "width": 23,
+    "height": 21
   },
   "sh_round": {
-    "pivotX": 37,
-    "pivotY": 39,
-    "width": 72,
-    "height": 23
+    "pivotX": 0,
+    "pivotY": 26,
+    "width": 25,
+    "height": 27
   },
   "sh_spikes": {
-    "pivotX": 39,
-    "pivotY": 38,
-    "width": 76,
-    "height": 16
+    "pivotX": 0,
+    "pivotY": 22,
+    "width": 25,
+    "height": 23
   },
   "sh_tg": {
-    "pivotX": 7,
-    "pivotY": 41,
-    "width": 12,
-    "height": 40
+    "pivotX": 0,
+    "pivotY": 19,
+    "width": 25,
+    "height": 20
   },
   "sh_triple": {
-    "pivotX": 31,
-    "pivotY": 36,
-    "width": 62,
-    "height": 18
+    "pivotX": 0,
+    "pivotY": 19,
+    "width": 20,
+    "height": 20
   },
   "sickle": {
     "pivotX": 1,
@@ -394,5 +388,11 @@
     "pivotY": 11,
     "width": 152,
     "height": 24
+  },
+  "body_abyss": {
+    "pivotX": 27,
+    "pivotY": 61,
+    "width": 54,
+    "height": 63
   }
 }
