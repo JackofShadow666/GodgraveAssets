@@ -1,4 +1,64 @@
 {
+  "body_dragon": {
+    "pivotX": 19,
+    "pivotY": 46,
+    "width": 40,
+    "height": 46
+  },
+  "body_faceless": {
+    "pivotX": 19,
+    "pivotY": 46,
+    "width": 40,
+    "height": 46
+  },
+  "body_frost": {
+    "pivotX": 19,
+    "pivotY": 46,
+    "width": 40,
+    "height": 46
+  },
+  "body_iron": {
+    "pivotX": 19,
+    "pivotY": 46,
+    "width": 40,
+    "height": 46
+  },
+  "body_necro": {
+    "pivotX": 19,
+    "pivotY": 46,
+    "width": 40,
+    "height": 46
+  },
+  "body_plate": {
+    "pivotX": 19,
+    "pivotY": 46,
+    "width": 40,
+    "height": 46
+  },
+  "body_reaper": {
+    "pivotX": 19,
+    "pivotY": 46,
+    "width": 40,
+    "height": 46
+  },
+  "body_shadow": {
+    "pivotX": 19,
+    "pivotY": 46,
+    "width": 40,
+    "height": 46
+  },
+  "body_skeleton": {
+    "pivotX": 19,
+    "pivotY": 32,
+    "width": 38,
+    "height": 65
+  },
+  "cb_h": {
+    "pivotX": 0,
+    "pivotY": 22,
+    "width": 30,
+    "height": 48
+  },
   "fl_b": {
     "pivotX": 0,
     "pivotY": 9,
@@ -114,10 +174,10 @@
     "height": 23
   },
   "helm_skeleton": {
-    "pivotX": 55,
-    "pivotY": 155,
-    "width": 115,
-    "height": 158
+    "pivotX": 11,
+    "pivotY": 28,
+    "width": 24,
+    "height": 33
   },
   "legs_bone": {
     "pivotX": 17,
@@ -370,65 +430,5 @@
     "pivotY": 46,
     "width": 40,
     "height": 46
-  },
-  "body_dragon": {
-    "pivotX": 19,
-    "pivotY": 46,
-    "width": 40,
-    "height": 46
-  },
-  "body_faceless": {
-    "pivotX": 19,
-    "pivotY": 46,
-    "width": 40,
-    "height": 46
-  },
-  "body_frost": {
-    "pivotX": 19,
-    "pivotY": 46,
-    "width": 40,
-    "height": 46
-  },
-  "body_iron": {
-    "pivotX": 19,
-    "pivotY": 46,
-    "width": 40,
-    "height": 46
-  },
-  "body_necro": {
-    "pivotX": 19,
-    "pivotY": 46,
-    "width": 40,
-    "height": 46
-  },
-  "body_plate": {
-    "pivotX": 19,
-    "pivotY": 46,
-    "width": 40,
-    "height": 46
-  },
-  "body_reaper": {
-    "pivotX": 19,
-    "pivotY": 46,
-    "width": 40,
-    "height": 46
-  },
-  "body_shadow": {
-    "pivotX": 19,
-    "pivotY": 46,
-    "width": 40,
-    "height": 46
-  },
-  "body_skeleton": {
-    "pivotX": 81,
-    "pivotY": 189,
-    "width": 159,
-    "height": 269
-  },
-  "cb_h": {
-    "pivotX": 0,
-    "pivotY": 22,
-    "width": 30,
-    "height": 48
   }
 }
