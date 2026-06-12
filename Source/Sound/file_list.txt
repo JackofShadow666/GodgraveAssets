@@ -2,7 +2,10 @@
 
 И еще теперь мы звуки будем выкачивать с гита перед началом игры. 
 вот звуки список.
-HammerSwing играется 
+SwordHit играется рандомный звук при ударе меча
+SwordHit играется рандомный звук при ударе меча с шансом 5 процентов
+
+
 GodgraveAssets\Source\Sound\Arrow\SFX_ArrowHit_01.mp3
 GodgraveAssets\Source\Sound\Arrow\SFX_ArrowHit_02.mp3
 GodgraveAssets\Source\Sound\Arrow\SFX_ArrowHit_03.mp3
@@ -29,13 +32,13 @@ GodgraveAssets\Source\Sound\Shield\SFX_Shield_01.mp3
 GodgraveAssets\Source\Sound\Shield\SFX_Shield_02.mp3
 GodgraveAssets\Source\Sound\Shield\SFX_Shield_03.mp3
 GodgraveAssets\Source\Sound\Shield\SFX_Shield_04.mp3
-GodgraveAssets\Source\Sound\SwordHit\SwordBlockRare_01.mp3
-GodgraveAssets\Source\Sound\SwordHit\SwordBlock_01.mp3
-GodgraveAssets\Source\Sound\SwordHit\SwordBlock_02.mp3
-GodgraveAssets\Source\Sound\SwordHit\SwordBlock_03.mp3
-GodgraveAssets\Source\Sound\SwordHit\SwordBlock_04.mp3
-GodgraveAssets\Source\Sound\SwordHit\SwordBlock_05.mp3
-GodgraveAssets\Source\Sound\SwordHit\SwordBlock_06.mp3
+GodgraveAssets\Source\Sound\SwordHit\SwordClink_01.mp3
+GodgraveAssets\Source\Sound\SwordHit\SwordClink_02.mp3
+GodgraveAssets\Source\Sound\SwordHit\SwordClink_03.mp3
+GodgraveAssets\Source\Sound\SwordHit\SwordHitRare_01.mp3
+GodgraveAssets\Source\Sound\SwordHit\SwordHit_01.mp3
+GodgraveAssets\Source\Sound\SwordHit\SwordHit_02.mp3
+GodgraveAssets\Source\Sound\SwordHit\SwordHit_03.mp3
 GodgraveAssets\Source\Sound\SwordSwing\SFX_SwordSwingAgressive_01.mp3
 GodgraveAssets\Source\Sound\SwordSwing\SFX_SwordSwingAgressive_02.mp3
 GodgraveAssets\Source\Sound\SwordSwing\SFX_SwordSwingAgressive_03.mp3
@@ -45,4 +48,3 @@ GodgraveAssets\Source\Sound\SwordSwing\SFX_SwordSwing_03.mp3
 GodgraveAssets\Source\Sound\SwordSwing\SFX_SwordSwing_04.mp3
 GodgraveAssets\Source\Sound\SwordSwing\SFX_SwordSwing_05.mp3
 GodgraveAssets\Source\Sound\SwordSwing\SFX_SwordSwing_06.mp3
-
