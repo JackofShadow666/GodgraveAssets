@@ -1,9 +1,10 @@
 ' BuildMusicList.vbs
 ' Скрипт создает список файлов из папок Music и Sound (включая подпапки)
+' Корневая папка со скриптом входит в путь к файлам
 
 Option Explicit
 
-Dim fso, logFile, rootFolder, outputPath
+Dim fso, logFile, rootFolder, outputPath, rootFolderName
 Dim targetFolders, folderName, targetFolder
 
 ' Создаем объект файловой системы
@@ -12,6 +13,9 @@ Set fso = CreateObject("Scripting.FileSystemObject")
 ' Определяем папку, где находится текущий скрипт
 rootFolder = fso.GetParentFolderName(WScript.ScriptFullName)
 If rootFolder = "" Then rootFolder = fso.GetAbsolutePathName(".")
+
+' Получаем имя корневой папки
+rootFolderName = fso.GetFolder(rootFolder).Name
 
 ' Путь к выходному файлу
 outputPath = fso.BuildPath(rootFolder, "BuildMusicList.txt")
@@ -34,8 +38,8 @@ For Each folderName In targetFolders
     
     If fso.FolderExists(targetFolder) Then
         logFile.WriteLine "=== Папка: " & folderName & " ==="
-        ' Рекурсивный обход папки
-        Call ListFilesRecursively(targetFolder, "")
+        ' Рекурсивный обход папки с указанием корневой папки
+        Call ListFilesRecursively(targetFolder, rootFolderName)
         logFile.WriteLine ""
     Else
         logFile.WriteLine "=== Папка НЕ НАЙДЕНА: " & folderName & " ==="
@@ -50,23 +54,19 @@ logFile.Close
 Set logFile = Nothing
 Set fso = Nothing
 
-' Уведомление (можно закомментировать)
+' Уведомление
 WScript.Echo "Готово! Список сохранен в:" & vbCrLf & outputPath
 
 ' ------------------------------------------------------------
 ' Рекурсивная процедура для обхода папок и записи путей к файлам
 ' ------------------------------------------------------------
-Sub ListFilesRecursively(currentFolder, relativePath)
+Sub ListFilesRecursively(currentFolder, currentRelativePath)
     Dim folder, subFolder, file, newRelativePath
     
     Set folder = fso.GetFolder(currentFolder)
     
-    ' Если relativePath пустой, то это корневая целевая папка
-    If relativePath = "" Then
-        newRelativePath = folder.Name
-    Else
-        newRelativePath = relativePath & "\" & folder.Name
-    End If
+    ' Формируем относительный путь от корневой папки со скриптом
+    newRelativePath = currentRelativePath & "\" & folder.Name
     
     ' Перебираем все файлы в текущей папке
     For Each file In folder.Files
