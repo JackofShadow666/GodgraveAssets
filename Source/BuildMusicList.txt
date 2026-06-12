@@ -1,14 +1,14 @@
 ; Список файлов из папок Music и Sound
-; Создано: 12.06.2026 15:20:58
+; Создано: 12.06.2026 15:30:01
 ; Корневая папка: F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source
 
 === Папка: Music ===
-Music\DarkEpicTechno.mp3
-Music\DarkTechno.mp3
-Music\MusicCyber.mp3
-Music\MusicEpic.mp3
-Music\MusicSad.mp3
-Music\TechnoFolk.mp3
+Music\Battle\DarkEpicTechno.mp3
+Music\Battle\DarkTechno.mp3
+Music\Battle\MusicCyber.mp3
+Music\Battle\MusicEpic.mp3
+Music\Battle\MusicSad.mp3
+Music\Battle\TechnoFolk.mp3
 
 === Папка: Sound ===
 Sound\Arrow\SFX_ArrowHit_01.mp3
