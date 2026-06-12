@@ -1,0 +1,61 @@
+; Список файлов из папок Music и Sound
+; Создано: 12.06.2026 15:20:58
+; Корневая папка: F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source
+
+=== Папка: Music ===
+Music\DarkEpicTechno.mp3
+Music\DarkTechno.mp3
+Music\MusicCyber.mp3
+Music\MusicEpic.mp3
+Music\MusicSad.mp3
+Music\TechnoFolk.mp3
+
+=== Папка: Sound ===
+Sound\Arrow\SFX_ArrowHit_01.mp3
+Sound\Arrow\SFX_ArrowHit_02.mp3
+Sound\Arrow\SFX_ArrowHit_03.mp3
+Sound\Arrow\SFX_ArrowHit_04.mp3
+Sound\Arrow\SFX_ArrowHit_05.mp3
+Sound\Arrow\SFX_ArrowHit_06.mp3
+Sound\Arrow\SFX_ArrowPush_01.mp3
+Sound\Arrow\SFX_ArrowPush_02.mp3
+Sound\Arrow\SFX_ArrowPush_03.mp3
+Sound\Damage\Sword\SFX_DamageSword_01.mp3
+Sound\Damage\Sword\SFX_DamageSword_02.mp3
+Sound\Damage\Sword\SFX_DamageSword_03.mp3
+Sound\Damage\Sword\SFX_DamageSword_04.mp3
+Sound\Damage\Sword\SFX_DamageSword_05.mp3
+Sound\HammerSwing\SFX_HammerSwing_01.mp3
+Sound\HammerSwing\SFX_HammerSwing_02.mp3
+Sound\HammerSwing\SFX_HammerSwing_03.mp3
+Sound\HammerSwing\SFX_HammerSwing_04.mp3
+Sound\HammerSwing\SFX_HammerSwing_05.mp3
+Sound\HammerSwing\SFX_HammerSwing_06.mp3
+Sound\Magic\SFX_MagicEnergy_01.mp3
+Sound\Magic\SFX_MagicEnergy_02.mp3
+Sound\Magic\SFX_MagicHit_01.mp3
+Sound\Magic\SFX_MagicHit_02.mp3
+Sound\Magic\SFX_MagicPush_01.mp3
+Sound\Magic\SFX_MagicPush_02.mp3
+Sound\Magic\SFX_MagicPush_03.mp3
+Sound\Shield\SFX_Shield_01.mp3
+Sound\Shield\SFX_Shield_02.mp3
+Sound\Shield\SFX_Shield_03.mp3
+Sound\Shield\SFX_Shield_04.mp3
+Sound\Sword\SwordClink\SFX_SwordClink_01.mp3
+Sound\Sword\SwordClink\SFX_SwordClink_02.mp3
+Sound\Sword\SwordClink\SFX_SwordClink_03.mp3
+Sound\Sword\SwordHit\SFX_SwordHitRare_01.mp3
+Sound\Sword\SwordHit\SFX_SwordHit_01.mp3
+Sound\Sword\SwordHit\SFX_SwordHit_02.mp3
+Sound\Sword\SwordHit\SFX_SwordHit_03.mp3
+Sound\Sword\SwordSwing\SFX_SwordSwingAgressive_01.mp3
+Sound\Sword\SwordSwing\SFX_SwordSwingAgressive_02.mp3
+Sound\Sword\SwordSwing\SFX_SwordSwingAgressive_03.mp3
+Sound\Sword\SwordSwing\SFX_SwordSwing_01.mp3
+Sound\Sword\SwordSwing\SFX_SwordSwing_02.mp3
+Sound\Sword\SwordSwing\SFX_SwordSwing_03.mp3
+Sound\Sword\SwordSwing\SFX_SwordSwing_04.mp3
+Sound\Sword\SwordSwing\SFX_SwordSwing_05.mp3
+Sound\Sword\SwordSwing\SFX_SwordSwing_06.mp3
+
