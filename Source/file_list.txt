@@ -1,291 +1,128 @@
-Добавь ползунок скорости игры. сейчас очень быстро все на моем ноуте может так и должно быть я до этого при плохом фпс тестил на другом компе?
-
-И еще теперь мы звуки будем выкачивать с гита перед началом игры. 
-вот звуки список.
-SwordClink при соприкасновении клинков играется рандомный звук при ударе меча
-SwordHit   при соприкасновении клинков с размахом играется рандомный звук при ударе меча с шансом 5 процентов
-SwordSwingAgressive при размахе
-SwordSwingAgressive при размахе c яростью
-DamageSword при получении урона
-Любая из папки Music играет фоном при старте
-
-Вот список путей 
-GodgraveAssets\Source\Build.html
-GodgraveAssets\Source\Build.js
-GodgraveAssets\Source\Music\MusicCyber.mp3
-GodgraveAssets\Source\Music\MusicEpic.mp3
-GodgraveAssets\Source\Music\MusicSad.mp3
-GodgraveAssets\Source\Sound\Arrow\SFX_ArrowHit_01.mp3
-GodgraveAssets\Source\Sound\Arrow\SFX_ArrowHit_02.mp3
-GodgraveAssets\Source\Sound\Arrow\SFX_ArrowHit_03.mp3
-GodgraveAssets\Source\Sound\Arrow\SFX_ArrowHit_04.mp3
-GodgraveAssets\Source\Sound\Arrow\SFX_ArrowHit_05.mp3
-GodgraveAssets\Source\Sound\Arrow\SFX_ArrowHit_06.mp3
-GodgraveAssets\Source\Sound\Arrow\SFX_ArrowPush_01.mp3
-GodgraveAssets\Source\Sound\Arrow\SFX_ArrowPush_02.mp3
-GodgraveAssets\Source\Sound\Arrow\SFX_ArrowPush_03.mp3
-GodgraveAssets\Source\Sound\Damage\Sword\SFX_DamageSword_01.mp3
-GodgraveAssets\Source\Sound\Damage\Sword\SFX_DamageSword_02.mp3
-GodgraveAssets\Source\Sound\Damage\Sword\SFX_DamageSword_03.mp3
-GodgraveAssets\Source\Sound\Damage\Sword\SFX_DamageSword_04.mp3
-GodgraveAssets\Source\Sound\Damage\Sword\SFX_DamageSword_05.mp3
-GodgraveAssets\Source\Sound\HammerSwing\SFX_HammerSwing_01.mp3
-GodgraveAssets\Source\Sound\HammerSwing\SFX_HammerSwing_02.mp3
-GodgraveAssets\Source\Sound\HammerSwing\SFX_HammerSwing_03.mp3
-GodgraveAssets\Source\Sound\HammerSwing\SFX_HammerSwing_04.mp3
-GodgraveAssets\Source\Sound\HammerSwing\SFX_HammerSwing_05.mp3
-GodgraveAssets\Source\Sound\HammerSwing\SFX_HammerSwing_06.mp3
-GodgraveAssets\Source\Sound\Magic\SFX_MagicEnergy_01.mp3
-GodgraveAssets\Source\Sound\Magic\SFX_MagicEnergy_02.mp3
-GodgraveAssets\Source\Sound\Magic\SFX_MagicHit_01.mp3
-GodgraveAssets\Source\Sound\Magic\SFX_MagicHit_02.mp3
-GodgraveAssets\Source\Sound\Magic\SFX_MagicPush_01.mp3
-GodgraveAssets\Source\Sound\Magic\SFX_MagicPush_02.mp3
-GodgraveAssets\Source\Sound\Magic\SFX_MagicPush_03.mp3
-GodgraveAssets\Source\Sound\Shield\SFX_Shield_01.mp3
-GodgraveAssets\Source\Sound\Shield\SFX_Shield_02.mp3
-GodgraveAssets\Source\Sound\Shield\SFX_Shield_03.mp3
-GodgraveAssets\Source\Sound\Shield\SFX_Shield_04.mp3
-GodgraveAssets\Source\Sound\Sword\SwordClink\SFX_SwordClink_01.mp3
-GodgraveAssets\Source\Sound\Sword\SwordClink\SFX_SwordClink_02.mp3
-GodgraveAssets\Source\Sound\Sword\SwordClink\SFX_SwordClink_03.mp3
-GodgraveAssets\Source\Sound\Sword\SwordHit\SFX_SwordHitRare_01.mp3
-GodgraveAssets\Source\Sound\Sword\SwordHit\SFX_SwordHit_01.mp3
-GodgraveAssets\Source\Sound\Sword\SwordHit\SFX_SwordHit_02.mp3
-GodgraveAssets\Source\Sound\Sword\SwordHit\SFX_SwordHit_03.mp3
-GodgraveAssets\Source\Sound\Sword\SwordSwing\SFX_SwordSwingAgressive_01.mp3
-GodgraveAssets\Source\Sound\Sword\SwordSwing\SFX_SwordSwingAgressive_02.mp3
-GodgraveAssets\Source\Sound\Sword\SwordSwing\SFX_SwordSwingAgressive_03.mp3
-GodgraveAssets\Source\Sound\Sword\SwordSwing\SFX_SwordSwing_01.mp3
-GodgraveAssets\Source\Sound\Sword\SwordSwing\SFX_SwordSwing_02.mp3
-GodgraveAssets\Source\Sound\Sword\SwordSwing\SFX_SwordSwing_03.mp3
-GodgraveAssets\Source\Sound\Sword\SwordSwing\SFX_SwordSwing_04.mp3
-GodgraveAssets\Source\Sound\Sword\SwordSwing\SFX_SwordSwing_05.mp3
-GodgraveAssets\Source\Sound\Sword\SwordSwing\SFX_SwordSwing_06.mp3
-
-вот пример как загружать
-
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Godgrave - Загрузка картинки и звука</title>
-    <style>
-        body {
-            background: #0a0a1a;
-            font-family: monospace;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            padding: 20px;
-        }
-        .container {
-            background: #1a1a2a;
-            border-radius: 20px;
-            padding: 30px;
-            text-align: center;
-            border: 1px solid #6a4a8a;
-        }
-        button {
-            background: #1f1530;
-            border: 2px solid #9a6bc0;
-            color: #eeddbb;
-            font-size: 18px;
-            font-family: monospace;
-            padding: 12px 24px;
-            margin: 10px;
-            border-radius: 50px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        button:hover {
-            background: #342855;
-            transform: scale(1.05);
-        }
-        button:active {
-            transform: scale(0.95);
-        }
-        .image-container {
-            margin: 20px 0;
-            min-height: 200px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        img {
-            max-width: 300px;
-            max-height: 200px;
-            border-radius: 10px;
-            box-shadow: 0 0 20px rgba(155, 107, 192, 0.3);
-        }
-        .status {
-            margin-top: 20px;
-            padding: 10px;
-            border-radius: 10px;
-            font-size: 12px;
-            color: #b980e0;
-        }
-        .success { color: #88ff88; }
-        .error { color: #ff8888; }
-        .loading { color: #ffcc88; }
-    </style>
-</head>
-<body>
-<div class="container">
-    <h2>⚔️ Godgrave ⚔️</h2>
-    
-    <div class="image-container" id="imageContainer">
-        <div class="loading">🖼️ Загрузка картинки...</div>
-    </div>
-    
-    <button id="soundBtn" disabled>🔊 Слушать звук (загружается...)</button>
-    <button id="reloadBtn">🔄 Перезагрузить всё</button>
-    
-    <div id="status" class="status"></div>
-</div>
-
-<script>
-    // ========== КОНФИГУРАЦИЯ ==========
-    // Путь к картинке (возьмём любой существующий спрайт)
-    const IMAGE_URL = "https://raw.githubusercontent.com/JackofShadow666/GodgraveAssets/main/Build/CharacterSet/helm_horned.png";
-    
-    // Путь к звуку
-    const SOUND_URL = "https://raw.githubusercontent.com/JackofShadow666/GodgraveAssets/main/Source/Sound/Arrow/SFX_ArrowHit_01.mp3";
-    
-    // ========== ЭЛЕМЕНТЫ ==========
-    const imageContainer = document.getElementById('imageContainer');
-    const soundBtn = document.getElementById('soundBtn');
-    const reloadBtn = document.getElementById('reloadBtn');
-    const statusDiv = document.getElementById('status');
-    
-    let audio = null;
-    let isSoundLoaded = false;
-    
-    // ========== ФУНКЦИЯ ЛОГИРОВАНИЯ ==========
-    function setStatus(message, type = 'loading') {
-        statusDiv.innerHTML = message;
-        statusDiv.className = `status ${type}`;
-        console.log(`[${type.toUpperCase()}] ${message}`);
-    }
-    
-    // ========== ЗАГРУЗКА КАРТИНКИ ==========
-    function loadImage() {
-        setStatus('🖼️ Загрузка картинки...', 'loading');
-        imageContainer.innerHTML = '<div class="loading">🖼️ Загрузка картинки...</div>';
-        
-        const img = new Image();
-        
-        img.onload = () => {
-            imageContainer.innerHTML = '';
-            imageContainer.appendChild(img);
-            setStatus('✅ Картинка загружена!', 'success');
-        };
-        
-        img.onerror = (error) => {
-            imageContainer.innerHTML = '<div class="error">❌ Не удалось загрузить картинку</div>';
-            setStatus('❌ Ошибка загрузки картинки', 'error');
-            console.error('Ошибка картинки:', error);
-        };
-        
-        img.src = IMAGE_URL;
-        img.alt = 'Godgrave Armor';
-        img.style.maxWidth = '300px';
-        img.style.maxHeight = '200px';
-        img.style.borderRadius = '10px';
-    }
-    
-    // ========== ЗАГРУЗКА ЗВУКА ==========
-    function loadSound() {
-        setStatus('🔊 Загрузка звука...', 'loading');
-        soundBtn.disabled = true;
-        soundBtn.textContent = '🔊 Загрузка звука...';
-        
-        // Создаём Audio элемент
-        audio = new Audio();
-        
-        audio.addEventListener('canplaythrough', () => {
-            isSoundLoaded = true;
-            soundBtn.disabled = false;
-            soundBtn.textContent = '🏹 Воспроизвести звук стрелы';
-            setStatus('✅ Звук загружен! Нажми на кнопку', 'success');
-        });
-        
-        audio.addEventListener('error', (e) => {
-            isSoundLoaded = false;
-            soundBtn.disabled = false;
-            soundBtn.textContent = '❌ Ошибка загрузки звука';
-            setStatus('❌ Не удалось загрузить звук (возможно файл отсутствует)', 'error');
-            console.error('Ошибка звука:', e);
-        });
-        
-        audio.src = SOUND_URL;
-        audio.load();
-    }
-    
-    // ========== ВОСПРОИЗВЕДЕНИЕ ЗВУКА ==========
-    function playSound() {
-        if (!isSoundLoaded || !audio) {
-            setStatus('⚠️ Звук ещё не загружен, подожди...', 'error');
-            return;
-        }
-        
-        // Останавливаем если играет
-        audio.currentTime = 0;
-        
-        // Воспроизводим
-        const playPromise = audio.play();
-        
-        if (playPromise !== undefined) {
-            playPromise.then(() => {
-                setStatus('🏹 Звук стрелы!', 'success');
-                setTimeout(() => {
-                    if (statusDiv.innerHTML === '🏹 Звук стрелы!') {
-                        setStatus('✅ Звук загружен!', 'success');
-                    }
-                }, 1500);
-            }).catch(error => {
-                setStatus('❌ Не удалось воспроизвести (нужно взаимодействие с пользователем)', 'error');
-                console.error('Ошибка воспроизведения:', error);
-            });
-        }
-    }
-    
-    // ========== ПЕРЕЗАГРУЗКА ВСЕГО ==========
-    function reloadAll() {
-        setStatus('🔄 Перезагрузка...', 'loading');
-        isSoundLoaded = false;
-        audio = null;
-        
-        // Загружаем картинку заново
-        loadImage();
-        
-        // Загружаем звук заново
-        loadSound();
-    }
-    
-    // ========== ИНИЦИАЛИЗАЦИЯ ==========
-    function init() {
-        loadImage();
-        loadSound();
-        
-        // Вешаем обработчики
-        soundBtn.onclick = playSound;
-        reloadBtn.onclick = reloadAll;
-    }
-    
-    // Запускаем всё
-    init();
-    
-    // Показываем в консоли ссылки для проверки
-    console.log('📁 Ссылка на картинку:', IMAGE_URL);
-    console.log('📁 Ссылка на звук:', SOUND_URL);
-    console.log('💡 Если звук не работает - возможно файл отсутствует в репозитории');
-    
-</script>
-</body>
-</html>
-
-
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Build.html
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Build.js
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\file_list � �����.txt
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\CharacterSet\body_abyss.png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\CharacterSet\body_black.png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\CharacterSet\body_chaos.png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\CharacterSet\body_dragon.png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\CharacterSet\body_faceless.png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\CharacterSet\body_frost.png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\CharacterSet\body_iron.png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\CharacterSet\body_necro.png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\CharacterSet\body_plate.png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\CharacterSet\body_reaper.png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\CharacterSet\body_shadow.png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\CharacterSet\body_skeleton.png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\CharacterSet\cb_h.png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\CharacterSet\flail.png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\CharacterSet\fl_b.png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\CharacterSet\fl_s.png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\CharacterSet\gs_sw_c.png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\CharacterSet\gs_sw_cur.png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\CharacterSet\gs_sw_o.png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\CharacterSet\gs_sw_s.png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\CharacterSet\hd_Blue.png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\CharacterSet\hd_Brown.png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\CharacterSet\hd_Green.png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\CharacterSet\hd_Pink.png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\CharacterSet\hd_White.png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\CharacterSet\helm_abyss.png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\CharacterSet\helm_full(1).png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\CharacterSet\helm_hood.png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\CharacterSet\helm_horned.png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\CharacterSet\helm_ice.png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\CharacterSet\helm_knight.png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\CharacterSet\helm_mask.png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\CharacterSet\helm_skeleton.png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\CharacterSet\legs_bone.png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\CharacterSet\legs_cloth.png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\CharacterSet\legs_heavy.png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\CharacterSet\legs_leather.png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\CharacterSet\legs_plate.png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\CharacterSet\legs_spiked.png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\CharacterSet\mstaff_arcane.png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\CharacterSet\mstaff_blood.png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\CharacterSet\mstaff_light.png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\CharacterSet\mstaff_void.png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\CharacterSet\scythe.png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\CharacterSet\sc_b.png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\CharacterSet\sc_d.png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\CharacterSet\sh_ang_spikes.png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\CharacterSet\sh_asym.png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\CharacterSet\sh_blocky.png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\CharacterSet\sh_jagged(1).png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\CharacterSet\sh_mh.png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\CharacterSet\sh_mk.png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\CharacterSet\sh_ribbed.png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\CharacterSet\sh_ribs.png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\CharacterSet\sh_round.png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\CharacterSet\sh_spikes.png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\CharacterSet\sh_tg.png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\CharacterSet\sh_triple.png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\CharacterSet\sickle.png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\CharacterSet\sk_c.png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\CharacterSet\sk_m.png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\CharacterSet\spear.png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\CharacterSet\sp_l.png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\CharacterSet\sp_t.png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\CharacterSet\staff.png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\CharacterSet\staff_chaos.png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\CharacterSet\staff_dragon.png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\CharacterSet\staff_iron.png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\CharacterSet\staff_runic.png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\CharacterSet\staff_wood.png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\CharacterSet\sw_cur.png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\CharacterSet\sw_f.png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Music\DarkEpicTechno.mp3
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Music\DarkTechno.mp3
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Music\MusicCyber.mp3
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Music\MusicEpic.mp3
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Music\MusicSad.mp3
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Music\TechnoFolk.mp3
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Sound\Arrow\SFX_ArrowHit_01.mp3
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Sound\Arrow\SFX_ArrowHit_02.mp3
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Sound\Arrow\SFX_ArrowHit_03.mp3
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Sound\Arrow\SFX_ArrowHit_04.mp3
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Sound\Arrow\SFX_ArrowHit_05.mp3
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Sound\Arrow\SFX_ArrowHit_06.mp3
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Sound\Arrow\SFX_ArrowPush_01.mp3
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Sound\Arrow\SFX_ArrowPush_02.mp3
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Sound\Arrow\SFX_ArrowPush_03.mp3
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Sound\Damage\Sword\SFX_DamageSword_01.mp3
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Sound\Damage\Sword\SFX_DamageSword_02.mp3
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Sound\Damage\Sword\SFX_DamageSword_03.mp3
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Sound\Damage\Sword\SFX_DamageSword_04.mp3
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Sound\Damage\Sword\SFX_DamageSword_05.mp3
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Sound\HammerSwing\SFX_HammerSwing_01.mp3
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Sound\HammerSwing\SFX_HammerSwing_02.mp3
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Sound\HammerSwing\SFX_HammerSwing_03.mp3
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Sound\HammerSwing\SFX_HammerSwing_04.mp3
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Sound\HammerSwing\SFX_HammerSwing_05.mp3
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Sound\HammerSwing\SFX_HammerSwing_06.mp3
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Sound\Magic\SFX_MagicEnergy_01.mp3
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Sound\Magic\SFX_MagicEnergy_02.mp3
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Sound\Magic\SFX_MagicHit_01.mp3
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Sound\Magic\SFX_MagicHit_02.mp3
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Sound\Magic\SFX_MagicPush_01.mp3
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Sound\Magic\SFX_MagicPush_02.mp3
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Sound\Magic\SFX_MagicPush_03.mp3
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Sound\Shield\SFX_Shield_01.mp3
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Sound\Shield\SFX_Shield_02.mp3
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Sound\Shield\SFX_Shield_03.mp3
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Sound\Shield\SFX_Shield_04.mp3
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Sound\Sword\SwordClink\SFX_SwordClink_01.mp3
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Sound\Sword\SwordClink\SFX_SwordClink_02.mp3
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Sound\Sword\SwordClink\SFX_SwordClink_03.mp3
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Sound\Sword\SwordHit\SFX_SwordHitRare_01.mp3
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Sound\Sword\SwordHit\SFX_SwordHit_01.mp3
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Sound\Sword\SwordHit\SFX_SwordHit_02.mp3
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Sound\Sword\SwordHit\SFX_SwordHit_03.mp3
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Sound\Sword\SwordSwing\SFX_SwordSwingAgressive_01.mp3
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Sound\Sword\SwordSwing\SFX_SwordSwingAgressive_02.mp3
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Sound\Sword\SwordSwing\SFX_SwordSwingAgressive_03.mp3
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Sound\Sword\SwordSwing\SFX_SwordSwing_01.mp3
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Sound\Sword\SwordSwing\SFX_SwordSwing_02.mp3
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Sound\Sword\SwordSwing\SFX_SwordSwing_03.mp3
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Sound\Sword\SwordSwing\SFX_SwordSwing_04.mp3
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Sound\Sword\SwordSwing\SFX_SwordSwing_05.mp3
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Sound\Sword\SwordSwing\SFX_SwordSwing_06.mp3
