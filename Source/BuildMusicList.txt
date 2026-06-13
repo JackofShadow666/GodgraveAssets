@@ -1,5 +1,5 @@
 ; Список файлов из папок Music и Sound
-; Создано: 13.06.2026 14:34:50
+; Создано: 13.06.2026 14:51:59
 ; Корневая папка: F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source
 
 === Папка: Music ===
@@ -41,7 +41,7 @@ Source\Sound\Magic\SFX_MagicHit_02.mp3
 Source\Sound\Magic\SFX_MagicPush_01.mp3
 Source\Sound\Magic\SFX_MagicPush_02.mp3
 Source\Sound\Magic\SFX_MagicPush_03.mp3
-Source\Sound\Rage\SFX_Rage.mp3
+Source\Sound\Rage\SFX_Rage_01.mp3
 Source\Sound\Shield\SFX_Shield_01.mp3
 Source\Sound\Shield\SFX_Shield_02.mp3
 Source\Sound\Shield\SFX_Shield_03.mp3
