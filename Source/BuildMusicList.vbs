@@ -1,4 +1,4 @@
-' BuildMusicList.vbs
+' BuildList.vbs
 ' Скрипт создает список файлов из папок Music и Sound (включая подпапки)
 ' Корневая папка со скриптом входит в путь к файлам
 
@@ -18,10 +18,10 @@ If rootFolder = "" Then rootFolder = fso.GetAbsolutePathName(".")
 rootFolderName = fso.GetFolder(rootFolder).Name
 
 ' Путь к выходному файлу
-outputPath = fso.BuildPath(rootFolder, "BuildMusicList.txt")
+outputPath = fso.BuildPath(rootFolder, "BuildList.txt")
 
 ' Массив с именами целевых папок
-targetFolders = Array("Music", "Sound")
+targetFolders = Array("Music", "Sound", "Character")
 
 ' Открываем файл для записи (перезапись, если существует)
 Set logFile = fso.CreateTextFile(outputPath, True, False)
