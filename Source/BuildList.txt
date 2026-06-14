@@ -1,5 +1,5 @@
 ; Список файлов из папок Music и Sound
-; Создано: 14.06.2026 17:59:28
+; Создано: 14.06.2026 18:21:29
 ; Корневая папка: F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source
 
 === Папка: Music ===
@@ -65,7 +65,15 @@ Source\Sound\Sword\SwordSwing\SFX_SwordSwing_05.mp3
 Source\Sound\Sword\SwordSwing\SFX_SwordSwing_06.mp3
 
 === Папка: Character ===
-Source\Character\Knight\T_Knight_01.png
+Source\Character\Knight\T_Character_01.png
+Source\Character\Knight\T_Character_02.png
+Source\Character\Knight\T_Character_03.png
+Source\Character\Knight\T_Character_04.png
+Source\Character\Knight\T_Character_05.png
+Source\Character\Knight\T_Character_06.png
+Source\Character\Knight\T_Character_07.png
+Source\Character\Knight\T_Character_08.png
+Source\Character\Knight\T_Character_09.png
 
 === Папка: Weapon ===
 Source\Weapon\Sword\T_Sword_01.png
