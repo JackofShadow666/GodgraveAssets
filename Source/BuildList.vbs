@@ -21,7 +21,7 @@ rootFolderName = fso.GetFolder(rootFolder).Name
 outputPath = fso.BuildPath(rootFolder, "BuildList.txt")
 
 ' Массив с именами целевых папок
-targetFolders = Array("Music", "Sound", "Character")
+targetFolders = Array("Music", "Sound", "Character", "Weapon")
 
 ' Открываем файл для записи (перезапись, если существует)
 Set logFile = fso.CreateTextFile(outputPath, True, False)

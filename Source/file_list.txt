@@ -1,6 +1,10 @@
 F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Build.html
 F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Build.js
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\BuildList.txt
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\CharacterTest.psd
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Doc.txt
 F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\file_list Ч копи€.txt
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Character\Knight\T_Knight_01.png
 F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\CharacterSet\body_abyss.png
 F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\CharacterSet\body_black.png
 F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\CharacterSet\body_chaos.png
@@ -73,12 +77,15 @@ F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\CharacterSet\staff_runic.png
 F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\CharacterSet\staff_wood.png
 F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\CharacterSet\sw_cur.png
 F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\CharacterSet\sw_f.png
-F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Music\DarkEpicTechno.mp3
-F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Music\DarkTechno.mp3
-F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Music\MusicCyber.mp3
-F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Music\MusicEpic.mp3
-F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Music\MusicSad.mp3
-F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Music\TechnoFolk.mp3
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Music\Battle\DarkEpicTechno.mp3
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Music\Battle\DarkTechno.mp3
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Music\Battle\EpicBattleA.mp3
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Music\Battle\IrishTechno.mp3
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Music\Battle\IrishTechnoB.mp3
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Music\Battle\MusicCyber.mp3
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Music\Battle\MusicEpic.mp3
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Music\Battle\MusicSad.mp3
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Music\Battle\TechnoFolk.mp3
 F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Sound\Arrow\SFX_ArrowHit_01.mp3
 F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Sound\Arrow\SFX_ArrowHit_02.mp3
 F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Sound\Arrow\SFX_ArrowHit_03.mp3
@@ -93,6 +100,7 @@ F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Sound\Damage\Sword\SFX_Damag
 F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Sound\Damage\Sword\SFX_DamageSword_03.mp3
 F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Sound\Damage\Sword\SFX_DamageSword_04.mp3
 F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Sound\Damage\Sword\SFX_DamageSword_05.mp3
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Sound\Empty\SFX_Empty_01.mp3
 F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Sound\HammerSwing\SFX_HammerSwing_01.mp3
 F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Sound\HammerSwing\SFX_HammerSwing_02.mp3
 F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Sound\HammerSwing\SFX_HammerSwing_03.mp3
@@ -106,6 +114,7 @@ F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Sound\Magic\SFX_MagicHit_02.
 F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Sound\Magic\SFX_MagicPush_01.mp3
 F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Sound\Magic\SFX_MagicPush_02.mp3
 F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Sound\Magic\SFX_MagicPush_03.mp3
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Sound\Rage\SFX_Rage_01.mp3
 F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Sound\Shield\SFX_Shield_01.mp3
 F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Sound\Shield\SFX_Shield_02.mp3
 F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Sound\Shield\SFX_Shield_03.mp3
@@ -126,3 +135,15 @@ F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Sound\Sword\SwordSwing\SFX_S
 F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Sound\Sword\SwordSwing\SFX_SwordSwing_04.mp3
 F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Sound\Sword\SwordSwing\SFX_SwordSwing_05.mp3
 F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Sound\Sword\SwordSwing\SFX_SwordSwing_06.mp3
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Weapon\Sword\T_Sword_01.png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Weapon\Sword\T_Sword_02.png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Weapon\Sword\T_Sword_03.png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Weapon\Sword\T_Sword_04.png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Weapon\Sword\T_Sword_05.png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Weapon\Sword\T_Sword_06.png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Weapon\Sword\T_Sword_07.png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Weapon\Sword\T_Sword_08.png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Weapon\Sword\T_Sword_09.png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Weapon\Sword\T_Sword_10.png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Weapon\Sword\T_Sword_11.png
+F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source\Weapon\Sword\T_Sword_12.png
