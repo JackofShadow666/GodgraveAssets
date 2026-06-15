@@ -8,6 +8,3 @@ cmdCommand = "cmd.exe /c git add . && git commit -m ""up"" && git push origin ma
 
 ' Запуск в скрытом режиме (0) с ожиданием завершения (True)
 objShell.Run cmdCommand, 0, True
-
-' Английское уведомление об успешном завершении
-MsgBox "All changes have been successfully pushed to Git!", 64, "Success"
