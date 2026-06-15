@@ -1,6 +1,6 @@
 ; Список файлов из папок Music и Sound
-; Создано: 14.06.2026 18:21:29
-; Корневая папка: F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source
+; Создано: 15.06.2026 4:37:49
+; Корневая папка: F:\Jack\Project\Godgrave\Public\Godgrave\Source
 
 === Папка: Music ===
 Source\Music\Battle\DarkEpicTechno.mp3
