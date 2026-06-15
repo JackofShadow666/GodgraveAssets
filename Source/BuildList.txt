@@ -1,5 +1,5 @@
 ; Список файлов из папок Music и Sound
-; Создано: 15.06.2026 19:59:55
+; Создано: 15.06.2026 20:14:48
 ; Корневая папка: F:\Jack\Project\Godgrave\Public\Godgrave\Source
 
 === Папка: Music ===
@@ -99,6 +99,7 @@ Source\UI\T_BarMiddle.png
 Source\UI\T_LocationPreview.png
 Source\UI\T_MaskA � �����.png
 Source\UI\T_MaskA.png
+Source\UI\UISystem.html
 
 === Папка: Font ===
 Source\Font\BloodyDrip-Regular.ttf
