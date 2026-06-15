@@ -1,5 +1,5 @@
 ; Список файлов из папок Music и Sound
-; Создано: 15.06.2026 4:37:49
+; Создано: 15.06.2026 6:51:45
 ; Корневая папка: F:\Jack\Project\Godgrave\Public\Godgrave\Source
 
 === Папка: Music ===
@@ -88,4 +88,7 @@ Source\Weapon\Sword\T_Sword_09.png
 Source\Weapon\Sword\T_Sword_10.png
 Source\Weapon\Sword\T_Sword_11.png
 Source\Weapon\Sword\T_Sword_12.png
+
+=== Папка: UI ===
+Source\UI\T_MaskA.png
 
