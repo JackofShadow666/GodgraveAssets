@@ -42,8 +42,6 @@ canvas{display:block;position:fixed;top:0;left:0;cursor:none;}
 #badge .bn{font-size:8px;color:#2a5068;letter-spacing:2px;}
 #badge .bname{font-size:13px;color:#7ac8e8;font-family:'Oswald',sans-serif;letter-spacing:2px;margin-top:1px;}
 #adisplay{position:fixed;top:14px;left:50%;transform:translateX(-50%);background:rgba(8,14,22,0.88);border:1px solid #1a3050;border-radius:4px;padding:4px 14px;font-size:9px;color:#3a6a80;pointer-events:none;white-space:nowrap;z-index:5;}
-#dtoggle{position:fixed;bottom:14px;right:296px;background:rgba(8,14,22,0.9);border:1px solid #1a3a50;border-radius:6px;padding:6px 12px;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:9px;color:#4a7a90;transition:all 0.12s;}
-#dtoggle:hover{border-color:#2a6a80;color:#7ab0c8;}
 #dtoggle.on{border-color:#2a7a50;color:#4acc80;}
 #hint{position:fixed;bottom:14px;left:14px;font-size:8px;color:#2a4a5a;line-height:1.8;pointer-events:none;}
 
@@ -593,7 +591,6 @@ canvas{display:block;position:fixed;top:0;left:0;cursor:none;}
   </div>
 </div>
 
-<button id="dtoggle" onclick="toggleDummy()">🤖 МАНЕКЕН: ВЫКЛ</button>
 <div id="hint">WASD движение · T манекен · мышь целиться</div>
 
 <script>
@@ -3880,9 +3877,35 @@ let SPRITE_LISTS = {};
 const SPRITE_IMG_CACHE = {};
 let spritesDBReady = false;
 
+function showSpriteErrorToast(url){
+  const fname = url.split('/').pop();
+  const toast = document.createElement('div');
+  toast.textContent = `⚠ Файл не найден: ${fname}`;
+  toast.style.cssText = 'position:fixed;top:14px;right:14px;z-index:5000;'
+    + 'background:rgba(60,10,10,0.95);color:#ff8080;border:1px solid #aa3030;'
+    + 'border-radius:6px;padding:10px 16px;font-family:monospace;font-size:12px;'
+    + 'box-shadow:0 4px 12px rgba(0,0,0,0.5);max-width:320px;';
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 6000);
+}
+
 function loadSpriteImage(url){
   if(SPRITE_IMG_CACHE[url]) return SPRITE_IMG_CACHE[url];
   const img = new Image();
+  img.addEventListener('error', () => {
+    // Одна повторная попытка через 1 сек — отличает реальный 404 от
+    // временного сбоя сети/CDN. Тост показываем только после повторной
+    // неудачи, чтобы не сработать на файле который ещё в процессе загрузки.
+    if(!img._retried){
+      img._retried = true;
+      setTimeout(() => {
+        img.src = url + (url.includes('?') ? '&' : '?') + 'retry=' + Date.now();
+      }, 1000);
+    } else {
+      console.warn('⚠ Файл не загружен (404 после повтора):', url);
+      showSpriteErrorToast(url);
+    }
+  });
   img.src = url;
   SPRITE_IMG_CACHE[url] = img;
   return img;
