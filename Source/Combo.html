@@ -524,16 +524,24 @@ canvas{display:block;position:fixed;top:0;left:0;cursor:none;}
         <label for="cb-flickdet" style="font-size:8px;color:#8a7020;cursor:pointer;letter-spacing:0.5px;">Детект флик-замаха (туда-сюда)</label>
       </div>
       <div class="row">
-        <div class="row-head"><label style="color:#8a7020;">Флик: окно (сек)</label><span class="val" id="vl-flickwindow" style="color:#ccaa30;">0.1</span></div>
-        <input type="range" id="sl-flickwindow" min="0.05" max="1.0" step="0.05" value="0.1" style="accent-color:#ccaa30;">
+        <div class="row-head"><label style="color:#8a7020;">Флик: окно (сек)</label><span class="val" id="vl-flickwindow" style="color:#ccaa30;">1</span></div>
+        <input type="range" id="sl-flickwindow" min="0.05" max="1.5" step="0.05" value="1" style="accent-color:#ccaa30;">
       </div>
       <div class="row">
-        <div class="row-head"><label style="color:#8a7020;">Флик: мин.скорость (рад/с)</label><span class="val" id="vl-flickminvel" style="color:#ccaa30;">9.5</span></div>
-        <input type="range" id="sl-flickminvel" min="1.0" max="20.0" step="0.5" value="9.5" style="accent-color:#ccaa30;">
+        <div class="row-head"><label style="color:#8a7020;">Флик: мин.скорость (рад/с)</label><span class="val" id="vl-flickminvel" style="color:#ccaa30;">4</span></div>
+        <input type="range" id="sl-flickminvel" min="0.5" max="8.0" step="0.25" value="4" style="accent-color:#ccaa30;">
       </div>
       <div class="row">
-        <div class="row-head"><label style="color:#8a7020;">Флик: мин.амплитуда (рад)</label><span class="val" id="vl-flickminamp" style="color:#ccaa30;">0.95</span></div>
-        <input type="range" id="sl-flickminamp" min="0.05" max="2.0" step="0.05" value="0.95" style="accent-color:#ccaa30;">
+        <div class="row-head"><label style="color:#8a7020;">Флик: мин.амплитуда (рад)</label><span class="val" id="vl-flickminamp" style="color:#ccaa30;">0.45</span></div>
+        <input type="range" id="sl-flickminamp" min="0.05" max="2.0" step="0.05" value="0.45" style="accent-color:#ccaa30;">
+      </div>
+      <div class="row">
+        <div class="row-head"><label style="color:#8a7020;">Флик: кол-во махов</label><span class="val" id="vl-flickcount" style="color:#ccaa30;">2</span></div>
+        <input type="range" id="sl-flickcount" min="2" max="8" step="1" value="2" style="accent-color:#ccaa30;">
+      </div>
+      <div class="row">
+        <div class="row-head"><label style="color:#8a7020;">Флик: макс.амп (x мульт)</label><span class="val" id="vl-flickmaxmult" style="color:#ccaa30;">5</span></div>
+        <input type="range" id="sl-flickmaxmult" min="1.5" max="10" step="0.5" value="5" style="accent-color:#ccaa30;">
       </div>
       <div class="row">
         <div class="row-head"><label style="color:#8a7020;">Флик: стамина (потеря)</label><span class="val" id="vl-stamflick" style="color:#ccaa30;">25</span></div>
@@ -903,6 +911,8 @@ bindSlider('swres');
 bindSlider('flickwindow');
 bindSlider('flickminvel');
 bindSlider('flickminamp');
+bindSlider('flickcount');
+bindSlider('flickmaxmult');
 bindSlider('stamflick');
 bindSlider('orbitwindow');
 bindSlider('orbitturns');
@@ -2716,14 +2726,32 @@ function update(dt){
     }
   }
 
+  // Кламп шага угла за кадр — защита от "слепой зоны" у pivot, где целевой
+  // угол ta может скакать на огромную величину при микро-движении мыши.
+  // Без этого realAngVel становится нефизично большим за 1 кадр у меча.
+  // (см. калибровку в FlickTest.html)
+  if (FLICK.prevSwordAngle !== null) {
+    const MAX_ANGLE_STEP = 8 * rawDt; // ограничение угловой скорости меча, рад/сек
+    const rawStep = angDiff(P.angle, FLICK.prevSwordAngle);
+    const clampedStep = Math.max(-MAX_ANGLE_STEP, Math.min(MAX_ANGLE_STEP, rawStep));
+    P.angle = FLICK.prevSwordAngle + clampedStep;
+  }
+
+  // realAngVel = реальная угловая скорость меча (после клампа)
+  const realAngVel = FLICK.prevSwordAngle !== null
+    ? angDiff(P.angle, FLICK.prevSwordAngle) / Math.max(rawDt, 0.004)
+    : 0;
+  FLICK.prevSwordAngle = P.angle;
+  window._debugRealAngVel = realAngVel;
+
   P._pmX = mX; P._pmY = mY;
   P._inAutoBlock = inAutoBlock;
 
   // Замах: надпись + трата стамины с делеем 1 сек
   if(!P._swingCD) P._swingCD = -1;
-  // Детект флик-замаха (добавляет к стандартному vel-замаху)
-  const flickAngle = Math.atan2(effectiveMY - rc.y, effectiveMX - rc.x);
-  if(updateFlickDetect(flickAngle, rawDt) && (P._swingBlockCD||0) < GameTime && P.exhausted <= 0){
+  // Детект флик-замаха: используем realAngVel (реальная угловая скорость меча,
+  // с клампом шага) — откалибровано в FlickTest.html (flickcount=2, flickmaxmult=5).
+  if(updateFlickDetect(realAngVel, rawDt) && (P._swingBlockCD||0) < GameTime && P.exhausted <= 0){
     P.stamina = Math.max(0, P.stamina - sv('stamflick'));
     if(P.stamina <= 0 && P.exhausted <= 0) P.exhausted = sv('exhdur2');
     P._swingBlockCD = GameTime + 0.15;
@@ -3392,6 +3420,16 @@ function drawCursor(){
   ctx.fillStyle = '#44aaff';
   ctx.fillText('ЯРОСТЬ: ' + Math.round(P.rage||0) + '%', 140, H-11);
 
+  // Debug: флик-детектор
+  if(document.getElementById('cb-flickdet')?.checked){
+    const swCount = FLICK.swings ? FLICK.swings.length : 0;
+    const curAmp = (FLICK.curAmp||0).toFixed(2);
+    const curDirStr = FLICK.curDir > 0 ? '+' : FLICK.curDir < 0 ? '-' : '0';
+    const ravStr = (window._debugRealAngVel||0).toFixed(2);
+    ctx.fillStyle = swCount > 0 ? '#ffcc40' : '#557788';
+    ctx.fillText(`ФЛИК: swings=${swCount} dir=${curDirStr} amp=${curAmp} rav=${ravStr}`, 260, H-11);
+  }
+
   if(dummyOn){
     const tactic = AI.tactic==='COMBAT_HARASS'?'HARASS':'RETREATING';
     const style = AI.swordStyle==='SWORD_STYLE_DUELIST'?'DUELIST':'SWORDSMAN';
@@ -3433,13 +3471,10 @@ let rawDt = 0.016; // глобальный, обновляется каждый 
 // Работает через GameTime (не FPS-зависимо): накапливает угловую скорость
 // за реальное время, детектит пик и смену направления.
 const FLICK = {
-  prevAngle: null,
-  prevTime: -1,
-  peakVel: 0,       // максимальная угловая скорость за окно
-  peakDir: 0,       // направление пика
-  peakTime: -1,
-  reversalTime: -1, // когда произошла первая смена направления
-  state: 'idle',    // idle | peaked | reversed
+  prevSwordAngle: null, // P.angle предыдущего кадра (для realAngVel)
+  curDir: 0,        // направление текущего маха
+  curAmp: 0,        // накопленная амплитуда текущего маха
+  swings: [],       // история завершённых махов: {time, amp}
 };
 
 // ── Детектор орбиты меча (вращение вокруг себя без ЛКМ) ─────────────────
@@ -3489,40 +3524,66 @@ function updateOrbitDetect(swordAngle, rawDt) {
   return false;
 }
 
-function updateFlickDetect(curAngle, rawDt) {
+// Детект серии быстрых махов туда-сюда: >= flickCount маха за flickWindow
+// секунд, каждый мах с |realAngVel| > flickMinVel и амплитудой
+// flickMinAmp <= amp <= flickMinAmp*flickmaxmult (откалибровано в FlickTest.html:
+// flickcount=2, flickmaxmult=5 — "идеально").
+// curAngle здесь — уже realAngVel (рад/сек), посчитанный снаружи с клампом шага.
+function updateFlickDetect(realAngVel, rawDt) {
   if (!document.getElementById('cb-flickdet')?.checked) return false;
-  if (FLICK.prevAngle === null) { FLICK.prevAngle = curAngle; FLICK.prevTime = RealTime; return false; }
 
-  // Ползунки
-  const flickWindow  = sv('flickwindow');   // секунд на весь флик
-  const flickMinVel  = sv('flickminvel');   // мин. угл. скорость для засчёта рад/сек
-  const flickMinAmp  = sv('flickminamp');   // мин. суммарный угол первого маха (рад)
+  const flickWindow  = sv('flickwindow');
+  const flickMinVel  = sv('flickminvel');
+  const flickMinAmp  = sv('flickminamp');
+  const flickMaxMult = sv('flickmaxmult');
+  const flickCount   = sv('flickcount');
 
-  const dAng = angDiff(curAngle, FLICK.prevAngle);
-  const dT   = Math.max(rawDt, 0.004);
-  const vel  = dAng / dT; // угловая скорость рад/сек (не зависит от FPS)
+  const dir = Math.sign(realAngVel);
+  const fastEnough = Math.abs(realAngVel) > flickMinVel;
 
-  FLICK.prevAngle = curAngle;
+  // Убираем устаревшие махи из истории (старше flickWindow)
+  FLICK.swings = FLICK.swings.filter(s => RealTime - s.time <= flickWindow);
 
-  if (FLICK.state === 'idle') {
-    if (Math.abs(vel) > flickMinVel) {
-      FLICK.state = 'peaked';
-      FLICK.peakVel = vel;
-      FLICK.peakDir = Math.sign(vel);
-      FLICK.peakTime = RealTime;
-      FLICK.amp = Math.abs(dAng);
+  if (dir === 0) return false;
+
+  const contribution = Math.abs(realAngVel) * rawDt;
+
+  if (FLICK.curDir === 0) {
+    if (fastEnough) {
+      FLICK.curDir = dir;
+      FLICK.curAmp = contribution;
     }
-  } else if (FLICK.state === 'peaked') {
-    FLICK.amp = (FLICK.amp || 0) + Math.abs(dAng);
-    if (RealTime - FLICK.peakTime > flickWindow) {
-      FLICK.state = 'idle'; FLICK.amp = 0; return false;
-    }
-    // Смена направления при достаточной амплитуде
-    if (Math.sign(vel) !== FLICK.peakDir && Math.abs(vel) > flickMinVel * 0.5 && FLICK.amp >= flickMinAmp) {
-      FLICK.state = 'idle'; FLICK.amp = 0;
-      return true; // ФЛИК!
-    }
+    return false;
   }
+
+  if (dir === FLICK.curDir) {
+    FLICK.curAmp += contribution;
+    return false;
+  }
+
+  // Смена направления — завершаем текущий мах.
+  if (FLICK.curAmp >= flickMinAmp && FLICK.curAmp <= flickMinAmp * flickMaxMult) {
+    FLICK.swings.push({ time: RealTime, amp: FLICK.curAmp });
+  } else if (FLICK.curAmp > flickMinAmp * flickMaxMult) {
+    // Слишком широкий мах — сбрасывает серию
+    FLICK.swings = [];
+  }
+  // amp < flickMinAmp — слишком мелкое движение, игнорируем без сброса
+
+  if (fastEnough) {
+    FLICK.curDir = dir;
+    FLICK.curAmp = contribution;
+  } else {
+    FLICK.curDir = 0;
+    FLICK.curAmp = 0;
+  }
+
+  if (FLICK.swings.length >= flickCount) {
+    FLICK.swings = [];
+    FLICK.curDir = 0; FLICK.curAmp = 0;
+    return true;
+  }
+
   return false;
 }
 
@@ -3700,6 +3761,12 @@ function loop(ts){
 canvas.addEventListener('mousemove', e=>{ const r=canvas.getBoundingClientRect(); mX=e.clientX-r.left; mY=e.clientY-r.top; });
 canvas.addEventListener('mousedown', e=>{ if(e.button!==0)return; mDown=true; });
 canvas.addEventListener('mouseup',   e=>{ if(e.button!==0)return; mDown=false; });
+// Глобальные обработчики: если ЛКМ отжата за пределами canvas/окна, или окно
+// теряет фокус (alt-tab, переключение вкладки) — сбрасываем mDown, чтобы
+// игра не "застревала" в режиме зажатой кнопки.
+window.addEventListener('mouseup', e=>{ if(e.button===0) mDown=false; });
+window.addEventListener('blur', ()=>{ mDown=false; });
+document.addEventListener('mouseleave', ()=>{ mDown=false; });
 window.addEventListener('keydown', e=>{
   const k = e.key.toLowerCase();
   keys[k]=true;
