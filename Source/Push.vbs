@@ -1,19 +1,13 @@
 Set objShell = CreateObject("WScript.Shell")
 
-' Запрос сообщения для коммита у пользователя
-commitMessage = InputBox("Введите сообщение для коммита:", "Git Commit Helper")
+' Укажите здесь путь к репозиторию, если скрипт лежит в другом месте:
+' objShell.CurrentDirectory = "C:\path\to\your\project"
 
-' Если пользователь нажал Отмена или оставил поле пустым, выходим
-If commitMessage = "" Then
-    WScript.Quit
-End If
+' Формируем команду с фиксированным сообщением коммита "up"
+cmdCommand = "cmd.exe /c git add . && git commit -m ""up"" && git push origin main"
 
-' Очередь команд: добавляем файлы, комитим и пушим в ветку main (замените на master, если нужно)
-' Команда /c закрывает окно консоли после выполнения. Если нужно оставить для отладки — замените на /k
-cmdCommand = "cmd.exe /c git add . && git commit -m """ & commitMessage & """ && git push origin main"
+' Запуск в скрытом режиме (0) с ожиданием завершения (True)
+objShell.Run cmdCommand, 0, True
 
-' Запуск командной строки
-' Параметр 1 показывает окно консоли. Замените на 0, если хотите выполнить полностью скрытно.
-objShell.Run cmdCommand, 1, True
-
-MsgBox "Изменения успешно отправлены в Git!", 64, "Готово"
+' Английское уведомление об успешном завершении
+MsgBox "All changes have been successfully pushed to Git!", 64, "Success"
