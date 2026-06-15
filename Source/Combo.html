@@ -1,0 +1,4497 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sword — КОМБО + Body Offset</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Oswald:wght@300;600&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;user-select:none;}
+body{background:#080b10;overflow:hidden;font-family:'Share Tech Mono',monospace;color:#c8d8e8;}
+canvas{display:block;position:fixed;top:0;left:0;cursor:none;}
+#panel{
+  position:fixed;top:0;right:0;width:280px;height:100vh;
+  background:#0a0e14;border-left:1px solid #1a2e44;
+  display:flex;flex-direction:column;overflow:hidden;
+  box-shadow:-6px 0 30px rgba(0,0,0,0.7);
+}
+#ph{padding:14px 16px 10px;border-bottom:1px solid #1a2e44;flex-shrink:0;}
+#ph h2{font-family:'Oswald',sans-serif;font-size:14px;letter-spacing:3px;color:#6ab0d0;text-transform:uppercase;}
+#ph p{font-size:8px;color:#3a5a70;margin-top:3px;letter-spacing:1px;line-height:1.6;}
+#controls{flex:1;overflow-y:auto;padding:10px 12px;scrollbar-width:thin;scrollbar-color:#1e3050 transparent;}
+#controls::-webkit-scrollbar{width:3px;}
+#controls::-webkit-scrollbar-thumb{background:#1e3050;}
+
+.sec{margin-bottom:18px;}
+.sec-title{font-size:8px;letter-spacing:2px;color:#2a5a70;text-transform:uppercase;margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid #0e2030;}
+
+.row{display:flex;flex-direction:column;gap:3px;margin-bottom:9px;}
+.row-head{display:flex;justify-content:space-between;align-items:baseline;}
+.row-head label{font-size:8px;color:#4a7090;letter-spacing:0.5px;}
+.row-head .val{font-size:9px;color:#6ab0d0;font-weight:bold;}
+.row input[type=range]{width:100%;height:3px;cursor:pointer;accent-color:#3a9acc;}
+
+.keys{display:flex;flex-direction:column;gap:3px;margin-top:4px;}
+.key{background:rgba(15,40,60,0.7);border:1px solid #1e4060;border-radius:2px;padding:3px 7px;font-size:8px;color:#4a7a8a;line-height:1.5;}
+
+#infobar{padding:8px 12px;border-top:1px solid #162030;font-size:8px;color:#304858;line-height:1.9;background:#060a0e;flex-shrink:0;}
+.ir{display:flex;justify-content:space-between;}
+.iv{color:#5a8898;}
+
+#badge{position:fixed;top:14px;left:14px;background:rgba(8,14,22,0.93);border:1px solid #1a3a54;border-radius:6px;padding:7px 12px;pointer-events:none;z-index:5;}
+#badge .bn{font-size:8px;color:#2a5068;letter-spacing:2px;}
+#badge .bname{font-size:13px;color:#7ac8e8;font-family:'Oswald',sans-serif;letter-spacing:2px;margin-top:1px;}
+#adisplay{position:fixed;top:14px;left:50%;transform:translateX(-50%);background:rgba(8,14,22,0.88);border:1px solid #1a3050;border-radius:4px;padding:4px 14px;font-size:9px;color:#3a6a80;pointer-events:none;white-space:nowrap;z-index:5;}
+#dtoggle{position:fixed;bottom:14px;right:296px;background:rgba(8,14,22,0.9);border:1px solid #1a3a50;border-radius:6px;padding:6px 12px;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:9px;color:#4a7a90;transition:all 0.12s;}
+#dtoggle:hover{border-color:#2a6a80;color:#7ab0c8;}
+#dtoggle.on{border-color:#2a7a50;color:#4acc80;}
+#hint{position:fixed;bottom:14px;left:14px;font-size:8px;color:#2a4a5a;line-height:1.8;pointer-events:none;}
+
+/* debug marker */
+.root-dot{pointer-events:none;}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud" style="position:fixed;top:16px;left:0;width:calc(100% - 280px);pointer-events:none;font-family:'Share Tech Mono',monospace;padding:0 24px;display:flex;justify-content:space-between;align-items:flex-start;gap:16px;">
+  <!-- Игрок слева -->
+  <div id="hud-player" style="width:220px;">
+    <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
+      <span style="font-size:9px;color:#4a90c8;letter-spacing:1px;">ИГРОК</span>
+      <span id="hud-p-status" style="font-size:9px;color:#ffaa44;"></span>
+    </div>
+    <div style="background:rgba(0,0,0,0.6);border:1px solid #1a3a20;border-radius:2px;height:11px;margin-bottom:3px;overflow:hidden;">
+      <div id="hud-p-hp" style="height:100%;background:#2acc50;width:100%;transition:width 0.08s;"></div>
+    </div>
+    <div style="background:rgba(0,0,0,0.5);border:1px solid #2a2a10;border-radius:2px;height:7px;margin-bottom:3px;overflow:hidden;">
+      <div id="hud-p-stam" style="height:100%;background:#ccaa20;width:100%;transition:width 0.08s;"></div>
+    </div>
+    <div style="background:#1a0808;border:1px solid #5a1010;border-radius:2px;height:5px;margin-bottom:3px;overflow:hidden;">
+      <div id="hud-p-rage" style="height:100%;background:linear-gradient(90deg,#cc2020,#ff5020);width:0%;transition:width 0.12s;"></div>
+    </div>
+    <div style="display:flex;margin-top:2px;font-size:7px;color:#3a6080;">
+      <span>HP</span><span style="flex:1;text-align:center;color:#8a7020;">СТАМ</span><span style="color:#802020;">ЯРОСТЬ</span>
+    </div>
+    <div id="hud-p-buff" style="font-size:9px;color:#ff4040;margin-top:2px;letter-spacing:1px;"></div>
+  </div>
+  <!-- Бот справа -->
+  <div id="hud-bot" style="width:220px;text-align:right;opacity:0;transition:opacity 0.3s;">
+    <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
+      <span id="hud-b-phase" style="font-size:9px;letter-spacing:0.5px;"></span>
+      <span style="font-size:9px;color:#c84a4a;letter-spacing:1px;">БОТ</span>
+    </div>
+    <div style="background:rgba(0,0,0,0.6);border:1px solid #3a1a10;border-radius:2px;height:11px;margin-bottom:3px;overflow:hidden;">
+      <div id="hud-b-hp" style="height:100%;background:#cc4040;width:100%;transition:width 0.08s;"></div>
+    </div>
+    <div style="background:rgba(0,0,0,0.5);border:1px solid #2a2a10;border-radius:2px;height:7px;margin-bottom:3px;overflow:hidden;">
+      <div id="hud-b-stam" style="height:100%;background:#cc7020;width:100%;transition:width 0.08s;"></div>
+    </div>
+    <div style="background:#1a0808;border:1px solid #5a1010;border-radius:2px;height:5px;margin-bottom:3px;overflow:hidden;">
+      <div id="hud-b-rage" style="height:100%;background:linear-gradient(90deg,#ff5020,#cc2020);width:0%;transition:width 0.12s;float:right;"></div>
+    </div>
+    <div style="display:flex;margin-top:2px;font-size:7px;color:#5a4040;">
+      <span style="color:#802020;">ЯРОСТЬ</span><span style="flex:1;text-align:center;color:#8a7020;">СТАМ</span><span>HP</span>
+    </div>
+    <span id="hud-b-status" style="font-size:9px;color:#ffaa44;"></span>
+  </div>
+</div>
+
+<div id="adisplay">pivot: (0,0) | угол: 0°</div>
+
+<div id="panel">
+  <div id="ph">
+    <h2>⚔ КОМБО · BODY OFFSET</h2>
+    <p>МЕЧ → РУТ. ТЕЛО СМЕЩАЕТСЯ ПРОТИВ КУРСОРА.<br>АНИМАЦИЯ ВЕСА И ИНЕРЦИИ.</p>
+  </div>
+  <!-- ════════════════════════════════════════════════════════════════════
+       MODULE: SETTINGS PANEL  (все ползунки и галочки настроек)
+       Future: extract to settings-panel.html, load via fetch+innerHTML
+       ════════════════════════════════════════════════════════════════════ -->
+  <div id="controls">
+    <!-- БЛОК: СВЕЧЕНИЕ ИГРОКА -->
+    <div class="sec">
+      <div class="sec-title">█ СВЕЧЕНИЕ ИГРОКА</div>
+      <div class="row">
+        <div class="row-head"><label>Интенсивность</label><span class="val" id="vl-playerglow">1.0</span></div>
+        <input type="range" id="sl-playerglow" min="0" max="3" step="0.1" value="1.0">
+      </div>
+    </div>
+
+    <!-- БЛОК: ФОН АРЕНЫ -->
+    <div class="sec">
+      <div class="sec-title">█ ФОН АРЕНЫ</div>
+      <div class="row">
+        <div class="row-head"><label>Яркость фона</label><span class="val" id="vl-bgbright">1.8</span></div>
+        <input type="range" id="sl-bgbright" min="0" max="5" step="0.1" value="1.8">
+      </div>
+      <div class="row">
+        <div class="row-head"><label>Яркость сетки</label><span class="val" id="vl-gridbright">1</span></div>
+        <input type="range" id="sl-gridbright" min="0" max="3" step="0.05" value="1">
+      </div>
+    </div>
+
+    <!-- БЛОК: ОФФСЕТ ТЕЛА -->
+    <div class="sec">
+      <div class="sec-title">█ ОФФСЕТ ТЕЛА</div>
+      <div class="row">
+        <div class="row-head"><label>Дальность</label><span class="val" id="vl-dist">19</span></div>
+        <input type="range" id="sl-dist" min="0" max="120" step="1" value="19">
+      </div>
+      <div class="row">
+        <div class="row-head"><label>Скорость</label><span class="val" id="vl-spd">0.09</span></div>
+        <input type="range" id="sl-spd" min="0.01" max="0.5" step="0.01" value="0.09">
+      </div>
+      <div class="row">
+        <div class="row-head"><label>Инерция движения</label><span class="val" id="vl-inertia">0.84</span></div>
+        <input type="range" id="sl-inertia" min="0.5" max="0.99" step="0.01" value="0.84">
+      </div>
+    </div>
+
+    <!-- БЛОК: КОМБО СХЕМА -->
+    <div class="sec">
+      <div class="sec-title">█ БЕЗ ЛКМ · БЛОК (инв.эллипс)</div>
+      <div class="row">
+        <div class="row-head"><label>Эллипс X</label><span class="val" id="vl-ex">19</span></div>
+        <input type="range" id="sl-ex" min="0" max="200" step="1" value="19">
+      </div>
+      <div class="row">
+        <div class="row-head"><label>Эллипс Y</label><span class="val" id="vl-ey">44</span></div>
+        <input type="range" id="sl-ey" min="0" max="300" step="1" value="44">
+      </div>
+      <div class="row">
+        <div class="row-head"><label>Скорость lerp</label><span class="val" id="vl-blk">0.2</span></div>
+        <input type="range" id="sl-blk" min="0.01" max="0.6" step="0.01" value="0.2">
+      </div>
+      <div class="row" style="flex-direction:row;align-items:center;gap:7px;margin-top:2px;">
+        <input type="checkbox" id="cb-adaY" style="accent-color:#3a9acc;cursor:pointer;" checked>
+        <label for="cb-adaY" style="font-size:8px;color:#4a7090;cursor:pointer;letter-spacing:0.5px;">Адапт. Y по часам (12→смещ.вверх)</label>
+      </div>
+      <div class="row" id="row-adaY" style="display:flex;">
+        <div class="row-head"><label>Смещение вверх °12</label><span class="val" id="vl-adaY">60</span></div>
+        <input type="range" id="sl-adaY" min="0" max="200" step="1" value="60">
+      </div>
+      <div class="row" style="flex-direction:row;align-items:center;gap:7px;margin-top:2px;">
+        <input type="checkbox" id="cb-adaD" style="accent-color:#3a9acc;cursor:pointer;" checked>
+        <label for="cb-adaD" style="font-size:8px;color:#4a7090;cursor:pointer;letter-spacing:0.5px;">Адапт. Y вниз (6 ч макс, 4.5/7.5 мин)</label>
+      </div>
+      <div class="row" id="row-adaD" style="display:flex;">
+        <div class="row-head"><label>Смещение вниз °6</label><span class="val" id="vl-adaD">45</span></div>
+        <input type="range" id="sl-adaD" min="0" max="200" step="1" value="45">
+      </div>
+      <div class="row" style="flex-direction:row;align-items:center;gap:7px;margin-top:2px;">
+        <input type="checkbox" id="cb-adaX" style="accent-color:#3a9acc;cursor:pointer;">
+        <label for="cb-adaX" style="font-size:8px;color:#4a7090;cursor:pointer;letter-spacing:0.5px;">Адапт. X (пики 12/6 ч → расш., бока → 5)</label>
+      </div>
+      <div class="row" id="row-adaX" style="display:none;">
+        <div class="row-head"><label>X база (бока)</label><span class="val" id="vl-adaXb">40</span></div>
+        <input type="range" id="sl-adaXb" min="0" max="100" step="1" value="40">
+      </div>
+      <div class="row" id="row-adaX2" style="display:none;">
+        <div class="row-head"><label>X пик (12/6 ч)</label><span class="val" id="vl-adaXp">73</span></div>
+        <input type="range" id="sl-adaXp" min="0" max="200" step="1" value="73">
+      </div>
+      <div class="row" style="flex-direction:row;align-items:center;gap:7px;margin-top:4px;">
+        <input type="checkbox" id="cb-ada12" style="accent-color:#3a9acc;cursor:pointer;">
+        <label for="cb-ada12" style="font-size:8px;color:#4a7090;cursor:pointer;letter-spacing:0.5px;">Смещ. пивота вниз на 11-12-1 ч</label>
+      </div>
+      <div class="row" id="row-ada12" style="display:none;">
+        <div class="row-head"><label>Смещ. вниз °12 пик</label><span class="val" id="vl-ada12">25</span></div>
+        <input type="range" id="sl-ada12" min="0" max="100" step="1" value="25">
+      </div>
+    </div>
+
+    <!-- БЛОК: ЛКМ АТАКА -->
+    <div class="sec">
+      <div class="sec-title">█ ЛКМ · АТАКА (эллипс)</div>
+      <div class="row">
+        <div class="row-head"><label>Эллипс X</label><span class="val" id="vl-aex">22</span></div>
+        <input type="range" id="sl-aex" min="0" max="100" step="1" value="22">
+      </div>
+      <div class="row">
+        <div class="row-head"><label>Эллипс Y</label><span class="val" id="vl-aey">15</span></div>
+        <input type="range" id="sl-aey" min="0" max="100" step="1" value="15">
+      </div>
+      <div class="row">
+        <div class="row-head"><label>Скорость</label><span class="val" id="vl-as">0.28</span></div>
+        <input type="range" id="sl-as" min="0.1" max="0.5" step="0.01" value="0.28">
+      </div>
+    </div>
+
+    <!-- БЛОК: МЕЧ -->
+    <div class="sec">
+      <div class="sec-title">█ МЕЧ · СКЕЙЛ И ПОВОРОТ</div>
+      <div class="row">
+        <div class="row-head"><label>Скейл без ЛКМ</label><span class="val" id="vl-sc0">0.8</span></div>
+        <input type="range" id="sl-sc0" min="0.3" max="1.5" step="0.01" value="0.8">
+      </div>
+      <div class="row">
+        <div class="row-head"><label>Скейл с ЛКМ</label><span class="val" id="vl-sc1">1.0</span></div>
+        <input type="range" id="sl-sc1" min="0.3" max="2.0" step="0.01" value="1.0">
+      </div>
+      <div class="row">
+        <div class="row-head"><label>Скорость lerp</label><span class="val" id="vl-scs">0.46</span></div>
+        <input type="range" id="sl-scs" min="0.05" max="1.0" step="0.01" value="0.46">
+      </div>
+      <div class="row">
+        <div class="row-head"><label>Амплитуда диаг. °</label><span class="val" id="vl-srot">0</span></div>
+        <input type="range" id="sl-srot" min="0" max="90" step="1" value="0">
+      </div>
+      <div class="row">
+        <div class="row-head"><label>Оффсет вдоль</label><span class="val" id="vl-sox">0</span></div>
+        <input type="range" id="sl-sox" min="-60" max="60" step="1" value="0">
+      </div>
+      <div class="row">
+        <div class="row-head"><label>Оффсет перп.</label><span class="val" id="vl-soy">0</span></div>
+        <input type="range" id="sl-soy" min="-60" max="60" step="1" value="0">
+      </div>
+    </div>
+
+    <!-- БЛОК: ПЕРСОНАЖ И МЕЧ -->
+    <div class="sec">
+      <div class="sec-title">█ ПЕРСОНАЖ · СКЕЙЛ И МЕЧ</div>
+      <div class="row">
+        <div class="row-head"><label>Скейл персонажа</label><span class="val" id="vl-cscl">1.4</span></div>
+        <input type="range" id="sl-cscl" min="0.3" max="3.0" step="0.05" value="1.4">
+      </div>
+      <div class="row">
+        <div class="row-head"><label>Размер меча (глоб.)</label><span class="val" id="vl-swlen">1.4</span></div>
+        <input type="range" id="sl-swlen" min="0.2" max="3.0" step="0.05" value="1.4">
+      </div>
+    </div>
+
+    <!-- БЛОК: МЁРТВАЯ ЗОНА -->
+    <div class="sec">
+      <div class="sec-title" style="color:#8a2020;">█ МЁРТВАЯ ЗОНА КУРСОРА</div>
+      <div class="row">
+        <div class="row-head"><label style="color:#8a3030;">Радиус (красный)</label><span class="val" id="vl-dzone" style="color:#cc4040;">0</span></div>
+        <input type="range" id="sl-dzone" min="0" max="300" step="5" value="0" style="accent-color:#cc3030;">
+      </div>
+    </div>
+
+
+
+    <!-- БЛОК: АВТОБЛОК AI -->
+    <div class="sec">
+      <div class="sec-title" style="color:#4a9a60;">█ АВТОБЛОК (AI)</div>
+      <div class="row" style="flex-direction:row;align-items:center;gap:7px;">
+        <input type="checkbox" id="cb-aiab" style="accent-color:#3acc70;cursor:pointer;">
+        <label for="cb-aiab" style="font-size:8px;color:#3a8a50;cursor:pointer;letter-spacing:0.5px;">Включить автоблок</label>
+      </div>
+      <div class="row">
+        <div class="row-head"><label style="color:#3a7a50;">Радиус предупреждения</label><span class="val" id="vl-airad" style="color:#3acc70;">55</span></div>
+        <input type="range" id="sl-airad" min="20" max="300" step="5" value="55" style="accent-color:#2a9a50;">
+      </div>
+      <div class="row">
+        <div class="row-head"><label style="color:#3a7a50;">Сила движения к блоку</label><span class="val" id="vl-aispd" style="color:#3acc70;">0.4</span></div>
+        <input type="range" id="sl-aispd" min="0.05" max="1.0" step="0.05" value="0.4" style="accent-color:#2a9a50;">
+      </div>
+      <div class="row">
+        <div class="row-head"><label style="color:#3a7a50;">Кулдаун (сек)</label><span class="val" id="vl-aicd" style="color:#3acc70;">0.2</span></div>
+        <input type="range" id="sl-aicd" min="0.1" max="5.0" step="0.1" value="0.2" style="accent-color:#2a9a50;">
+      </div>
+      <div class="row">
+        <div class="row-head"><label style="color:#3a7a50;">Дальность вдоль лезвия</label><span class="val" id="vl-aipvd" style="color:#3acc70;">30</span></div>
+        <input type="range" id="sl-aipvd" min="0" max="120" step="1" value="30" style="accent-color:#2a9a50;">
+      </div>
+      <div class="row">
+        <div class="row-head"><label style="color:#3a7a50;">Дальность поперёк лезвия</label><span class="val" id="vl-aipvp" style="color:#3acc70;">0</span></div>
+        <input type="range" id="sl-aipvp" min="-60" max="60" step="1" value="0" style="accent-color:#2a9a50;">
+      </div>
+      <div class="row">
+        <div class="row-head"><label style="color:#3a7a50;">Отбрасывание при блоке</label><span class="val" id="vl-aikb" style="color:#3acc70;">6.5</span></div>
+        <input type="range" id="sl-aikb" min="0" max="20" step="0.5" value="6.5" style="accent-color:#2a9a50;">
+      </div>
+      <div class="row">
+        <div class="row-head"><label style="color:#3a7a50;">Угол позиций бота N°</label><span class="val" id="vl-aiang" style="color:#3acc70;">35</span></div>
+        <input type="range" id="sl-aiang" min="5" max="90" step="1" value="35" style="accent-color:#2a9a50;">
+      </div>
+      <div class="row">
+        <div class="row-head"><label style="color:#3a7a50;">Duel Radius (пикс)</label><span class="val" id="vl-duelrad" style="color:#3acc70;">100</span></div>
+        <input type="range" id="sl-duelrad" min="30" max="300" step="10" value="100" style="accent-color:#2a9a50;">
+      </div>
+      <div class="row">
+        <div class="row-head"><label style="color:#3a7a50;">Шанс обхода % (отступ)</label><span class="val" id="vl-circchance" style="color:#3acc70;">35</span></div>
+        <input type="range" id="sl-circchance" min="0" max="100" step="5" value="35" style="accent-color:#2a9a50;">
+      </div>
+      <div class="row" style="flex-direction:row;align-items:center;gap:7px;">
+        <input type="checkbox" id="cb-aishow" style="accent-color:#3acc70;cursor:pointer;" checked>
+        <label for="cb-aishow" style="font-size:8px;color:#3a8a50;cursor:pointer;letter-spacing:0.5px;">Показывать радиус</label>
+      </div>
+      <div class="row" style="flex-direction:row;align-items:center;gap:7px;">
+        <input type="checkbox" id="cb-duel" style="accent-color:#3acc70;cursor:pointer;" checked>
+        <label for="cb-duel" style="font-size:8px;color:#3a8a50;cursor:pointer;letter-spacing:0.5px;">Duel Position System</label>
+      </div>
+      <div class="row">
+        <div class="row-head"><label style="color:#3a7a50;">Длит. вращения (сек)</label><span class="val" id="vl-spindur" style="color:#3acc70;">0.8</span></div>
+        <input type="range" id="sl-spindur" min="0.3" max="3.0" step="0.1" value="0.8" style="accent-color:#2a9a50;">
+      </div>
+      <div class="row" style="flex-direction:row;align-items:center;gap:7px;">
+        <input type="checkbox" id="cb-nospin" style="accent-color:#3acc70;cursor:pointer;">
+        <label for="cb-nospin" style="font-size:8px;color:#3a8a50;cursor:pointer;letter-spacing:0.5px;">Запретить вращения</label>
+      </div>
+      <div class="row" style="flex-direction:row;align-items:center;gap:7px;">
+        <input type="checkbox" id="cb-alwaysmirror" style="accent-color:#3acc70;cursor:pointer;">
+        <label for="cb-alwaysmirror" style="font-size:8px;color:#3a8a50;cursor:pointer;letter-spacing:0.5px;">Всегда Mirror стиль</label>
+      </div>
+      <div class="row" style="flex-direction:row;align-items:center;gap:7px;">
+        <input type="checkbox" id="cb-noheat" style="accent-color:#cc6010;cursor:pointer;">
+        <label for="cb-noheat" style="font-size:8px;color:#7a4020;cursor:pointer;letter-spacing:0.5px;">Нагрев клинка (выкл)</label>
+      </div>
+    </div>
+
+    <!-- БЛОК: БОТ -->
+    <div class="sec" id="sec-mobile-cam">
+      <div class="sec-title">█ СКОРОСТЬ ИГРЫ</div>
+      <div class="row">
+        <div class="row-head"><label>Скорость игры (x)</label><span class="val" id="vl-gamespeed">1.0</span></div>
+        <input type="range" id="sl-gamespeed" min="0.1" max="2.0" step="0.05" value="1.0">
+      </div>
+      <div class="row">
+        <div class="row-head"><label>Дальность камеры (клеток)</label><span class="val" id="vl-camrows">14</span></div>
+        <input type="range" id="sl-camrows" min="6" max="24" step="1" value="14">
+      </div>
+    </div>
+    <div class="sec">
+      <div class="sec-title" style="color:#7a5a30;">█ БОТ · СКОРОСТЬ</div>
+      <div class="row">
+        <div class="row-head"><label>Скорость бота (x игрока)</label><span class="val" id="vl-botspd">0.8</span></div>
+        <input type="range" id="sl-botspd" min="0.3" max="1.5" step="0.05" value="0.8">
+      </div>
+      <div class="row">
+        <div class="row-head"><label>Скейл бота (тело)</label><span class="val" id="vl-botscale">1.0</span></div>
+        <input type="range" id="sl-botscale" min="0.5" max="2.0" step="0.05" value="1.0">
+      </div>
+      <div class="row">
+        <div class="row-head"><label>Скейл меча бота</label><span class="val" id="vl-botswordscale">1.0</span></div>
+        <input type="range" id="sl-botswordscale" min="0.3" max="2.5" step="0.05" value="1.0">
+      </div>
+      <div class="row">
+        <div class="row-head"><label>Клинок: скор. нагрева</label><span class="val" id="vl-heatrate">2.0</span></div>
+        <input type="range" id="sl-heatrate" min="0.5" max="8" step="0.5" value="2.0" style="accent-color:#8020cc;">
+      </div>
+      <div class="row">
+        <div class="row-head"><label>Клинок: ускорение (x)</label><span class="val" id="vl-heatboost">0.5</span></div>
+        <input type="range" id="sl-heatboost" min="0" max="2.0" step="0.1" value="0.5">
+      </div>
+      <div class="row">
+        <div class="row-head"><label>Общая скорость (x)</label><span class="val" id="vl-globalspd">1.0</span></div>
+        <input type="range" id="sl-globalspd" min="0.2" max="2.0" step="0.05" value="1.0">
+      </div>
+    </div>
+
+    <!-- БЛОК: БОЕВАЯ СИСТЕМА -->
+    <div class="sec">
+      <div class="sec-title" style="color:#9a7a30;">█ БОЕВАЯ СИСТЕМА</div>
+      <div class="row">
+        <div class="row-head"><label>Порог замаха °/с</label><span class="val" id="vl-swthresh">0.6</span></div>
+        <input type="range" id="sl-swthresh" min="0.1" max="8" step="0.1" value="0.6">
+      </div>
+      <div class="row">
+        <div class="row-head"><label>Стамина блока (потеря)</label><span class="val" id="vl-stamblock">20</span></div>
+        <input type="range" id="sl-stamblock" min="1" max="50" step="1" value="20">
+      </div>
+      <div class="row">
+        <div class="row-head"><label>Стамина замаха (потеря)</label><span class="val" id="vl-stamswing">17</span></div>
+        <input type="range" id="sl-stamswing" min="0" max="100" step="1" value="17">
+      </div>
+      <div class="row">
+        <div class="row-head"><label>Сила отбрасывания</label><span class="val" id="vl-kbforce">20</span></div>
+        <input type="range" id="sl-kbforce" min="0" max="40" step="0.5" value="20">
+      </div>
+
+      <div class="row">
+        <div class="row-head"><label>Дисбаланс: длит. (сек)</label><span class="val" id="vl-unbdur">1.5</span></div>
+        <input type="range" id="sl-unbdur" min="0.5" max="4" step="0.5" value="1.5">
+      </div>
+      <div class="row">
+        <div class="row-head"><label>Восст. стамины / сек</label><span class="val" id="vl-stamreg">28</span></div>
+        <input type="range" id="sl-stamreg" min="1" max="60" step="1" value="28">
+      </div>
+      <div class="row">
+        <div class="row-head"><label>Стам. ЛКМ (начало)</label><span class="val" id="vl-lmbcost">50</span></div>
+        <input type="range" id="sl-lmbcost" min="0" max="80" step="5" value="50">
+      </div>
+      <div class="row">
+        <div class="row-head"><label>Стам. ЛКМ (в сек)</label><span class="val" id="vl-lmbdrain">25</span></div>
+        <input type="range" id="sl-lmbdrain" min="0" max="60" step="5" value="25">
+      </div>
+      <div class="row">
+        <div class="row-head"><label>Урон при ЛКМ (x)</label><span class="val" id="vl-lmbdmg">1.5</span></div>
+        <input type="range" id="sl-lmbdmg" min="1" max="3" step="0.1" value="1.5">
+      </div>
+    </div>
+
+    <!-- БЛОК: ЯРОСТЬ (красная рамка) -->
+    <div class="sec" style="border:1px solid #3a1010;padding:8px;border-radius:3px;">
+      <div class="sec-title" style="color:#cc3030;">█ ЯРОСТЬ</div>
+      <div class="row">
+        <div class="row-head"><label style="color:#8a3030;">Блоков до 100 ярости</label><span class="val" id="vl-rageper" style="color:#cc4040;">10</span></div>
+        <input type="range" id="sl-rageper" min="1" max="30" step="1" value="10" style="accent-color:#cc2020;">
+      </div>
+      <div class="row">
+        <div class="row-head"><label style="color:#8a3030;">Длит. баффа ЯРОСТЬ (сек)</label><span class="val" id="vl-ragebuf" style="color:#cc4040;">5</span></div>
+        <input type="range" id="sl-ragebuf" min="2" max="15" step="1" value="5" style="accent-color:#cc2020;">
+      </div>
+    </div>
+
+    <!-- БЛОК: УСТАЛОСТЬ (красная рамка) -->
+    <div class="sec" style="border:1px solid #3a1010;padding:8px;border-radius:3px;">
+      <div class="sec-title" style="color:#cc3030;">█ УСТАЛОСТЬ</div>
+      <div class="row">
+        <div class="row-head"><label style="color:#8a3030;">Длительность (сек)</label><span class="val" id="vl-exhdur2">2</span></div>
+        <input type="range" id="sl-exhdur2" min="0.5" max="8" step="0.5" value="2" style="accent-color:#cc2020;">
+      </div>
+      <div class="row">
+        <div class="row-head"><label style="color:#8a3030;">Замедл. движения</label><span class="val" id="vl-exhspd2">0.4</span></div>
+        <input type="range" id="sl-exhspd2" min="0.1" max="1" step="0.05" value="0.4" style="accent-color:#cc2020;">
+      </div>
+      <div class="row">
+        <div class="row-head"><label style="color:#8a3030;">Замедл. меча</label><span class="val" id="vl-exhswd2">0.03</span></div>
+        <input type="range" id="sl-exhswd2" min="0.01" max="0.5" step="0.01" value="0.03" style="accent-color:#cc2020;">
+      </div>
+    </div>
+
+    <!-- БЛОК: КОЛЛИЗИЯ МЕЧЕЙ -->
+    <div class="sec">
+      <div class="sec-title" style="color:#7a6a30;">█ КОЛЛИЗИЯ МЕЧЕЙ</div>
+      <div class="row">
+        <div class="row-head"><label>Сопротивление меча</label><span class="val" id="vl-swres">0.85</span></div>
+        <input type="range" id="sl-swres" min="0" max="1" step="0.05" value="0.85">
+      </div>
+      <div class="row">
+        <div class="row-head"><label style="color:#4060cc;">Откат при столкн. мечей</label><span class="val" id="vl-bladeKB" style="color:#5080ff;">2.5</span></div>
+        <input type="range" id="sl-bladeKB" min="0" max="20" step="0.5" value="2.5" style="accent-color:#3060cc;">
+      </div>
+      <div class="row">
+        <div class="row-head"><label style="color:#9040cc;">Откат от меча по телу</label><span class="val" id="vl-bodyKB" style="color:#bb60ff;">10</span></div>
+        <input type="range" id="sl-bodyKB" min="0" max="20" step="0.5" value="10" style="accent-color:#7020aa;">
+      </div>
+      <div class="row">
+        <div class="row-head"><label>Замедл. при блоке (сек)</label><span class="val" id="vl-blockSlowDur">0.6</span></div>
+        <input type="range" id="sl-blockSlowDur" min="0.1" max="2" step="0.1" value="0.6">
+      </div>
+      <div class="row">
+        <div class="row-head"><label>Замедл. при блоке (x)</label><span class="val" id="vl-blockSlowMult">0.5</span></div>
+        <input type="range" id="sl-blockSlowMult" min="0.1" max="1" step="0.05" value="0.5">
+      </div>
+      <div class="row">
+        <div class="row-head"><label>Откл. меча при блоке мин°</label><span class="val" id="vl-deflectMin">50</span></div>
+        <input type="range" id="sl-deflectMin" min="0" max="90" step="1" value="50">
+      </div>
+      <div class="row">
+        <div class="row-head"><label>Откл. меча при блоке макс°</label><span class="val" id="vl-deflectMax">100</span></div>
+        <input type="range" id="sl-deflectMax" min="5" max="180" step="1" value="100">
+      </div>
+      <div class="row">
+        <div class="row-head"><label>Меч сзади: буст скор.</label><span class="val" id="vl-swordback">0.55</span></div>
+        <input type="range" id="sl-swordback" min="0.3" max="1.0" step="0.05" value="0.55">
+      </div>
+      <div class="row">
+        <div class="row-head"><label style="color:#cc8020;">Блок-откат сила</label><span class="val" id="vl-blockKB" style="color:#cc8020;">5</span></div>
+        <input type="range" id="sl-blockKB" min="0" max="20" step="0.5" value="5" style="accent-color:#cc6010;">
+      </div>
+    </div>
+
+    <!-- БЛОК: BLADE BIND -->
+    <div class="sec">
+      <div class="sec-title" style="color:#9a6a20;">█ BLADE BIND</div>
+      <div class="row" style="flex-direction:row;align-items:center;gap:7px;">
+        <input type="checkbox" id="cb-bbind" style="accent-color:#ccaa30;cursor:pointer;" checked>
+        <label for="cb-bbind" style="font-size:8px;color:#8a7020;cursor:pointer;letter-spacing:0.5px;">Включить Blade Bind</label>
+      </div>
+      <div class="row">
+        <div class="row-head"><label style="color:#8a7020;">Bladebind: окно (сек)</label><span class="val" id="vl-bbwindow" style="color:#ccaa30;">1.2</span></div>
+        <input type="range" id="sl-bbwindow" min="0.3" max="3.0" step="0.1" value="1.2" style="accent-color:#ccaa30;">
+      </div>
+      <div class="row" style="flex-direction:row;align-items:center;gap:7px;">
+        <input type="checkbox" id="cb-orbitdet" style="accent-color:#cc5020;cursor:pointer;" checked>
+        <label for="cb-orbitdet" style="font-size:8px;color:#8a5020;cursor:pointer;letter-spacing:0.5px;">Детект вращения меча (орбита)</label>
+      </div>
+      <div class="row">
+        <div class="row-head"><label style="color:#8a5020;">Орбита: окно (сек)</label><span class="val" id="vl-orbitwindow" style="color:#cc7040;">1.0</span></div>
+        <input type="range" id="sl-orbitwindow" min="0.3" max="3.0" step="0.1" value="1.0" style="accent-color:#cc5020;">
+      </div>
+      <div class="row">
+        <div class="row-head"><label style="color:#8a5020;">Орбита: полных оборотов</label><span class="val" id="vl-orbitturns" style="color:#cc7040;">1.0</span></div>
+        <input type="range" id="sl-orbitturns" min="0.3" max="3.0" step="0.1" value="1.0" style="accent-color:#cc5020;">
+      </div>
+      <div class="row">
+        <div class="row-head"><label style="color:#8a5020;">Орбита: стамина (потеря)</label><span class="val" id="vl-stamorbit" style="color:#cc7040;">30</span></div>
+        <input type="range" id="sl-stamorbit" min="0" max="60" step="5" value="30" style="accent-color:#cc5020;">
+      </div>
+      <div class="row" style="flex-direction:row;align-items:center;gap:7px;">
+        <input type="checkbox" id="cb-flickdet" style="accent-color:#ccaa30;cursor:pointer;" checked>
+        <label for="cb-flickdet" style="font-size:8px;color:#8a7020;cursor:pointer;letter-spacing:0.5px;">Детект флик-замаха (туда-сюда)</label>
+      </div>
+      <div class="row">
+        <div class="row-head"><label style="color:#8a7020;">Флик: окно (сек)</label><span class="val" id="vl-flickwindow" style="color:#ccaa30;">0.1</span></div>
+        <input type="range" id="sl-flickwindow" min="0.05" max="1.0" step="0.05" value="0.1" style="accent-color:#ccaa30;">
+      </div>
+      <div class="row">
+        <div class="row-head"><label style="color:#8a7020;">Флик: мин.скорость (рад/с)</label><span class="val" id="vl-flickminvel" style="color:#ccaa30;">9.5</span></div>
+        <input type="range" id="sl-flickminvel" min="1.0" max="20.0" step="0.5" value="9.5" style="accent-color:#ccaa30;">
+      </div>
+      <div class="row">
+        <div class="row-head"><label style="color:#8a7020;">Флик: мин.амплитуда (рад)</label><span class="val" id="vl-flickminamp" style="color:#ccaa30;">0.95</span></div>
+        <input type="range" id="sl-flickminamp" min="0.05" max="2.0" step="0.05" value="0.95" style="accent-color:#ccaa30;">
+      </div>
+      <div class="row">
+        <div class="row-head"><label style="color:#8a7020;">Флик: стамина (потеря)</label><span class="val" id="vl-stamflick" style="color:#ccaa30;">25</span></div>
+        <input type="range" id="sl-stamflick" min="0" max="60" step="5" value="25" style="accent-color:#ccaa30;">
+      </div>
+    </div>
+
+    <!-- БЛОК: ДЕБАГ -->
+    <div class="sec">
+      <div class="sec-title">█ ОТЛАДКА</div>
+      <div class="row">
+        <div class="row-head"><label>Показать рут</label><span class="val" id="vl-dbg">ВЫКЛ</span></div>
+        <input type="range" id="sl-dbg" min="0" max="1" step="1" value="0">
+      </div>
+    </div>
+
+    <!-- БЛОК: ДЕЙСТВИЯ -->
+    <div class="sec">
+      <div class="sec-title">█ ДЕЙСТВИЯ</div>
+      <button id="btn-export" style="width:100%;padding:7px 0;background:#0e2a1e;border:1px solid #1a5a30;border-radius:3px;color:#3acc70;font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:1px;cursor:pointer;margin-bottom:8px;">📋 ЭКСПОРТ НАСТРОЕК → БУФЕР</button>
+      <button id="dtoggle" style="width:100%;padding:7px 0;background:#1a1a0e;border:1px solid #5a5a1a;border-radius:3px;color:#cccc40;font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:1px;cursor:pointer;margin-bottom:8px;">🤖 МАНЕКЕН: ВЫКЛ</button>
+      <button id="btn-balls" style="width:100%;padding:7px 0;background:#1a0e0e;border:1px solid #5a1a1a;border-radius:3px;color:#cc4040;font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:1px;cursor:pointer;margin-bottom:8px;">⚽ СПАВН ШАРИКОВ</button>
+      <button id="btn-boxes" style="width:100%;padding:7px 0;background:#100e1a;border:1px solid #3a1a5a;border-radius:3px;color:#9040cc;font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:1px;cursor:pointer;margin-bottom:8px;">📦 ЯЩИКИ: ВЫКЛ</button>
+      <button id="btn-blockkb" style="width:100%;padding:7px 0;background:#1a1000;border:1px solid #6a4010;border-radius:3px;color:#cc8020;font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:1px;cursor:pointer;margin-bottom:8px;">🛡 БЛОК-ОТКАТ: ВЫКЛ</button>
+      <button id="musicToggleBtn" style="width:100%;padding:7px 0;background:#0e1a0e;border:1px solid #2a5a2a;border-radius:3px;color:#4acc70;font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:1px;cursor:pointer;">🎵 МУЗЫКА: ВКЛ</button>
+    </div>
+
+    <!-- УПРАВЛЕНИЕ -->
+    <div class="sec">
+      <div class="sec-title">█ УПРАВЛЕНИЕ</div>
+      <div class="keys">
+        <span class="key">WASD — движение рута</span>
+        <span class="key">Мышь — курсор / направление</span>
+        <span class="key">Без ЛКМ — инв.эллипс (блок)</span>
+        <span class="key">ЛКМ — атака к манекену</span>
+        <span class="key">Автоблок: курсор внутри синей зоны — меч всегда смотрит к угрозе</span>
+        <span class="key">Радиус прицела 0 = выкл, >0 = виртуальный курсор на окружности (оранжевая)</span>
+        <span class="key">T — манекен вкл/выкл</span>
+      </div>
+    </div>
+  </div>
+  <!-- ════════════════ END MODULE: SETTINGS PANEL ════════════════════════ -->
+
+  <div id="infobar">
+    <div class="ir"><span>РУТ</span><span class="iv" id="inf-root">0,0</span></div>
+    <div class="ir"><span>ОФФСЕТ ТЕЛА</span><span class="iv" id="inf-boff">0,0</span></div>
+    <div class="ir"><span>ПИВОТ</span><span class="iv" id="inf-piv">0,0</span></div>
+    <div class="ir"><span>УГОЛ МЕЧА</span><span class="iv" id="inf-ang">0°</span></div>
+  </div>
+</div>
+
+<button id="dtoggle" onclick="toggleDummy()">🤖 МАНЕКЕН: ВЫКЛ</button>
+<div id="hint">WASD движение · T манекен · мышь целиться</div>
+
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+function applyCanvasSmoothing(){
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+}
+applyCanvasSmoothing();
+
+// ── Раннее определение мобильного устройства (до расчёта W/H) ──────────────
+const _ua = navigator.userAgent || '';
+const _isTouchDevice = (navigator.maxTouchPoints > 0) || ('ontouchstart' in window);
+const _isMobileUA = /Android|iPhone|iPad|iPod|Mobile/i.test(_ua);
+window.IS_MOBILE = _isTouchDevice && _isMobileUA;
+if(window.IS_MOBILE) document.body.classList.add('is-mobile');
+
+let W = canvas.width  = window.IS_MOBILE ? window.innerWidth  : window.innerWidth - 280;
+let H = canvas.height = window.innerHeight;
+
+const keys = {};
+let mX = W/2, mY = H/2, mDown = false;
+let dummyOn = false;
+
+// ── ПОЛЗУНКИ ────────────────────────────────────────────────────────────────
+function sv(id){ return parseFloat(document.getElementById('sl-'+id).value); }
+function bindSlider(id, fmt){
+  const el = document.getElementById('sl-'+id);
+  const vl = document.getElementById('vl-'+id);
+  const update = ()=>{ vl.textContent = fmt ? fmt(+el.value) : '['+el.value+']'; };
+  el.addEventListener('input', update);
+  update();
+}
+bindSlider('playerglow');
+bindSlider('bgbright');
+bindSlider('gridbright');
+document.getElementById('sl-bgbright').addEventListener('input', () => { arenaDirty = true; });
+document.getElementById('sl-gridbright').addEventListener('input', () => { arenaDirty = true; });
+bindSlider('dist');
+bindSlider('spd');
+bindSlider('inertia');
+bindSlider('globalspd');
+bindSlider('heatboost');
+bindSlider('heatrate');
+bindSlider('ex');
+bindSlider('ey');
+bindSlider('blk');
+bindSlider('adaY');
+bindSlider('adaD');
+document.getElementById('cb-adaY').addEventListener('change', function(){
+  document.getElementById('row-adaY').style.display = this.checked ? 'flex' : 'none';
+});
+document.getElementById('cb-adaD').addEventListener('change', function(){
+  document.getElementById('row-adaD').style.display = this.checked ? 'flex' : 'none';
+});
+bindSlider('adaXb');
+bindSlider('adaXp');
+bindSlider('ada12');
+document.getElementById('cb-adaX').addEventListener('change', function(){
+  document.getElementById('row-adaX').style.display = this.checked ? 'flex' : 'none';
+  document.getElementById('row-adaX2').style.display = this.checked ? 'flex' : 'none';
+});
+document.getElementById('cb-ada12').addEventListener('change', function(){
+  document.getElementById('row-ada12').style.display = this.checked ? 'flex' : 'none';
+});
+bindSlider('cscl');
+bindSlider('swlen');
+bindSlider('dzone');
+bindSlider('airad');
+bindSlider('aispd');
+bindSlider('aicd');
+bindSlider('aipvd');
+bindSlider('aipvp');
+// aikb removed - use bodyKB
+bindSlider('aiang');
+bindSlider('duelrad');
+bindSlider('circchance');
+bindSlider('spindur');
+
+// ── ЭКСПОРТ НАСТРОЕК ────────────────────────────────────────────────────────
+document.getElementById('dtoggle').addEventListener('click', () => toggleAI());
+document.getElementById('btn-blockkb').addEventListener('click', () => {
+  blockKnockOn = !blockKnockOn;
+  const b = document.getElementById('btn-blockkb');
+  b.textContent = blockKnockOn ? '🛡 БЛОК-ОТКАТ: ВКЛ' : '🛡 БЛОК-ОТКАТ: ВЫКЛ';
+  b.style.borderColor = blockKnockOn ? '#aa6020' : '#6a4010';
+  b.style.color = blockKnockOn ? '#ffaa40' : '#cc8020';
+});
+document.getElementById('btn-boxes').addEventListener('click', () => {
+  boxesOn = !boxesOn;
+  const b = document.getElementById('btn-boxes');
+  b.textContent = boxesOn ? '📦 ЯЩИКИ: ВКЛ' : '📦 ЯЩИКИ: ВЫКЛ';
+  b.style.borderColor = boxesOn ? '#7a3aaa' : '#3a1a5a';
+});
+
+document.getElementById('btn-export').addEventListener('click', () => {
+  const sliders = document.querySelectorAll('input[type=range]');
+  const checks  = document.querySelectorAll('input[type=checkbox]');
+  const out = {};
+  sliders.forEach(s => { out[s.id.replace('sl-','')] = parseFloat(s.value); });
+  checks.forEach(c  => { out[c.id.replace('cb-','')] = c.checked; });
+  const text = JSON.stringify(out, null, 2);
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('btn-export');
+    const orig = btn.textContent;
+    btn.textContent = '✓ СКОПИРОВАНО!';
+    btn.style.color = '#80ff80';
+    setTimeout(() => { btn.textContent = orig; btn.style.color = '#3acc70'; }, 1500);
+  });
+});
+
+// ── ШАРИКИ ──────────────────────────────────────────────────────────────────
+const BALLS = [];
+let ballsActive = false;
+let ballSpawnTimer = 0;
+
+function spawnBall(){
+  const side = Math.floor(Math.random() * 4);
+  let x, y;
+  const rc0 = rootCenter();
+  if(side === 0){ x = Math.random()*W; y = -16; }
+  else if(side === 1){ x = W+16; y = Math.random()*H; }
+  else if(side === 2){ x = Math.random()*W; y = H+16; }
+  else { x = -16; y = Math.random()*H; }
+  // целимся прямо в тело игрока (не рут), небольшой разброс
+  const targetX = rc0.x + P.bx + (Math.random()-0.5)*30;
+  const targetY = rc0.y + P.by + (Math.random()-0.5)*30;
+  const ang = Math.atan2(targetY - y, targetX - x);
+  const spd = 4.5 + Math.random() * 3.0;
+  const vx = Math.cos(ang) * spd;
+  const vy = Math.sin(ang) * spd;
+  BALLS.push({ x, y, vx, vy, r: 10 + Math.random()*5, life: 500, hit: 0,
+               initVx: vx, initVy: vy }); // запоминаем начальную скорость
+}
+
+document.getElementById('btn-balls').addEventListener('click', () => {
+  ballsActive = !ballsActive;
+  const btn = document.getElementById('btn-balls');
+  if(ballsActive){
+    btn.textContent = '⏹ СТОП ШАРИКИ';
+    btn.style.borderColor = '#aa3030';
+    btn.style.background = '#2a0e0e';
+  } else {
+    BALLS.length = 0;
+    btn.textContent = '⚽ СПАВН ШАРИКОВ';
+    btn.style.borderColor = '#5a1a1a';
+    btn.style.background = '#1a0e0e';
+  }
+});
+
+function updateBalls(dt){
+  if(!ballsActive) return;
+  ballSpawnTimer += dt;
+  if(ballSpawnTimer > 0.9){ ballSpawnTimer = 0; spawnBall(); }
+
+  const pivX = rootCenter().x + P.pvX;
+  const pivY = rootCenter().y + P.pvY;
+  const swLen = SWORD_LEN * P.swordScale * sv('swlen');
+
+  // позиция наконечника и ПРЕДЫДУЩЕГО наконечника (для sweep-коллизии)
+  const tipX = pivX + Math.cos(P.angle) * swLen;
+  const tipY = pivY + Math.sin(P.angle) * swLen;
+  const prevTipX = pivX + Math.cos(P.angle - P.vel*0.8) * swLen;
+  const prevTipY = pivY + Math.sin(P.angle - P.vel*0.8) * swLen;
+
+  for(let i = BALLS.length-1; i >= 0; i--){
+    const b = BALLS[i];
+
+    // мягкое наведение на тело игрока (homing)
+    if(b.hit === 0){
+      const rc1 = rootCenter();
+      const targetX = rc1.x + P.bx, targetY = rc1.y + P.by;
+      const angToPlayer = Math.atan2(targetY - b.y, targetX - b.x);
+      const homingStr = 0.012; // слабое — не телепортируется
+      b.vx += Math.cos(angToPlayer) * homingStr;
+      b.vy += Math.sin(angToPlayer) * homingStr;
+      // ограничиваем скорость
+      const spd2 = Math.hypot(b.vx, b.vy);
+      const maxSpd = Math.hypot(b.initVx, b.initVy) * 1.15;
+      if(spd2 > maxSpd){ b.vx = b.vx/spd2*maxSpd; b.vy = b.vy/spd2*maxSpd; }
+    }
+
+    b.x += b.vx; b.y += b.vy;
+    b.life--;
+    if(b.hit > 0) b.hit--;
+
+    // ── Коллизия с мечом ─────────────────────────────────────────────────
+    // Один вызов: расстояние от шарика до отрезка пивот→наконечник (текущий кадр)
+    // + sweep: проверяем оба кадра (prev и cur лезвие) чтобы не пролетало сквозь
+    let hit = false;
+    if(b.hit === 0){
+      // Функция: расстояние от точки (px,py) до отрезка (ax,ay)→(bx,by)
+      // возвращает {d, nx, ny, t} — t=0 у пивота, t=1 у острия
+      function distToSeg(px, py, ax, ay, bx2, by2){
+        const dx = bx2-ax, dy = by2-ay, len2 = dx*dx+dy*dy;
+        if(len2 < 0.001) return { d: Math.hypot(px-ax, py-ay), nx: 0, ny: -1, t: 0 };
+        const t = clamp(((px-ax)*dx+(py-ay)*dy)/len2, 0, 1);
+        const cx = ax+t*dx, cy = ay+t*dy;
+        const ddx = px-cx, ddy = py-cy;
+        const d = Math.hypot(ddx, ddy);
+        return { d, nx: d>0.01?ddx/d:0, ny: d>0.01?ddy/d:-1, t };
+      }
+
+      // Проверяем текущее И предыдущее положение лезвия
+      const BLADE_W = 6; // полутолщина меча
+      for(const [ax,ay,bx2,by2] of [
+        [pivX, pivY, tipX, tipY],             // текущее лезвие
+        [pivX, pivY, prevTipX, prevTipY],     // предыдущее лезвие (sweep)
+      ]){
+        if(hit) break;
+        const {d, nx, ny, t} = distToSeg(b.x, b.y, ax, ay, bx2, by2);
+        if(d < b.r + BLADE_W){
+          // Запрет вдоль острия: нормаль к точке должна быть перп. лезвию
+          // nx/ny — вектор от лезвия к шарику
+          // bladeX/Y — направление лезвия
+          const bladeX = Math.cos(P.angle), bladeY = Math.sin(P.angle);
+          const alongBlade = Math.abs(nx*bladeX + ny*bladeY);
+          // порог 0.8 ≈ ±37° — вдоль острия не считается
+          if(alongBlade > 0.8) continue;
+
+          const swordSpd = Math.abs(P.vel) * 200;
+          b.vx = nx*(5 + swordSpd*0.06) + bladeX*swordSpd*0.035;
+          b.vy = ny*(5 + swordSpd*0.06) + bladeY*swordSpd*0.035;
+          b.hit = 22;
+          hitFX.push({x: b.x, y: b.y-14, t:'✦', life:28, big:false});
+          // Отбрасывание при отбивании шарика
+          const aikb = sv('bodyKB') * 0.5;
+          if(aikb > 0){
+            const rc1 = rootCenter();
+            const bodyCX1 = rc1.x + P.bx, bodyCY1 = rc1.y + P.by;
+            const kbAng = Math.atan2(bodyCY1 - b.y, bodyCX1 - b.x);
+            P.vx += Math.cos(kbAng) * aikb;
+            P.vy += Math.sin(kbAng) * aikb;
+          }
+          // Автоблок: сразу сбрасываем если эта цель
+          if(P._abActive && P._abTarget === b){
+            P._abActive = false;
+            P._abTarget = null;
+            P._abCD = sv('aicd');
+          }
+          hit = true;
+        }
+      }
+    }
+
+    if(b.life <= 0 || b.x < -120 || b.x > W+120 || b.y < -120 || b.y > H+120){
+      BALLS.splice(i, 1);
+    }
+  }
+}
+
+function drawBalls(){
+  for(const b of BALLS){
+    const alpha = Math.min(1, b.life / 60);
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    // тень
+    ctx.fillStyle = 'rgba(0,0,0,0.3)';
+    ctx.beginPath(); ctx.ellipse(b.x+3, b.y+5, b.r*0.8, b.r*0.4, 0, 0, Math.PI*2); ctx.fill();
+    // шар
+    const g = ctx.createRadialGradient(b.x - b.r*0.3, b.y - b.r*0.3, b.r*0.1, b.x, b.y, b.r);
+    if(b.hit > 0){
+      g.addColorStop(0, '#fff8c0'); g.addColorStop(0.4, '#ffcc40'); g.addColorStop(1, '#cc6010');
+    } else {
+      g.addColorStop(0, '#e0f0ff'); g.addColorStop(0.4, '#4090d0'); g.addColorStop(1, '#0a2850');
+    }
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI*2); ctx.fill();
+    // блик
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.beginPath(); ctx.arc(b.x - b.r*0.3, b.y - b.r*0.3, b.r*0.25, 0, Math.PI*2); ctx.fill();
+    ctx.restore();
+  }
+}
+bindSlider('aex');
+bindSlider('aey');
+bindSlider('as');
+bindSlider('sc0');
+bindSlider('sc1');
+bindSlider('scs');
+bindSlider('srot');
+bindSlider('sox');
+bindSlider('soy');
+// arad/abrad/abspd/abN/abOff/abex/abey/aboxo/aboyo removed
+bindSlider('dbg', v => v>0.5 ? '[ВКЛ]' : '[ВЫКЛ]');
+bindSlider('swthresh');
+bindSlider('stamblock');
+bindSlider('stamswing');
+bindSlider('kbforce');
+bindSlider('unbdur');
+bindSlider('stamreg');
+bindSlider('gamespeed');
+bindSlider('camrows');
+bindSlider('botspd');
+bindSlider('botscale');
+bindSlider('botswordscale');
+bindSlider('lmbcost');
+bindSlider('lmbdrain');
+bindSlider('lmbdmg');
+bindSlider('rageper');
+bindSlider('ragebuf');
+bindSlider('exhdur2');
+bindSlider('exhspd2');
+bindSlider('exhswd2');
+bindSlider('bladeKB');
+bindSlider('bodyKB');
+bindSlider('blockSlowDur');
+bindSlider('blockSlowMult');
+bindSlider('deflectMin');
+bindSlider('deflectMax');
+bindSlider('swordback');
+bindSlider('blockKB');
+bindSlider('swres');
+bindSlider('flickwindow');
+bindSlider('flickminvel');
+bindSlider('flickminamp');
+bindSlider('stamflick');
+bindSlider('orbitwindow');
+bindSlider('orbitturns');
+bindSlider('bbwindow');
+bindSlider('stamorbit');
+
+// ── СОСТОЯНИЕ ИГРОКА ────────────────────────────────────────────────────────
+function makeEntity(x, y, swordScale, color, charParams){
+  const defaults = {
+    stamRegen: 28,       // восст. стамины в сек
+    stamMax: 100,        // макс стамина
+    exhaustDur: 2,       // длительность усталости
+    exhaustSpd: 0.3,     // замедл. движения при усталости
+    exhaustSwd: 0.1,     // замедл. меча при усталости
+    exhaustRegenDelay: 2,// задержка восст. стамины после усталости
+  };
+  const p = Object.assign({}, defaults, charParams);
+  return {
+    x, y, vx:0, vy:0,
+    bx:0, by:0, tbx:0, tby:0,
+    pvX:0, pvY:-8, tpX:0, tpY:-8,
+    angle:0, vel:0, prevAngle:0,
+    swordScale,
+    color,
+    // ── Параметры персонажа ──
+    stamRegen: p.stamRegen,
+    stamMax: p.stamMax,
+    exhaustDur: p.exhaustDur,
+    exhaustSpd: p.exhaustSpd,
+    exhaustSwd: p.exhaustSwd,
+    exhaustRegenDelay: p.exhaustRegenDelay,
+    // ──────────────────────────
+    _abActive:false, _abTarget:null, _abPivTarget:null, _abCD:0,
+    _vcX:50, _vcY:0, _pmX:0, _pmY:0,
+    hp:100, hitFlash:0,
+    stamina:100,
+    exhausted:0, unbalanced:0, unbAngle:0,
+    atkPts:0, isAttacker:false,
+    trailPts:[],
+    rage:0, rageBuffEnd:-1, lmbWasDown:false,
+    _bbWait:-1, _bbDefender:null,
+    _blockSlow:-1, _hitCD:-1,
+  };
+}
+
+const P = makeEntity(W/2 - 80, H/2, 0.8, '#1e4a72', {
+  stamRegen: 28, exhaustDur: 2, exhaustSpd: 0.3, exhaustSwd: 0.1
+});
+const D = makeEntity(W/2 + 110, H/2, 0.8, '#4a1a10', {
+  stamRegen: 1,  exhaustDur: 2, exhaustSpd: 0.3, exhaustSwd: 0.1
+});
+const hitFX = [];
+const BLOOD = [];
+
+function spawnBlood(x, y, nx, ny){
+  const count = 6 + Math.floor(Math.random()*5);
+  for(let i=0;i<count;i++){
+    const spd = 2 + Math.random()*5;
+    const ang = Math.atan2(ny,nx) + (Math.random()-0.5)*1.8;
+    BLOOD.push({
+      x, y,
+      vx: Math.cos(ang)*spd,
+      vy: Math.sin(ang)*spd - 1,
+      life: 25 + Math.random()*20,
+      maxLife: 0,
+      r: 2 + Math.random()*3,
+    });
+    BLOOD[BLOOD.length-1].maxLife = BLOOD[BLOOD.length-1].life;
+  }
+}
+
+function updateBlood(dt){
+  for(let i=BLOOD.length-1;i>=0;i--){
+    const b=BLOOD[i];
+    b.x+=b.vx*dt*60; b.y+=b.vy*dt*60;
+    b.vy+=0.25*dt*60;
+    b.vx=decayDT(b.vx,0.88,dt); b.vy=decayDT(b.vy,0.92,dt);
+    b.life-=dt*60;
+    if(b.life<=0) BLOOD.splice(i,1);
+  }
+}
+
+function drawBlood(){
+  for(const b of BLOOD){
+    const a = (b.life/b.maxLife)*0.85;
+    ctx.globalAlpha = a;
+    ctx.fillStyle = '#cc1818';
+    ctx.beginPath(); ctx.arc(b.x, b.y, b.r*(b.life/b.maxLife), 0, Math.PI*2); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+const trailPts = [];
+const SWORD_LEN = 85;
+
+// ── ЯЩИКИ ─────────────────────────────────────────────────────────────────
+// Инициализируются после W/H (см. initBoxes внизу)
+const BOXES = [];
+function initBoxes(){
+  BOXES.length = 0;
+  BOXES.push(
+    { x: W/2+120, y: H/2-60,  w: 55, h: 55 },
+    { x: W/2-180, y: H/2+80,  w: 55, h: 55 },
+    { x: W/2+60,  y: H/2+130, w: 70, h: 40 },
+    { x: W/2-80,  y: H/2-130, w: 40, h: 70 }
+  );
+}
+
+// Разрешить коллизию тела (bx/by) с ящиками
+// Тело = визуальный центр: (P.x+5+P.bx, P.y-8+P.by), радиус ~14
+function resolveBoxCollision(ent){
+  if(!boxesOn) return;
+  const BODY_R = 14 * sv('cscl');
+  const bCX = ent.x + 5 + ent.bx;
+  const bCY = ent.y - 8 + ent.by;
+  for(const b of BOXES){
+    const nearX = clamp(bCX, b.x, b.x + b.w);
+    const nearY = clamp(bCY, b.y, b.y + b.h);
+    const dx = bCX - nearX, dy = bCY - nearY;
+    const dist = Math.hypot(dx, dy);
+    if(dist < BODY_R && dist > 0){
+      const pen = BODY_R - dist;
+      const nx = dx/dist, ny = dy/dist;
+      const penC = Math.min(pen, 6);
+      ent.x += nx * penC; ent.y += ny * penC;
+      const dot = ent.vx*nx + ent.vy*ny;
+      if(dot < 0){ ent.vx -= dot*nx*1.2; ent.vy -= dot*ny*1.2; }
+    }
+  }
+}
+
+function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
+
+// ── БОЕВАЯ СИСТЕМА ────────────────────────────────────────────────────────────
+// Вычисляем очки атаки для entity (атакующий vs защищающийся)
+
+// ════════════════════════════════════════════════════════════════════════════
+// MODULE: FX  (visual effects — blood, flash, cross, impact)
+// Future: extract to fx.js, expose via window.GameFX = {...}
+// ════════════════════════════════════════════════════════════════════════════
+const FX_EFFECTS = [];
+let FX_horizData = null;
+
+function fxGetAlpha(effect){
+  const prog = effect.t / (effect.duration||20);
+  if(prog>=1) return 0;
+  return Math.min(1, Math.max(0, 1 - Math.pow(prog, 1.25)));
+}
+
+function fxDrawBlood(ctx, p, x, y, angle){
+  ctx.save(); ctx.translate(x,y); ctx.rotate(angle || -0.68); ctx.scale(0.4,0.4);
+  ctx.globalCompositeOperation='lighter';
+  const g=ctx.createLinearGradient(-200,0,200,0);
+  const a=Math.min(0.95,p*1.05);
+  g.addColorStop(0,'rgba(100,0,0,0)');
+  g.addColorStop(0.4,`rgba(210,25,20,${a})`);
+  g.addColorStop(0.6,`rgba(255,50,30,${a*0.95})`);
+  g.addColorStop(1,'rgba(100,0,0,0)');
+  ctx.strokeStyle=g; ctx.lineWidth=80*p; ctx.lineCap='round';
+  ctx.beginPath(); ctx.moveTo(-200,0); ctx.lineTo(200,0); ctx.stroke();
+  ctx.restore();
+}
+
+function fxDrawFlash(ctx, p){
+  // Flash — полноэкранный (без масштаба, как в библиотеке)
+  const intensity = Math.min(0.85, p * 1.2);
+  ctx.fillStyle = `rgba(255,255,250,${intensity*0.85})`;
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle = `rgba(255,255,255,${intensity*0.25})`;
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+}
+
+function fxDrawCross(ctx, p, x, y){
+  ctx.save(); ctx.translate(x,y); ctx.rotate(Math.PI/4); ctx.scale(0.4,0.4);
+  ctx.globalCompositeOperation='lighter';
+  const a=Math.min(1,p*1.2), lw=60*p;
+  function ln(rot){
+    ctx.save(); ctx.rotate(rot);
+    const g=ctx.createLinearGradient(-220,0,220,0);
+    g.addColorStop(0,'rgba(255,255,220,0)'); g.addColorStop(0.47,`rgba(255,255,245,${a})`);
+    g.addColorStop(0.53,`rgba(255,255,255,${a})`); g.addColorStop(1,'rgba(255,240,180,0)');
+    ctx.strokeStyle=g; ctx.lineWidth=lw; ctx.beginPath();
+    ctx.moveTo(-220,0); ctx.lineTo(220,0); ctx.stroke(); ctx.restore();
+  }
+  ln(0); ln(Math.PI/2); ctx.restore();
+}
+
+function fxDrawImpact(ctx, p, x, y){
+  ctx.save(); ctx.translate(x,y); ctx.scale(0.4,0.4);
+  ctx.globalCompositeOperation='lighter';
+  const t2=1-p, eased=Math.pow(t2,0.65), r=20+eased*160;
+  const g=ctx.createRadialGradient(0,0,r*0.15,0,0,r);
+  g.addColorStop(0,'rgba(255,255,255,0)');
+  g.addColorStop(0.5,`rgba(255,250,235,${p*0.2})`);
+  g.addColorStop(0.82,`rgba(255,255,245,${p*0.6})`);
+  g.addColorStop(1,`rgba(255,255,250,${p*0.9})`);
+  ctx.fillStyle=g; ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(0,0,r-4,0,Math.PI*2);
+  ctx.strokeStyle=`rgba(255,245,210,${p*0.7})`; ctx.lineWidth=6*p; ctx.stroke();
+  ctx.restore();
+}
+
+function spawnFX(type, x, y, angle, followEntity){
+  FX_EFFECTS.push({type, x, y, t:0, duration: type==='impact'?18:20, angle: angle||0, followEntity: followEntity||null});
+}
+
+function updateFX(dt){
+  for(let i=FX_EFFECTS.length-1;i>=0;i--){
+    const fx=FX_EFFECTS[i];
+    fx.t+=dt*60;
+    if(fx.t>=fx.duration) FX_EFFECTS.splice(i,1);
+  }
+}
+
+function drawFXEffects(){
+  for(const fx of FX_EFFECTS){
+    const p=fxGetAlpha(fx);
+    if(p<=0.01) continue;
+    let fx_x = fx.x, fx_y = fx.y;
+    if(fx.followEntity){
+      // Пересчитываем позицию каждый кадр — эффект следует за entity (пивот меча)
+      const piv = entityPivot(fx.followEntity);
+      fx_x = piv.x; fx_y = piv.y;
+    }
+    if(fx.type==='blood') fxDrawBlood(ctx,p,fx_x,fx_y,fx.angle);
+    else if(fx.type==='impact') fxDrawImpact(ctx,p,fx_x,fx_y);
+    else if(fx.type==='cross') fxDrawCross(ctx,p,fx_x,fx_y);
+    else if(fx.type==='flash') fxDrawFlash(ctx,p);
+  }
+}
+// ════════════════════ END MODULE: FX ══════════════════════════════════════
+
+function updateAtkPoints(ent, opponent, dt){
+  const exC = entityCenter(ent);
+  const opC = entityBodyCenter(opponent);
+  const toOp = Math.atan2(opC.y - exC.y, opC.x - exC.x);
+  const movAng = Math.atan2(ent.vy, ent.vx);
+  const movSpd = Math.hypot(ent.vx, ent.vy);
+
+  // +1 если движется к противнику
+  if(movSpd > 0.5 && Math.abs(angDiff(movAng, toOp)) < Math.PI/2)
+    ent.atkPts += dt * 1;
+
+  // +1 если кончик меча касается (tip близко к телу противника)
+  const piv = entityPivot(ent);
+  const tipX = piv.x + Math.cos(ent.angle) * SWORD_LEN * ent.swordScale;
+  const tipY = piv.y + Math.sin(ent.angle) * SWORD_LEN * ent.swordScale;
+  if(Math.hypot(tipX - opC.x, tipY - opC.y) < 30) ent.atkPts += dt * 1;
+
+  // +1 за замах (высокая угловая скорость)
+  if(Math.abs(ent.vel) > sv('swthresh')) ent.atkPts += dt * 1;
+
+  // +2 если ЛКМ-атака (только для игрока)
+  if(ent === P && mDown) ent.atkPts += dt * 2;
+
+  // затухание
+  ent.atkPts *= Math.pow(0.92, dt*60);
+}
+
+function determineAttacker(){
+  P.isAttacker   = P.atkPts >= D.atkPts;
+  D.isAttacker   = D.atkPts > P.atkPts;
+}
+
+// Обработка столкновения мечей
+function swordHit(attacker, defender){
+  const botMult = 1.5;
+  if(attacker.isAttacker){
+    const cost = sv('stamblock') * (defender === D ? botMult : 1);
+    defender.stamina = Math.max(0, defender.stamina - cost);
+    if(defender.stamina <= 0 && defender.unbalanced <= 0){
+      defender.unbalanced = sv('unbdur');
+      defender.unbAngle = defender.angle;
+    }
+    if(defender.stamina <= 0 && defender.exhausted <= 0){
+      defender.exhausted = defender.exhaustDur || sv('exhdur2');
+    }
+  } else {
+    const cost = sv('stamblock') * (attacker === D ? botMult : 1);
+    attacker.stamina = Math.max(0, attacker.stamina - cost);
+    if(attacker.stamina <= 0 && attacker.exhausted <= 0){
+      attacker.exhausted = attacker.exhaustDur || sv('exhdur2');
+    }
+  }
+}
+
+// Ближайшее расстояние между двумя отрезками
+function segSegDist(ax,ay,bx,by,cx,cy,dx,dy){
+  const d1x=bx-ax,d1y=by-ay,d2x=dx-cx,d2y=dy-cy,d12x=ax-cx,d12y=ay-cy;
+  const a=d1x*d1x+d1y*d1y, e=d2x*d2x+d2y*d2y;
+  if(a<0.001&&e<0.001) return {d:Math.hypot(ax-cx,ay-cy),mx:(ax+cx)/2,my:(ay+cy)/2};
+  let s,t;
+  if(a<0.001){t=clamp((d2x*d12x+d2y*d12y)/e,0,1);s=0;}
+  else{const c2=d1x*d12x+d1y*d12y;
+    if(e<0.001){s=clamp(-c2/a,0,1);t=0;}
+    else{const b2=d1x*d2x+d1y*d2y,den=a*e-b2*b2;
+      s=den>0.001?clamp((b2*(d2x*d12x+d2y*d12y)-e*c2)/den,0,1):0;
+      t=clamp((b2*s+(d2x*d12x+d2y*d12y))/e,0,1);
+      s=clamp((-c2+b2*t)/a,0,1);t=clamp((b2*s+(d2x*d12x+d2y*d12y))/e,0,1);}}
+  const px=ax+s*d1x,py=ay+s*d1y,qx=cx+t*d2x,qy=cy+t*d2y;
+  return {d:Math.hypot(px-qx,py-qy),mx:(px+qx)/2,my:(py+qy)/2,px,py,qx,qy,s,t};
+}
+
+// Коллизия меч→меч: физический блок + стамина + искры
+// Коллизия меч→тело: урон + отбрасывание, кулдаун 0.5с
+function checkSwordCollision(entA, entB, dt){
+  const pivA = entityPivot(entA);
+  const pivB = entityPivot(entB);
+  const swA = SWORD_LEN * entA.swordScale * sv('swlen');
+  const swB = SWORD_LEN * entB.swordScale * sv('swlen') * (entB===D?sv('botswordscale'):1);
+  const tipAx = pivA.x + Math.cos(entA.angle)*swA;
+  const tipAy = pivA.y + Math.sin(entA.angle)*swA;
+  const tipBx = pivB.x + Math.cos(entB.angle)*swB;
+  const tipBy = pivB.y + Math.sin(entB.angle)*swB;
+
+  const BLADE_W = 7;
+  // Ключ для задержки столкновения мечей (общий для пары)
+  if(entA._bladeCD === undefined) entA._bladeCD = -1;
+
+  // ── МЕЧ A vs МЕЧ B ──────────────────────────────────────────────────────
+  const res = segSegDist(pivA.x,pivA.y,tipAx,tipAy, pivB.x,pivB.y,tipBx,tipBy);
+  if(res.d < BLADE_W){
+    // Нормаль столкновения мечей (от B к A)
+    const sep = BLADE_W - res.d;
+    const nx = res.px!==undefined ? (res.px-res.qx)/(res.d||1) : Math.cos(entA.angle+Math.PI/2);
+    const ny = res.py!==undefined ? (res.py-res.qy)/(res.d||1) : Math.sin(entA.angle+Math.PI/2);
+    const swres = sv('swres');
+
+    // Раздвижка позиций (всегда — чтобы не проходили сквозь)
+    const sepClamped = Math.min(sep, 8); // клампим чтобы не телепортировать
+    entA.x += nx*sepClamped*0.5; entA.y += ny*sepClamped*0.5;
+    entB.x -= nx*sepClamped*0.5; entB.y -= ny*sepClamped*0.5;
+
+    // Блокировка движения — гасим компоненту velocity вдоль нормали (как стена)
+    // Для entA: если движется в сторону B (dot > 0) — гасим эту компоненту
+    const dotA = entA.vx*nx + entA.vy*ny;
+    if(dotA > 0){ entA.vx -= dotA*nx*swres; entA.vy -= dotA*ny*swres; }
+    const dotB = entB.vx*nx + entB.vy*ny;
+    if(dotB < 0){ entB.vx -= dotB*nx*swres; entB.vy -= dotB*ny*swres; }
+
+    // Отталкивание при столкновении мечей — используем bodyKB
+    const aikb = sv('bodyKB');
+    if(aikb > 0){
+      const spdA = Math.hypot(entA.vx, entA.vy);
+      const spdB = Math.hypot(entB.vx, entB.vy);
+      const MOVE_THRESH = 1.0;
+      if(spdA > MOVE_THRESH){
+        const mxA = entA.vx/spdA, myA = entA.vy/spdA;
+        const proj = Math.max(0, mxA*(-nx) + myA*(-ny));
+        entB.vx -= mxA * aikb * 0.4 * proj;
+        entB.vy -= myA * aikb * 0.4 * proj;
+      } else {
+        entB.vx -= nx * aikb * 0.3;
+        entB.vy -= ny * aikb * 0.3;
+      }
+      if(spdB > MOVE_THRESH){
+        const mxB = entB.vx/spdB, myB = entB.vy/spdB;
+        const proj = Math.max(0, mxB*nx + myB*ny);
+        entA.vx += mxB * aikb * 0.4 * proj;
+        entA.vy += myB * aikb * 0.4 * proj;
+      } else {
+        entA.vx += nx * aikb * 0.3;
+        entA.vy += ny * aikb * 0.3;
+      }
+    }
+    // стамина и эффекты — только с задержкой 0.4с
+    if(entA._bladeCD <= GameTime){
+      entA._bladeCD = GameTime + 0.4;
+      const strongSwing = Math.abs(entA.vel) > sv('swthresh')*2.5 || Math.abs(entB.vel) > sv('swthresh')*2.5;
+      doClash(entA, entB, res.mx, res.my, strongSwing);
+      swordHit(entA, entB);
+      if(strongSwing) playSound('clashHard'); else playSound('clash');
+      const rageGain = 100/sv('rageper') * 0.5; // вдвое медленнее
+      entA.rage = Math.min(100, (entA.rage||0) + rageGain);
+      entB.rage = Math.min(100, (entB.rage||0) + rageGain);
+      // debug
+      dbgLastClash = GameTime;
+      dbgClashCount++;
+      // BladeBind: запоминаем с какой стороны был контакт
+      if(document.getElementById('cb-bbind').checked){
+        bladeBind_onContact(entA, entB, nx, ny);
+      }
+      aiNotifyContact();
+    }
+  }
+
+  // ── МЕЧ A vs ТЕЛО B ─────────────────────────────────────────────────────
+  function checkBladeVsBody(attacker, defender, pivX,pivY,tipX2,tipY2){
+    const bC = entityBodyCenter(defender);
+    const segDX=tipX2-pivX, segDY=tipY2-pivY, segL2=segDX*segDX+segDY*segDY||1;
+    const t2=clamp(((bC.x-pivX)*segDX+(bC.y-pivY)*segDY)/segL2,0,1);
+    const nearX=pivX+t2*segDX, nearY=pivY+t2*segDY;
+    const dist=Math.hypot(bC.x-nearX, bC.y-nearY);
+    const hitR = 14*sv('cscl');
+    if(dist >= hitR) return; // не касается — выходим
+    // касается тела — проверяем задержку
+    if(defender._hitCD === undefined) defender._hitCD = -1;
+    if(defender._hitCD < GameTime){
+      // запрет вдоль острия
+      const nx2=(dist>0.1?(bC.x-nearX)/dist:0);
+      const ny2=(dist>0.1?(bC.y-nearY)/dist:1);
+      const bladeX=Math.cos(attacker.angle), bladeY=Math.sin(attacker.angle);
+      const alongBlade = Math.abs(nx2*bladeX+ny2*bladeY);
+      // ставим задержку В ЛЮБОМ случае когда меч касается тела
+      defender._hitCD = GameTime + 0.5;
+      if(alongBlade < 0.8){
+        // плашмя — наносим урон
+        let dmg = Math.round(Math.abs(attacker.vel)*15+3);
+      if(defender === P && mDown) dmg = Math.round(dmg * sv('lmbdmg'));
+      if(defender === D && AI._fakeMDown) dmg = Math.round(dmg * 1.5);
+      // Ярость ИЛИ раскалённый клинок — 2x урон, не складываются
+      if(attacker === P && attacker._hotBladeActive) dmg *= 2;
+      else if(attacker.rageBuffEnd > GameTime) dmg *= 2;
+        defender.hp = Math.max(0, defender.hp-dmg);
+        defender.hitFlash = GameTime + 0.25;
+        const kbf = sv('bodyKB') * 0.5;
+        if(kbf > 0){ defender.vx += nx2*kbf; defender.vy += ny2*kbf; }
+        spawnBlood(bC.x, bC.y, nx2, ny2);
+        spawnFX('blood', bC.x, bC.y, Math.atan2(ny2, nx2));
+        hitFX.push({x:bC.x, y:bC.y-18, t:'-'+dmg, life:40, big:false});
+      playSound('damage');
+        if(defender.hp<=0){ triggerDeath(defender, defender===D); }
+        aiNotifyContact();
+      }
+    }
+  }
+
+  checkBladeVsBody(entA, entB, pivA.x,pivA.y,tipAx,tipAy);
+  checkBladeVsBody(entB, entA, pivB.x,pivB.y,tipBx,tipBy);
+}
+
+// Вспомогательные функции для entity
+function entityCenter(e){
+  return { x: e.x + 5, y: e.y - 8 };
+}
+function entityBodyCenter(e){ return { x: e.x+5+e.bx, y: e.y-8+e.by }; }
+function entityPivot(e){
+  const c = entityCenter(e);
+  return { x: c.x + e.pvX, y: c.y + e.pvY };
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// MODULE: AI  (bot controller, tactics, sword styles, mirror/duelist/swordsman)
+// Future: extract to ai.js, expose via window.GameAI = {...}
+// ════════════════════════════════════════════════════════════════════════════
+// ── AI CONTROLLER ────────────────────────────────────────────────────────────
+// Все команды только через fakeKeys/fakeMDown/fakeMX/fakeMY — физику не трогаем.
+// ════════════════════════════════════════════════════════════════════════════
+// MODULE: AI PROFILES  (веса тактик/стилей — легко создавать разные "характеры" бота)
+// Future: extract to ai-profiles.json, load via fetch
+// ════════════════════════════════════════════════════════════════════════════
+const AI_PROFILES = {
+  default: {
+    // Веса стилей меча (сумма не обязана быть 100, нормализуется автоматически)
+    swordStyleWeights: { MIRROR: 50, SWORDSMAN: 25, DUELIST: 25 },
+    // Шанс ярости при переходе в атаку из передышки/отступления
+    rageOnAttackChance: 0.5,
+    // Длительность ярости бота (сек)
+    rageDuration: 4.0,
+    // Шанс ложного шага (фейнт) при отступлении
+    feintChance: 1.0, // используется как множитель к интервалу
+    // Шанс выпада после контакта
+    lungeChance: 0.2,
+    // Дальность дуэльной зоны (доп. множитель к sl-duelrad)
+    duelRadiusMult: 1.0,
+  },
+  // Пример агрессивного профиля — больше DUELIST, чаще ярость
+  aggressive: {
+    swordStyleWeights: { MIRROR: 30, SWORDSMAN: 20, DUELIST: 50 },
+    rageOnAttackChance: 0.8,
+    rageDuration: 5.0,
+    feintChance: 0.6,
+    lungeChance: 0.35,
+    duelRadiusMult: 0.8,
+  },
+  // Пример défensive профиля — больше MIRROR, реже ярость
+  defensive: {
+    swordStyleWeights: { MIRROR: 70, SWORDSMAN: 20, DUELIST: 10 },
+    rageOnAttackChance: 0.3,
+    rageDuration: 3.0,
+    feintChance: 1.4,
+    lungeChance: 0.1,
+    duelRadiusMult: 1.3,
+  },
+};
+let AI_ACTIVE_PROFILE = 'default';
+function getAIProfile(){ return AI_PROFILES[AI_ACTIVE_PROFILE] || AI_PROFILES.default; }
+
+// Выбирает стиль меча по весам активного профиля
+function pickSwordStyle(){
+  const w = getAIProfile().swordStyleWeights;
+  const total = w.MIRROR + w.SWORDSMAN + w.DUELIST;
+  const roll = Math.random() * total;
+  if(roll < w.MIRROR) return 'SWORD_STYLE_MIRROR';
+  if(roll < w.MIRROR + w.SWORDSMAN) return 'SWORD_STYLE_SWORDSMAN';
+  return 'SWORD_STYLE_DUELIST';
+}
+// ════════════════ END MODULE: AI PROFILES ════════════════════════════════════
+
+const AI = {
+  enabled: true,
+  phase: 'attack',  // 'attack' | 'retreat' | 'breather'
+  tactic: 'COMBAT_RETREATING',
+  swordStyle: 'SWORD_STYLE_SWORDSMAN', // SWORDSMAN | DUELIST | MIRROR // 'SWORD_STYLE_SWORDSMAN' | 'SWORD_STYLE_DUELIST'
+  _tacticTimer: -1,
+  _duelistBlocking: false,
+  _harassPhase: 'approach', // approach | strike | orbit
+  _harassTimer: -1,
+  _harassStrikes: 0,
+  _harassOrbitAng: 0,
+  _harassOrbitDir: 1,
+  _harassTotalEnd: -1,
+  _fakeKeys: { w:false, a:false, s:false, d:false },
+  _fakeMDown: false,
+  _fakeMX: 0, _fakeMY: 0,
+  _retreatMode: false,
+  _spinActive: false, _spinAng: 0, _spinEndTime: -1, _spinSpeed: 0,
+  _feintActive: false, _feintSteps: [], _feintIdx: 0, _feintStepEnd: -1, _feintCD: -1,
+  _lungeActive: false, _lungePhase: 'back', _lungeEnd: -1,
+  _smoothMX: 0, _smoothMY: 0, _smoothInited: false,
+  _feintActive: false, _feintPattern: [], _feintStep: 0, _feintStepEnd: -1, _feintCD: -1,
+
+  // таймеры и состояние
+  _contactCD: -1,     // когда будет переход после контакта
+  _phaseEnd: -1,      // конец текущей фазы
+  _retreatTargX: 0, _retreatTargY: 0,
+  _retreatMoveCD: -1,
+  _circling: false, _circleDir: 1, _circleAng: 0,
+  _posTimer: 0, _posIdx: 0,
+  _breatherBackEnd: -1,
+  _breatherArrived: false, _breatherEndAfterArrival: -1,
+};
+
+function aiStartSpin(durationSec){
+  if(!dummyOn || AI._spinActive) return;
+  if(document.getElementById('cb-nospin').checked) return;
+  if(AI.swordStyle === 'SWORD_STYLE_DUELIST') return; // duelist не вращает
+  const dBodyC = entityBodyCenter(D);
+  const dpivX = dBodyC.x + D.pvX, dpivY = dBodyC.y + D.pvY;
+  // Начинаем с текущего положения меча бота (fakeMX/MY относительно пивота)
+  const curAngToFakeM = Math.atan2(AI._fakeMY - dpivY, AI._fakeMX - dpivX);
+  AI._spinActive = true;
+  AI._spinAng = curAngToFakeM; // стартуем с текущего угла — нет прыжка
+  AI._spinEndTime = GameTime + durationSec;
+  AI._spinSpeed = (Math.PI*2) / durationSec;
+}
+
+function aiSetPhase(phase){
+  if(!dummyOn) return; // guard: не менять фазу пока бот не заспавнен
+  const cscl = sv('cscl');
+  AI.phase = phase;
+  // Не сбрасываем smooth — продолжаем плавно от текущей позиции
+  if(phase === 'attack'){
+    AI._phaseEnd = -1;
+    AI._retreatMode = false;
+    // Бот включает ярость при переходе в атаку (50% шанс)
+    if(dummyOn && Math.random() < getAIProfile().rageOnAttackChance){
+      D.rageBuffEnd = GameTime + getAIProfile().rageDuration;
+      D.rage = 100;
+      hitFX.push({x:entityBodyCenter(D).x, y:entityBodyCenter(D).y-40, t:'🔥', life:35, big:false, col:'#ff4020'});
+    }
+    // при начале атаки — если игрок далеко, прокрут
+    const pBodyC = entityBodyCenter(P);
+    const dBodyC = entityBodyCenter(D);
+    const cscl = sv('cscl');
+    const dist = Math.hypot(pBodyC.x-dBodyC.x, pBodyC.y-dBodyC.y);
+    if(dist > 150*cscl){
+      aiStartSpin(sv('spindur'));
+    }
+  } else if(phase === 'retreat'){
+    AI._retreatMode = true;
+    AI._phaseEnd = GameTime + 5 + Math.random()*4;
+    AI._retreatMoveCD = -1;
+    AI._circling = false;
+    // 50% шанс прокрута при первой точке
+    if(Math.random() < 0.5){
+      aiStartSpin(sv('spindur'));
+    }
+  } else if(phase === 'breather'){
+    AI._retreatMode = false;
+    AI._phaseEnd = GameTime + 1 + Math.random()*2;
+    AI._breatherBackEnd = GameTime + 0.2 + Math.random()*0.3;
+  }
+}
+
+// Вычисляем точку отступления: d пикс от игрока по направлению от бота
+function aiRetreatPoint(){
+  const pBodyC = entityBodyCenter(P);
+  const dBodyC = entityBodyCenter(D);
+  const ang = Math.atan2(dBodyC.y - pBodyC.y, dBodyC.x - pBodyC.x); // от игрока к боту
+  const d = (100 + (Math.floor(Math.random()*3)+1)*25) * sv('cscl');
+  return {
+    x: pBodyC.x + Math.cos(ang)*d,
+    y: pBodyC.y + Math.sin(ang)*d,
+  };
+}
+
+// Установка fakeKeys на движение к точке target
+function aiMoveToward(k, fromC, target, stopDist, cscl){
+  const dx = target.x - fromC.x, dy = target.y - fromC.y;
+  const dist = Math.hypot(dx, dy);
+  if(dist < stopDist){ k.w=k.a=k.s=k.d=false; return; }
+  const ax = dx/dist, ay = dy/dist;
+  k.a = ax < -0.3; k.d = ax > 0.3;
+  k.w = ay < -0.3; k.s = ay > 0.3;
+}
+
+// Установка fakeKeys на движение ОТ точки
+function aiMoveAway(k, fromC, target, maxDist, cscl){
+  const dx = fromC.x - target.x, dy = fromC.y - target.y;
+  const dist = Math.hypot(dx, dy);
+  if(dist > maxDist){ k.w=k.a=k.s=k.d=false; return; }
+  const ax = dx/(dist||1), ay = dy/(dist||1);
+  k.a = ax < -0.3; k.d = ax > 0.3;
+  k.w = ay < -0.3; k.s = ay > 0.3;
+}
+
+function aiPointMouse(dBodyC, targetX, targetY, instant, _dt){
+  if(!AI._smoothInited || instant){
+    AI._smoothMX = targetX;
+    AI._smoothMY = targetY;
+    AI._smoothInited = true;
+  }
+  // Плавный lerp к целевой точке
+  const lerpSpd = 0.18;
+  AI._smoothMX += (targetX - AI._smoothMX) * lerpSpd;
+  AI._smoothMY += (targetY - AI._smoothMY) * lerpSpd;
+  AI._fakeMX = AI._smoothMX;
+  AI._fakeMY = AI._smoothMY;
+}
+
+// ── DUEL POSITION SYSTEM ────────────────────────────────────────────────────
+const DUEL = {
+  active: false,
+  cx: 0, cy: 0,
+  pLastInRange: 0, // инициализируем 0, не -1
+};
+
+function duelUpdate(dt){
+  if(!dummyOn) return;
+  if(!document.getElementById('cb-duel').checked){ AI._duelPull=false; DUEL.active=false; return; }
+  const pBodyC = entityBodyCenter(P);
+  const dBodyC = entityBodyCenter(D);
+  const cscl = sv('cscl');
+  const duelRad = sv('duelrad') * cscl;
+  const swReach = SWORD_LEN * D.swordScale * sv('swlen') * 2.5;
+
+  const distToPlayer = Math.hypot(pBodyC.x-dBodyC.x, pBodyC.y-dBodyC.y);
+  const playerInReach = distToPlayer < swReach;
+  if(playerInReach) DUEL.pLastInRange = GameTime;
+
+  // Сброс если игрок далеко > 2 сек
+  if(DUEL.active && !playerInReach && GameTime - DUEL.pLastInRange > 2.0){
+    DUEL.active = false;
+    AI._duelPull = false;
+    DUEL.nextMoveCD = -1;
+  }
+
+  // Периодически выбираем новую цель внутри Duel Zone
+  if(!DUEL.nextMoveCD) DUEL.nextMoveCD = -1;
+  if(DUEL.active && AI.phase === 'attack'){
+    const distFromCenter = Math.hypot(dBodyC.x-DUEL.cx, dBodyC.y-DUEL.cy);
+    // Бот вышел за радиус — выдаём цель внутри зоны
+    if(distFromCenter > duelRad && GameTime >= DUEL.nextMoveCD){
+      const r = duelRad * 0.7;
+      const ang = Math.random() * Math.PI * 2;
+      AI._duelTargX = clamp(DUEL.cx + Math.cos(ang)*r*Math.random(), 60, W-100);
+      AI._duelTargY = clamp(DUEL.cy + Math.sin(ang)*r*Math.random(), 60, H-60);
+      AI._duelPull = true;
+      DUEL.nextMoveCD = GameTime + 0.5 + Math.random()*1.5;
+    }
+    // Бот дошёл до цели — снимаем pull, двигаемся к игроку
+    if(AI._duelPull){
+      const distToTarg = Math.hypot(dBodyC.x-AI._duelTargX, dBodyC.y-AI._duelTargY);
+      if(distToTarg < 40*cscl) AI._duelPull = false;
+    }
+    // Бот внутри зоны — pull не нужен
+    if(distFromCenter <= duelRad) AI._duelPull = false;
+  } else {
+    AI._duelPull = false;
+  }
+}
+
+// Уведомление о контакте мечами (вызывается из checkSwordCollision)
+function aiNotifyContact(){
+  if(AI._contactCD > GameTime) return;
+  const delay = 1 + Math.floor(Math.random()*4);
+  AI._contactCD = GameTime + delay;
+
+  // Фиксируем центр дуэли при первом контакте
+  if(!DUEL.active){
+    const dBodyC = entityBodyCenter(D);
+    DUEL.cx = dBodyC.x;
+    DUEL.cy = dBodyC.y;
+    DUEL.active = true;
+    DUEL.pLastInRange = GameTime;
+    hitFX.push({x:DUEL.cx, y:DUEL.cy-20, t:'⚔', life:30, big:false, col:'rgba(200,180,60,0.7)'});
+  }
+
+  // 20% шанс: шаг назад + выпад ЛКМ
+  if(Math.random() < 0.2 && !AI._lungeActive){
+    AI._lungeActive = true;
+    AI._lungePhase = 'back';
+    AI._lungeEnd = GameTime + 0.35;
+  }
+}
+
+function updateAI(dt){
+  if(!dummyOn) return;
+  if(!AI.enabled){
+    AI._fakeKeys.w=AI._fakeKeys.a=AI._fakeKeys.s=AI._fakeKeys.d=false;
+    AI._fakeMDown=false;
+    return;
+  }
+
+  const pBodyC = entityBodyCenter(P);
+  const dBodyC = entityBodyCenter(D);
+  const angToPlayer = Math.atan2(pBodyC.y - dBodyC.y, pBodyC.x - dBodyC.x);
+  const distToPlayer = Math.hypot(pBodyC.x - dBodyC.x, pBodyC.y - dBodyC.y);
+  const cscl = sv('cscl');
+  const k = AI._fakeKeys;
+
+  // Инициализация
+  if(!AI._inited){
+    AI._inited=true;
+    // случайно выбираем тактику при спавне
+    AI.tactic = Math.random() < 0.5 ? 'COMBAT_RETREATING' : 'COMBAT_HARASS';
+    if(AI.tactic==='COMBAT_HARASS') AI._harassTotalEnd = GameTime + 10 + Math.random()*10;
+    aiSetPhase('attack');
+  }
+  // Авто-смена тактики каждые 10-20 сек
+  if(AI._tacticTimer < 0) AI._tacticTimer = GameTime + 10 + Math.random()*10;
+  if(GameTime >= AI._tacticTimer && !AI._spinActive){
+    AI._tacticTimer = GameTime + 10 + Math.random()*10;
+    // чередуем тактику боя
+    if(AI.tactic === 'COMBAT_RETREATING') AI.tactic = 'COMBAT_HARASS';
+    else { AI.tactic = 'COMBAT_RETREATING'; AI._harassPhase='approach'; }
+    // чередуем стиль меча
+    // Веса из AI_PROFILES (или всегда Mirror по галочке)
+    if(document.getElementById('cb-alwaysmirror')?.checked){
+      AI.swordStyle = 'SWORD_STYLE_MIRROR';
+    } else {
+      AI.swordStyle = pickSwordStyle();
+    }
+    AI._duelistBlocking = false;
+  }
+  // HARASS: по истечении
+  if(AI.tactic==='COMBAT_HARASS' && AI._harassTotalEnd>0 && GameTime>=AI._harassTotalEnd){
+    AI._harassTotalEnd = -1;
+  }
+
+  // Переход после контакта
+  if(AI._contactCD > 0 && AI.phase === 'attack' && AI._contactCD <= GameTime){
+    AI._contactCD = -1;
+    if(Math.random() < 0.25) aiSetPhase('retreat');
+    else aiSetPhase('breather');
+  }
+
+  // Конец фазы → атака
+  if(AI._phaseEnd > 0 && GameTime >= AI._phaseEnd){
+    aiSetPhase('attack');
+  }
+
+  // ── ВЫПАД ПОСЛЕ КОНТАКТА (шаг назад + ЛКМ) ─────────────────────────────────
+  if(AI._lungeActive){
+    if(GameTime >= AI._lungeEnd){
+      if(AI._lungePhase === 'back'){
+        // переходим к выпаду вперёд с ЛКМ
+        AI._lungePhase = 'lunge';
+        AI._lungeEnd = GameTime + 0.45;
+        AI._fakeMDown = true;
+      } else {
+        AI._lungeActive = false;
+        AI._fakeMDown = false;
+      }
+    }
+    if(AI._lungeActive){
+      const dir = AI._lungePhase === 'back' ? -1 : 1;
+      const ax = Math.cos(angToPlayer)*dir, ay = Math.sin(angToPlayer)*dir;
+      k.a = ax<-0.3; k.d = ax>0.3; k.w = ay<-0.3; k.s = ay>0.3;
+      if(AI._lungePhase === 'lunge'){
+        aiPointMouse(dBodyC, pBodyC.x, pBodyC.y);
+        AI._fakeMDown = true;
+      }
+    }
+  }
+
+  // ── ЛОЖНЫЙ ШАГ (feint) ───────────────────────────────────────────────────
+  if(AI._feintActive){
+    if(GameTime >= AI._feintStepEnd){
+      AI._feintStep++;
+      if(AI._feintStep >= AI._feintPattern.length){
+        AI._feintActive = false;
+        AI._feintCD = GameTime + 2.5;
+      } else {
+        AI._feintStepEnd = GameTime + 0.14 + Math.random()*0.07;
+      }
+    }
+    if(AI._feintActive){
+      const dir = AI._feintPattern[AI._feintStep];
+      const angTP = Math.atan2(pBodyC.y-dBodyC.y, pBodyC.x-dBodyC.x);
+      // 1=вперёд, -1=назад, 2=вправо от игрока, -2=влево от игрока
+      let moveAng;
+      if(Math.abs(dir) === 1) moveAng = dir > 0 ? angTP : angTP + Math.PI;
+      else moveAng = dir > 0 ? angTP + Math.PI/2 : angTP - Math.PI/2;
+      const ax = Math.cos(moveAng), ay = Math.sin(moveAng);
+      k.a = ax < -0.3; k.d = ax > 0.3;
+      k.w = ay < -0.3; k.s = ay > 0.3;
+    }
+  }
+
+  // Дисбаланс/усталость — стоим, меч держим к игроку
+  if(D.exhausted > 0 || D.unbalanced > 0){
+    k.w=k.a=k.s=k.d=false;
+    AI._fakeMDown=false;
+    aiPointMouse(dBodyC, pBodyC.x, pBodyC.y);
+    return;
+  }
+
+  // ── COMBAT_HARASS: изматывание ───────────────────────────────────────────────
+  if(AI.tactic === 'COMBAT_HARASS'){
+    AI._retreatMode = false;
+    const hp = AI._harassPhase;
+    if(hp === 'approach'){
+      // идём к игроку
+      if(!AI._feintActive) aiMoveToward(k, dBodyC, pBodyC, 65*cscl, cscl);
+      // меч в направлении игрока
+      if(!AI._spinActive) aiPointMouse(dBodyC, pBodyC.x, pBodyC.y);
+      // когда достаточно близко — переходим к удару
+      if(distToPlayer < 90*cscl){
+        AI._harassPhase = 'strike';
+        AI._harassStrikes = Math.floor(Math.random()*2) + 1; // 1-2 удара
+        AI._harassTimer = GameTime + 0.6;
+        AI._fakeMDown = true;
+      }
+    } else if(hp === 'strike'){
+      // стоим и атакуем
+      k.w=k.a=k.s=k.d=false;
+      aiPointMouse(dBodyC, pBodyC.x, pBodyC.y);
+      AI._fakeMDown = true;
+      if(GameTime >= AI._harassTimer){
+        AI._harassStrikes--;
+        if(AI._harassStrikes <= 0){
+          AI._fakeMDown = false;
+          AI._harassPhase = 'orbit';
+          AI._harassOrbitDir = Math.random()<0.5 ? 1 : -1;
+          AI._harassOrbitAng = angToPlayer + Math.PI;
+          AI._harassTimer = GameTime + 0.8 + Math.random()*0.6;
+          aiStartSpin(sv('spindur'));
+        } else {
+          AI._harassTimer = GameTime + 0.5;
+        }
+      }
+    } else if(hp === 'orbit'){
+      // обход сбоку с вращением
+      AI._fakeMDown = false;
+      AI._harassOrbitAng += AI._harassOrbitDir * 0.025;
+      const orbitR = Math.max(60*cscl, distToPlayer);
+      const tx = clamp(pBodyC.x + Math.cos(AI._harassOrbitAng)*orbitR, 60, W-100);
+      const ty = clamp(pBodyC.y + Math.sin(AI._harassOrbitAng)*orbitR, 60, H-60);
+      k.a=(tx-dBodyC.x)<-5; k.d=(tx-dBodyC.x)>5;
+      k.w=(ty-dBodyC.y)<-5; k.s=(ty-dBodyC.y)>5;
+      if(!AI._spinActive) aiPointMouse(dBodyC, pBodyC.x, pBodyC.y);
+      // возвращаемся к сближению
+      if(GameTime >= AI._harassTimer) AI._harassPhase = 'approach';
+    }
+    // пропускаем стандартные фазы
+  } else
+  // ── АТАКА (COMBAT_RETREATING) ─────────────────────────────────────────────
+  if(AI.phase === 'attack'){
+    AI._retreatMode = false;
+    // движемся к игроку или к цели в зоне дуэли
+    if(!AI._feintActive){
+      if(AI._duelPull){
+        aiMoveToward(k, dBodyC, {x:AI._duelTargX, y:AI._duelTargY}, 30*cscl, cscl);
+      } else {
+        aiMoveToward(k, dBodyC, pBodyC, 80*cscl, cscl);
+      }
+    }
+    // позиции меча — ТОЛЬКО если нет прокрута
+    if(!AI._spinActive){
+      AI._posTimer -= dt;
+      if(AI._posTimer <= 0){
+        AI._posIdx = (AI._posIdx+1)%3;
+        AI._posTimer = 0.8 + Math.random()*0.8;
+      }
+      const offsets = [0, sv('aiang')*Math.PI/180, -sv('aiang')*Math.PI/180];
+      const aimAng = angToPlayer + offsets[AI._posIdx];
+      aiPointMouse(dBodyC, dBodyC.x + Math.cos(aimAng)*150*cscl, dBodyC.y + Math.sin(aimAng)*150*cscl);
+    }
+    AI._fakeMDown = false;
+
+  // ── ОТСТУПЛЕНИЕ ────────────────────────────────────────────────────────────
+  } else if(AI.phase === 'retreat'){
+    AI._retreatMode = true;
+    // каждые 1-3 сек выбираем новую точку или начинаем обход
+    if(GameTime >= AI._retreatMoveCD){
+      if(Math.random() * 100 < sv('circchance')){
+        // начинаем обход по кругу вокруг игрока
+        AI._circling = true;
+        AI._circleDir = Math.random() < 0.5 ? 1 : -1; // по/против часовой
+        AI._circleAng = angToPlayer + Math.PI; // начинаем с противоположной стороны
+        AI._retreatMoveCD = GameTime + 1.5 + Math.random()*1.5;
+      } else {
+        AI._circling = false;
+        const pt = aiRetreatPoint();
+        AI._retreatTargX = clamp(pt.x, 60, W-100);
+        AI._retreatTargY = clamp(pt.y, 60, H-60);
+        AI._retreatMoveCD = GameTime + 1 + Math.random()*2;
+      }
+    }
+
+    if(AI._circling){
+      // Обход по кругу: двигаемся перпендикулярно линии бот-игрок, сохраняя дистанцию
+      const orbitDist = distToPlayer; // держим текущую дистанцию
+      AI._circleAng += AI._circleDir * 0.018; // угловая скорость обхода
+      const targX = clamp(pBodyC.x + Math.cos(AI._circleAng) * orbitDist, 60, W-100);
+      const targY = clamp(pBodyC.y + Math.sin(AI._circleAng) * orbitDist, 60, H-60);
+      k.a = (targX - dBodyC.x) < -5; k.d = (targX - dBodyC.x) > 5;
+      k.w = (targY - dBodyC.y) < -5; k.s = (targY - dBodyC.y) > 5;
+    } else {
+      // идём к точке отступления
+      const retreatTarg = {x: AI._retreatTargX, y: AI._retreatTargY};
+      const distToRetTarg = Math.hypot(dBodyC.x-AI._retreatTargX, dBodyC.y-AI._retreatTargY);
+      aiMoveToward(k, dBodyC, retreatTarg, 30*cscl, cscl);
+      // ложный шаг когда стоим в точке
+      if(distToRetTarg < 40*cscl && !AI._feintActive && GameTime > AI._feintCD){
+        const patterns = [[1,-1],[-1,1],[-1,1,-1],[-1,-1],[1,1],[2,-2],[-2,2]];
+        AI._feintPattern = patterns[Math.floor(Math.random()*patterns.length)];
+        AI._feintStep = 0;
+        AI._feintStepEnd = GameTime + 0.14 + Math.random()*0.07;
+        AI._feintActive = true;
+      }
+    }
+    // меч смотрит на игрока — блок (только если нет прокрута)
+    if(!AI._spinActive){
+      AI._posTimer -= dt;
+      if(AI._posTimer <= 0){
+        AI._posIdx = (AI._posIdx+1)%3;
+        AI._posTimer = 1.0 + Math.random()*0.6;
+      }
+      const offs2 = [0, sv('aiang')*Math.PI/180, -sv('aiang')*Math.PI/180];
+      const blockAng = angToPlayer + offs2[AI._posIdx];
+      aiPointMouse(dBodyC, dBodyC.x + Math.cos(blockAng)*120*cscl, dBodyC.y + Math.sin(blockAng)*120*cscl);
+    }
+    AI._fakeMDown = false;
+
+  // ── ПЕРЕДЫШКА ──────────────────────────────────────────────────────────────
+  } else if(AI.phase === 'breather'){
+    AI._retreatMode = false;
+    if(GameTime < AI._breatherBackEnd){
+      // отходим назад
+      aiMoveAway(k, dBodyC, pBodyC, 999*cscl, cscl);
+      AI._breatherArrived = false;
+      AI._breatherEndAfterArrival = -1;
+    } else {
+      // встали — фиксируем момент прихода
+      if(!AI._breatherArrived){
+        AI._breatherArrived = true;
+        AI._breatherEndAfterArrival = GameTime + 0.3 + Math.random()*0.7;
+      }
+      // заканчиваем фазу через 0.3-1 сек после остановки
+      if(AI._breatherEndAfterArrival > 0 && GameTime >= AI._breatherEndAfterArrival){
+        aiSetPhase('attack');
+        return; // уходим сразу
+      }
+      // ложный шаг пока ждём
+      if(!AI._feintActive && GameTime > AI._feintCD){
+        const patterns = [[1,-1],[-1,1],[-1,1,-1],[-1,-1],[1,1],[2,-2],[-2,2]];
+        AI._feintPattern = patterns[Math.floor(Math.random()*patterns.length)];
+        AI._feintStep = 0;
+        AI._feintStepEnd = GameTime + 0.14 + Math.random()*0.07;
+        AI._feintActive = true;
+      }
+      if(!AI._feintActive) k.w=k.a=k.s=k.d=false;
+    }
+    aiPointMouse(dBodyC, pBodyC.x, pBodyC.y);
+    AI._fakeMDown = false;
+  }
+
+  // ── SWORD_STYLE_DUELIST: блокирующая позиция ────────────────────────────────
+  // ── SWORD_STYLE_MIRROR: меч в зону противоположную мечу игрока ──────────────
+  // Запрет 1 сек после вращения
+  if(!AI._mirrorCooldown) AI._mirrorCooldown = -1;
+  // Буфер истории угла меча игрока для задержки зеркалирования
+  if(!AI._mirrorBuf) { AI._mirrorBuf = []; AI._mirrorLag = 0.1 + Math.random()*0.4; }
+  // Пишем текущий угол игрока с меткой времени
+  AI._mirrorBuf.push({t: RealTime, angle: P.angle, vel: P.vel});
+  // Удаляем старые (старше lag + 0.1 сек)
+  const lagTarget = AI._mirrorLag;
+  while(AI._mirrorBuf.length > 1 && RealTime - AI._mirrorBuf[0].t > lagTarget + 0.1)
+    AI._mirrorBuf.shift();
+
+  if(AI.swordStyle === 'SWORD_STYLE_MIRROR' && !AI._spinActive
+     && (AI._mirrorCooldown < 0 || GameTime > AI._mirrorCooldown)){
+    const angToP = Math.atan2(pBodyC.y - dBodyC.y, pBodyC.x - dBodyC.x);
+
+    // Берём угол игрока с задержкой lagTarget сек
+    let laggedAngle = P.angle, laggedVel = P.vel;
+    for(const entry of AI._mirrorBuf){
+      if(RealTime - entry.t >= lagTarget){ laggedAngle = entry.angle; laggedVel = entry.vel; }
+      else break;
+    }
+
+    const pSwordReach = SWORD_LEN * P.swordScale * sv('swlen');
+    const pPiv = entityPivot(P);
+    const dPiv = entityPivot(D);
+    const pivDist = Math.hypot(pPiv.x - dPiv.x, pPiv.y - dPiv.y);
+    const inStrikeRange = pivDist < pSwordReach * 1.2;
+
+    let targetAng;
+    if(inStrikeRange){
+      const blockAng = laggedAngle + Math.PI/2 + (laggedVel > 0 ? -0.3 : 0.3);
+      targetAng = blockAng;
+    } else {
+      const playerRelAng = angDiff(laggedAngle, angToP);
+      const MAX_MIRROR = Math.PI / 4;
+      const clampedRel = clamp(playerRelAng, -MAX_MIRROR, MAX_MIRROR);
+      targetAng = angToP - clampedRel;
+    }
+
+    const dpiv2 = entityPivot(D);
+    const mirrorDist = 140 * sv('cscl');
+    aiPointMouse(dBodyC,
+      dpiv2.x + Math.cos(targetAng)*mirrorDist,
+      dpiv2.y + Math.sin(targetAng)*mirrorDist);
+    AI._duelistBlocking = false;
+  }
+
+  if(AI.swordStyle === 'SWORD_STYLE_DUELIST' && !AI._spinActive){
+    const swReach = SWORD_LEN * D.swordScale * sv('swlen') * 1.3;
+    if(distToPlayer < swReach){
+      // Вычисляем угол меча игрока и ставим блок перпендикулярно
+      const pPivX = rootCenter().x + P.pvX;
+      const pPivY = rootCenter().y + P.pvY;
+      // Направление лезвия игрока
+      const pBladeX = Math.cos(P.angle), pBladeY = Math.sin(P.angle);
+      // Нам нужно поставить меч перпендикулярно к лезвию игрока
+      // + небольшое смещение в сторону куда летит меч (vel)
+      const blockAng = P.angle + Math.PI/2 + (P.vel > 0 ? -0.3 : 0.3);
+      // Целевая точка fakeM: от пивота бота в направлении blockAng
+      const dpiv = entityPivot(D);
+      const bDist = 140 * sv('cscl');
+      aiPointMouse(dBodyC, dpiv.x + Math.cos(blockAng)*bDist, dpiv.y + Math.sin(blockAng)*bDist);
+      AI._duelistBlocking = true;
+    } else {
+      // вне досягаемости — просто смотрим на игрока
+      aiPointMouse(dBodyC, pBodyC.x, pBodyC.y);
+      AI._duelistBlocking = false;
+    }
+  }
+
+  // ── ПРОКРУТ МЕЧА — ВСЕГДА ПОСЛЕДНИМ ──────────────────────────────────────
+  if(AI._spinActive){
+    if(GameTime >= AI._spinEndTime){
+      AI._spinActive = false;
+      AI._mirrorCooldown = GameTime + 1.0; // запрет mirror 1 сек после вращения
+      AI._smoothMX = pBodyC.x; AI._smoothMY = pBodyC.y;
+      AI._fakeMX = pBodyC.x;   AI._fakeMY = pBodyC.y;
+    } else {
+      AI._spinAng -= AI._spinSpeed * dt;
+      const spinR = 120 * sv('cscl');
+      const sx = dBodyC.x + Math.cos(AI._spinAng) * spinR;
+      const sy = dBodyC.y + Math.sin(AI._spinAng) * spinR;
+      AI._smoothMX = sx; AI._smoothMY = sy;
+      AI._fakeMX = sx;   AI._fakeMY = sy;
+    }
+  }
+}
+// Ложный шаг: серия быстрых шагов вперёд/назад — бот остаётся примерно на месте
+function aiStartFeint(){
+  if(AI._feintActive) return;
+  if(AI._feintCD > GameTime) return;
+  // выбираем паттерн
+  const pBodyC = entityBodyCenter(P);
+  const dBodyC = entityBodyCenter(D);
+  const ang = Math.atan2(pBodyC.y-dBodyC.y, pBodyC.x-dBodyC.x);
+  // fwd = к игроку, bwd = от игрока
+  const fwd = { ang: ang };
+  const bwd = { ang: ang + Math.PI };
+  const patterns = [
+    [fwd, bwd],           // вперёд-назад
+    [bwd, fwd],           // назад-вперёд
+    [bwd, fwd, bwd],      // назад-вперёд-назад
+  ];
+  const pat = patterns[Math.floor(Math.random()*patterns.length)];
+  const stepTime = 0.28; // каждый шаг ~0.28с, всего ~1с
+  AI._feintSteps = pat.map(s => ({ ...s, dur: stepTime }));
+  AI._feintIdx = 0;
+  AI._feintActive = true;
+  AI._feintStepEnd = GameTime + AI._feintSteps[0].dur;
+  AI._feintCD = GameTime + 2.5; // следующий не раньше чем через 2.5с
+}
+
+function updateFeint(k, dt){
+  if(!AI._feintActive) return false;
+  if(AI._feintIdx >= AI._feintSteps.length){
+    AI._feintActive = false;
+    k.w=k.a=k.s=k.d=false;
+    return false;
+  }
+  if(GameTime >= AI._feintStepEnd){
+    AI._feintIdx++;
+    if(AI._feintIdx >= AI._feintSteps.length){
+      AI._feintActive = false;
+      k.w=k.a=k.s=k.d=false;
+      return false;
+    }
+    AI._feintStepEnd = GameTime + AI._feintSteps[AI._feintIdx].dur;
+  }
+  // двигаемся в направлении текущего шага
+  const step = AI._feintSteps[AI._feintIdx];
+  const ax = Math.cos(step.ang), ay = Math.sin(step.ang);
+  k.a = ax < -0.4; k.d = ax > 0.4;
+  k.w = ay < -0.4; k.s = ay > 0.4;
+  return true; // перехватываем управление
+}
+
+function angDiff(a,b){ let d=a-b; while(d>Math.PI)d-=Math.PI*2; while(d<-Math.PI)d+=Math.PI*2; return d; }
+// ── Frame-rate независимые helpers ───────────────────────────────────────────
+// speed: скорость lerp при 60fps (напр. 0.28)
+// decay: затухание при 60fps (напр. 0.6)
+function lerpDT(current, target, speed, dt){
+  if(!isFinite(current)||!isFinite(target)||!isFinite(dt)) return current;
+  const alpha = 1 - Math.pow(1 - Math.min(Math.max(speed,0), 0.9999), dt * 60);
+  return current + (target - current) * alpha;
+}
+function decayDT(val, decay, dt){
+  if(!isFinite(val)||!isFinite(dt)) return 0;
+  return val * Math.pow(Math.min(Math.max(decay,0), 0.9999), dt * 60);
+}
+function angLerpDT(current, target, speed, dt){
+  if(!isFinite(current)||!isFinite(target)||!isFinite(dt)) return current;
+  const alpha = 1 - Math.pow(1 - Math.min(Math.max(speed,0), 0.9999), dt * 60);
+  return current + angDiff(target, current) * alpha;
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// MODULE: MATH HELPERS  (часто используемые паттерны — углы, расстояния, lerp)
+// Future: extract to math-utils.js
+// ════════════════════════════════════════════════════════════════════════════
+const TAU = Math.PI * 2;
+const HALF_PI = Math.PI / 2;
+const DEG2RAD = Math.PI / 180;
+const RAD2DEG = 180 / Math.PI;
+
+// Угол между двумя точками (от a к b)
+function angleTo(ax, ay, bx, by){ return Math.atan2(by-ay, bx-ax); }
+
+// Расстояние между двумя точками
+function distTo(ax, ay, bx, by){ return Math.hypot(bx-ax, by-ay); }
+
+// Нормализованный вектор направления (dx,dy) -> {x,y} длины 1 (или {0,0})
+function normVec(dx, dy){
+  const len = Math.hypot(dx, dy);
+  return len > 0.0001 ? {x: dx/len, y: dy/len} : {x:0, y:0};
+}
+
+// Клампирует точку на окружности радиуса r вокруг центра (cx,cy)
+function clampToCircle(px, py, cx, cy, r){
+  const dx = px-cx, dy = py-cy;
+  const d = Math.hypot(dx,dy);
+  if(d <= r || d < 0.0001) return {x:px, y:py};
+  return {x: cx + dx/d*r, y: cy + dy/d*r};
+}
+
+// Точка на окружности по углу
+function pointOnCircle(cx, cy, r, angle){
+  return {x: cx + Math.cos(angle)*r, y: cy + Math.sin(angle)*r};
+}
+
+// Случайный знак: -1 или 1
+function randSign(){ return Math.random() < 0.5 ? -1 : 1; }
+
+// Случайное число в диапазоне [a,b)
+function randRange(a, b){ return a + Math.random()*(b-a); }
+// ════════════════ END MODULE: MATH HELPERS ══════════════════════════════════
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+
+// ════════════════ END MODULE: AI ═══════════════════════════════════════════
+
+// ════════════════════════════════════════════════════════════════════════════
+// MODULE: COMBAT  (blade bind, clash, deflection, death/respawn)
+// Future: extract to combat.js
+// ════════════════════════════════════════════════════════════════════════════
+// ── BLADE BIND ───────────────────────────────────────────────────────────────
+const BB = {
+  active: false,
+  contactSide: 0,   // +1 или -1 — с какой стороны был контакт (относительно лезвия attacker)
+  contactTime: -1,
+  attacker: null,   // кто атаковал (чтобы засечь его следующий удар)
+  defender: null,
+};
+
+// ── BladeBind: блок БЕЗ ярости открывает окно. Если В ТЕЧЕНИЕ окна
+// (sv('bbwindow') сек) у того же entity появляется ярость И происходит
+// замах/удар (LMB или замах с ускорением) — срабатывает BladeBind.
+// Не срабатывает мгновенно в момент блока даже если ярость уже активна —
+// нужен отдельный последующий удар.
+function bladeBind_onContact(entA, entB, nx, ny){
+  const hasSwing = Math.abs(entA.vel) > sv('swthresh') || Math.abs(entB.vel) > sv('swthresh');
+  if(!hasSwing) return;
+
+  [entA, entB].forEach((ent, idx) => {
+    const other = idx===0 ? entB : entA;
+    // Блок без ярости — открываем окно для последующего удара
+    if(ent.rageBuffEnd <= GameTime){
+      ent._bbWait = GameTime + sv('bbwindow');
+      ent._bbDefender = other;
+    }
+    // Если ярость уже активна — НЕ триггерим здесь.
+    // Срабатывание только через bladeBind_checkSwing при следующем ударе.
+  });
+}
+
+function triggerBladeBind(attacker, defender){
+  if((BB._cd||0) > GameTime) return;
+  BB._cd = GameTime + 1.0;
+  attacker._bbWait = -1;
+  const defC = entityBodyCenter(defender);
+  const swingDir = attacker.vel >= 0 ? 1 : -1;
+  const openAng = attacker.angle + Math.PI/2 * swingDir;
+  const ellipseR = Math.max(csv('ex'), csv('ey')) * 1.5;
+  defender.tpX = Math.cos(openAng) * ellipseR;
+  defender.tpY = Math.sin(openAng) * ellipseR;
+  defender.pvX = defender.tpX;
+  defender.pvY = defender.tpY;
+  defender.unbalanced = sv('unbdur');
+  defender.unbAngle = defender.angle;
+  hitFX.push({x:defC.x, y:defC.y-55, t:'💥 BLADE BIND!', life:70, big:true, col:'#ffaa00'});
+  playSound('bladeblind');
+}
+
+// Вызывается при РЕАЛЬНОМ ударе/замахе (после открытия окна блоком).
+// Срабатывает только если: окно открыто, есть активная ярость СЕЙЧАС,
+// и это настоящий удар (vel выше порога — не воздушное кручение).
+function bladeBind_checkSwing(ent){
+  if((ent._bbWait||0) <= GameTime) return; // окно не открыто
+  const hasRage = ent.rageBuffEnd > GameTime;
+  if(!hasRage) return; // ярость должна быть активна именно в момент удара
+  if(Math.abs(ent.vel) <= sv('swthresh')) return; // должен быть реальный удар
+  const def = ent._bbDefender;
+  if(!def) return;
+  triggerBladeBind(ent, def);
+  ent._bbWait = -1; // окно закрыто после использования
+}
+function rad(d){ return d * Math.PI / 180; }
+// csval — значение слайдера умноженное на скейл персонажа (для пространственных параметров)
+function csv(id){ return sv(id) * sv('cscl'); }
+
+// Центр РУТА игрока — с учётом компенсации
+function rootCenter(){
+  return { x: P.x + 5, y: P.y - 8 };
+}
+function bodyVisualCenter(){ return { x: P.x+5+P.bx, y: P.y-8+P.by }; }
+
+// ── АПДЕЙТ ──────────────────────────────────────────────────────────────────
+// ── СМЕРТЬ / ПОБЕДА / ПОРАЖЕНИЕ ─────────────────────────────────────────────
+const DEATH = { pDead: false, dDead: false, deathCross: [], fadeAlpha: 0, fadeIn: false, text: '', textCol: '#fff' };
+
+function triggerDeath(ent, isBot){
+  if(isBot && DEATH.dDead) return;
+  if(!isBot && DEATH.pDead) return;
+  const bc = entityBodyCenter(ent);
+  for(let i=0;i<8;i++) spawnBlood(bc.x, bc.y, Math.cos(i*Math.PI/4), Math.sin(i*Math.PI/4));
+  DEATH.deathCross.push({x:bc.x, y:bc.y, timer:2.0, isBot});
+  DEATH.fadeAlpha = 0;
+  DEATH.fadeIn = true;
+  playSound('death');
+
+  const resetBoth = ()=>{
+    // Ресет игрока
+    P.hp=100; P.stamina=P.stamMax; P.rage=0;
+    P.exhausted=0; P.unbalanced=0; P.vx=0; P.vy=0;
+    P.x=W*0.15; P.y=H*0.8;
+    // Ресет бота
+    if(dummyOn){
+      D.hp=100; D.stamina=0; D.rage=0;
+      D._hadExhaustion=false; D.exhausted=0; D.unbalanced=0; D.vx=0; D.vy=0;
+      D.x=W*0.8; D.y=H*0.2;
+      assignRandomSkin(D); // новая случайная вариация скина/оружия после смерти
+    }
+    DEATH.dDead=false; DEATH.pDead=false;
+    DEATH.fadeIn=false; DEATH.text='';
+  };
+
+  if(isBot){
+    DEATH.dDead = true;
+    DEATH.text = '🏆 ПОБЕДА!';
+    DEATH.textCol = '#ffdd44';
+    playSound('whooshRage');
+    setTimeout(resetBoth, 2000);
+  } else {
+    DEATH.pDead = true;
+    DEATH.text = '💀 ПОРАЖЕНИЕ';
+    DEATH.textCol = '#ff6060';
+    setTimeout(resetBoth, 2000);
+  }
+}
+
+function drawDeathCrosses(){
+  // Затемнение + текст победы/поражения
+  if(DEATH.fadeIn || DEATH.fadeAlpha > 0){
+    if(DEATH.fadeIn) DEATH.fadeAlpha = Math.min(0.78, DEATH.fadeAlpha + 0.022);
+    else DEATH.fadeAlpha = Math.max(0, DEATH.fadeAlpha - 0.03);
+    ctx.fillStyle = `rgba(0,0,0,${DEATH.fadeAlpha})`;
+    ctx.fillRect(0, 0, W, H);
+    // Жирный текст по центру
+    if(DEATH.text && DEATH.fadeAlpha > 0.3){
+      const textAlpha = Math.min(1, (DEATH.fadeAlpha-0.3)/0.4);
+      ctx.save();
+      ctx.globalAlpha = textAlpha;
+      ctx.font = 'bold 72px Oswald, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.shadowColor = DEATH.textCol;
+      ctx.shadowBlur = 30;
+      ctx.fillStyle = DEATH.textCol;
+      ctx.fillText(DEATH.text, W/2, H/2);
+      ctx.restore();
+    }
+  }
+  for(const dc of DEATH.deathCross){
+    ctx.save();
+    ctx.globalAlpha = Math.min(1, dc.timer/2.0);
+    ctx.strokeStyle='#cc2020'; ctx.lineWidth=3;
+    ctx.beginPath(); ctx.moveTo(dc.x-12,dc.y-12); ctx.lineTo(dc.x+12,dc.y+12); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(dc.x+12,dc.y-12); ctx.lineTo(dc.x-12,dc.y+12); ctx.stroke();
+    ctx.restore();
+  }
+}
+
+// Оранжевая кнопка — переключение блок-отбрасывания
+let blockKnockOn = false;
+
+// ── КЛАЦ: отскок мечей ────────────────────────────────────────────────────────
+function doClash(entA, entB, mx, my, strongSwing){
+  const ang = Math.atan2(entB.y - entA.y, entB.x - entA.x);
+  // Определяем кто атакующий (у кого больше atkPts)
+  const atkr = entA.isAttacker ? entA : entB;
+  const defr = entA.isAttacker ? entB : entA;
+  // Отклонение лезвия защищающегося: 5-30° в зависимости от силы удара (vel атакующего)
+  const atkForce = Math.abs(atkr.vel);
+  const deflectDeg = Math.min(sv('deflectMax'), sv('deflectMin') + atkForce * 20);
+  const deflectRad = deflectDeg * Math.PI / 180;
+  // Направление отклонения — в сторону от атакующего
+  const deflectDir = Math.sign(angDiff(defr.angle, atkr.angle)) * -1;
+  defr.angle += deflectDir * deflectRad; // полный импульс угла
+  defr.vel += deflectDir * deflectRad * 4;  // угловая скорость — сильная
+
+  entA.vel = clamp(entA.vel * 0.2 - 2.5, -8, 8);
+  entB.vel = clamp(entB.vel * 0.2 + 2.5, -8, 8);
+
+  // Отталкивание персонажей (push)
+  const push = Math.min(sv('bladeKB') * 1.5, 8); // клампируем макс импульс
+  if(push > 0){
+    entA.vx -= Math.cos(ang)*push; entA.vy -= Math.sin(ang)*push;
+    entB.vx += Math.cos(ang)*push; entB.vy += Math.sin(ang)*push;
+  }
+
+  // Блок-отбрасывание если включено
+  if(blockKnockOn){
+    const bkb = sv('blockKB');
+    // Атакованный (defender) летит ОТ атакующего
+    const atkr = entA.isAttacker ? entA : entB;
+    const defr = entA.isAttacker ? entB : entA;
+    const bkAng = Math.atan2(defr.y-atkr.y, defr.x-atkr.x);
+    defr.vx += Math.cos(bkAng)*bkb*0.5; defr.vy += Math.sin(bkAng)*bkb*0.5;
+  }
+
+  // Эффект: молния + КЛАЦ
+  hitFX.push({x:mx, y:my-4, t:'⚡', life:12, big:true, col:'#ffffff'});
+  hitFX.push({x:mx, y:my+14, t:'КЛАЦ!', life:35, big:false, col:'#ccccaa'});
+  // strongSwing передаётся как параметр
+  if(strongSwing && Math.random() < 0.04) spawnFX('flash', mx, my);
+  // Cross FX только при настоящем замахе
+  if(strongSwing){
+    spawnFX('cross', mx, my);
+  }
+  // Замедление обоих при блоке
+  const sld = sv('blockSlowDur');
+  if(sld > 0){
+    entA._blockSlow = GameTime + sld;
+    entB._blockSlow = GameTime + sld;
+  }
+  // Отключаем детект замаха на 0.25 сек (блок резко отклоняет меч)
+  entA._swingBlockCD = GameTime + 0.25;
+  entB._swingBlockCD = GameTime + 0.25;
+}
+
+function update(dt){
+  if(DEATH.pDead) return; // мертв — нет обновления
+  // --- движение рута ---
+  let mx=0, my=0;
+  if(keys['a']||keys['ф']) mx=-1; if(keys['d']||keys['в']) mx=1;
+  if(keys['w']||keys['ц']) my=-1; if(keys['s']||keys['ы']) my=1;
+  if(mx||my){ const l=Math.hypot(mx,my); mx/=l; my/=l; }
+  // Восстановление стамины
+  if(P.exhausted > 0){
+    P.exhausted = Math.max(0, P.exhausted - rawDt); // реальное время
+    if(P.exhausted <= 0){
+      // Мгновенное восстановление стамины после усталости
+      P.stamina = P.stamMax;
+      P._swingBlockCD = GameTime + 1.0;
+      P._exhaustedEndTime = GameTime + 0.3; // небольшая пауза перед обычным реген
+    }
+    // стамина не восстанавливается во время усталости
+  } else if((P._exhaustedEndTime||0) <= GameTime && !mDown){
+    // При зажатом ЛКМ стамина не восстанавливается
+    P.stamina = Math.min(P.stamMax, P.stamina + dt*P.stamRegen);
+  }
+  if(P.unbalanced > 0) P.unbalanced = Math.max(0, P.unbalanced-rawDt);
+
+  const inRageBuff = P.rageBuffEnd > GameTime;
+
+  // ── БАФФ ЯРОСТИ: пока ЛКМ зажата тратит 30/сек, продлевает бафф ──────
+  if(inRageBuff && mDown){
+    P.rage = Math.max(0, P.rage - 30 * dt);
+    if(P.rage > 0) P.rageBuffEnd = Math.max(P.rageBuffEnd, GameTime + 0.1);
+  }
+
+  // ── ЛКМ: активация баффа СРАЗУ при нажатии, текст через 0.5 сек ──────
+  if(P.exhausted > 0 && mDown){
+    // Усталость: ЛКМ принудительно отжимается
+    mDown = false; // переопределяем локально (не меняет реальное состояние мыши)
+  }
+  if(mDown){
+    if(!P.lmbWasDown){
+      P.lmbWasDown = true;
+      P.lmbHoldStart = GameTime;
+      if(!inRageBuff){
+        if(P.rage >= 30 && P.stamina >= 50){
+          // Есть ярость — активируем бафф, стамина НЕ тратится
+          P.rage = Math.max(0, P.rage - 30);
+          P.rageBuffEnd = GameTime + 1.0;
+          P._rageTextShown = false;
+          playSound('rage');
+        } else {
+          // Нет ярости — снять 50% стамины
+          P.stamina = Math.max(0, P.stamina - P.stamMax * 0.5);
+        }
+      }
+    }
+    // Текст "ЯРОСТЬ!" появляется при удержании 0.5 сек
+    if(inRageBuff && !P._rageTextShown && (GameTime - (P.lmbHoldStart||0)) >= 0.5){
+      P._rageTextShown = true;
+      hitFX.push({x:W/2,y:H/2-50,t:'🔥 ЯРОСТЬ!',life:40,big:true,col:'#ff2020'});
+    }
+    if(!inRageBuff && P.stamina > 0){
+      P.stamina = Math.max(0, P.stamina - sv('lmbdrain') * dt * 0.5);
+    }
+  } else {
+    P.lmbWasDown = false;
+    P.lmbHoldStart = -1;
+  }
+
+  // Усталость при стамина=0 (только если нет баффа)
+  if(P.stamina <= 0 && P.exhausted <= 0 && !inRageBuff && (P._exhaustedEndTime||0) <= GameTime){
+    P.stamina = 0;
+    P.exhausted = P.exhaustDur;
+    P._exhaustedEndTime = GameTime + P.exhaustDur + P.exhaustRegenDelay;
+    playSound('exhaust');
+  }
+
+  const exhMult = P.exhausted>0 ? sv('exhspd2') : 1;
+  const unbMult = P.unbalanced>0 ? 0.3 : 1;
+  const blockSlowMult = (P._blockSlow||0) > GameTime ? sv('blockSlowMult') : 1;
+  const pSpeedMult = exhMult * unbMult * blockSlowMult;
+  const heatSpeedBoost2 = P._hotBladeActive ? (1.0 + (P._heat||0)*sv('heatboost')) : 1.0;
+  const maxV = 7 * pSpeedMult * sv('globalspd') * heatSpeedBoost2;
+
+  // Меч сзади = меньше сопротивление → скорость 1.0, спереди = 0.7
+  // Реальное смещение за тик (не скорость, а факт движения — игнорирует стену)
+  const realMove = Math.hypot(P.x - (P._prevX||P.x), P.y - (P._prevY||P.y));
+  P._prevX = P.x; P._prevY = P.y;
+  const actuallyMoving = realMove > 0.08; // двигается только если реально сместился
+
+  const actualSpd = Math.hypot(P.vx, P.vy);
+  let swordBackMult = 1.0;
+  let swordIsBehind = false;
+  if(actuallyMoving){
+    const moveAng = Math.atan2(P.vy, P.vx);
+    const swordRelAng = Math.abs(angDiff(P.angle, moveAng));
+    // ±15° от строго сзади = угол > 165°
+    swordIsBehind = swordRelAng > Math.PI * 0.917;
+    // меч сзади: скорость немного выше чем при мече спереди (не полный 1.0)
+    const backBoost = sv('swordback') + (1.0 - sv('swordback')) / 3.0;
+    swordBackMult = swordRelAng > Math.PI * 0.6 ? backBoost : sv('swordback');
+  }
+
+  const heatVal = P._heat || 0;
+
+  // ── РАСКАЛЁННЫЙ КЛИНОК ───────────────────────────────────────────────────
+  // Не греться если движемся ОТ последнего врага
+  let movingAwayFromEnemy = false;
+  if(P._lastHitEnemy && actuallyMoving){
+    const eC = entityBodyCenter(P._lastHitEnemy);
+    const rc0 = rootCenter();
+    const angToEnemy = Math.atan2(eC.y-rc0.y, eC.x-rc0.x);
+    const angMove = Math.atan2(P.vy, P.vx);
+    // Движемся прочь от врага если угол движения близок к направлению "от врага"
+    const awayAng = angToEnemy + Math.PI;
+    movingAwayFromEnemy = Math.abs(angDiff(angMove, awayAng)) < Math.PI * 0.5;
+  }
+
+  if(swordIsBehind && actuallyMoving && !movingAwayFromEnemy && document.getElementById('cb-noheat').checked){
+    if(!P._heatStart) P._heatStart = GameTime;
+    P._heatHoldEnd = -1; // сбрасываем таймер удержания при активном нагреве
+    P._heat = Math.min(1, (GameTime - P._heatStart) / sv('heatrate'));
+    if(P._heat >= 1 && !P._heatBuff){
+      P._heatBuff = true;
+      if(P.rageBuffEnd <= GameTime){
+        P._hotBladeActive = true;
+        hitFX.push({x: rootCenter().x + P.pvX, y: rootCenter().y + P.pvY - 20,
+                    t:'🔥 КЛИНОК!', life:45, big:false, col:'#ff6020'});
+      }
+    }
+  } else {
+    // Не греется — запускаем таймер удержания ОДИН РАЗ
+    if(P._heatStart !== null){
+      // Переход в "не греется" — ставим таймер
+      P._heatHoldEnd = GameTime + 2.0;
+      P._heatStart = null;
+    }
+    // После истечения таймера — остываем
+    if(P._heatHoldEnd > 0 && GameTime > P._heatHoldEnd){
+      P._heat = Math.max(0, heatVal - dt * 1.2);
+      if(P._heat < 0.05){ P._heatHoldEnd = -1; P._heatBuff = false; P._hotBladeActive = false; }
+    }
+    // Внутри таймера — heat не падает
+  }
+
+  const hasInput = mx !== 0 || my !== 0;
+  if(hasInput){
+    P.vx = lerpDT(P.vx, mx*maxV*swordBackMult, 0.28, dt);
+    P.vy = lerpDT(P.vy, my*maxV*swordBackMult, 0.28, dt);
+  } else {
+    P.vx = decayDT(P.vx, sv('inertia'), dt);
+    P.vy = decayDT(P.vy, sv('inertia'), dt);
+  }
+  P.vx = clamp(P.vx, -15, 15); P.vy = clamp(P.vy, -15, 15);
+  P.x = clamp(P.x + P.vx, 40, W-80);
+  P.y = clamp(P.y + P.vy, 40, H-40);
+  resolveBoxCollision(P);
+
+  // --- оффсет тела: в сторону ПРОТИВОПОЛОЖНУЮ от рута к курсору ---
+  const rc = rootCenter();
+  const dzone = csv('dzone');
+  const rawMouseDist = Math.hypot(mX - rc.x, mY - rc.y);
+  // Мёртвая зона: ограничиваем ДИСТАНЦИЮ (не менее dzone), направление сохраняем
+  let effectiveMX = mX, effectiveMY = mY;
+  if(dzone > 0 && rawMouseDist > 0.1){
+    if(rawMouseDist < dzone){
+      // внутри зоны: выдавливаем на границу, но с плавным сглаживанием
+      // t=0 в центре, t=1 на краю зоны → смешиваем между "на границе" и реальным
+      const t = rawMouseDist / dzone; // 0..1
+      const clampedX = rc.x + (mX - rc.x) / rawMouseDist * dzone;
+      const clampedY = rc.y + (mY - rc.y) / rawMouseDist * dzone;
+      // сглаживание: в центре зоны (t≈0) курсор мягко «залипает» на границе
+      // на краю (t≈1) — почти совпадает с реальным, резкого прыжка нет
+      const smooth = t * t; // easeIn — резче у края, мягче у центра
+      effectiveMX = clampedX; // направление всегда сохраняем (граница)
+      effectiveMY = clampedY;
+      // lerp к effectiveMX по smooth не нужен — мы уже на границе по направлению
+    }
+    // снаружи зоны — используем реальный курсор (уже default)
+  } else if(dzone > 0 && rawMouseDist < 0.1){
+    effectiveMX = rc.x + dzone; effectiveMY = rc.y;
+  }
+
+  // Сглаживание при пересечении рута — интегрируем effectiveMX/MY через lerp
+  // чтобы не было резкого прыжка когда курсор пролетает сквозь центр
+  if(!P._eMX){ P._eMX = effectiveMX; P._eMY = effectiveMY; }
+  // скорость сглаживания: снаружи зоны — быстро (0.35), внутри — медленнее
+  const smoothSpd = rawMouseDist < dzone ? 0.18 : 0.45;
+  P._eMX += (effectiveMX - P._eMX) * smoothSpd;
+  P._eMY += (effectiveMY - P._eMY) * smoothSpd;
+  effectiveMX = P._eMX;
+  effectiveMY = P._eMY;
+  const toCursor = Math.atan2(effectiveMY - rc.y, effectiveMX - rc.x);
+  const oppAng = toCursor + Math.PI;
+  const dist = csv('dist');
+  const mouseDist = Math.hypot(effectiveMX - rc.x, effectiveMY - rc.y);
+  const scaledDist = dist * clamp(mouseDist / 120, 0, 1);
+  P.tbx = Math.cos(oppAng) * scaledDist;
+  P.tby = Math.sin(oppAng) * scaledDist;
+  const bspd = sv('spd') * (P.exhausted > 0 ? sv('exhspd2') : 1);
+  P.bx = lerpDT(P.bx, P.tbx, bspd, dt);
+  P.by = lerpDT(P.by, P.tby, bspd, dt);
+
+  // --- компенсация рута: визуальный рут смещается к телу, физический не трогаем ---
+  // применяется в rootCenter() через P._rcompK
+
+  // --- скейл меча ---
+  const targetScale = mDown ? sv('sc1') : sv('sc0');
+  P.swordScale += (targetScale - P.swordScale) * sv('scs');
+
+  // --- КОМБО пивот (относительно РУТА) ---
+  if(mDown){
+    // атака: эллипс центрирован в руте, ориентирован к манекену
+    // мышь выбирает точку на эллипсе по углу курсора
+    const aex = csv('aex'), aey = csv('aey');
+    const aspd = sv('as');
+    const toD = Math.atan2(D.y - rc.y, D.x - rc.x); // угол к манекену = поворот эллипса
+    const angM = Math.atan2(effectiveMY - rc.y, effectiveMX - rc.x);  // угол мыши = фаза на эллипсе
+    // переводим угол мыши в локальное пространство эллипса
+    const localAng = angM - toD;
+    // точка на эллипсе в локальных координатах
+    const lx = Math.cos(localAng) * aex;
+    const ly = Math.sin(localAng) * aey;
+    // поворачиваем обратно в мировые координаты
+    const cosD = Math.cos(toD), sinD = Math.sin(toD);
+    const tx = lx*cosD - ly*sinD;
+    const ty = lx*sinD + ly*cosD;
+    P.tpX = lerpDT(P.tpX, tx, aspd, dt);
+    P.tpY = lerpDT(P.tpY, ty, aspd, dt);
+  } else {
+    // блок: инверсный эллипс от рута к курсору (вне зоны автоблока)
+    const ang = Math.atan2(effectiveMY - rc.y, effectiveMX - rc.x);
+    const inv = ang + Math.PI;
+
+    // ── Адаптивный X: пики 12 и 6 часов → max, бока 3/9 → база ──
+    const adaXon = document.getElementById('cb-adaX').checked;
+    let ex;
+    if(adaXon){
+      const xBase = csv('adaXb');
+      const xPeak = csv('adaXp');
+      // sin(ang): 12ч=-1 (пик), 6ч=+1 (пик), 3/9ч=0 (база)
+      // t = sin²(ang): 1 на 12 и 6 ч, 0 на 3/9 ч
+      const t = Math.sin(ang) * Math.sin(ang);
+      ex = xBase + (xPeak - xBase) * t;
+    } else {
+      ex = csv('ex');
+    }
+
+    // ── Адаптивный Y вверх (12 ч) ──
+    const adaYon = document.getElementById('cb-adaY').checked;
+    const adaDon = document.getElementById('cb-adaD').checked;
+    const ada12on = document.getElementById('cb-ada12').checked;
+    let eyOffset = 0;
+    if(adaYon){
+      const t = clamp(-Math.sin(ang), 0, 1); // 12ч=1, бока=0
+      eyOffset -= t * csv('adaY');
+    }
+    // ── Адаптивный Y вниз (6 ч) ──
+    if(adaDon){
+      const ang6 = ang - Math.PI/2; // 6ч → 0
+      const tc = Math.cos(ang6);
+      const tDown = clamp(tc * tc * (tc > 0 ? 1 : 0), 0, 1);
+      eyOffset += tDown * csv('adaD');
+    }
+    // ── Смещение пивота вниз на 11-12-1 ч ──
+    // 12ч → max (t=1), 10.5 и 1.5ч → 0 (зона ±45° от 12ч = ±π/4)
+    let pivDownOffset = 0;
+    if(ada12on){
+      // 12ч: ang ≈ -π/2. Расстояние от -π/2:
+      const ang12 = ang + Math.PI/2; // нормируем к 0 на 12ч
+      // зона ±45° = ±π/4
+      const t12 = clamp(Math.cos(ang12 * 2), 0, 1); // cos(0)=1 на 12ч, cos(π/2)=0 на 10.5/1.5ч
+      pivDownOffset = t12 * csv('ada12');
+    }
+
+    const ey = csv('ey');
+    const tx = Math.cos(inv) * ex;
+    const ty = Math.sin(inv) * ey + eyOffset + pivDownOffset;
+    P.tpX = lerpDT(P.tpX, tx, sv('blk'), dt);
+    P.tpY = lerpDT(P.tpY, ty, sv('blk'), dt);
+  }
+  // Применяем tpX→pvX только если автоблок не активен
+  // (во время автоблока пивот управляется отдельно)
+  if(!P._abActive){
+    P.pvX += (P.tpX - P.pvX) * 0.35; // плавно возвращаемся к tpX когда не в автоблоке
+    P.pvY += (P.tpY - P.pvY) * 0.35;
+  }
+
+  // --- АВТОБЛОК AI ---
+  const aiabOn = document.getElementById('cb-aiab').checked;
+  const aiRad = sv('airad');
+  const aiSpd = sv('aispd');
+  const aiCD = sv('aicd');
+  const swScaleAI = P.swordScale * sv('swlen');
+  // Центр лезвия (середина меча) — от него считаем радиус автоблока
+  const swordCX = (rc.x + P.pvX) + Math.cos(P.angle) * SWORD_LEN * swScaleAI * 0.5;
+  const swordCY = (rc.y + P.pvY) + Math.sin(P.angle) * SWORD_LEN * swScaleAI * 0.5;
+
+  // КД: обратный отсчёт (инициализируем если undefined)
+  if(P._abCD === undefined) P._abCD = 0;
+  if(P._abCD > 0) P._abCD = Math.max(0, P._abCD - dt);
+
+  // Сброс автоблока: цель ударена ИЛИ уже не существует в массиве
+  if(P._abActive && P._abTarget){
+    const stillAlive = BALLS.includes(P._abTarget);
+    if(!stillAlive || P._abTarget.hit > 0){
+      P._abActive = false;
+      P._abTarget = null;
+      P._abCD = aiCD;
+    }
+  }
+
+  if(aiabOn && !mDown && !P._abActive && P._abCD <= 0){
+    let closest = null, closestDist = aiRad;
+    for(const b of BALLS){
+      if(b.hit > 0) continue;
+      const d = Math.hypot(b.x - swordCX, b.y - swordCY);
+      const futureX = b.x + b.vx * 10, futureY = b.y + b.vy * 10;
+      const futureD = Math.hypot(futureX - swordCX, futureY - swordCY);
+      if(d < closestDist && futureD < d){
+        closest = b; closestDist = d;
+      }
+    }
+    if(closest){
+      P._abActive = true;
+      P._abTarget = closest;
+      // ── ОДИН РАЗ вычисляем целевую точку пивота: вдоль/поперёк лезвия
+      // в направлении снаряда
+      const aipvd = sv('aipvd') * sv('cscl');
+      const aipvp = sv('aipvp') * sv('cscl');
+      const angToBall = Math.atan2(closest.y - rc.y, closest.x - rc.x);
+      // проецируем желаемое смещение (aipvd вдоль, aipvp поперёк) на направление к снаряду
+      // вдоль лезвия и поперёк — но ориентируемся на угол К снаряду, не на угол меча
+      const tgtPvX = Math.cos(angToBall) * aipvd + Math.cos(angToBall + Math.PI/2) * aipvp;
+      const tgtPvY = Math.sin(angToBall) * aipvd + Math.sin(angToBall + Math.PI/2) * aipvp;
+      P._abPivTarget = { x: tgtPvX, y: tgtPvY }; // фиксируем навсегда до сброса
+      // слабый импульс назад при детекте автоблока
+      const aikb = sv('bodyKB') * 0.3;
+      if(aikb > 0){
+        const backAng = angToBall + Math.PI;
+        P.vx += Math.cos(backAng) * aikb * 0.3;
+        P.vy += Math.sin(backAng) * aikb * 0.3;
+      }
+    }
+  }
+
+  // --- угол меча ---
+  // Детект орбиты меча
+  if(updateOrbitDetect(P.angle, rawDt) && P.exhausted <= 0){
+    P.stamina = Math.max(0, P.stamina - sv('stamorbit'));
+    if(P.stamina <= 0 && P.exhausted <= 0) P.exhausted = sv('exhdur2');
+    hitFX.push({x: rc.x + P.pvX, y: rc.y + P.pvY - 30, t:'🌀 ОРБИТА', life:35, big:false, col:'#ff8840'});
+    playSound('whoosh');
+  }
+
+  const pivX = rc.x + P.pvX;
+  const pivY = rc.y + P.pvY;
+  const arad = 0;
+  const abrad = 0;
+  const abspd = 0.22;
+  const abMaxOff = 60 * Math.PI / 180;
+
+  // Расстояние ЭФФЕКТИВНОГО курсора от рута (с учётом мёртвой зоны)
+  const cursorDistFromRoot = Math.hypot(effectiveMX - rc.x, effectiveMY - rc.y);
+  const inAutoBlock = !mDown && abrad > 1 && cursorDistFromRoot < abrad;
+
+  let ta;
+  if(inAutoBlock){
+    // ── ВНУТРИ КРУГА: та же логика что ЛКМ (атака к манекену) ────────────
+    const aex = 26, aey = 40;
+    const abOxo = 0, abOyo = 0;
+    const aspd = 0.22;
+    // ориентация эллипса — к манекену (как ЛКМ)
+    const toD = Math.atan2(D.y - rc.y, D.x - rc.x);
+    const angM = Math.atan2(effectiveMY - rc.y, effectiveMX - rc.x);
+    const localAng = angM - toD;
+    const lx = Math.cos(localAng) * aex;
+    const ly = Math.sin(localAng) * aey;
+    const cosD = Math.cos(toD), sinD = Math.sin(toD);
+    const tx = lx*cosD - ly*sinD + abOxo;
+    const ty = lx*sinD + ly*cosD + abOyo;
+    P.tpX = lerpDT(P.tpX, tx, aspd, dt);
+    P.tpY = lerpDT(P.tpY, ty, aspd, dt);
+    P.pvX = P.tpX;
+    P.pvY = P.tpY;
+
+    // Дальность тела внутри круга (ползунок abN)
+    const angToCursor = Math.atan2(effectiveMY - rc.y, effectiveMX - rc.x);
+    const abBodyDist = 45;
+    const oppAB = angToCursor + Math.PI;
+    P.tbx = Math.cos(oppAB) * abBodyDist;
+    P.tby = Math.sin(oppAB) * abBodyDist;
+    P.bx += (P.tbx - P.bx) * sv('spd');
+    P.by += (P.tby - P.by) * sv('spd');
+
+    // Угол меча — к манекену (как ЛКМ)
+    ta = Math.atan2(mY - (rc.y + P.pvY), mX - (rc.x + P.pvX));
+    P.vel = P.vel*0.6 + angDiff(ta, P.angle)*0.4;
+    P.angle = angLerpDT(P.angle, ta, aspd * (P.exhausted>0?sv('exhswd2'):1), dt);
+    P._inABang = angToCursor;
+  } else if(arad > 1){
+    // Виртуальный прицел (кольцо)
+    const dmx = mX - P._pmX, dmy = mY - P._pmY;
+    P._vcX += dmx; P._vcY += dmy;
+    const vd = Math.hypot(P._vcX, P._vcY) || 0.001;
+    if(vd > arad){ P._vcX = P._vcX/vd*arad; P._vcY = P._vcY/vd*arad; }
+    ta = Math.atan2(P._vcY, P._vcX);
+    P.vel = P.vel*0.6 + angDiff(ta, P.angle)*0.4;
+    P.angle += angDiff(ta, P.angle) * 0.28;
+  } else {
+    ta = Math.atan2(effectiveMY - pivY, effectiveMX - pivX);
+    const pSwordSpd = P.unbalanced>0 ? 0 : (P.exhausted>0 ? sv('exhswd2') : 0.28);
+    P.vel = P.vel * 0.6 + angDiff(ta, P.angle) * 0.4;
+    if(P.unbalanced > 0){
+      const unbBack = P.unbAngle + Math.PI;
+      P.vel *= 0.88;
+      P.angle += angDiff(unbBack, P.angle) * 0.06;
+    } else {
+      // Используем pSwordSpd — при усталости он равен sv('exhswd2') ≈ 0.6 от 0.28
+      P.angle += angDiff(ta, P.angle) * pSwordSpd;
+      // Дополнительно гасим угловую скорость при усталости
+      if(P.exhausted > 0) P.vel *= sv('exhswd2');
+    }
+  }
+
+  P._pmX = mX; P._pmY = mY;
+  P._inAutoBlock = inAutoBlock;
+
+  // Замах: надпись + трата стамины с делеем 1 сек
+  if(!P._swingCD) P._swingCD = -1;
+  // Детект флик-замаха (добавляет к стандартному vel-замаху)
+  const flickAngle = Math.atan2(effectiveMY - rc.y, effectiveMX - rc.x);
+  if(updateFlickDetect(flickAngle, rawDt) && (P._swingBlockCD||0) < GameTime && P.exhausted <= 0){
+    P.stamina = Math.max(0, P.stamina - sv('stamflick'));
+    if(P.stamina <= 0 && P.exhausted <= 0) P.exhausted = sv('exhdur2');
+    P._swingBlockCD = GameTime + 0.15;
+    hitFX.push({x: rc.x + P.pvX, y: rc.y + P.pvY - 25, t:'⚡ ФЛИК', life:30, big:false, col:'#ffaa20'});
+    playSound('whoosh');
+  }
+
+  if(Math.abs(P.vel) > sv('swthresh') && (P._swingBlockCD||0) < GameTime && P.exhausted <= 0){
+    if(!P._swingFX){
+      P._swingFX = true;
+      const rc0 = rootCenter();
+      hitFX.push({x: rc0.x + P.pvX, y: rc0.y + P.pvY - 30, t:'⚔ ЗАМАХ', life:35, big:false, col:'#ffcc44'});
+      if(P.rageBuffEnd>GameTime) playSound('whooshRage'); else playSound('whoosh');
+      // BladeBind: срабатывает только на удар с зажатым ЛКМ (не на воздушное кручение)
+      if(document.getElementById('cb-bbind').checked && mDown) bladeBind_checkSwing(P);
+    }
+    if(P._swingCD <= GameTime){
+      P.stamina = Math.max(0, P.stamina - sv('stamswing'));
+      P._swingCD = GameTime + 1.0;
+      if(P.stamina <= 0 && P.exhausted <= 0) P.exhausted = sv('exhdur2');
+    }
+  } else {
+    P._swingFX = false;
+  }
+
+  // Автоблок AI: lerp к заранее зафиксированной точке пивота
+  if(P._abActive && P._abPivTarget){
+    P.pvX = lerpDT(P.pvX, P._abPivTarget.x, aiSpd, dt);
+    P.pvY = lerpDT(P.pvY, P._abPivTarget.y, aiSpd, dt);
+  }
+
+  // --- детект попадания шарика в тело игрока ---
+  {
+    const rc0 = rootCenter();
+    const bodyCX = rc0.x + P.bx;
+    const bodyCY = rc0.y + P.by;
+    const BODY_HIT_R = 18 * sv('cscl');
+    for(let i = BALLS.length-1; i >= 0; i--){
+      const b = BALLS[i];
+      if(b.hit > 0) continue; // уже отбит мечом
+      const d = Math.hypot(b.x - bodyCX, b.y - bodyCY);
+      if(d < BODY_HIT_R + b.r && (P._ballHitCD||0) <= GameTime){
+        P._ballHitCD = GameTime + 0.5;
+        const dmg = Math.round(Math.hypot(b.vx, b.vy) * 4);
+        P.hp = Math.max(0, P.hp - dmg);
+        P.hitFlash = GameTime + 0.25;
+        hitFX.push({x: bodyCX, y: bodyCY - 20, t: '-'+dmg+'HP', life:45, big:true});
+        const nx = (bodyCX - b.x)/(d||1), ny = (bodyCY - b.y)/(d||1);
+        const kbf = sv('bodyKB') * 0.5;
+        P.vx += nx * kbf; P.vy += ny * kbf;
+        spawnBlood(bodyCX, bodyCY, -nx, -ny);
+        b.vx = nx * 3; b.vy = ny * 3 - 1;
+        b.hit = 30;
+        BALLS.splice(i, 1);
+        if(P.hp <= 0){ triggerDeath(P, false); }
+      }
+    }
+  } // end ball hit block
+  // --- HUD ---
+  document.getElementById('inf-root').textContent = `${Math.round(rc.x)},${Math.round(rc.y)}`;
+  document.getElementById('inf-boff').textContent = `${P.bx.toFixed(1)},${P.by.toFixed(1)}`;
+  document.getElementById('inf-piv').textContent = `${P.pvX.toFixed(0)},${P.pvY.toFixed(0)}`;
+  document.getElementById('inf-ang').textContent = Math.round(P.angle*180/Math.PI)+'°';
+  document.getElementById('adisplay').textContent =
+    `рут:(${Math.round(rc.x)},${Math.round(rc.y)}) | тело_δ:(${P.bx.toFixed(0)},${P.by.toFixed(0)}) | пивот:(${P.pvX.toFixed(0)},${P.pvY.toFixed(0)}) | ${Math.round(P.angle*180/Math.PI)}°`;
+}
+
+// ── РИСОВАНИЕ ───────────────────────────────────────────────────────────────
+// Offscreen canvas для статичного фона арены
+let arenaCanvas = null, arenaCtx = null, arenaDirty = true;
+let arenaBgImg = null; // фон, загружаемый из файла (см. ARENA_BG_FOLDER)
+
+const ARENA_BG_FOLDER = 'Source/Background/';
+// SPRITE_LISTS.background заполняется в loadAudioDB (см. MODULE: SPRITES)
+
+function pickArenaBackground(){
+  const url = pickRandomSprite('background');
+  if(!url) return;
+  arenaBgImg = loadSpriteImage(url);
+  arenaBgImg.addEventListener('load', ()=>{ arenaDirty = true; }, {once:true});
+}
+
+function buildArena(){
+  arenaCanvas = document.createElement('canvas');
+  arenaCanvas.width  = W;
+  arenaCanvas.height = H;
+  arenaCtx = arenaCanvas.getContext('2d');
+  const ac = arenaCtx;
+
+  // Базовый фон: картинка из файла (если загружена) или сплошной цвет.
+  // bgbright: 0..5. На 0 — тёмный (как раньше #080b10), на 5 — светлый "бумажный".
+  // Интерполяция между тёмным и бумажным цветом по t=bgbright/5.
+  const bgbright = sv('bgbright');
+  const t = clamp(bgbright / 5, 0, 1);
+  const darkR=8,  darkG=11, darkB=16;   // #080b10
+  const paperR=240, paperG=232, paperB=216; // тёплый "бумажный" оттенок
+  const bgR = Math.round(darkR + (paperR-darkR)*t);
+  const bgG = Math.round(darkG + (paperG-darkG)*t);
+  const bgB = Math.round(darkB + (paperB-darkB)*t);
+
+  if(arenaBgImg && arenaBgImg.complete && arenaBgImg.naturalWidth > 0){
+    ac.save();
+    // brightness-фильтр для картинки: 0..5 -> 0..~1.6 (не делаем совсем белым)
+    const imgBrightness = 0.3 + t * 1.3;
+    ac.filter = `brightness(${imgBrightness})`;
+    const ir = arenaBgImg.naturalWidth / arenaBgImg.naturalHeight;
+    const cr = W / H;
+    let dw, dh, dx, dy;
+    if(ir > cr){ dh = H; dw = H*ir; dx = (W-dw)/2; dy = 0; }
+    else { dw = W; dh = W/ir; dx = 0; dy = (H-dh)/2; }
+    ac.drawImage(arenaBgImg, dx, dy, dw, dh);
+    ac.restore();
+  } else {
+    ac.fillStyle = `rgb(${bgR},${bgG},${bgB})`;
+    ac.fillRect(0,0,W,H);
+  }
+
+  // Сетка — отдельный ползунок яркости/прозрачности
+  const gridBright = sv('gridbright');
+  // На светлом фоне сетка должна быть тёмной, на тёмном — светлой.
+  // Берём контрастный к фону цвет линий, прозрачность зависит от gridBright.
+  const gridAlpha = Math.min(1, 0.3 * gridBright);
+  let gridR, gridG, gridB;
+  if(t < 0.5){
+    // тёмный фон -> светло-голубая сетка (как раньше)
+    gridR=20; gridG=44; gridB=66;
+  } else {
+    // светлый/бумажный фон -> тёмная сетка
+    gridR=90; gridG=80; gridB=60;
+  }
+  ac.strokeStyle=`rgba(${Math.min(255,Math.round(gridR*gridBright))},${Math.min(255,Math.round(gridG*gridBright))},${Math.min(255,Math.round(gridB*gridBright))},${gridAlpha})`;
+  ac.lineWidth=1;
+  for(let x=0;x<W;x+=55){ ac.beginPath(); ac.moveTo(x,0); ac.lineTo(x,H); ac.stroke(); }
+  for(let y=0;y<H;y+=55){ ac.beginPath(); ac.moveTo(0,y); ac.lineTo(W,y); ac.stroke(); }
+
+  // Виньетка по краям (затемнение) — оставляем как было
+  const v=ac.createRadialGradient(W/2,H/2,H*0.2,W/2,H/2,H*0.85);
+  v.addColorStop(0,'transparent'); v.addColorStop(1,'rgba(0,0,0,0.55)');
+  ac.fillStyle=v; ac.fillRect(0,0,W,H);
+
+  arenaDirty = false;
+}
+
+function drawArena(){
+  if(arenaDirty || !arenaCanvas) buildArena();
+  ctx.drawImage(arenaCanvas, 0, 0);
+}
+
+// ── UPDATE DUMMY (AI Entity) ─────────────────────────────────────────────────
+function updateDummy(dt){
+  if(!dummyOn) return;
+  const fk = AI._fakeKeys;
+  const fmX = AI._fakeMX, fmY = AI._fakeMY;
+  const fDown = AI._fakeMDown;
+
+  // Состояния: усталость и дисбаланс
+  const exhMult = D.exhausted > 0 ? D.exhaustSpd : 1;
+  const unbMult = D.unbalanced > 0 ? 0.3 : 1;
+  const speedMult = exhMult * unbMult;
+  if(D.exhausted > 0){
+    D.exhausted = Math.max(0, D.exhausted - rawDt);
+    D._hadExhaustion = true; // разблокируем восстановление стамины
+  }
+  if(D.unbalanced > 0) D.unbalanced = Math.max(0, D.unbalanced - rawDt);
+  // Стамина восстанавливается ТОЛЬКО после усталости — мгновенно
+  if(D._hadExhaustion && D.exhausted <= 0 && D.stamina < D.stamMax){
+    D.stamina = D.stamMax; // мгновенное восстановление
+    D._hadExhaustion = false; // сбрасываем флаг до следующей усталости
+  }
+
+  // Движение
+  let mx=0, my=0;
+  if(fk.a) mx=-1; if(fk.d) mx=1;
+  if(fk.w) my=-1; if(fk.s) my=1;
+  if(mx||my){ const l=Math.hypot(mx,my); mx/=l; my/=l; }
+  const retreatScale = AI._retreatMode ? 0.6 : 1.0;
+  const dbBlockSlow = (D._blockSlow||0) > GameTime ? sv('blockSlowMult') : 1;
+  const maxV = 7 * sv('botspd') * speedMult * retreatScale * dbBlockSlow * sv('globalspd');
+  if(mx || my){
+    D.vx = lerpDT(D.vx, mx*maxV, 0.22, dt);
+    D.vy = lerpDT(D.vy, my*maxV, 0.22, dt);
+  } else {
+    D.vx = decayDT(D.vx, sv('inertia'), dt);
+    D.vy = decayDT(D.vy, sv('inertia'), dt);
+  }
+  D.vx = clamp(D.vx, -15, 15); D.vy = clamp(D.vy, -15, 15);
+  D.x = clamp(D.x + D.vx, 40, W-80);
+  D.y = clamp(D.y + D.vy, 40, H-40);
+  resolveBoxCollision(D);
+
+  // Рут бота (без компенсации — у бота её нет)
+  const drc = { x: D.x + 5, y: D.y - 8 }; // чистый рут, как rootCenter() для игрока
+  const angToFM = Math.atan2(fmY - drc.y, fmX - drc.x);
+  const opp = angToFM + Math.PI;
+  const distV = csv('dist');
+  const fdist = Math.hypot(fmX-drc.x, fmY-drc.y);
+  const scaledDist = distV * clamp(fdist/120,0,1);
+  D.tbx = Math.cos(opp)*scaledDist; D.tby = Math.sin(opp)*scaledDist;
+  D.bx = lerpDT(D.bx, D.tbx, sv('spd'), dt);
+  D.by = lerpDT(D.by, D.tby, sv('spd'), dt);
+
+  // Пивот бота (lerp к tpX/tpY как у игрока)
+  if(!D._abActive){
+    D.pvX += (D.tpX - D.pvX)*0.35;
+    D.pvY += (D.tpY - D.pvY)*0.35;
+  }
+
+  const ang = Math.atan2(fmY - drc.y, fmX - drc.x);
+  const inv = ang + Math.PI;
+  if(!fDown){
+    // те же адаптивные параметры что у игрока
+    const adaXon = document.getElementById('cb-adaX').checked;
+    let dex;
+    if(adaXon){
+      const t = Math.sin(ang)*Math.sin(ang);
+      dex = csv('adaXb') + (csv('adaXp') - csv('adaXb')) * t;
+    } else {
+      dex = csv('ex');
+    }
+    const adaYon = document.getElementById('cb-adaY').checked;
+    const adaDon = document.getElementById('cb-adaD').checked;
+    const ada12on = document.getElementById('cb-ada12').checked;
+    let eyOffset = 0;
+    if(adaYon){ eyOffset -= clamp(-Math.sin(ang),0,1)*csv('adaY'); }
+    if(adaDon){
+      const tc = Math.cos(ang - Math.PI/2);
+      eyOffset += clamp(tc*tc*(tc>0?1:0),0,1)*csv('adaD');
+    }
+    if(ada12on){
+      eyOffset += clamp(Math.cos((ang+Math.PI/2)*2),0,1)*csv('ada12');
+    }
+    const dey = csv('ey');
+    D.tpX += (Math.cos(inv)*dex - D.tpX)*sv('blk');
+    D.tpY += (Math.sin(inv)*dey + eyOffset - D.tpY)*sv('blk');
+  } else {
+    const aex=csv('aex'), aey=csv('aey');
+    D.tpX += (Math.cos(ang)*aex - D.tpX)*sv('as');
+    D.tpY += (Math.sin(ang)*aey - D.tpY)*sv('as');
+  }
+
+  // Угол меча
+  const dpivX = drc.x + D.pvX, dpivY = drc.y + D.pvY;
+  let ta = Math.atan2(fmY - dpivY, fmX - dpivX);
+  const spdMult2 = D.exhausted>0 ? sv('exhswd2') : 1;
+
+  if(D.unbalanced > 0){
+    ta = D.unbAngle + Math.PI;
+    D.vel = decayDT(D.vel, 0.88, dt);
+    D.angle = angLerpDT(D.angle, ta, 0.05, dt);
+  } else {
+    D.vel = decayDT(D.vel, 0.6, dt) + angDiff(ta, D.angle)*0.4;
+    D.angle = angLerpDT(D.angle, ta, 0.28*spdMult2, dt);
+  }
+  D.prevAngle = D.angle;
+}
+
+let boxesOn = false;
+
+function drawBoxes(){
+  if(!boxesOn) return;
+  for(const b of BOXES){
+    // тень
+    ctx.fillStyle='rgba(0,0,0,0.35)';
+    ctx.fillRect(b.x+4, b.y+6, b.w, b.h);
+    // основа ящика
+    ctx.fillStyle='#2a1e10';
+    ctx.fillRect(b.x, b.y, b.w, b.h);
+    // верхняя грань
+    ctx.fillStyle='#4a3218';
+    ctx.fillRect(b.x+2, b.y+2, b.w-4, b.h*0.35);
+    // доски — горизонтальные линии
+    ctx.strokeStyle='#1a1008'; ctx.lineWidth=1;
+    for(let i=1;i<3;i++){
+      const ly = b.y + b.h * i/3;
+      ctx.beginPath(); ctx.moveTo(b.x+2,ly); ctx.lineTo(b.x+b.w-2,ly); ctx.stroke();
+    }
+    // вертикальная полоска по центру
+    ctx.beginPath(); ctx.moveTo(b.x+b.w/2,b.y+2); ctx.lineTo(b.x+b.w/2,b.y+b.h-2); ctx.stroke();
+    // рамка
+    ctx.strokeStyle='#5a3a1a'; ctx.lineWidth=1.5;
+    ctx.strokeRect(b.x, b.y, b.w, b.h);
+    // блик
+    ctx.strokeStyle='rgba(120,80,30,0.25)'; ctx.lineWidth=1;
+    ctx.strokeRect(b.x+2, b.y+2, b.w-4, b.h-4);
+  }
+}
+
+// Рисует тело с body offset (с учётом скейла персонажа)
+function drawPlayer(){
+  drawChar(P, sv('cscl'), '#1e4a72', '#2a6a9a');
+}
+
+
+// Пот при усталости
+function drawSweat(ent){
+  if(ent.exhausted <= 0) return;
+  const bc = entityBodyCenter(ent);
+  const cscl = sv('cscl');
+  if(Math.random() < 0.05){
+    hitFX.push({x: bc.x + (Math.random()-0.5)*16*cscl,
+                y: bc.y - 18*cscl,
+                t: '💧', life: 45 + Math.random()*20, big: false, col:'#88ccff'});
+  }
+}
+
+// Дебаг: показываем рут и линию рут→тело
+function drawRootDebug(){
+  // хит-флеш игрока
+  {
+    if(P.hitFlash > GameTime){
+      const flashAlpha = Math.min(0.35, (P.hitFlash - GameTime) / 0.25 * 0.35);
+      ctx.fillStyle=`rgba(255,40,40,${flashAlpha})`;
+      ctx.fillRect(0,0,W,H);
+    }
+    // предколлайдер автоблока AI
+    const aiabOn2 = document.getElementById('cb-aiab').checked;
+    const aiShowR = document.getElementById('cb-aishow').checked;
+    if(aiabOn2){
+      const aiRad = sv('airad');
+      const swScale2 = P.swordScale * sv('swlen');
+      const rc00 = rootCenter();
+      const sCX = (rc00.x + P.pvX) + Math.cos(P.angle) * SWORD_LEN * swScale2 * 0.5;
+      const sCY = (rc00.y + P.pvY) + Math.sin(P.angle) * SWORD_LEN * swScale2 * 0.5;
+
+      if(aiShowR){
+        const pulse = P._abActive ? (0.45 + 0.15 * Math.sin(Date.now()*0.015)) : 0.18;
+        ctx.strokeStyle = P._abActive ? `rgba(80,255,120,${pulse})` : 'rgba(255,200,40,0.18)';
+        ctx.lineWidth = P._abActive ? 2 : 1;
+        ctx.setLineDash([3,5]);
+        ctx.beginPath(); ctx.arc(sCX, sCY, aiRad, 0, Math.PI*2); ctx.stroke();
+        ctx.setLineDash([]);
+      }
+
+      if(P._abActive){
+        ctx.fillStyle='rgba(80,255,120,0.7)'; ctx.font='bold 9px Share Tech Mono';
+        ctx.fillText('АВТОБЛОК', sCX - 28, sCY - aiRad - 6);
+      }
+
+      // КД дуга (убывает снаружи)
+      const cd = P._abCD || 0;
+      const aiCDmax = sv('aicd');
+      if(cd > 0 && aiCDmax > 0){
+        const prog = clamp(cd / aiCDmax, 0, 1);
+        ctx.strokeStyle = 'rgba(255,140,40,0.5)';
+        ctx.lineWidth = 3; ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.arc(sCX, sCY, (aiShowR ? aiRad : 18) + 6, -Math.PI/2, -Math.PI/2 + prog * Math.PI*2);
+        ctx.stroke();
+        ctx.lineCap = 'butt';
+      }
+    }
+  }
+
+  if(sv('dbg') < 0.5) return;
+  const rc = rootCenter();
+  const bx = rc.x + P.bx;
+  const by = rc.y + P.by;
+
+  // линия рут → тело
+  ctx.strokeStyle='rgba(255,180,0,0.35)'; ctx.lineWidth=1; ctx.setLineDash([3,5]);
+  ctx.beginPath(); ctx.moveTo(rc.x, rc.y); ctx.lineTo(bx, by); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // крестик рута
+  ctx.strokeStyle='rgba(255,180,0,0.7)'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(rc.x-6,rc.y); ctx.lineTo(rc.x+6,rc.y); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(rc.x,rc.y-6); ctx.lineTo(rc.x,rc.y+6); ctx.stroke();
+
+  // надпись
+  ctx.fillStyle='rgba(255,180,0,0.5)'; ctx.font='8px Share Tech Mono';
+  ctx.fillText('РУТ', rc.x+8, rc.y+3);
+}
+
+function drawPivotDebug(pivX, pivY){
+  const rc = rootCenter();
+
+  // линия рут → пивот
+  ctx.strokeStyle='rgba(60,120,180,0.4)'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(rc.x, rc.y); ctx.lineTo(pivX, pivY); ctx.stroke();
+
+  // линия пивот → кончик → курсор
+  const tipX=pivX+Math.cos(P.angle)*SWORD_LEN, tipY=pivY+Math.sin(P.angle)*SWORD_LEN;
+  ctx.strokeStyle='rgba(80,160,220,0.1)'; ctx.lineWidth=1; ctx.setLineDash([2,6]);
+  ctx.beginPath(); ctx.moveTo(tipX,tipY); ctx.lineTo(mX,mY); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // трейл пивота
+  trailPts.push({x:pivX, y:pivY, life:35});
+  if(trailPts.length>55) trailPts.shift();
+  for(let i=0;i<trailPts.length-1;i++){
+    trailPts[i].life--;
+    const a=trailPts[i].life/35;
+    ctx.strokeStyle=`rgba(80,180,255,${a*0.3})`; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(trailPts[i].x,trailPts[i].y); ctx.lineTo(trailPts[i+1].x,trailPts[i+1].y); ctx.stroke();
+  }
+
+  // точка пивота
+  ctx.fillStyle=mDown?'rgba(220,160,80,0.85)':'rgba(100,200,255,0.75)';
+  ctx.beginPath(); ctx.arc(pivX,pivY,4,0,Math.PI*2); ctx.fill();
+
+  // круг автоблока + визуализация наклона лезвия
+  const abrad = 0;
+  if(abrad > 1){
+    const rc2 = rootCenter();
+    const inAB = P._inAutoBlock;
+
+    // внешнее кольцо зоны
+    ctx.strokeStyle = inAB ? 'rgba(80,200,120,0.5)' : 'rgba(60,140,220,0.2)';
+    ctx.lineWidth = inAB ? 2 : 1;
+    ctx.setLineDash([4,6]);
+    ctx.beginPath(); ctx.arc(rc2.x, rc2.y, abrad, 0, Math.PI*2); ctx.stroke();
+    ctx.setLineDash([]);
+
+    if(inAB && P._inABang !== undefined){
+      const angTC = P._inABang;
+      const pivDist2 = 45;
+      const pivX2 = rc2.x + Math.cos(angTC) * pivDist2;
+      const pivY2 = rc2.y + Math.sin(angTC) * pivDist2;
+
+      // линия рут → пивот (направление угрозы)
+      ctx.strokeStyle = 'rgba(80,200,120,0.25)';
+      ctx.lineWidth = 1; ctx.setLineDash([3,5]);
+      ctx.beginPath(); ctx.moveTo(rc2.x, rc2.y); ctx.lineTo(pivX2, pivY2); ctx.stroke();
+      ctx.setLineDash([]);
+
+      // дуга наклона лезвия — показывает диапазон и текущий tilt
+      const tiltNorm = (P._abTilt || 0) / (60 * Math.PI / 180);
+      const arcR = 28;
+      const baseAng = angTC + Math.PI / 2;
+      ctx.strokeStyle = 'rgba(80,200,120,0.18)';
+      ctx.lineWidth = 6; ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.arc(pivX2, pivY2, arcR, baseAng - 60*Math.PI/180, baseAng + 60*Math.PI/180);
+      ctx.stroke();
+      // текущий наклон — яркая точка на дуге
+      ctx.fillStyle = 'rgba(120,255,160,0.9)';
+      ctx.beginPath();
+      ctx.arc(pivX2 + Math.cos(baseAng + (P._abTilt||0)) * arcR,
+              pivY2 + Math.sin(baseAng + (P._abTilt||0)) * arcR, 3, 0, Math.PI*2);
+      ctx.fill();
+      ctx.lineCap = 'butt';
+    }
+
+    // надпись
+    ctx.fillStyle = inAB ? 'rgba(80,200,120,0.6)' : 'rgba(60,140,220,0.35)';
+    ctx.font = '8px Share Tech Mono';
+    ctx.fillText(inAB ? 'АВТОБЛОК' : 'авт.зона', rc2.x - abrad + 4, rc2.y - abrad + 12);
+  }
+
+  // мёртвая зона курсора (красный круг)
+  const dzone = csv('dzone');
+  if(dzone > 1){
+    const rc3 = rootCenter();
+    ctx.strokeStyle='rgba(200,50,50,0.5)';
+    ctx.lineWidth=1.5; ctx.setLineDash([4,4]);
+    ctx.beginPath(); ctx.arc(rc3.x, rc3.y, dzone, 0, Math.PI*2); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle='rgba(200,60,60,0.06)';
+    ctx.beginPath(); ctx.arc(rc3.x, rc3.y, dzone, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle='rgba(200,60,60,0.4)'; ctx.font='8px Share Tech Mono';
+    ctx.fillText('мёртв.зона', rc3.x - dzone + 4, rc3.y - dzone + 12);
+  }
+
+  // круг виртуального прицела (если включён)
+  const arad = 0;
+  if(arad > 1){
+    // серый круг = радиус взмаха меча (минимальный рабочий радиус)
+    ctx.strokeStyle='rgba(100,100,100,0.2)'; ctx.lineWidth=1; ctx.setLineDash([2,8]);
+    ctx.beginPath(); ctx.arc(pivX, pivY, SWORD_LEN, 0, Math.PI*2); ctx.stroke();
+    ctx.setLineDash([]);
+    // оранжевый круг = активный радиус прицела
+    ctx.strokeStyle='rgba(255,140,40,0.35)'; ctx.lineWidth=1; ctx.setLineDash([4,6]);
+    ctx.beginPath(); ctx.arc(pivX, pivY, arad, 0, Math.PI*2); ctx.stroke();
+    ctx.setLineDash([]);
+    // надпись радиуса
+    ctx.fillStyle='rgba(255,140,40,0.4)'; ctx.font='8px Share Tech Mono';
+    ctx.fillText('r='+arad, pivX+arad+4, pivY+3);
+    // виртуальная точка прицела
+    ctx.fillStyle='rgba(255,120,60,0.85)';
+    ctx.beginPath(); ctx.arc(pivX + P._vcX, pivY + P._vcY, 3, 0, Math.PI*2); ctx.fill();
+    // линия пивот → виртуальный прицел
+    ctx.strokeStyle='rgba(255,120,60,0.3)'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(pivX, pivY); ctx.lineTo(pivX+P._vcX, pivY+P._vcY); ctx.stroke();
+  }
+}
+
+// Реальные пропорции PNG: 80×400 (1:5).
+const SWORD_SPRITE_ASPECT = 80 / 400; // width/height в файле
+
+// Спрайт нарисован лезвием ВНИЗ (остриё = низ файла, рукоять = верх файла).
+// Pivot должен быть на рукояти, острие должно смотреть в направлении -Y экрана.
+// drawImage(img, x, y, w, h) с ОТРИЦАТЕЛЬНОЙ h рисует изображение "вверх ногами"
+// относительно точки (x,y) без изменения системы координат — это и нужно:
+// (x, y=0) = верх экрана-картинки = низ файла (остриё) -> но нам нужно низ файла на y=-length.
+// Поэтому: drawImage(img, -w/2, 0, w, -length) кладёt верх файла (рукоять) на y=0 (pivot),
+// низ файла (остриё) на y=-length (остриё-позиция). Именно то что нужно.
+const SWORD_HILT_OFFSET = 0.15; // доля длины — доп.сдвиг pivot вглубь рукояти (0 = без сдвига)
+
+function drawSwordSprite(ctx2, img, length, glowColor, glowBlur){
+  const width = length * SWORD_SPRITE_ASPECT;
+  if(glowColor){ ctx2.shadowColor = glowColor; ctx2.shadowBlur = glowBlur; }
+  const hiltShift = length * SWORD_HILT_OFFSET;
+  // Старый примитив: рукоять y=0, остриё y=+length (НЕ -length).
+  // Спрайт лезвием вниз: верх файла=рукоять, низ файла=остриё.
+  // Прямой маппинг без переворота: верх файла -> y=0, низ файла -> y=+length.
+  ctx2.drawImage(img, -width/2, -hiltShift, width, length + hiltShift);
+  ctx2.shadowBlur = 0;
+}
+
+function drawSword(pivX, pivY, angle){
+  const swScale = P.swordScale * sv('swlen');
+  const BASE_L = SWORD_LEN;
+  const spd = Math.abs(P.vel);
+  let shapeRot = 0;
+  if(!mDown){
+    const dx = mX - W/2, dy = mY - H/2;
+    const halfDiag = Math.hypot(W, H) / 2;
+    const t = clamp((dx - dy) / halfDiag, -1, 1);
+    const amplitude = sv('srot') * Math.PI / 180;
+    shapeRot = -t * amplitude;
+  }
+  const sox = mDown ? 0 : sv('sox');
+  const soy = mDown ? 0 : sv('soy');
+  ctx.save();
+  ctx.translate(pivX, pivY);
+  ctx.rotate(angle - Math.PI/2);
+  ctx.translate(soy, -sox);
+  ctx.rotate(shapeRot);
+  ctx.scale(swScale, swScale);
+
+  const rageActive = P.rageBuffEnd > GameTime;
+  const heatVal = P._heat || 0;
+  // Свечение меча ТОЛЬКО от ярости — без скорости/нагрева
+  let glowColor = null, glowBlur = 0;
+  if(rageActive){
+    glowColor = 'rgba(255,40,0,0.9)'; glowBlur = 18+spd*15;
+  }
+
+  const img = P._weaponImg;
+  if(img && img.complete && img.naturalWidth > 0){
+    // Нагрев — тонируем через filter (hue-rotate к красному при сильном нагреве)
+    if(heatVal > 0.2){
+      ctx.save();
+      ctx.filter = `sepia(${(heatVal*0.8).toFixed(2)}) saturate(${(1+heatVal*3).toFixed(2)}) hue-rotate(-${Math.round(heatVal*40)}deg)`;
+      drawSwordSprite(ctx, img, BASE_L, glowColor, glowBlur);
+      ctx.restore();
+    } else {
+      drawSwordSprite(ctx, img, BASE_L, glowColor, glowBlur);
+    }
+  }
+  ctx.restore();
+}
+
+// Базовый bounding box персонажа (логические единицы, до cscl):
+// Целевая высота персонажа в логических единицах (до cscl).
+// Ширина вычисляется из реальных пропорций PNG — без искажения аспекта.
+const CHAR_SPRITE_H = 38;
+const CHAR_SPRITE_OFFSET_Y = -23; // верх спрайта относительно bx,by
+
+function drawChar(ent, cscl, torsoCol, headCol){
+  const bx = ent.x + 5 + ent.bx;
+  const by = ent.y - 8 + ent.by;
+  ctx.save();
+  ctx.translate(bx, by);
+  ctx.scale(cscl, cscl);
+  ctx.rotate((ent.vx||0)*0.02);
+
+  // тень
+  ctx.fillStyle='rgba(0,0,0,0.28)';
+  ctx.beginPath(); ctx.ellipse(0,22,18,7,0,0,Math.PI*2); ctx.fill();
+
+  const flash = ent.hitFlash > GameTime;
+  const img = ent._skinImg;
+
+  // Ширина из реальных пропорций PNG (без искажения аспекта)
+  let spriteW = 16; // дефолт пока картинка не загрузилась
+  if(img && img.naturalWidth > 0 && img.naturalHeight > 0){
+    spriteW = CHAR_SPRITE_H * (img.naturalWidth / img.naturalHeight);
+  }
+
+  // Мягкое белое свечение позади игрока (у бота — нет) — радиальный градиент,
+  // без видимого сплошного круга, только затухающее гало.
+  if(ent === P){
+    const glowIntensity = sv('playerglow');
+    if(glowIntensity > 0.01){
+      const glowCX = 0, glowCY = CHAR_SPRITE_OFFSET_Y + CHAR_SPRITE_H/2;
+      const glowR = Math.max(spriteW, CHAR_SPRITE_H) * 0.7 * glowIntensity;
+      const grad = ctx.createRadialGradient(glowCX, glowCY, 0, glowCX, glowCY, glowR);
+      const centerAlpha = Math.min(0.55, 0.25 * glowIntensity);
+      grad.addColorStop(0,    `rgba(255,255,255,${centerAlpha})`);
+      grad.addColorStop(0.5,  `rgba(255,255,255,${centerAlpha*0.35})`);
+      grad.addColorStop(1,    'rgba(255,255,255,0)');
+      ctx.save();
+      ctx.fillStyle = grad;
+      ctx.beginPath(); ctx.arc(glowCX, glowCY, glowR, 0, Math.PI*2); ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  if(img && img.complete && img.naturalWidth > 0){
+    if(flash){
+      ctx.save();
+      ctx.filter = 'sepia(1) saturate(6) hue-rotate(-30deg) brightness(0.9)';
+    }
+    ctx.drawImage(img, -spriteW/2, CHAR_SPRITE_OFFSET_Y, spriteW, CHAR_SPRITE_H);
+    if(flash) ctx.restore();
+  } else {
+    // Спрайт ещё не загрузился — временный плейсхолдер-силуэт,
+    // чтобы не было пустоты пока качается PNG
+    ctx.fillStyle = ent===P ? 'rgba(90,160,255,0.25)' : 'rgba(255,80,70,0.25)';
+    ctx.fillRect(-spriteW/2, CHAR_SPRITE_OFFSET_Y, spriteW, CHAR_SPRITE_H);
+  }
+  ctx.restore();
+}
+
+function drawDummy(){
+  if(!dummyOn) return;
+  const drc = {x: D.x+5, y: D.y-8};
+  const dpivX = drc.x + D.pvX, dpivY = drc.y + D.pvY;
+
+  drawChar(D, sv('cscl') * sv('botscale'), '#4a1a10', '#6a2a18');
+
+  // Меч манекена
+  ctx.save();
+  ctx.translate(dpivX, dpivY);
+  ctx.rotate(D.angle - Math.PI/2);
+  const dSw = D.swordScale * sv('swlen') * sv('botswordscale');
+  ctx.scale(dSw, dSw);
+  const spd2 = Math.abs(D.vel);
+  // Свечение меча бота — только от ярости
+  let dGlowColor = null, dGlowBlur = 0;
+  if(D.rageBuffEnd > GameTime){ dGlowColor='rgba(255,20,0,1.0)'; dGlowBlur=30+spd2*20; }
+  const dImg = D._weaponImg;
+  if(dImg && dImg.complete && dImg.naturalWidth > 0){
+    drawSwordSprite(ctx, dImg, SWORD_LEN, dGlowColor, dGlowBlur);
+  }
+  ctx.restore();
+
+  // хит-флеш бота
+  if(dummyOn && D.hitFlash > GameTime){
+    const flashAlphaD = Math.min(0.25, (D.hitFlash - GameTime) / 0.25 * 0.25);
+    ctx.fillStyle=`rgba(255,40,40,${flashAlphaD})`;
+    ctx.fillRect(0,0,W,H);
+  }
+}
+
+let dbgLastClash = -99;
+let dbgClashCount = 0;
+
+function drawCursor(){
+  ctx.strokeStyle=mDown?'rgba(220,160,60,0.85)':'rgba(100,190,255,0.65)'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(mX-9,mY); ctx.lineTo(mX+9,mY); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(mX,mY-9); ctx.lineTo(mX,mY+9); ctx.stroke();
+  ctx.beginPath(); ctx.arc(mX,mY,5,0,Math.PI*2); ctx.stroke();
+
+  // DEBUG нижняя строка
+  ctx.font = '10px Share Tech Mono';
+  ctx.textAlign = 'left';
+  // Блок-flash: мигает при каждом blade clash
+  const clashFlash = GameTime - dbgLastClash < 0.3;
+  ctx.fillStyle = clashFlash ? '#ffff00' : '#2a4a2a';
+  ctx.fillRect(10, H-22, 120, 14);
+  ctx.fillStyle = clashFlash ? '#000' : '#3a6a3a';
+  ctx.fillText('БЛОКОВ: ' + dbgClashCount, 14, H-11);
+
+  ctx.fillStyle = '#44aaff';
+  ctx.fillText('ЯРОСТЬ: ' + Math.round(P.rage||0) + '%', 140, H-11);
+
+  if(dummyOn){
+    const tactic = AI.tactic==='COMBAT_HARASS'?'HARASS':'RETREATING';
+    const style = AI.swordStyle==='SWORD_STYLE_DUELIST'?'DUELIST':'SWORDSMAN';
+    const phase = AI.phase.toUpperCase();
+    const harStr = AI.tactic==='COMBAT_HARASS' ? '|'+AI._harassPhase : '';
+    const spinStr = AI._spinActive ? '|SPIN' : '';
+    const feintStr = AI._feintActive ? '|FEINT' : '';
+    const lungeStr = AI._lungeActive ? '|LUNGE' : '';
+    const slowStr = (D._blockSlow||0)>GameTime ? '|SLOW' : '';
+    const circ = AI._circling ? '|ORBIT' : '';
+    ctx.fillStyle = '#88aaff';
+    ctx.fillText('BOT: '+tactic+' '+style+' '+phase+harStr+spinStr+feintStr+lungeStr+slowStr+circ,
+      270, H-11);
+  }
+  ctx.textAlign = 'left';
+}
+
+function drawFX(){
+  for(let i=hitFX.length-1;i>=0;i--){
+    const f=hitFX[i];
+    ctx.globalAlpha=Math.max(0,f.life/40);
+    ctx.font=f.big?'bold 22px Oswald':'bold 12px Share Tech Mono';
+    ctx.fillStyle=f.col||(f.big?'#ffcc44':'#ff7744');
+    ctx.shadowColor=f.big?'#ff8800':'#ff4400'; ctx.shadowBlur=8;
+    ctx.textAlign='center'; ctx.fillText(f.t, f.x, f.y-(40-f.life)*0.4);
+    ctx.globalAlpha=1; ctx.shadowBlur=0; f.life--;
+    if(f.life<=0) hitFX.splice(i,1);
+  }
+  ctx.textAlign='left';
+}
+
+// ── ЦИКЛ ────────────────────────────────────────────────────────────────────
+let lastT = 0;
+let GameTime = 0;
+let RealTime = 0;
+let rawDt = 0.016; // глобальный, обновляется каждый тик
+
+// ── Детектор флик-замаха (быстрое туда-сюда курсором) ────────────────────
+// Работает через GameTime (не FPS-зависимо): накапливает угловую скорость
+// за реальное время, детектит пик и смену направления.
+const FLICK = {
+  prevAngle: null,
+  prevTime: -1,
+  peakVel: 0,       // максимальная угловая скорость за окно
+  peakDir: 0,       // направление пика
+  peakTime: -1,
+  reversalTime: -1, // когда произошла первая смена направления
+  state: 'idle',    // idle | peaked | reversed
+};
+
+// ── Детектор орбиты меча (вращение вокруг себя без ЛКМ) ─────────────────
+const ORBIT = {
+  accumAngle: 0,   // накопленный угол (рад)
+  lastAngle: null,
+  windowStart: -1,
+  lastDir: 0,
+};
+
+function updateOrbitDetect(swordAngle, rawDt) {
+  if (!document.getElementById('cb-orbitdet')?.checked) return false;
+  if (mDown) { ORBIT.accumAngle = 0; ORBIT.lastAngle = null; ORBIT.lastDir = 0; return false; }
+
+  if (ORBIT.lastAngle === null) { ORBIT.lastAngle = swordAngle; ORBIT.windowStart = RealTime; return false; }
+
+  const orbitWindow = sv('orbitwindow');
+  const minTurns = sv('orbitturns');
+
+  if (RealTime - ORBIT.windowStart > orbitWindow) {
+    ORBIT.accumAngle = 0; ORBIT.lastAngle = swordAngle;
+    ORBIT.windowStart = RealTime; ORBIT.lastDir = 0;
+    return false;
+  }
+
+  const dAng = angDiff(swordAngle, ORBIT.lastAngle);
+  ORBIT.lastAngle = swordAngle;
+
+  const curDir = Math.sign(dAng);
+  if (Math.abs(dAng) < 0.001) return false; // почти нет движения
+
+  if (ORBIT.lastDir !== 0 && curDir !== 0 && curDir !== ORBIT.lastDir) {
+    // Смена направления — сброс
+    ORBIT.accumAngle = 0; ORBIT.windowStart = RealTime;
+    ORBIT.lastDir = curDir;
+    return false;
+  }
+
+  if (curDir !== 0) ORBIT.lastDir = curDir;
+  // Накапливаем по модулю — работает в обе стороны
+  ORBIT.accumAngle += Math.abs(dAng);
+
+  if (ORBIT.accumAngle >= minTurns * Math.PI * 2) {
+    ORBIT.accumAngle = 0; ORBIT.windowStart = RealTime; ORBIT.lastDir = 0;
+    return true;
+  }
+  return false;
+}
+
+function updateFlickDetect(curAngle, rawDt) {
+  if (!document.getElementById('cb-flickdet')?.checked) return false;
+  if (FLICK.prevAngle === null) { FLICK.prevAngle = curAngle; FLICK.prevTime = RealTime; return false; }
+
+  // Ползунки
+  const flickWindow  = sv('flickwindow');   // секунд на весь флик
+  const flickMinVel  = sv('flickminvel');   // мин. угл. скорость для засчёта рад/сек
+  const flickMinAmp  = sv('flickminamp');   // мин. суммарный угол первого маха (рад)
+
+  const dAng = angDiff(curAngle, FLICK.prevAngle);
+  const dT   = Math.max(rawDt, 0.004);
+  const vel  = dAng / dT; // угловая скорость рад/сек (не зависит от FPS)
+
+  FLICK.prevAngle = curAngle;
+
+  if (FLICK.state === 'idle') {
+    if (Math.abs(vel) > flickMinVel) {
+      FLICK.state = 'peaked';
+      FLICK.peakVel = vel;
+      FLICK.peakDir = Math.sign(vel);
+      FLICK.peakTime = RealTime;
+      FLICK.amp = Math.abs(dAng);
+    }
+  } else if (FLICK.state === 'peaked') {
+    FLICK.amp = (FLICK.amp || 0) + Math.abs(dAng);
+    if (RealTime - FLICK.peakTime > flickWindow) {
+      FLICK.state = 'idle'; FLICK.amp = 0; return false;
+    }
+    // Смена направления при достаточной амплитуде
+    if (Math.sign(vel) !== FLICK.peakDir && Math.abs(vel) > flickMinVel * 0.5 && FLICK.amp >= flickMinAmp) {
+      FLICK.state = 'idle'; FLICK.amp = 0;
+      return true; // ФЛИК!
+    }
+  }
+  return false;
+}
+
+// Кэш HUD элементов
+// HUD lazy refs — инициализируем при первом вызове
+let hudPHP=null,hudPSt=null,hudPStat=null,hudBot=null,hudBHP=null,hudBSt=null,hudBPh=null,hudBStat=null;
+function getHUD(){
+  if(!hudPHP){
+    hudPHP  = document.getElementById('hud-p-hp');
+    hudPSt  = document.getElementById('hud-p-stam');
+    hudPStat= document.getElementById('hud-p-status');
+    hudBot  = document.getElementById('hud-bot');
+    hudBHP  = document.getElementById('hud-b-hp');
+    hudBSt  = document.getElementById('hud-b-stam');
+    hudBPh  = document.getElementById('hud-b-phase');
+    hudBStat= document.getElementById('hud-b-status');
+  }
+}
+// HUD vars declared above in lazy block
+
+function updateHUD(){
+  getHUD();
+  if(!hudPHP) return;
+  // Игрок
+  hudPHP.style.width  = P.hp + '%';
+  hudPHP.style.background = P.hp>50?'#2acc50':P.hp>25?'#ccaa20':'#cc2020';
+  hudPSt.style.width  = Math.max(0, Math.min(100, P.stamina)) + '%';
+  hudPSt.style.background = '#ccaa20';
+  let pStat = '';
+  if(P.unbalanced>0) pStat = '💫 ДИСБАЛАНС';
+  else if(P.exhausted>0) pStat = '😫 УСТАЛОСТЬ';
+  else if((P._hitCD||0)>GameTime) pStat = '🛡 ' + Math.max(0,P._hitCD-GameTime).toFixed(1)+'s';
+  hudPStat.textContent = pStat;
+  // Rage бар игрока
+  const pRageEl = document.getElementById('hud-p-rage');
+  if(pRageEl){
+    const prevRage = pRageEl._lastRage || 0;
+    const curRage = Math.max(0, Math.min(100, P.rage||0));
+    if(prevRage < 50 && curRage >= 50){
+      // Пересекли 50 — ImpactPop
+      const rc9 = rootCenter();
+      spawnFX('impact', rc9.x + P.pvX, rc9.y + P.pvY, 0, P);
+    }
+    pRageEl._lastRage = curRage;
+    pRageEl.style.width = curRage + '%';
+    pRageEl.style.background = curRage >= 50 ? '#2060cc' : '#5a5a5a';
+  }
+  // Buff display
+  const pBuffEl = document.getElementById('hud-p-buff');
+  if(pBuffEl) pBuffEl.textContent = P.rageBuffEnd>GameTime ? '⚔ ЯРОСТЬ 2x' : '';
+
+  // Бот: показываем только когда dummyOn
+  if(!dummyOn){ hudBot.style.opacity='0'; return; }
+  // Показываем бота всегда пока он активен (можно добавить условие "в таргете")
+  hudBot.style.opacity='1';
+  hudBHP.style.width  = Math.max(0,Math.min(100,D.hp)) + '%';
+  hudBHP.style.background = D.hp>50?'#cc4040':D.hp>25?'#cc7020':'#882020';
+  hudBSt.style.width  = Math.max(0, Math.min(100, D.stamina)) + '%';
+  hudBSt.style.background = '#ccaa20';
+  const bRageEl = document.getElementById('hud-b-rage');
+  if(bRageEl){
+    bRageEl.style.width = Math.max(0, Math.min(100, D.rage||0)) + '%';
+    bRageEl.style.background = (D.rage||0) >= 50 ? '#2060cc' : '#5a5a5a';
+  }
+  const phase = AI.phase;
+  const tacticStr = AI.tactic==='COMBAT_HARASS'?' [ИЗМ]':'';
+  const harassStr = AI.tactic==='COMBAT_HARASS'?' '+AI._harassPhase:'';
+  const phaseTxt = phase==='attack'?'⚔ АТАКА'+tacticStr:phase==='retreat'?'🏃 ОТСТУП':'😮‍💨 ПЕРЕДЫШКА';
+  const phaseCol = phase==='attack'?'#cc5030':phase==='retreat'?'#3090cc':'#aaaa30';
+  const tLeft = AI._phaseEnd>0?' '+Math.max(0,AI._phaseEnd-GameTime).toFixed(1)+'s':'';
+  const styleStr = AI.swordStyle==='SWORD_STYLE_DUELIST' ? ' 🛡DUE' : AI.swordStyle==='SWORD_STYLE_MIRROR' ? ' 🪞MIR' : ' ⚔SWD';
+  hudBPh.textContent = phaseTxt + tLeft + styleStr;
+  hudBPh.style.color = phaseCol;
+  let bStat = '';
+  if(D.unbalanced>0) bStat = '💫 ДИСБАЛАНС';
+  else if(D.exhausted>0) bStat = '😫 УСТАЛОСТЬ';
+  hudBStat.textContent = bStat;
+}
+
+const TARGET_FPS = 120;
+const FRAME_MIN_MS = 1000 / TARGET_FPS;
+const FIXED_DT = 1 / 120; // фиксированный шаг физики — всегда 1/60 сек
+let lastRenderT = 0;
+let accumulator = 0; // накопитель реального времени
+
+// ════════════════════════════════════════════════════════════════════════════
+// MODULE: VISIBILITY  (пауза игры и музыки при сворачивании/уходе со страницы)
+// ════════════════════════════════════════════════════════════════════════════
+let gamePaused = false;
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    gamePaused = true;
+    if (typeof currentMusicObj !== 'undefined' && currentMusicObj) currentMusicObj.pause();
+  } else {
+    gamePaused = false;
+    lastT = performance.now(); // сброс таймера чтобы не было гигантского dt
+    lastRenderT = lastT;
+    if (typeof currentMusicObj !== 'undefined' && currentMusicObj && musicEnabled && audioEnabledFlag) {
+      currentMusicObj.play().catch(()=>{});
+    }
+  }
+});
+// ════════════════ END MODULE: VISIBILITY ════════════════════════════════════
+
+function loop(ts){
+  if (gamePaused) { requestAnimationFrame(loop); return; }
+  rawDt = Math.min(0.1, (ts-lastT)/1000); lastT = ts;
+  RealTime += rawDt;
+
+  // Накапливаем реальное время и шагаем физику фиксированными шагами
+  accumulator += rawDt;
+  const maxSteps = 3; // защита от spiral of death
+  let steps = 0;
+  while(accumulator >= FIXED_DT && steps < maxSteps){
+    accumulator -= FIXED_DT;
+    const dt = FIXED_DT * sv('gamespeed');
+    GameTime += dt;
+    update(dt);
+    duelUpdate(dt);
+    updateAI(dt);
+    updateDummy(dt);
+    if(dummyOn){
+      updateAtkPoints(P, D, dt);
+      updateAtkPoints(D, P, dt);
+      determineAttacker();
+    }
+    if(dummyOn) checkSwordCollision(P, D, dt);
+    updateBalls(dt);
+    updateBlood(dt);
+    updateFX(dt);
+    steps++;
+  }
+
+  for(let i=DEATH.deathCross.length-1;i>=0;i--){
+    DEATH.deathCross[i].timer -= rawDt;
+    if(DEATH.deathCross[i].timer<=0) DEATH.deathCross.splice(i,1);
+  }
+  updateHUD();
+  if(P.exhausted>0) drawSweat(P);
+  if(dummyOn&&D.exhausted>0) drawSweat(D);
+
+  const rc = rootCenter();
+  if(updateOrbitDetect(P.angle, rawDt) && P.exhausted <= 0){
+    P.stamina = Math.max(0, P.stamina - sv('stamorbit'));
+    if(P.stamina <= 0 && P.exhausted <= 0) P.exhausted = sv('exhdur2');
+    hitFX.push({x: rc.x + P.pvX, y: rc.y + P.pvY - 30, t:'🌀 ОРБИТА', life:35, big:false, col:'#ff8840'});
+    playSound('whoosh');
+  }
+
+  // Рендер не чаще 60fps
+  const doRender = (ts - lastRenderT) >= FRAME_MIN_MS - 1;
+  if(doRender) lastRenderT = ts; // реальное время, не зависит от gamespeed
+  if(doRender){
+    const pivX = rc.x + P.pvX;
+    const pivY = rc.y + P.pvY;
+    drawArena();
+    drawBoxes();
+    drawBalls();
+    drawDummy();
+    drawRootDebug();
+    drawPlayer();
+    drawPivotDebug(pivX, pivY);
+    drawSword(pivX, pivY, P.angle);
+    drawCursor();
+    drawBlood();
+    drawFXEffects();
+    drawDeathCrosses();
+    drawFX();
+  }
+
+  requestAnimationFrame(loop);
+}
+
+// ── ВВОД ────────────────────────────────────────────────────────────────────
+canvas.addEventListener('mousemove', e=>{ const r=canvas.getBoundingClientRect(); mX=e.clientX-r.left; mY=e.clientY-r.top; });
+canvas.addEventListener('mousedown', e=>{ if(e.button!==0)return; mDown=true; });
+canvas.addEventListener('mouseup',   e=>{ if(e.button!==0)return; mDown=false; });
+window.addEventListener('keydown', e=>{
+  const k = e.key.toLowerCase();
+  keys[k]=true;
+  if(e.key==='t' || k==='t' || k==='т') toggleDummy();
+  if(e.key==='e' || k==='e' || k==='у') toggleAI();
+  if(e.key==='g' || k==='g' || k==='п'){
+    P.exhausted = sv('exhdur2');
+    P.stamina = 0;
+    hitFX.push({x:W/3,y:H/2-40,t:'😫 УСТАЛОСТЬ',life:60,big:true,col:'#ffaa44'});
+  }
+  if(e.key==='h' || k==='h' || k==='р'){
+    P.rage = Math.min(100, (P.rage||0) + 100);
+    hitFX.push({x:W/3,y:H/2-40,t:'🔥+100 ЯРОСТЬ',life:45,big:true,col:'#ff4020'});
+  }
+  if(e.key==='j' || k==='j' || k==='о'){
+    if(dummyOn){
+      D.rageBuffEnd = GameTime + 4.0;
+      D.rage = 100;
+      hitFX.push({x:W*0.6,y:H/2-40,t:'🔥 БОТ ЯРОСТЬ',life:45,big:true,col:'#ff6030'});
+    }
+  }
+  if(e.key==='y' || k==='y' || k==='н'){
+    // Принудительный BladeBind на игрока (тест)
+    if(dummyOn) triggerBladeBind(D, P);
+    else {
+      // Без бота — применяем дисбаланс напрямую
+      const rc0 = rootCenter();
+      P.unbalanced = sv('unbdur');
+      P.unbAngle = P.angle;
+      P.pvX = Math.cos(P.angle + Math.PI/2) * csv('ex') * 1.5;
+      P.pvY = Math.sin(P.angle + Math.PI/2) * csv('ey') * 1.5;
+      hitFX.push({x:rc0.x,y:rc0.y-55,t:'💥 BLADE BIND!',life:70,big:true,col:'#ffaa00'});
+    }
+  }
+  e.preventDefault();
+});
+window.addEventListener('keyup',   e=>{ keys[e.key.toLowerCase()]=false; });
+window.addEventListener('resize',  ()=>{
+  W=canvas.width = window.IS_MOBILE ? window.innerWidth : window.innerWidth-280;
+  H=canvas.height = window.innerHeight;
+  applyCanvasSmoothing();
+  initBoxes(); arenaDirty=true;
+});
+
+function toggleDummy(){
+  // T = пауза AI, манекен остаётся видимым
+  AI.enabled = !AI.enabled;
+  const b=document.getElementById('dtoggle');
+  b.textContent=AI.enabled?'🤖 МАНЕКЕН: ВКЛ':'⏸ МАНЕКЕН: ПАУЗА';
+  b.classList.toggle('on', AI.enabled);
+  hitFX.push({x:W/2, y:H/2-60, t: AI.enabled?'▶ AI ВКЛ':'⏸ AI ПАУЗА', life:55, big:true, col: AI.enabled?'#44ffaa':'#ffaa44'});
+}
+
+function toggleAI(){
+  dummyOn=!dummyOn;
+  const b=document.getElementById('dtoggle');
+  b.textContent=dummyOn?'🤖 МАНЕКЕН: ВКЛ':'🤖 МАНЕКЕН: ВЫКЛ';
+  b.classList.toggle('on',dummyOn);
+  if(dummyOn){
+    // Полный сброс Entity D
+    D.hp=100; D.stamina=100; D.exhausted=0; D.unbalanced=0;
+    D.x=W/2+110; D.y=H/2; D.vx=0; D.vy=0;
+    D.bx=0; D.by=0; D.pvX=0; D.pvY=-8; D.tpX=0; D.tpY=-8;
+    D.angle=0; D.vel=0; D._hitCD=-1; D._hitCD=-1;
+    D.atkPts=0; D.isAttacker=false;
+    // Полный сброс AI состояния — без исключений
+    AI.enabled=true;
+    AI.phase='attack';
+    AI._phaseEnd=-1;
+    AI._contactCD=-1;
+    AI._retreatMoveCD=-1;
+    AI._feintActive=false;
+    AI._feintCD=-1;
+    AI._lungeActive=false;
+    AI._spinActive=false;
+    AI._retreatMode=false;
+    AI._duelPull=false;
+    AI._smoothInited=false;
+    AI._inited=false;
+    AI._harassPhase='approach'; AI._harassStrikes=0; AI._harassTimer=-1;
+    AI._fakeKeys.w=AI._fakeKeys.a=AI._fakeKeys.s=AI._fakeKeys.d=false;
+    AI._fakeMDown=false;
+    DUEL.active=false;
+    DUEL.pLastInRange=GameTime; // важно: не -1!
+  }
+}
+
+// ════════════════ END MODULE: COMBAT ═══════════════════════════════════════
+
+// ════════════════════════════════════════════════════════════════════════════
+// MODULE: AUDIO v5  (SFX + Music, folder-based loading from BuildMusicList.txt)
+// Future: extract to audio.js, expose via window.GameAudio = {playSound, ...}
+// ════════════════════════════════════════════════════════════════════════════
+
+const PROJECT_PATH_AUDIO = "https://raw.githubusercontent.com/JackofShadow666/GodgraveAssets/main/";
+const BUILD_LIST_URL_AUDIO = PROJECT_PATH_AUDIO + "Source/BuildList.txt";
+
+// ════════════════════════════════════════════════════════════════════════════
+// MODULE: SPRITES  (PNG персонажа и оружия, тот же BuildMusicList.txt)
+// Future: extract to sprites.js, expose via window.GameSprites = {...}
+// ════════════════════════════════════════════════════════════════════════════
+const SPRITE_FOLDERS = {
+  knight:     'Source/Character/Knight/',
+  sword:      'Source/Weapon/Sword/',
+  background: 'Source/Background/',
+};
+
+// Runtime: { knight: ["url1","url2",...], sword: [...] }
+let SPRITE_LISTS = {};
+// Кэш загруженных Image объектов: url -> Image
+const SPRITE_IMG_CACHE = {};
+let spritesDBReady = false;
+
+function loadSpriteImage(url){
+  if(SPRITE_IMG_CACHE[url]) return SPRITE_IMG_CACHE[url];
+  const img = new Image();
+  img.src = url;
+  SPRITE_IMG_CACHE[url] = img;
+  return img;
+}
+
+// Возвращает случайный URL из категории (или null если список пуст)
+function pickRandomSprite(category){
+  const arr = SPRITE_LISTS[category];
+  if(!arr || arr.length === 0) return null;
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+// Назначает случайный скин персонажа и оружие entity (вызывать при спавне/респавне)
+function assignRandomSkin(ent){
+  const knightUrl = pickRandomSprite('knight');
+  const swordUrl  = pickRandomSprite('sword');
+  ent._skinUrl   = knightUrl;
+  ent._weaponUrl = swordUrl;
+  ent._skinImg   = knightUrl ? loadSpriteImage(knightUrl) : null;
+  ent._weaponImg = swordUrl  ? loadSpriteImage(swordUrl)  : null;
+}
+// ════════════════ END MODULE: SPRITES (loader part below in loadAudioDB) ════
+
+// ┌─ SOUND_BLOCK: папки для каждого типа звука ─────────────────────────────
+// Игра читает BuildMusicList.txt и выбирает все файлы из этих папок
+const SFX_FOLDERS = {
+  music:          'Source/Music/',
+  nullsnd:        'Source/Sound/Empty/',
+  clash:          'Source/Sound/Sword/SwordClink/',
+  clashHard:      'Source/Sound/Sword/SwordHit/',
+  clashHard_rare: 'Source/Sound/Sword/SwordHit/',   // фильтр: Rare
+  whoosh:         'Source/Sound/Sword/SwordSwing/',  // фильтр: без Agressive
+  whooshRage:     'Source/Sound/Sword/SwordSwing/',  // фильтр: Agressive
+  damage:         'Source/Sound/Damage/Sword/',
+  rage:           'Source/Sound/Rage/',
+  bladeblind:     'Source/Sound/Shield/',
+};
+
+// Runtime: заполняется из BuildMusicList.txt
+let SFX_DB = {};          // { clash: ["fullUrl1",...], ... }
+let MUSIC_LIST_FULL = []; // ["fullUrl1", ...]
+
+let audioEnabledFlag = false;
+let musicEnabled = true;
+let currentMusicObj = null;
+let audioDBReady = false;
+
+// ┌─ LOADER: парсим BuildMusicList.txt и раскладываем по папкам ────────────
+async function loadAudioDB() {
+  let text = '';
+  try {
+    const r = await fetch(BUILD_LIST_URL_AUDIO);
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    text = await r.text();
+  } catch(e) {
+    console.warn('⚠ BuildMusicList.txt недоступен, звук отключён:', e.message);
+    audioDBReady = true; // продолжаем без звука
+    return;
+  }
+
+  // Парсим строки → полные URL (общий список для аудио и спрайтов)
+  const rawLines = text.split('\n')
+    .map(l => l.trim().replace(/\\/g, '/'))
+    .filter(l => l && !l.startsWith(';') && !l.startsWith('===')
+              && !l.includes('Создано:') && !l.includes('Папка:'));
+
+  const toUrl = l => PROJECT_PATH_AUDIO + (l.startsWith('Source/') ? l : 'Source/' + l);
+
+  const lines = rawLines.filter(l => /\.(mp3|wav|ogg)$/i.test(l));
+  const allUrls = lines.map(toUrl);
+
+  // ── Спрайты (PNG) ────────────────────────────────────────────────────────
+  const pngLines = rawLines.filter(l => /\.png$/i.test(l));
+  const pngUrls = pngLines.map(toUrl);
+  for (const [cat, folder] of Object.entries(SPRITE_FOLDERS)) {
+    const prefix = PROJECT_PATH_AUDIO + folder;
+    const matches = pngUrls.filter(u => u.startsWith(prefix));
+    SPRITE_LISTS[cat] = matches;
+    if(matches.length === 0) console.warn(`⚠ Нет спрайтов для "${cat}" в папке: ${folder}`);
+  }
+  spritesDBReady = true;
+  console.log(`🖼 Спрайты: ${Object.entries(SPRITE_LISTS).map(([k,v])=>k+'×'+v.length).join(', ')}`);
+
+  // Предзагрузка ВСЕХ вариаций спрайтов (персонажи, оружие, фоны) в кэш —
+  // браузер кэширует ответы по HTTP, но Image-объекты создаются заранее,
+  // чтобы при следующей смене скина (респавн) картинка уже была в памяти
+  // и не было "пустого кадра" пока идёт загрузка.
+  for (const [cat, urls] of Object.entries(SPRITE_LISTS)) {
+    for (const url of urls) loadSpriteImage(url);
+  }
+
+  // Назначаем случайный скин игроку и боту сразу после загрузки
+  assignRandomSkin(P);
+  assignRandomSkin(D);
+  pickArenaBackground();
+
+  // Раскладываем по SFX_FOLDERS
+  for (const [type, folder] of Object.entries(SFX_FOLDERS)) {
+    const prefix = PROJECT_PATH_AUDIO + folder;
+    let matches = allUrls.filter(u => u.startsWith(prefix));
+
+    // Уточняющие фильтры
+    if (type === 'clashHard')      matches = matches.filter(u => !u.toLowerCase().includes('rare'));
+    if (type === 'clashHard_rare') matches = matches.filter(u => u.toLowerCase().includes('rare'));
+    if (type === 'whoosh')         matches = matches.filter(u => !u.toLowerCase().includes('agressive'));
+    if (type === 'whooshRage')     matches = matches.filter(u => u.toLowerCase().includes('agressive'));
+
+    if (type === 'music') {
+      MUSIC_LIST_FULL = matches;
+    } else {
+      if (matches.length > 0) SFX_DB[type] = matches;
+    }
+  }
+
+  console.log(`🎵 Треков: ${MUSIC_LIST_FULL.length}`);
+  console.log(`🔊 SFX: ${Object.entries(SFX_DB).map(([k,v])=>k+'×'+v.length).join(', ')}`);
+
+  // Проверяем что каждая папка из SFX_FOLDERS нашла хотя бы один файл
+  for (const [type, folder] of Object.entries(SFX_FOLDERS)) {
+    if (type === 'music' || type === 'nullsnd') continue;
+    if (!SFX_DB[type] || SFX_DB[type].length === 0) {
+      console.warn(`⚠ Нет звуков для "${type}" в папке: ${folder}`);
+    }
+  }
+  audioDBReady = true;
+
+  // Запустить музыку если уже кликнули
+  if (audioEnabledFlag && musicEnabled && MUSIC_LIST_FULL.length) playRandomMusicTrack();
+}
+
+function playRandomMusicTrack() {
+  if (!audioEnabledFlag || !musicEnabled || MUSIC_LIST_FULL.length === 0) return;
+  if (currentMusicObj) { currentMusicObj.pause(); currentMusicObj = null; }
+  const idx = Math.floor(Math.random() * MUSIC_LIST_FULL.length);
+  currentMusicObj = new Audio(MUSIC_LIST_FULL[idx]);
+  currentMusicObj.volume = 0.2;
+  currentMusicObj.addEventListener('ended', () => {
+    if (musicEnabled && audioEnabledFlag) playRandomMusicTrack();
+  }, { once: true });
+  currentMusicObj.play().catch(() => {});
+}
+
+function stopMusic() {
+  if (currentMusicObj) { currentMusicObj.pause(); currentMusicObj = null; }
+}
+
+function toggleMusic() {
+  if (!audioEnabledFlag) { enableAudioSystem(); musicEnabled = true; }
+  else {
+    musicEnabled = !musicEnabled;
+    musicEnabled ? playRandomMusicTrack() : stopMusic();
+  }
+  const btn = document.getElementById('musicToggleBtn');
+  if (btn) {
+    btn.textContent = musicEnabled ? '🎵 МУЗЫКА: ВКЛ' : '🔇 МУЗЫКА: ВЫКЛ';
+    btn.style.color = musicEnabled ? '#4acc70' : '#cc4040';
+  }
+}
+
+function enableAudioSystem() {
+  if (audioEnabledFlag) return;
+  audioEnabledFlag = true;
+  document.removeEventListener('mousedown', enableAudioSystem);
+  document.removeEventListener('keydown',   enableAudioSystem);
+  // Музыка запустится сразу если DB готова, иначе loadAudioDB() запустит её сама
+  if (audioDBReady && musicEnabled && MUSIC_LIST_FULL.length) playRandomMusicTrack();
+}
+
+// ┌─ SOUND_BLOCK: воспроизведение ─────────────────────────────────────────
+// ── Audio Pool: пул из 4 объектов на URL для быстрого воспроизведения ────
+const AUDIO_POOL = {}; // url → [Audio, Audio, Audio, Audio]
+const POOL_SIZE = 4;
+
+function getPoolAudio(url){
+  if(!AUDIO_POOL[url]){
+    AUDIO_POOL[url] = Array.from({length: POOL_SIZE}, () => {
+      const a = new Audio(url); a.preload = 'auto'; a.load(); return a;
+    });
+  }
+  // Ищем свободный (не играет или закончил)
+  const pool = AUDIO_POOL[url];
+  for(const a of pool){
+    if(a.paused || a.ended){ return a; }
+  }
+  // Все заняты — берём самый старый (перезапускаем)
+  return pool[0];
+}
+
+function playSound(sfxType) {
+  if (!audioEnabledFlag) return;
+  let arr = SFX_DB[sfxType];
+  if (sfxType === 'clashHard' && Math.random() < 0.05 && SFX_DB['clashHard_rare']?.length)
+    arr = SFX_DB['clashHard_rare'];
+  if (!arr || arr.length === 0) {
+    if (audioDBReady) console.warn('🔇 Нет звука для типа:', sfxType);
+    return;
+  }
+  const idx = Math.floor(Math.random() * arr.length);
+  const url = arr[idx];
+  const audio = getPoolAudio(url);
+  audio.currentTime = 0;
+  audio.volume = 0.5;
+  audio.play().catch(() => {
+    // Если pool объект не готов — fallback new Audio
+    const fb = new Audio(url); fb.volume = 0.5; fb.play().catch(()=>{});
+  });
+}
+
+document.addEventListener('mousedown', enableAudioSystem);
+document.addEventListener('keydown',   enableAudioSystem);
+// ════════════════ END MODULE: AUDIO ════════════════════════════════════════
+
+const _musicBtn = document.getElementById('musicToggleBtn');
+if(_musicBtn) _musicBtn.addEventListener('click', toggleMusic);
+
+loadAudioDB(); // запускаем загрузку в фоне
+initBoxes();
+requestAnimationFrame(loop);
+</script>
+
+<style id="mobile-style">
+/* ── МОБИЛЬ: скрыть панель, canvas на весь экран ────────────────────────── */
+body.is-mobile #panel { display: none !important; }
+/* До нажатия СТАРТ — скрываем игру полностью */
+body.is-mobile.mob-pregame canvas,
+body.is-mobile.mob-pregame #hud,
+body.is-mobile.mob-pregame #mobile-ctrl,
+body.is-mobile.mob-pregame #adisplay,
+body.is-mobile.mob-pregame #hint,
+body.is-mobile.mob-pregame #dtoggle { visibility: hidden !important; }
+body.is-mobile canvas { width: 100vw !important; height: 100vh !important; }
+body.is-mobile #hud { width: 100% !important; }
+body.is-mobile #adisplay { display: none !important; }
+body.is-mobile #hint { display: none !important; }
+body.is-mobile #dtoggle { display: none !important; }
+
+/* ── ROTATE PROMPT ────────────────────────────────────────────────────────*/
+#rotate-prompt {
+  display: none;
+  position: fixed; inset: 0; z-index: 999; pointer-events: all;
+  background: #060a0e;
+  flex-direction: column; align-items: center; justify-content: center;
+  color: #6ab0d0; font-family: 'Share Tech Mono', monospace; text-align: center;
+}
+body.is-mobile.is-portrait #rotate-prompt { display: flex; }
+body.is-mobile.is-portrait #mobile-ctrl,
+body.is-mobile.is-portrait canvas,
+body.is-mobile.is-portrait #hud { visibility: hidden; }
+#rotate-prompt .icon { font-size: 56px; margin-bottom: 16px; animation: rotateHint 1.6s ease-in-out infinite; }
+@keyframes rotateHint { 0%,100%{transform:rotate(0deg);} 50%{transform:rotate(90deg);} }
+#rotate-prompt .txt { font-size: 13px; letter-spacing: 2px; opacity: 0.8; }
+
+/* ── ДЖОЙСТИКИ (плавающие) ───────────────────────────────────────────────*/
+#mobile-ctrl {
+  display: none;
+  position: fixed; inset: 0;
+  pointer-events: none;
+  z-index: 100;
+}
+body.is-mobile:not(.is-portrait) #mobile-ctrl { display: block; }
+/* Кнопки должны быть НАД зонами стиков и кликабельны независимо */
+#mob-spawn-btn, #mob-menu-btn {
+  z-index: 1000;
+  pointer-events: auto !important;
+  position: absolute;
+}
+.touch-zone { z-index: 100; }
+
+/* Зоны касания — невидимые, большие, делят экран пополам */
+.touch-zone {
+  position: absolute; top: 0; bottom: 0;
+  pointer-events: all; touch-action: none;
+}
+#zone-move  { left: 0;  width: 45%; top: 90px; }
+#zone-sword { right: 0; width: 55%; top: 90px; }
+
+/* Плавающий джойстик: появляется в точке касания */
+.stick-base {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.07);
+  border: 2px solid rgba(255,255,255,0.18);
+  transform: translate(-50%,-50%);
+  opacity: 0; transition: opacity 0.1s;
+  pointer-events: none;
+}
+.stick-base.active { opacity: 1; }
+.stick-knob {
+  position: absolute;
+  border-radius: 50%;
+  transform: translate(-50%,-50%);
+  pointer-events: none;
+}
+#move-base  { width: 110px; height: 110px; }
+#move-knob  { width: 50px;  height: 50px;
+  background: radial-gradient(circle at 35% 35%, #6ab0ff, #2060cc);
+  box-shadow: 0 4px 12px rgba(0,80,200,0.5); }
+
+#sword-base { width: 150px; height: 150px; }
+#sword-knob { width: 68px;  height: 68px;
+  background: radial-gradient(circle at 35% 35%, #ffaa60, #cc5010);
+  box-shadow: 0 4px 12px rgba(200,60,0,0.5);
+  transition: background 0.1s, box-shadow 0.1s; }
+#sword-knob.lmb-active {
+  background: radial-gradient(circle at 35% 35%, #ff4040, #cc1010);
+  box-shadow: 0 4px 20px rgba(255,0,0,0.85);
+}
+
+/* Кнопка спавна бота */
+#mob-spawn-btn {
+  position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
+  background: rgba(10,30,20,0.9); border: 1px solid #2a6a40; border-radius: 20px;
+  color: #4acc70; font-family: monospace; font-size: 13px;
+  padding: 12px 26px; pointer-events: auto !important; touch-action: none; letter-spacing: 1px;
+  min-height: 44px; /* минимальный размер тап-таргета */
+}
+
+/* Кнопка меню (⚙) — открывает оверлей с настройками поверх экрана */
+#mob-menu-btn {
+  position: absolute; top: 14px; right: 14px;
+  background: rgba(10,20,30,0.9); border: 1px solid #1a4060; border-radius: 50%;
+  width: 50px; height: 50px; color: #6ab0d0; font-size: 20px;
+  display: flex; align-items: center; justify-content: center;
+  pointer-events: auto !important; touch-action: none;
+}
+
+/* Оверлей меню: пауза + рестарт + настройки */
+#mob-menu-overlay {
+  display: none;
+  position: fixed; inset: 0; z-index: 500;
+  background: rgba(5,8,12,0.92);
+  flex-direction: column; align-items: center; justify-content: center;
+  gap: 14px; pointer-events: all;
+}
+#mob-menu-overlay.open { display: flex; }
+#mob-menu-overlay button {
+  font-family: 'Share Tech Mono', monospace; font-size: 14px; letter-spacing: 2px;
+  padding: 12px 36px; border-radius: 24px; cursor: pointer;
+  background: rgba(20,30,45,0.9); color: #6ab0d0; border: 1px solid #2a5a80;
+  min-width: 220px;
+}
+#mob-menu-overlay .panel-embed { max-height: 60vh; overflow-y: auto; width: 90%; }
+</style>
+<!-- ── ROTATE PROMPT ───────────────────────────────────────────────────────-->
+<div id="rotate-prompt">
+  <div class="icon">📱</div>
+  <div class="txt">ПОВЕРНИТЕ УСТРОЙСТВО<br>ГОРИЗОНТАЛЬНО</div>
+</div>
+
+<!-- ── МОБИЛЬНЫЙ КОНТРОЛЛЕР ────────────────────────────────────────────────-->
+<div id="mobile-ctrl">
+  <button id="mob-spawn-btn">🤖 БОТ: ВЫКЛ</button>
+  <button id="mob-menu-btn">⚙</button>
+
+  <div id="zone-move" class="touch-zone">
+    <div id="move-base" class="stick-base"><div id="move-knob" class="stick-knob"></div></div>
+  </div>
+  <div id="zone-sword" class="touch-zone">
+    <div id="sword-base" class="stick-base"><div id="sword-knob" class="stick-knob"></div></div>
+  </div>
+</div>
+
+<!-- ── МЕНЮ (пауза/рестарт/настройки) ─────────────────────────────────────-->
+<div id="mob-menu-overlay">
+  <button id="mob-resume">▶ ПРОДОЛЖИТЬ</button>
+  <button id="mob-restart">🔄 РЕСТАРТ (сброс состояния)</button>
+  <button id="mob-toggle-settings">⚙ НАСТРОЙКИ</button>
+  <div class="panel-embed" id="mob-settings-embed" style="display:none;"></div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════════════════════════════
+// MODULE: MOBILE CONTROLS  (touch sticks, rotate prompt, pause/restart menu)
+// Future: extract to mobile-controls.js
+// ════════════════════════════════════════════════════════════════════════════
+(function(){
+  // ── ИСПОЛЬЗУЕМ РАННИЙ ДЕТЕКТ (см. начало основного скрипта) ──────────────
+  if(!window.IS_MOBILE) return; // десктоп — выходим, ничего не трогаем
+  // body.classList 'is-mobile' уже добавлен раньше
+
+  function applyOrientation(){
+    const portrait = window.innerHeight > window.innerWidth;
+    document.body.classList.toggle('is-portrait', portrait);
+    if(!portrait){
+      // Камера "отдалена": целимся в ~14 клеток (55px) по вертикали, как на ПК.
+      // Увеличиваем ВНУТРЕННЕЕ разрешение canvas (логический мир) сверх
+      // физического размера экрана — браузер сжимает картинку через CSS,
+      // визуально получаем "зум аут" без искажения пропорций объектов.
+      const targetRows = sv('camrows'); // настраиваемое кол-во клеток (55px) по вертикали
+      const targetWorldH = targetRows * 55;
+      const camScale = Math.max(1, targetWorldH / window.innerHeight);
+      window.CAM_SCALE = camScale;
+
+      H = Math.round(window.innerHeight * camScale);
+      W = Math.round(window.innerWidth  * camScale);
+      canvas.width  = W;
+      canvas.height = H;
+      applyCanvasSmoothing();
+      arenaDirty = true;
+      initBoxes();
+    }
+  }
+  // Дефолт камеры на мобиле — 12 клеток (компактнее чем на ПК)
+  const camSlider0 = document.getElementById('sl-camrows');
+  if(camSlider0){
+    camSlider0.value = 12;
+    const camLabel0 = document.getElementById('vl-camrows');
+    if(camLabel0) camLabel0.textContent = '12';
+  }
+
+  // ── АВТОФУЛЛСКРИН ──────────────────────────────────────────────────────
+  function requestFS(){
+    const el = document.documentElement;
+    try {
+      if (el.requestFullscreen) {
+        const p = el.requestFullscreen();
+        if (p && p.catch) p.catch(()=>{});
+      } else if (el.webkitRequestFullscreen) {
+        el.webkitRequestFullscreen();
+      } else if (el.mozRequestFullScreen) {
+        el.mozRequestFullScreen();
+      } else if (el.msRequestFullscreen) {
+        el.msRequestFullscreen();
+      }
+    } catch(e){}
+  }
+
+  // Видимая кнопка "На весь экран" — надёжнее чем авто-триггер на первый тап
+  // Полноэкранный оверлей "СТАРТ" — скрывает всё (canvas/UI/стики) до запуска
+  const startOverlay = document.createElement('div');
+  startOverlay.id = 'mob-start-overlay';
+  startOverlay.style.cssText = 'position:fixed;inset:0;z-index:3000;'
+    + 'background:#060a0e;display:flex;align-items:center;justify-content:center;'
+    + 'flex-direction:column;gap:20px;';
+  document.body.appendChild(startOverlay);
+
+  const fsBtn = document.createElement('button');
+  fsBtn.id = 'mob-fullscreen-btn';
+  fsBtn.textContent = '▶ СТАРТ';
+  fsBtn.style.cssText = 'background:#ff4757;color:#fff;border:none;padding:18px 50px;'
+    + 'font-size:18px;font-weight:bold;border-radius:30px;font-family:monospace;'
+    + 'box-shadow:0 5px 15px rgba(255,71,87,0.4);letter-spacing:2px;';
+  startOverlay.appendChild(fsBtn);
+
+  // Скрываем игровые элементы пока не нажат СТАРТ
+  document.body.classList.add('mob-pregame');
+
+  function hideFsBtn(){
+    startOverlay.style.display = 'none';
+    document.body.classList.remove('mob-pregame');
+    // Пересчёт размеров после смены fullscreen/баров браузера
+    setTimeout(applyOrientation, 100);
+    setTimeout(applyOrientation, 400); // повторно — на случай задержки скрытия баров
+  }
+
+  fsBtn.addEventListener('touchend', e => {
+    e.preventDefault();
+    requestFS();
+    hideFsBtn();
+  }, {passive:false});
+  fsBtn.addEventListener('click', () => { requestFS(); hideFsBtn(); });
+
+  // Если fullscreen уже активен (или сработал) — скрываем кнопку
+  document.addEventListener('fullscreenchange', () => {
+    if(document.fullscreenElement) hideFsBtn();
+    setTimeout(applyOrientation, 100);
+  });
+  document.addEventListener('webkitfullscreenchange', () => {
+    if(document.webkitFullscreenElement) hideFsBtn();
+    setTimeout(applyOrientation, 100);
+  });
+
+  applyOrientation();
+  window.addEventListener('resize', () => setTimeout(applyOrientation, 150));
+  window.addEventListener('orientationchange', () => setTimeout(applyOrientation, 150));
+  // Перестроить камеру при изменении ползунка "Дальность камеры"
+  const camSlider = document.getElementById('sl-camrows');
+  if(camSlider) camSlider.addEventListener('input', applyOrientation);
+
+  // ── СПАВН БОТА ────────────────────────────────────────────────────────────
+  const spawnBtn = document.getElementById('mob-spawn-btn');
+  spawnBtn.addEventListener('touchstart', e => {
+    e.preventDefault();
+    toggleAI();
+    spawnBtn.textContent = dummyOn ? '🤖 БОТ: ВКЛ' : '🤖 БОТ: ВЫКЛ';
+    spawnBtn.style.borderColor = dummyOn ? '#4acc70' : '#1a4060';
+  }, {passive: false});
+
+  // ── МЕНЮ (пауза/рестарт/настройки) ──────────────────────────────────────
+  const menuBtn = document.getElementById('mob-menu-btn');
+  const menuOverlay = document.getElementById('mob-menu-overlay');
+  const settingsEmbed = document.getElementById('mob-settings-embed');
+  const toggleSettingsBtn = document.getElementById('mob-toggle-settings');
+  let pausedByMenu = false;
+
+  menuBtn.addEventListener('touchstart', e => {
+    e.preventDefault();
+    menuOverlay.classList.add('open');
+    pausedByMenu = true;
+    AI.enabled = false;
+  }, {passive:false});
+
+  document.getElementById('mob-resume').addEventListener('touchstart', e => {
+    e.preventDefault();
+    menuOverlay.classList.remove('open');
+    pausedByMenu = false;
+    AI.enabled = true;
+  }, {passive:false});
+
+  document.getElementById('mob-restart').addEventListener('touchstart', e => {
+    e.preventDefault();
+    // Полный ресет состояния (как resetBoth, но без анимации смерти)
+    P.hp=100; P.stamina=P.stamMax; P.rage=0; P.exhausted=0; P.unbalanced=0; P.vx=0; P.vy=0;
+    P.x=W*0.15; P.y=H*0.8;
+    if(dummyOn){
+      D.hp=100; D.stamina=0; D.rage=0; D._hadExhaustion=false;
+      D.exhausted=0; D.unbalanced=0; D.vx=0; D.vy=0;
+      D.x=W*0.8; D.y=H*0.2;
+    }
+    DEATH.dDead=false; DEATH.pDead=false; DEATH.fadeIn=false; DEATH.fadeAlpha=0; DEATH.text='';
+    menuOverlay.classList.remove('open');
+    pausedByMenu = false;
+    AI.enabled = true;
+  }, {passive:false});
+
+  toggleSettingsBtn.addEventListener('touchstart', e => {
+    e.preventDefault();
+    const showing = settingsEmbed.style.display !== 'none';
+    if(!showing){
+      // На мобиле показываем ТОЛЬКО секцию "Скорость игры / Камера"
+      const camSec = document.getElementById('sec-mobile-cam');
+      if(camSec && camSec.parentElement !== settingsEmbed){
+        settingsEmbed.appendChild(camSec);
+      }
+      settingsEmbed.style.display = 'block';
+      if(camSec) camSec.style.display = 'block';
+    } else {
+      settingsEmbed.style.display = 'none';
+    }
+  }, {passive:false});
+
+  // ── ПЛАВАЮЩИЕ ДЖОЙСТИКИ ──────────────────────────────────────────────────
+  const zoneMove  = document.getElementById('zone-move');
+  const zoneSword = document.getElementById('zone-sword');
+  const moveBase  = document.getElementById('move-base');
+  const moveKnob  = document.getElementById('move-knob');
+  const swordBase = document.getElementById('sword-base');
+  const swordKnob = document.getElementById('sword-knob');
+
+  const MOVE_R  = 55;
+  const SWORD_R = 75;
+
+  let moveId = null, moveOrigin = {x:0,y:0};
+  let swordId = null, swordOrigin = {x:0,y:0};
+  let lastSwordTap = 0;
+  let doubleTapLMB = false;
+
+  // ── ЛЕВЫЙ — движение ──────────────────────────────────────────────────────
+  zoneMove.addEventListener('touchstart', e => {
+    e.preventDefault();
+    if(moveId !== null) return;
+    const t = e.changedTouches[0];
+    moveId = t.identifier;
+    moveOrigin = {x: t.clientX, y: t.clientY};
+    moveBase.style.left = moveOrigin.x+'px';
+    moveBase.style.top  = moveOrigin.y+'px';
+    moveBase.classList.add('active');
+    updateMoveKnob(0,0);
+  }, {passive:false});
+
+  zoneMove.addEventListener('touchmove', e => {
+    e.preventDefault();
+    for(const t of e.changedTouches){
+      if(t.identifier !== moveId) continue;
+      const dx = t.clientX - moveOrigin.x;
+      const dy = t.clientY - moveOrigin.y;
+      const dist = Math.hypot(dx,dy);
+      const nx = dist>MOVE_R ? dx/dist*MOVE_R : dx;
+      const ny = dist>MOVE_R ? dy/dist*MOVE_R : dy;
+      updateMoveKnob(nx,ny);
+      const dead = 8;
+      keys['w']=ny<-dead; keys['s']=ny>dead;
+      keys['a']=nx<-dead; keys['d']=nx>dead;
+    }
+  }, {passive:false});
+
+  zoneMove.addEventListener('touchend', e => {
+    e.preventDefault();
+    for(const t of e.changedTouches){
+      if(t.identifier !== moveId) continue;
+      moveId = null;
+      moveBase.classList.remove('active');
+      updateMoveKnob(0,0);
+      keys['w']=keys['s']=keys['a']=keys['d']=false;
+    }
+  }, {passive:false});
+
+  function updateMoveKnob(dx,dy){
+    moveKnob.style.left = (moveOrigin.x+dx)+'px';
+    moveKnob.style.top  = (moveOrigin.y+dy)+'px';
+    moveBase.style.left = moveOrigin.x+'px';
+    moveBase.style.top  = moveOrigin.y+'px';
+  }
+
+  // ── ПРАВЫЙ — меч / прицел ────────────────────────────────────────────────
+  zoneSword.addEventListener('touchstart', e => {
+    e.preventDefault();
+    enableAudioSystem();
+    if(swordId !== null) return;
+    const t = e.changedTouches[0];
+
+    const now = Date.now();
+    if(now - lastSwordTap < 300){
+      doubleTapLMB = !doubleTapLMB;
+      mDown = doubleTapLMB;
+      swordKnob.classList.toggle('lmb-active', doubleTapLMB);
+    }
+    lastSwordTap = now;
+
+    swordId = t.identifier;
+    swordOrigin = {x: t.clientX, y: t.clientY};
+    swordBase.style.left = swordOrigin.x+'px';
+    swordBase.style.top  = swordOrigin.y+'px';
+    swordBase.classList.add('active');
+    updateSword(t.clientX, t.clientY);
+
+    if(!doubleTapLMB) mDown = true;
+  }, {passive:false});
+
+  zoneSword.addEventListener('touchmove', e => {
+    e.preventDefault();
+    for(const t of e.changedTouches){
+      if(t.identifier !== swordId) continue;
+      updateSword(t.clientX, t.clientY);
+    }
+  }, {passive:false});
+
+  zoneSword.addEventListener('touchend', e => {
+    e.preventDefault();
+    for(const t of e.changedTouches){
+      if(t.identifier !== swordId) continue;
+      swordId = null;
+      swordBase.classList.remove('active');
+      updateSwordKnob(0,0);
+      if(!doubleTapLMB) mDown = false;
+    }
+  }, {passive:false});
+
+  function updateSword(cx, cy){
+    const dx = cx - swordOrigin.x;
+    const dy = cy - swordOrigin.y;
+    const dist = Math.hypot(dx,dy);
+    const nx = dist>SWORD_R ? dx/dist*SWORD_R : dx;
+    const ny = dist>SWORD_R ? dy/dist*SWORD_R : dy;
+    updateSwordKnob(nx,ny);
+
+    const rc = rootCenter();
+    const aimRadius = Math.min(W,H)*0.35;
+    const normX = nx/SWORD_R, normY = ny/SWORD_R;
+    if(Math.hypot(normX,normY) > 0.05){
+      mX = rc.x + normX*aimRadius;
+      mY = rc.y + normY*aimRadius;
+    }
+  }
+
+  function updateSwordKnob(dx,dy){
+    swordKnob.style.left = (swordOrigin.x+dx)+'px';
+    swordKnob.style.top  = (swordOrigin.y+dy)+'px';
+    swordBase.style.left = swordOrigin.x+'px';
+    swordBase.style.top  = swordOrigin.y+'px';
+  }
+
+  // Запрет скролла/зума
+  document.addEventListener('touchmove', e => { if(e.cancelable) e.preventDefault(); }, {passive:false});
+  document.addEventListener('gesturestart', e => e.preventDefault());
+})();
+</script>
+</body>
+</html>
