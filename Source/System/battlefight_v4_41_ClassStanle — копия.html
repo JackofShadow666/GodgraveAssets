@@ -1,0 +1,3025 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>BattleFight v7 — Character Class Refactored (FULL)</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;user-select:none;}
+body{background:#0a0810;overflow:hidden;font-family:'Courier New',monospace;}
+canvas{display:block;cursor:crosshair;position:fixed;top:0;left:0;z-index:1;pointer-events:auto;}
+#hint{position:fixed;bottom:10px;left:50%;transform:translateX(-50%);color:#887799;font-size:10px;background:rgba(0,0,0,0.5);border-radius:20px;padding:3px 14px;white-space:nowrap;z-index:15;pointer-events:none;letter-spacing:0.5px;}
+#health-bars{position:fixed;top:12px;left:0;right:0;display:flex;justify-content:center;gap:24px;pointer-events:none;z-index:20;}
+.hc{background:rgba(5,2,14,0.85);border-radius:10px;padding:6px 14px;text-align:center;border:1px solid #3a2255;min-width:165px;backdrop-filter:blur(6px);box-shadow:0 2px 12px rgba(0,0,0,0.6);}
+.hl{color:#aa9988;font-size:10px;letter-spacing:1px;text-transform:uppercase;}
+.hbg{width:150px;height:12px;background:#331122;border-radius:6px;overflow:hidden;margin-top:4px;position:relative;}
+.hf{height:100%;width:100%;transition:width 0.1s;}
+#ph{background:#cc3333;} #bh{background:#dd6644;}
+#weapon-hud{position:fixed;top:70px;left:0;right:0;display:flex;justify-content:center;gap:60px;pointer-events:none;z-index:20;}
+#restart-btn{position:fixed;bottom:60px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#aa3322,#cc5533);border:2px solid #ff7755;color:white;font-family:monospace;font-size:15px;font-weight:bold;padding:10px 32px;border-radius:40px;cursor:pointer;z-index:30;box-shadow:0 0 20px rgba(200,80,50,0.4);letter-spacing:1px;}
+#restart-btn:hover{background:linear-gradient(135deg,#cc4433,#ee6644);box-shadow:0 0 30px rgba(220,100,60,0.6);}
+#game-over{position:fixed;top:45%;left:50%;transform:translate(-50%,-50%);font-size:44px;font-weight:bold;color:#ffcc44;text-shadow:0 0 30px #ff6600,0 0 60px #ff330055;background:rgba(3,1,10,0.88);padding:22px 48px;border-radius:16px;z-index:100;border:1px solid #554400;backdrop-filter:blur(8px);}
+#debug-mode{position:fixed;top:15px;right:15px;background:rgba(0,0,0,0.7);border:1px solid #8866aa;border-radius:8px;padding:8px 15px;color:#ffcc88;font-size:12px;z-index:25;}
+#ai-debug{position:fixed;bottom:15px;left:15px;background:rgba(0,0,0,0.85);border:1px solid #ffaa44;border-radius:8px;padding:8px 15px;color:#ffff88;font-size:12px;font-family:monospace;z-index:25;pointer-events:none;max-width:400px;}
+#freeze-status{position:fixed;bottom:15px;right:15px;background:rgba(0,0,0,0.8);border:1px solid #44ff44;border-radius:8px;padding:6px 12px;color:#aaffaa;font-size:11px;font-family:monospace;z-index:25;}
+.clash-ui{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:200;pointer-events:none;text-align:center;}
+.clash-icon{font-size:64px;animation:pulse 0.3s ease-in-out infinite;filter:drop-shadow(0 0 10px #ffaa44);}
+.clash-bar-bg{width:300px;height:20px;background:#221122;border:2px solid #8866aa;border-radius:10px;margin:10px auto;overflow:hidden;position:relative;}
+.clash-bar-fill{height:100%;width:50%;background:linear-gradient(90deg,#ff6644,#ffcc44);transition:width 0.02s linear;}
+.clash-marker{position:absolute;top:-4px;width:6px;height:28px;background:#fff;box-shadow:0 0 8px #ffaa44;border-radius:2px;}
+@keyframes pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.1);}}
+.hidden{display:none;}
+#debug-menu{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.97);border:2px solid #ffaa44;border-radius:20px;padding:20px 24px;z-index:300;color:#ffcc88;font-family:monospace;display:flex;flex-direction:column;gap:10px;min-width:360px;max-height:90vh;overflow-y:auto;}
+#debug-menu h3{font-size:16px;text-align:center;margin-bottom:4px;color:#ffdd88;}
+#debug-menu .dbrow{display:flex;align-items:center;gap:8px;font-size:13px;}
+#debug-menu label{width:160px;flex-shrink:0;}
+#debug-menu input[type=range]{flex:1;}
+#debug-menu select{flex:1;background:#221100;border:1px solid #aa7733;color:#ffcc88;padding:3px 6px;border-radius:6px;font-family:monospace;}
+#debug-menu button{background:#332211;border:1px solid #ffaa44;color:#ffcc88;font-size:14px;padding:6px 12px;border-radius:10px;cursor:pointer;font-family:monospace;width:100%;}
+#debug-menu button:hover{background:#664422;}
+.dbsep{border-top:1px solid #443322;margin:4px 0;}
+#reload-bar{position:fixed;top:98px;left:50%;transform:translateX(-50%);color:#88ffff;font-size:12px;background:rgba(0,0,0,0.7);border-radius:6px;padding:2px 10px;z-index:20;display:none;}
+#start-screen{position:fixed;inset:0;background:radial-gradient(ellipse at 50% 40%,#130a22 0%,#060410 70%);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:500;gap:12px;pointer-events:auto;}
+#start-screen h1{font-size:42px;color:#ffdd55;text-shadow:0 0 25px #ff8800,0 0 50px #ff440055;margin-bottom:14px;letter-spacing:3px;}
+.start-btn{background:rgba(20,10,40,0.9);border:1px solid #553388;color:#ddbbff;font-size:15px;padding:13px 28px;border-radius:10px;cursor:pointer;font-family:monospace;width:340px;text-align:left;transition:all 0.18s;box-shadow:0 2px 10px rgba(0,0,0,0.5);}
+.start-btn:hover{background:rgba(50,20,80,0.95);border-color:#8855cc;box-shadow:0 2px 20px rgba(100,50,180,0.35);transform:translateY(-1px);}
+.start-btn span{font-size:10px;color:#8877aa;display:block;margin-top:3px;}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hint">WASD — движение · 2×тап — додж · ЛКМ — щит · E — бросок · R — толчок/рестарт · Z/z — оружие · M — меню</div>
+<div id="health-bars">
+  <div class="hc"><div class="hl">ИГРОК</div><div class="hbg"><div class="hf" id="ph"></div><span id="ph-txt" style="position:absolute;top:0;left:0;right:0;font-size:9px;color:#fff;text-align:center;line-height:12px;text-shadow:0 0 3px #000;">100/100</span></div><div class="hl" style="margin-top:2px">СТАМИНА</div><div class="hbg"><div class="hf" id="pStaminaBar" style="background:#44aaff"></div><span id="ps-txt" style="position:absolute;top:0;left:0;right:0;font-size:9px;color:#fff;text-align:center;line-height:12px;text-shadow:0 0 3px #000;">100/100</span></div><div class="hl" style="margin-top:3px" id="p-weapon">🗡️ ДЛИННЫЙ МЕЧ</div></div>
+  <div class="hc"><div class="hl">БОТ</div><div class="hbg"><div class="hf" id="bh"></div><span id="bh-txt" style="position:absolute;top:0;left:0;right:0;font-size:9px;color:#fff;text-align:center;line-height:12px;text-shadow:0 0 3px #000;">100/100</span></div><div class="hl" style="margin-top:2px">СТАМИНА</div><div class="hbg"><div class="hf" id="bStaminaBar" style="background:#44aacc"></div><span id="bs-txt" style="position:absolute;top:0;left:0;right:0;font-size:9px;color:#fff;text-align:center;line-height:12px;text-shadow:0 0 3px #000;">100/100</span></div><div class="hl" style="margin-top:3px" id="b-weapon">🗡️ ДЛИННЫЙ МЕЧ</div></div>
+</div>
+<div id="reload-bar">🔄 ПЕРЕЗАРЯДКА...</div>
+<div id="debug-mode">🛠 ОБЫЧНЫЙ</div>
+<div id="ai-debug">🤖 AI</div>
+<div id="freeze-status">⚡ АКТИВЕН</div>
+<div id="game-over" class="hidden"></div>
+<button id="restart-btn" class="hidden">⚔ РЕСТАРТ ⚔</button>
+<div id="clash-ui" class="clash-ui hidden"><div class="clash-icon">⚔️</div><div style="color:#ffcc66;font-size:18px;letter-spacing:2px;text-shadow:0 0 10px #ff8800;margin-bottom:4px">ПРОТИВОСТОЯНИЕ</div><div class="clash-bar-bg"><div class="clash-bar-fill" id="clash-fill"></div><div class="clash-marker" id="clash-marker" style="left:50%"></div></div><div style="color:#cc9966;font-size:11px;letter-spacing:1px">💢 E — БИТЬ · R — ОТСТУПИТЬ</div></div>
+<div id="debug-menu" style="display:none;"><h3>🛠 МЕНЮ ОТЛАДКИ</h3><div class="dbrow"><label>Игрок — размер:</label><input type="range" id="sl-pscale" min="0.5" max="4" step="0.1" value="1"><span id="lbl-pscale">1.0</span></div><div class="dbrow"><label>Бот — размер:</label><input type="range" id="sl-bscale" min="0.5" max="4" step="0.1" value="1"><span id="lbl-bscale">1.0</span></div><div class="dbsep"></div><div class="dbrow"><label>Оружие игрока:</label><select id="sel-pwep"></select></div><div class="dbrow"><label>Оружие бота:</label><select id="sel-bwep"></select></div><div class="dbsep"></div><div class="dbrow"><label>Множитель расхода стамины:</label><input type="range" id="sl-stamina" min="0.5" max="8" step="0.1" value="3"><span id="lbl-stamina">3.0</span></div><div class="dbrow"><label>Множитель времени отдыха:</label><input type="range" id="sl-rest" min="0.2" max="3" step="0.05" value="1"><span id="lbl-rest">1.0</span></div><div class="dbrow"><label>Скорость бота ×:</label><input type="range" id="sl-botspeed" min="0" max="1" step="0.05" value="1"><span id="lbl-botspeed">1.0</span></div><div class="dbrow"><label>Укол бота (0.1–1.0):</label><input type="range" id="sl-thrust" min="0.1" max="1" step="0.05" value="1"><span id="lbl-thrust">1.0</span></div><div class="dbrow"><label>Скорость раскрутки цепа:</label><input type="range" id="sl-flail" min="0.5" max="5" step="0.1" value="1.5"><span id="lbl-flail">1.5</span></div><div class="dbrow"><label>Истощение:</label><select id="sel-exhaust"><option value="smooth">Плавное</option><option value="hard">Резкое</option></select></div><div class="dbsep"></div><div class="dbrow"><label>Щит игрока:</label><select id="sel-pshield"><option value="none">Нет</option><option value="small">Малый</option><option value="large">Большой</option><option value="tower">Башенный</option></select></div><div class="dbrow"><label>Щит бота:</label><select id="sel-bshield"><option value="none">Нет</option><option value="small">Малый</option><option value="large">Большой</option><option value="tower">Башенный</option></select></div><div class="dbsep"></div><div class="dbrow" style="flex-wrap:wrap;gap:4px"><label style="width:100%;font-size:11px">Заклинания игрока:</label><span id="p-spell-toggles"></span></div><div class="dbrow" style="flex-wrap:wrap;gap:4px"><label style="width:100%;font-size:11px">Заклинания бота:</label><span id="b-spell-toggles"></span></div><div class="dbsep"></div><div class="dbrow"><label>Без перезарядки (игрок):</label><input type="checkbox" id="chk-nospellcd" style="width:auto"> <span style="font-size:10px;color:#aaa">Мгновенные способности</span></div><button id="btn-dummy">🤖 МАНЕКЕН (вкл/выкл)</button><button id="btn-dmg-log">📋 ЛОГ УРОНА</button><button id="btn-no-dodge">🚫 ЗАПРЕТ ДОДЖА БОТА</button><button id="btn-no-thrust">🚫 ЗАПРЕТ УКОЛА БОТА</button><button id="btn-hide-debug">🔇 СПРЯТАТЬ ДЕБ</button><button id="btn-resume">✅ ПРОДОЛЖИТЬ</button></div>
+<div id="dmg-log-panel" style="display:none;position:fixed;top:50px;right:10px;width:300px;max-height:400px;overflow-y:auto;background:rgba(0,0,0,0.9);color:#aaffaa;font-family:monospace;font-size:11px;padding:10px;z-index:600;border:1px solid #44ff44;border-radius:6px"><b>ЛОГ УРОНА</b><button onclick="document.getElementById('dmg-log-panel').style.display='none'" style="float:right;background:none;border:none;color:#fff;cursor:pointer">✕</button><div id="dmg-log-content"></div></div>
+<div id="start-screen"><h1>⚔ BATTLE FIGHT v7 ⚔</h1><button class="start-btn" id="btn-random-all">🎲 Случайная битва<span>Случайное оружие и размеры обоих. Бот не меняет оружие.</span></button><button class="start-btn" id="btn-random-enemy">👹 Случайный враг<span>Случайное оружие у бота. Бот не меняет оружие.</span></button><button class="start-btn" id="btn-all-weapon">🗡️ Все оружие<span>Бот может менять оружие каждые 10-50 сек.</span></button><button class="start-btn" id="btn-arena">🏟️ Арена<span>Выбитое оружие исчезает. Через 3 сек появляется случайное новое.</span></button></div>
+
+<script>
+// ============================================================
+// BATTLEFIGHT v7 — ПОЛНЫЙ РЕФАКТОРИНГ
+// Единый класс Character + PlayerController + AIBehaviour
+// СОХРАНЕНЫ ВСЕ МЕХАНИКИ
+// ============================================================
+
+// ---------- КОНСТАНТЫ ----------
+const C = {
+  PLAYER_SPEED:8.5, BOT_SPEED:5.2, BOT_NO_SWORD_SPEED:6.5,
+  PICKUP_RADIUS:55, HIT_W:22, HIT_H:32,
+  DODGE_IMPULSE:60, DODGE_CD:40, DODGE_RUSH:5, DODGE_SLIDE:22,
+  DEFENSE_MAX_SEC:12,
+  STAMINA_MAX:100
+};
+
+const WEAPONS = {
+  longsword:{name:'ДЛИННЫЙ МЕЧ',emoji:'🗡️',len:1.0,weight:1.0,pierceBlock:0,throwRange:0.6,throwType:'straight',collisionType:'full',slashMul:1.1,thrustMul:1.2,restTime:0.5,staminaCost:12,special:null},
+  shortsword:{name:'КОРОТКИЙ МЕЧ',emoji:'🗡️',len:0.7,weight:0.8,pierceBlock:0,throwRange:0.8,throwType:'straight',collisionType:'full',slashMul:1.0,thrustMul:1.0,restTime:0.3,staminaCost:8,special:null},
+  dagger:{name:'КИНЖАЛ',emoji:'🔪',len:0.4,weight:0.4,pierceBlock:0.3,throwRange:1.0,throwType:'spin',collisionType:'full',slashMul:1.0,thrustMul:2.0,restTime:0.01,staminaCost:4,special:'dagger'},
+  greatsword:{name:'ОГРОМНЫЙ МЕЧ',emoji:'⚔️',len:1.6,weight:1.6,pierceBlock:0,throwRange:0.2,throwType:'straight',collisionType:'full',slashMul:1.2,thrustMul:1.2,restTime:2.0,staminaCost:25,special:null},
+  spear:{name:'КОПЬЕ',emoji:'🏹',len:1.6,weight:1.0,pierceBlock:0,throwRange:1.0,throwType:'straight',collisionType:'tip',slashMul:0.1,thrustMul:1.5,restTime:0.3,staminaCost:10,special:'spear'},
+  hammer:{name:'МОЛОТ',emoji:'🔨',len:0.8,weight:1.2,pierceBlock:0,throwRange:0.6,throwType:'spin',collisionType:'full',slashMul:1.5,thrustMul:0.1,restTime:1.5,staminaCost:18,special:'hammer',knockback:true,disarms:true},
+  scythe:{name:'КОСА',emoji:'⚙️',len:1.7,weight:0.4,pierceBlock:0,throwRange:1.0,throwType:'spin',collisionType:'blade',slashMul:1.5,thrustMul:0.1,restTime:1.5,staminaCost:14,special:'scythe',flyingDisarms:true},
+  staff:{name:'ПОСОХ',emoji:'🪄',len:1.8,weight:0.8,pierceBlock:0,throwRange:0.8,throwType:'spin',collisionType:'full',slashMul:0,thrustMul:0,restTime:0.3,staminaCost:10,special:'staff',knockback:true},
+  wand:{name:'ЖЕЗЛ',emoji:'✨',len:0.55,weight:1.2,pierceBlock:0,throwRange:0.1,throwType:'spin',collisionType:'full',slashMul:0.4,thrustMul:0.1,restTime:1.5,staminaCost:8,special:'wand',crossbowCD:0},
+  flail:{name:'ЦЕП',emoji:'⛓️',len:0.4,weight:1.0,pierceBlock:0,throwRange:0.6,throwType:'straight',collisionType:'tip',slashMul:1.0,thrustMul:1.0,restTime:0.3,staminaCost:10,special:'flail',disarmsOnHit:true,knockback:true},
+  sickle:{name:'СЕРП',emoji:'🌙',len:0.7,weight:0.8,pierceBlock:0,throwRange:0.8,throwType:'spin',collisionType:'full',slashMul:1.0,thrustMul:0.01,restTime:0.3,staminaCost:8,special:'sickle',disarmsOnHit:true},
+  crossbow:{name:'АРБАЛЕТ',emoji:'🏹',len:0.4,weight:1.0,pierceBlock:0,throwRange:0.01,throwType:'straight',collisionType:'none',slashMul:0.01,thrustMul:0.01,restTime:0.1,staminaCost:2,special:'crossbow',canBlock:false}
+};
+const WEAPON_ORDER = ['longsword','shortsword','dagger','greatsword','spear','staff','hammer','scythe','crossbow','wand','sickle','flail'];
+function rndWeapon(){ return WEAPON_ORDER[Math.floor(Math.random()*WEAPON_ORDER.length)]; }
+
+const SHIELDS = {
+  none:{name:'БЕЗ ЩИТА', size:0, weight:0, shape:'none'},
+  small:{name:'МАЛ. ЩИТ', emoji:'🛡️', size:0.5, weight:0.1, shape:'oval'},
+  large:{name:'БОЛ. ЩИТ', emoji:'🛡️', size:0.9, weight:0.3, shape:'kite'},
+  tower:{name:'БАШЕН. ЩИТ', emoji:'🛡️', size:1.2, weight:0.5, shape:'tower'}
+};
+const SHIELD_ORDER = ['none','small','large','tower'];
+
+function getWeaponLen(weaponKey){ let wp=WEAPONS[weaponKey]; return wp?wp.len:1; }
+function getCombatRanges(sourceWep, targetWep){ let maxLen = Math.max(getWeaponLen(sourceWep), getWeaponLen(targetWep)) * 100; return { R1: maxLen, R2: maxLen*2, R3: 300, R4: 400, R5: 500 }; }
+function hitRect(x,y,scale=1){ let hw=C.HIT_W*scale, hh=C.HIT_H*scale; return {x:x+5-hw/2,y:y-5-hh/2,w:hw,h:hh}; }
+function rectCollide(r1,r2){ return !(r2.x>r1.x+r1.w||r2.x+r2.w<r1.x||r2.y>r1.y+r1.h||r2.y+r2.h<r1.y); }
+function pointInRect(px,py,r){ return px>=r.x&&px<=r.x+r.w&&py>=r.y&&py<=r.y+r.h; }
+function segSeg(ax,ay,bx,by,cx,cy,dx,dy){ function ccw(ax,ay,bx,by,cx,cy){ return (cy-ay)*(bx-ax)>(by-ay)*(cx-ax); } return ccw(ax,ay,cx,cy,dx,dy)!==ccw(bx,by,cx,cy,dx,dy) && ccw(ax,ay,bx,by,cx,cy)!==ccw(ax,ay,bx,by,dx,dy); }
+function segHitBox(s,box){ let {x,y,w,h}=box; if(segSeg(s.x1,s.y1,s.x2,s.y2, x,y,x+w,y)) return true; if(segSeg(s.x1,s.y1,s.x2,s.y2, x+w,y,x+w,y+h)) return true; if(segSeg(s.x1,s.y1,s.x2,s.y2, x,y+h,x+w,y+h)) return true; if(segSeg(s.x1,s.y1,s.x2,s.y2, x,y,x,y+h)) return true; if(pointInRect(s.x1,s.y1,box)||pointInRect(s.x2,s.y2,box)) return true; return false; }
+function segCollide(s1,s2){ const A={x:s1.x1,y:s1.y1},B={x:s1.x2,y:s1.y2},C={x:s2.x1,y:s2.y1},D={x:s2.x2,y:s2.y2}; const AB={x:B.x-A.x,y:B.y-A.y},AC={x:C.x-A.x,y:C.y-A.y},AD={x:D.x-A.x,y:D.y-A.y}; const CD={x:D.x-C.x,y:D.y-C.y},CA={x:A.x-C.x,y:A.y-C.y},CB={x:B.x-C.x,y:B.y-C.y}; return (AB.x*AC.y-AB.y*AC.x)*(AB.x*AD.y-AB.y*AD.x)<0 && (CD.x*CA.y-CD.y*CA.x)*(CD.x*CB.y-CD.y*CB.x)<0; }
+function swordSeg(cx,cy,ang,wlen,collisionType){ let L=100*wlen; let x2=cx+Math.cos(ang)*L, y2=cy+Math.sin(ang)*L; if(collisionType==='tip'){ let tipX=cx+Math.cos(ang)*L*0.85, tipY=cy+Math.sin(ang)*L*0.85; return {x1:tipX,y1:tipY,x2:x2,y2:y2}; } else if(collisionType==='blade'){ let startX=cx+Math.cos(ang)*L*0.4, startY=cy+Math.sin(ang)*L*0.4; return {x1:startX,y1:startY,x2:x2,y2:y2}; } return {x1:cx,y1:cy,x2:x2,y2:y2}; }
+function getSwordOffset(vx,vy){ let sp=Math.hypot(vx,vy); if(sp<1) return {x:0,y:0}; let a=Math.atan2(vy,vx), o=Math.min(12,sp*1.2); return {x:Math.cos(a)*o,y:Math.sin(a)*o}; }
+function getSpeedModifier(ma,sa){ let d=Math.abs(ma-sa); while(d>Math.PI) d-=Math.PI*2; d=Math.abs(d); return d<Math.PI/2?0.5:1.0; }
+function sweptPointHitBox(x1,y1,x2,y2,box){ let {x,y,w,h}=box; if(pointInRect(x1,y1,box)||pointInRect(x2,y2,box)) return true; if(segSeg(x1,y1,x2,y2, x,y,x+w,y)) return true; if(segSeg(x1,y1,x2,y2, x+w,y,x+w,y+h)) return true; if(segSeg(x1,y1,x2,y2, x,y+h,x+w,y+h)) return true; if(segSeg(x1,y1,x2,y2, x,y,x,y+h)) return true; return false; }
+function applyShake(i){ shakeTimer=8; shakeX=(Math.random()-0.5)*i; shakeY=(Math.random()-0.5)*i; }
+function angDiff(a,b){ let d=a-b; while(d>Math.PI)d-=2*Math.PI; while(d<-Math.PI)d+=2*Math.PI; return d; }
+function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
+// Случайное целое число от min до max (включительно)
+function RndI(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+// ---------- АУДИО И ЭФФЕКТЫ ----------
+let audioCtx = null;
+function initAudio() { if (!audioCtx) { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } if (audioCtx.state === 'suspended') audioCtx.resume(); }
+function oSc(freq,vol,time,type){
+  const t=audioCtx.currentTime,o=audioCtx.createOscillator(),g=audioCtx.createGain();
+  o.type=type||'square';o.frequency.setValueAtTime(freq,t);
+  g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(0.0001,t+time);
+  o.connect(g);g.connect(audioCtx.destination);o.start();o.stop(t+time);
+}
+function playSound(type){
+  initAudio(); if(!audioCtx) return;
+  const t=audioCtx.currentTime;
+  if(type==='hit'){
+    const base=[80,95,110][(Math.random()*3)|0];
+    oSc(base,0.6,0.10,'square');
+    const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+    o.type='sine';o.frequency.setValueAtTime(base*0.5,t);
+    g.gain.setValueAtTime(0.15,t);g.gain.exponentialRampToValueAtTime(0.0001,t+0.6);
+    o.connect(g);g.connect(audioCtx.destination);o.start();o.stop(t+0.6);
+  } else if(type==='clash'){
+    const base=[900,1100,1300][(Math.random()*3)|0];
+    oSc(base,0.35,0.05,'square');oSc(base*2.3,0.25,0.05,'triangle');
+    const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+    const tail=[360,420,480][(Math.random()*3)|0];
+    o.type='sine';o.frequency.setValueAtTime(tail,t);
+    g.gain.setValueAtTime(0.12,t);g.gain.exponentialRampToValueAtTime(0.0001,t+1.4);
+    o.connect(g);g.connect(audioCtx.destination);o.start();o.stop(t+1.4);
+  } else if(type==='damage'||type==='heavyhit'){
+    const base=[45,55,65][(Math.random()*3)|0];
+    oSc(base,type==='heavyhit'?1.1:0.9,0.18,'square');
+    const o=audioCtx.createOscillator(),g=audioCtx.createGain(),f=audioCtx.createBiquadFilter();
+    o.type='triangle';o.frequency.setValueAtTime(base*0.7,t);
+    f.type='lowpass';f.frequency.setValueAtTime(600,t);
+    g.gain.setValueAtTime(0.25,t);g.gain.exponentialRampToValueAtTime(0.0001,t+1.2);
+    o.connect(f);f.connect(g);g.connect(audioCtx.destination);o.start();o.stop(t+1.2);
+  } else {
+    const S={ knockout:[200,0.25,0.3,'square'], throw:[760,0.1,0.1,'square'], pickup:[1000,0.08,0.08,'sine'], clashStart:[400,0.3,0.3,'square'], clashSpam:[700,0.05,0.05,'square'], dodge:[500,0.1,0.12,'sine'], crossbow:[1200,0.12,0.08,'square'], death:[150,0.3,0.4,'sine'], exhaust:[280,0.2,0.25,'sine'], whoosh:[300,0.06,0.08,'sine'] };
+    let s=S[type]||[440,0.1,0.1,'sine'];
+    oSc(s[0],s[1],s[2],s[3]);
+  }
+}
+
+let lastMsg = new Map();
+function addFloat(text,x,y,color,cd=0.8,always=false){
+  if(hideDebug&&!always) return;
+  let n=performance.now()/1000;
+  if(lastMsg.has(text)&&n-lastMsg.get(text)<cd) return;
+  lastMsg.set(text,n); floats.push({t:text,x:x,y:y,c:color,life:40});
+}
+function addBlood(x,y,a,crit=false){
+  let count=crit?12:5;
+  puddles.push({x,y,life:200});
+  for(let i=0;i<count;i++){
+    let spd=crit?(2+Math.random()*8):(1+Math.random()*4);
+    let ang=a+(Math.random()-0.5)*(crit?2.0:1.4);
+    blood.push({x:x+(Math.random()-0.5)*8,y:y+(Math.random()-0.5)*8,
+      vx:Math.cos(ang)*spd, vy:Math.sin(ang)*spd,
+      life:crit?28:20, size:crit?(1+Math.random()*3):(1+Math.random()*1.5),
+      col:crit?'#dd1111':'#aa2222'});
+  }
+}
+function addPuddle(x,y){ puddles.push({x,y,life:150}); }
+function addDodgeTrail(x,y){ dodgeTrail.push({x,y,life:6}); }
+function addSweat(x,y){ for(let i=0;i<3;i++) sweatParticles.push({x:x+(Math.random()-0.5)*20, y:y-25+Math.random()*15, life:30, vx:(Math.random()-0.5)*0.8, vy:Math.random()*1.5}); }
+function addBoltDestroy(x,y){ for(let i=0;i<4;i++){ floats.push({t:'💨',x:x+(Math.random()-0.5)*15,y:y+(Math.random()-0.5)*15,c:'#ccccaa',life:20+Math.random()*10}); } for(let i=0;i<4;i++){ let ang = Math.random()*Math.PI*2; blood.push({x:x,y:y,vx:Math.cos(ang)*(2+Math.random()*4),vy:Math.sin(ang)*(2+Math.random()*4),life:14,color:'#8B5A2B'}); } }
+
+// ---------- КЛАССЫ ОБЪЕКТОВ ----------
+class Drop {
+  constructor(x,y,vx,vy,owner,ang,isFlying=false,weapon='longsword'){
+    this.x=x; this.y=y; this.vx=vx; this.vy=vy; this.owner=owner; this.ang=ang;
+    let wp=WEAPONS[weapon];
+    this.throwType=wp?.throwType||'straight';
+    if(isFlying){
+      if(this.throwType==='spin') this.rot=Math.random()<0.5?0.22:-0.22;
+      else{ this.rot=0; this.ang=Math.atan2(vy,vx); }
+    } else { this.rot=(Math.random()-0.5)*0.15; }
+    this.can=!isFlying; this.isFlying=isFlying;
+    this.flyTimer=isFlying?90:0; this.noCollideTimer=isFlying?8:0;
+    this.weapon=weapon;
+  }
+  update(){
+    if(this.noCollideTimer>0) this.noCollideTimer--;
+    this.x+=this.vx; this.y+=this.vy;
+    if(this.isFlying){
+      this.flyTimer--; if(this.flyTimer<=0) this.isFlying=false;
+      if(this.throwType==='spin') this.ang+=this.rot;
+      else this.ang=Math.atan2(this.vy,this.vx);
+    } else { this.ang+=this.rot; }
+    if(this.x<25){ this.x=25; this.vx=-this.vx*0.85; if(!this.isFlying) this.rot*=-0.5; }
+    if(this.x>W-25){ this.x=W-25; this.vx=-this.vx*0.85; if(!this.isFlying) this.rot*=-0.5; }
+    if(this.y<25){ this.y=25; this.vy=-this.vy*0.85; if(!this.isFlying) this.rot*=-0.5; }
+    if(this.y>H-25){ this.y=H-25; this.vy=-this.vy*0.85; if(!this.isFlying) this.rot*=-0.5; }
+    this.vx*=0.985; this.vy*=0.985;
+    if(!this.isFlying){ this.rot*=0.97; if(Math.abs(this.vx)<1.2&&Math.abs(this.vy)<1.2) this.can=true; }
+  }
+  draw(){
+    let wp=WEAPONS[this.weapon]||WEAPONS.longsword;
+    ctx.save(); ctx.translate(this.x,this.y);
+    let drawAng;
+    if(this.isFlying && this.throwType!=='spin') drawAng = Math.atan2(this.vy,this.vx) - Math.PI/2;
+    else drawAng = this.ang - Math.PI/2;
+    ctx.rotate(drawAng);
+    ctx.translate(0, -50*wp.len);
+    drawWeaponShape(wp,this.owner==='p',false,true);
+    ctx.restore();
+  }
+}
+
+class Bolt {
+  constructor(x,y,vx,vy,owner){
+    this.x=x; this.y=y; this.vx=vx; this.vy=vy; this.owner=owner;
+    this.prevX=x; this.prevY=y;
+    this.ang=Math.atan2(vy,vx); this.life=180;
+    this.noCollideTimer=3; this.hit=false; this.isMagic=false; this.isVenom=false;
+  }
+  update(){
+    if(this.noCollideTimer>0) this.noCollideTimer--;
+    this.prevX=this.x; this.prevY=this.y;
+    this.x+=this.vx; this.y+=this.vy; this.life--;
+    this.ang=Math.atan2(this.vy,this.vx);
+    if(this.x<10||this.x>W-10||this.y<10||this.y>H-10) this.life=0;
+  }
+  draw(){
+    ctx.save(); ctx.translate(this.x,this.y); ctx.rotate(this.ang);
+    if(this.isMagic){let mc=this.isVenom?'#44ff88':'#aaccff';ctx.fillStyle=mc;ctx.beginPath();ctx.arc(0,0,7,0,Math.PI*2);ctx.fill();ctx.fillStyle=this.isVenom?'#aaffcc':'#ffffff';ctx.beginPath();ctx.arc(-1,-1,3,0,Math.PI*2);ctx.fill();ctx.restore();return;}
+    ctx.fillStyle='#8B6914'; ctx.fillRect(-20,-2,32,4);
+    ctx.fillStyle='#aaccee'; ctx.beginPath(); ctx.moveTo(12,-4); ctx.lineTo(20,0); ctx.lineTo(12,4); ctx.closePath(); ctx.fill();
+    ctx.fillStyle='#ccaa66'; ctx.beginPath(); ctx.moveTo(-20,0); ctx.lineTo(-14,-6); ctx.lineTo(-10,0); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(-20,0); ctx.lineTo(-14,6); ctx.lineTo(-10,0); ctx.closePath(); ctx.fill();
+    ctx.restore();
+  }
+}
+
+class Box {
+  constructor(x,y,owner=null){ this.x=x; this.y=y; this.vx=0; this.vy=0; this.w=28; this.h=28; this.hp=3; this.owner=owner; this.protectTimer=owner?30:0; }
+  update(){
+    this.vx=Math.max(-16,Math.min(16,this.vx)); this.vy=Math.max(-16,Math.min(16,this.vy));
+    if(this.protectTimer>0) this.protectTimer--;
+    this.x+=this.vx; this.y+=this.vy;
+    if(this.x<25){this.x=25;this.vx*=-0.5;}
+    if(this.x>W-this.w-25){this.x=W-this.w-25;this.vx*=-0.5;}
+    if(this.y<25){this.y=25;this.vy*=-0.5;}
+    if(this.y>H-this.h-25){this.y=H-this.h-25;this.vy*=-0.5;}
+    this.vx*=0.97; this.vy*=0.97;
+  }
+  draw(){ let c=this.hp==3?'#8B5A2B':(this.hp==2?'#A0522D':'#CD853F'); ctx.fillStyle=c; ctx.fillRect(this.x,this.y,this.w,this.h); ctx.fillStyle='#6B3E1A'; ctx.fillRect(this.x+5,this.y+5,18,18); }
+}
+
+function resetBoxes(){ boxes=[]; for(let ib of initialBoxes) boxes.push(new Box(ib.x,ib.y,null)); }
+function applyBoxCollision(ent,scl=1){
+  let hw=C.HIT_W*scl*0.6, hh=C.HIT_H*scl*0.6;
+  for(let box of boxes){
+    let er={x:ent.x-hw,y:ent.y-hh,w:hw*2,h:hh*2};
+    let br={x:box.x,y:box.y,w:box.w,h:box.h};
+    if(rectCollide(er,br)){
+      let dx=ent.x-(box.x+box.w/2), dy=ent.y-(box.y+box.h/2);
+      let ox=er.w/2+box.w/2-Math.abs(dx), oy=er.h/2+box.h/2-Math.abs(dy);
+      if(ox>0&&oy>0){ if(ox<oy) ent.x+=(dx>0?ox:-ox); else ent.y+=(dy>0?oy:-oy); }
+    }
+  }
+  let margin=Math.max(hw,hh)+5;
+  ent.x=clamp(ent.x,margin,W-margin); ent.y=clamp(ent.y,margin,H-margin);
+}
+function pushBox(box,angle,power=10){ box.vx+=Math.cos(angle)*power; box.vy+=Math.sin(angle)*power; box.vx=clamp(box.vx,-18,18); box.vy=clamp(box.vy,-18,18); box.owner='b'; box.protectTimer=30; playSound('throw'); }
+
+// ---------- ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ----------
+let W, H, ctx, canvas;
+let player, bot, playerCtrl, ai;
+let gameMode = 'random_all';
+let active = true, mode = 'normal';
+let phMax = 100, bhMax = 100;
+let clashActive = false, clashPower = 50, clashPhase = 0, clashPhaseStart = 0;
+let clashPlayerPower = 0, clashBotPower = 0, clashEscape = false, clashRestoreHp = 0, clashRestoreWho = null;
+let lastClashTime = 0, lastClashCDTimer = 0;
+let pDamageCD = 0, bDamageCD = 0;
+let floats = [], blood = [], puddles = [], dodgeTrail = [], sweatParticles = [];
+let shakeX = 0, shakeY = 0, shakeTimer = 0, cinematicFlash = 0;
+let dropped = [], bolts = [], boxes = [], initialBoxes = [];
+let arenaSpawns = [];
+let hookActive = false, hookTargetX = 0, hookTargetY = 0, hookPulling = false, hookTimer = 0, hookVictim = null;
+let hideDebug = false;
+let staminaMult = 1.0, restMult = 1.0, botSpeedMult = 1.0, globalThrustRange = 1.0, flailSpeedMult = 1.5, exhaustMode = 'smooth';
+let botNoDodge = false, botNoThrust = false, noSpellCD = false;
+let damageLog = [];
+let globalSpellCD = 0;
+let clashCount = 0, clashCDTimer = 0;
+let playerThrowCD = 0, botThrowCD = 0, throwBlockTimer = 0;
+let pVenomStacks = [], bVenomStacks = [];
+let pVortexAngle = 0, bVortexAngle = 0;
+let pStars = 0, bStars = 0;
+let pWeaponIdx = 0;
+let botAllWeaponTimer = 0;
+
+let globalCD = {};
+
+
+function rnd(a, b) {
+  return Math.floor(Math.random() * (b - a + 1) + a);
+}
+function chanceDelay(sec, key) {
+  let n = performance.now() / 1000;
+  if (globalCD[key] && n < globalCD[key]) return false;
+  globalCD[key] = n + sec;
+  return true;
+}
+function updHP(){
+  let pp=clamp(player.hp,0,phMax), bp=clamp(bot.hp,0,bhMax);
+  let ppct=pp/phMax, bpct=bp/bhMax;
+  document.getElementById('ph').style.width=(ppct*100).toFixed(1)+'%';
+  document.getElementById('bh').style.width=(bpct*100).toFixed(1)+'%';
+  document.getElementById('ph').style.background=ppct>0.5?'#cc3333':ppct>0.25?'#cc7700':'#ff2200';
+  document.getElementById('bh').style.background=bpct>0.5?'#dd6644':bpct>0.25?'#cc8833':'#ff3300';
+  document.getElementById('ph-txt').textContent=Math.ceil(pp)+'/'+phMax;
+  document.getElementById('bh-txt').textContent=Math.ceil(bp)+'/'+bhMax;
+  let psBar=document.getElementById('pStaminaBar'), bsBar=document.getElementById('bStaminaBar');
+  let spct=player.stamina/C.STAMINA_MAX, bspct=bot.stamina/C.STAMINA_MAX;
+  psBar.style.width=(spct*100).toFixed(1)+'%';
+  bsBar.style.width=(bspct*100).toFixed(1)+'%';
+  psBar.style.background=player.staminaResting?'#cc4444':spct>0.4?'#44aaff':'#ffaa00';
+  bsBar.style.background=bot.staminaResting?'#cc4444':bspct>0.4?'#44aacc':'#ff8800';
+  document.getElementById('ps-txt').textContent=Math.ceil(player.stamina)+'/'+C.STAMINA_MAX;
+  document.getElementById('bs-txt').textContent=Math.ceil(bot.stamina)+'/'+C.STAMINA_MAX;
+}
+
+function showGameOver(txt){
+  document.getElementById('game-over').innerHTML=txt;
+  document.getElementById('game-over').classList.remove('hidden');
+  document.getElementById('restart-btn').classList.remove('hidden');
+  active=false;
+}
+
+function dropSwordOnDeath(who){
+  let ent=who==='p'?player:bot, ang=who==='p'?player.swordAngle:bot.swordAngle;
+  let a=Math.random()*Math.PI*2;
+  dropped.push(new Drop(ent.x+22,ent.y-20,Math.cos(a)*3,Math.sin(a)*3,who,ang,false,ent.weapon));
+  if(gameMode==='arena'){ dropped.pop(); scheduleArenaSpawn(); }
+}
+function scheduleArenaSpawn(){ arenaSpawns.push({timer:180, x:80+Math.random()*(W-160), y:80+Math.random()*(H-160)}); }
+
+function knockOut(who,fx,fy,isHeavy){
+  if(!isHeavy) return;
+  let ent=who==='p'?player:bot, ang=Math.atan2(ent.y-fy,ent.x-fx);
+  let sAng=who==='p'?player.swordAngle:bot.swordAngle;
+  if(ent.hasWeapon){
+    ent.hasWeapon=false;
+    let d=new Drop(ent.x+22+Math.cos(sAng)*50,ent.y-20+Math.sin(sAng)*50, Math.cos(ang)*12+Math.random()*4-2,Math.sin(ang)*12+Math.random()*4-2, who,sAng,true,ent.weapon);
+    dropped.push(d);
+    if(gameMode==='arena'){ dropped.pop(); scheduleArenaSpawn(); }
+    ent.swordLock=20;
+    addFloat('🗡️ МЕЧ ВЫБИТ!',ent.x,ent.y-40,'#ffaa66');
+    playSound('knockout');
+  }
+}
+
+function tryPickup(who){
+  let ent=who==='p'?player:bot;
+  if(ent.hasWeapon) return;
+  for(let i=0;i<dropped.length;i++){
+    let s=dropped[i];
+    if(s.can && Math.hypot(s.x-ent.x,s.y-ent.y)<C.PICKUP_RADIUS){
+      ent.hasWeapon=true; ent.weapon=s.weapon; dropped.splice(i,1);
+      addFloat('🔪 ПОДОБРАН',ent.x,ent.y-40,'#88ffaa'); playSound('pickup');
+      if(who==='b'){ bot.swordLock=0; if(ai) ai.tactic='attack'; }
+      updateWeaponHUD(); return;
+    }
+  }
+  if(gameMode==='arena'){
+    for(let i=0;i<arenaSpawns.length;i++){
+      let sp=arenaSpawns[i];
+      if(sp.timer<=0 && Math.hypot(sp.x-ent.x,sp.y-ent.y)<C.PICKUP_RADIUS){
+        ent.hasWeapon=true; ent.weapon=rndWeapon(); arenaSpawns.splice(i,1);
+        addFloat('🔪 НОВОЕ ОРУЖИЕ',ent.x,ent.y-40,'#aaff88'); playSound('pickup');
+        if(who==='b'){ bot.swordLock=0; if(ai) ai.tactic='attack'; }
+        updateWeaponHUD(); return;
+      }
+    }
+  }
+}
+
+function fireCrossbow(who){
+  let ent=who==='p'?player:bot;
+  if(WEAPONS[ent.weapon]?.special==='wand'){ fireMagicBolt(who); return; }
+  let sAng=who==='p'?player.swordAngle:bot.swordAngle;
+  let ox=ent.x+22, oy=ent.y-20;
+  let nb=new Bolt(ox,oy,Math.cos(sAng)*20,Math.sin(sAng)*20,who);
+  if(who==='p' && player.activeSpell==='SpellVenomAttack') nb.isVenom=true;
+  bolts.push(nb); playSound('crossbow');
+  ent.crossbowCD=(WEAPONS[ent.weapon]?.special==='wand'?90:120);
+  if(who==='p') document.getElementById('reload-bar').style.display='block';
+}
+function fireMagicBolt(who){
+  let ent=who==='p'?player:bot;
+  let sAng=who==='p'?player.swordAngle:bot.swordAngle;
+  let ox=ent.x+22, oy=ent.y-20;
+  let spd=14;
+  let b2=new Bolt(ox,oy,Math.cos(sAng)*spd,Math.sin(sAng)*spd,who);
+  b2.isMagic=true;   // <--- ЭТА СТРОКА ДОЛЖНА БЫТЬ
+  b2.life=240;
+  if(who==='p' && player.activeSpell==='SpellVenomAttack') b2.isVenom=true;
+  bolts.push(b2);
+  playSound('dodge');
+  ent.crossbowCD=(WEAPONS[ent.weapon]?.special==='wand'?90:120);
+  if(who==='p') document.getElementById('reload-bar').style.display='block';
+}
+
+function throwSword(who){
+  if(throwBlockTimer>0) return;
+  let ent=who==='p'?player:bot;
+  if(!ent.hasWeapon) return;
+  let wp=WEAPONS[ent.weapon];
+  if(who==='p' && playerThrowCD>0) return;
+  if(who==='b' && (botThrowCD>0 || (ai && ai.botSpawnTimer>0))) return;
+  let sAng=who==='p'?player.swordAngle:bot.swordAngle;
+  let cx=ent.x+22, cy=ent.y-20;
+  let angle=who==='p'?Math.atan2(playerCtrl.mouseY-cy,playerCtrl.mouseX-cx):Math.atan2(player.y-cy,player.x-cx);
+  let spd=15*(wp.throwRange||0.5);
+  ent.hasWeapon=false;
+  let d=new Drop(cx+Math.cos(sAng)*50,cy+Math.sin(sAng)*50,Math.cos(angle)*spd,Math.sin(angle)*spd,who,angle,true,ent.weapon);
+  dropped.push(d);
+  if(who==='p'){ playerThrowCD=30; addFloat('🗡️ БРОШЕН!',player.x,player.y-40,'#ffaa66'); }
+  else { botThrowCD=900; if(ai) ai.throwStun=8; addFloat('🗡️ БРОШЕН!',bot.x,bot.y-40,'#ffaa66'); }
+  playSound('throw');
+}
+
+function updateWeaponHUD(){
+  let pw=WEAPONS[player.weapon], bw=WEAPONS[bot.weapon];
+  document.getElementById('p-weapon').innerHTML=(pw?pw.emoji+' '+pw.name:'✖ БЕЗ');
+  document.getElementById('b-weapon').innerHTML=(bw?bw.emoji+' '+bw.name:'✖ БЕЗ');
+}
+
+function getObstacleInDirection(ent,angle,dist=50){
+  let cx=ent.x+Math.cos(angle)*dist, cy=ent.y+Math.sin(angle)*dist;
+  for(let box of boxes){ if(pointInRect(cx,cy,{x:box.x,y:box.y,w:box.w,h:box.h})) return box; }
+  if(cx<30||cx>W-30||cy<30||cy>H-30) return {wall:true};
+  return null;
+}
+
+function findShelterBox(){
+  let best=null, bestScore=-Infinity;
+  let toPx=player.x-bot.x, toPy=player.y-bot.y, distP=Math.hypot(toPx,toPy);
+  if(distP<1) return null;
+  for(let box of boxes){
+    let bxc=box.x+box.w/2, byc=box.y+box.h/2;
+    let toBoxX=bxc-bot.x, toBoxY=byc-bot.y, distBox=Math.hypot(toBoxX,toBoxY);
+    if(distBox>320||distBox<20) continue;
+    let dot=(toBoxX*toPx+toBoxY*toPy)/(distBox*distP);
+    if(dot>0.3){ let score=dot/distBox; if(score>bestScore){ bestScore=score; best=box; } }
+  }
+  return best;
+}
+// ---------- ЗАКЛИНАНИЯ ----------
+const SPELLS = {
+  SpellTelecinesis:{icon:'💫',name:'Телекинез',key:'1',cd:1800,duration:0},
+  SpellHook:{icon:'🪝',name:'Крюк',key:'2',cd:600,duration:42},
+  SpellVoidStep:{icon:'🌀',name:'Телепорт',key:'3',cd:600,duration:0},
+  SpellVortex:{icon:'🌪️',name:'Вихрь',key:'4',cd:3600,duration:600},
+  SpellRage:{icon:'💢',name:'Ярость',key:'5',cd:2400,duration:600},
+  SpellVenomAttack:{icon:'🐍',name:'Яд',key:'6',cd:2400,duration:600},
+  SpellGroundSlam:{icon:'💥',name:'Удар',key:'7',cd:2400,duration:120},
+};
+const SPELL_ORDER2 = Object.keys(SPELLS);
+const BOT_DEFAULT_SPELLS = new Set(['SpellTelecinesis','SpellVortex','SpellRage','SpellVenomAttack']);
+
+let pSpells = new Set(SPELL_ORDER2);
+let bSpells = new Set(BOT_DEFAULT_SPELLS);
+
+function castSpell(spellKey, who){
+  if(!active) return false;
+  if(globalSpellCD>0 && !(who==='p' && noSpellCD)) return false;
+  if(who==='p' && !pSpells.has(spellKey)) return false;
+  if(who==='b' && !bSpells.has(spellKey)) return false;
+  let sp=SPELLS[spellKey]; if(!sp) return false;
+  let ent=who==='p'?player:bot;
+  globalSpellCD=sp.cd;
+
+  if(spellKey==='SpellTelecinesis'){
+    let ang=who==='p'?Math.atan2(playerCtrl.mouseY-(ent.y-20),playerCtrl.mouseX-(ent.x+22)):Math.atan2(player.y-bot.y,player.x-bot.x);
+    let half=Math.PI/6;
+    let target=who==='p'?bot:player;
+    let toAng=Math.atan2(target.y-ent.y,target.x-ent.x);
+    let ranges=getCombatRanges(ent.weapon,target.weapon);
+    let dist_tk=Math.hypot(target.x-ent.x,target.y-ent.y);
+    if(Math.abs(angDiff(toAng,ang))<half && dist_tk<ranges.R5){
+      target.vx+=Math.cos(ang)*40; target.vy+=Math.sin(ang)*40;
+      applyShake(10); playSound('clash');
+      addFloat('💫 ОГЛУШЁН',target.x,target.y-40,'#ffff88',0.2,true);
+      if(target===player) player.moveLock=24;
+      else bot.moveLock=24;
+    }
+    for(let bx of boxes){
+      let bAng=Math.atan2(bx.y-ent.y,bx.x-ent.x);
+      if(Math.abs(angDiff(bAng,ang))<half && Math.hypot(bx.x-ent.x,bx.y-ent.y)<ranges.R5){
+        bx.vx+=Math.cos(ang)*18; bx.vy+=Math.sin(ang)*18;
+      }
+    }
+    for(let dr of dropped){
+      let dAng=Math.atan2(dr.y-ent.y,dr.x-ent.x);
+      if(Math.abs(angDiff(dAng,ang))<half && Math.hypot(dr.x-ent.x,dr.y-ent.y)<ranges.R5){
+        dr.vx+=Math.cos(ang)*22; dr.vy+=Math.sin(ang)*22;
+      }
+    }
+    for(let bt of bolts){
+      let bAng2=Math.atan2(bt.y-ent.y,bt.x-ent.x);
+      if(Math.abs(angDiff(bAng2,ang))<half && Math.hypot(bt.x-ent.x,bt.y-ent.y)<ranges.R5){
+        bt.vx+=Math.cos(ang)*15; bt.vy+=Math.sin(ang)*15;
+      }
+    }
+    for(let i=0;i<16;i++){ let a=ang+(Math.random()-0.5)*half*1.8; let spd2=6+Math.random()*10; blood.push({x:ent.x+Math.cos(a)*20,y:ent.y+Math.sin(a)*20, vx:Math.cos(a)*spd2,vy:Math.sin(a)*spd2, life:18+Math.random()*12,col:'#44aaff',size:3+Math.random()*2}); }
+    return true;
+  }
+
+    if(spellKey==='SpellHook'){
+    if(who==='p'){
+      // Сброс состояния
+      hookActive=false;
+      hookPulling=false;
+      hookVictim=null;
+      
+      let ang=Math.atan2(playerCtrl.mouseY-(player.y-20), playerCtrl.mouseX-(player.x+22));
+      let hx0=player.x+22, hy0=player.y-20;
+      let hookHit=false;
+      
+      // Поиск цели (только стены и ящики)
+      for(let hi=1; hi<=60 && !hookHit; hi++){
+        let cx=hx0+Math.cos(ang)*hi*20, cy=hy0+Math.sin(ang)*hi*20;
+        
+        // Стены
+        if(cx<=35 || cx>=W-35 || cy<=35 || cy>=H-35){
+          hookTargetX=clamp(cx, 35, W-35);
+          hookTargetY=clamp(cy, 35, H-35);
+          hookHit=true;
+          break;
+        }
+        
+        // Ящики
+        for(let box of boxes){
+          if(pointInRect(cx,cy,{x:box.x,y:box.y,w:box.w,h:box.h})){
+            hookTargetX=cx;
+            hookTargetY=cy;
+            hookHit=true;
+            break;
+          }
+        }
+      }
+      
+      // БОТ НЕ ЦЕЛЬ — полностью убрал проверку
+      
+      if(!hookHit) return true;
+      
+      hookActive=true;
+      hookPulling=false;
+      hookTimer=25;
+      playSound('throw');
+      addFloat('🪝 КРЮК', player.x, player.y-40, '#88aaff');
+    }
+    return true;
+  }	
+
+  if(spellKey==='SpellVoidStep'){
+    let tx=who==='p'?playerCtrl.mouseX:bot.x+Math.cos(Math.atan2(player.y-bot.y,player.x-bot.x)+Math.PI)*180;
+    let ty=who==='p'?playerCtrl.mouseY:bot.y+Math.sin(Math.atan2(player.y-bot.y,player.x-bot.x)+Math.PI)*180;
+    tx=clamp(tx,60,W-60); ty=clamp(ty,60,H-60);
+    for(let i=0;i<14;i++){ let a=Math.random()*Math.PI*2,r=30+Math.random()*30; blood.push({x:ent.x+Math.cos(a)*r,y:ent.y+Math.sin(a)*r,vx:-Math.cos(a)*(5+Math.random()*6),vy:-Math.sin(a)*(5+Math.random()*6),life:14,col:'#aa55ff',size:3+Math.random()*2}); }
+    ent.x=tx; ent.y=ty; ent.vx=0; ent.vy=0;
+    for(let i=0;i<14;i++){ let a=Math.random()*Math.PI*2,s=5+Math.random()*8; blood.push({x:tx,y:ty,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:14,col:'#cc88ff',size:3+Math.random()*2}); }
+    applyShake(5); playSound('dodge');
+    return true;
+  }
+
+	  if(spellKey==='SpellVortex'){
+		let vortexDur=sp.duration;
+		if(WEAPONS[ent.weapon]?.special==='spear') vortexDur=180;
+		if(who==='p'){ player.activeSpell='SpellVortex'; player.spellTimer=vortexDur; pVortexAngle=player.swordAngle; }
+		else{ bot.activeSpell='SpellVortex'; bot.spellTimer=sp.duration; }
+		addFloat('🌪️',ent.x,ent.y-50,'#66aaff',0.5,true); playSound('dodge');
+		return true;
+	  }
+
+  if(spellKey==='SpellRage'){
+    if(who==='p'){ player.activeSpell='SpellRage'; player.spellTimer=sp.duration; }
+    else{ bot.activeSpell='SpellRage'; bot.spellTimer=sp.duration; }
+    addFloat('💢',ent.x,ent.y-50,'#ff3322',0.5,true); playSound('hit');
+    return true;
+  }
+
+  if(spellKey==='SpellVenomAttack'){
+    if(who==='p'){ player.activeSpell='SpellVenomAttack'; player.spellTimer=sp.duration; }
+    else{ bot.activeSpell='SpellVenomAttack'; bot.spellTimer=sp.duration; }
+    addFloat('🐍',ent.x,ent.y-50,'#44ff44',0.5,true); playSound('pickup');
+    return true;
+  }
+
+  if(spellKey==='SpellGroundSlam'){
+    if(who==='p'){ player.activeSpell='SpellGroundSlam'; player.spellTimer=sp.duration; player._groundSlamPhase='charge'; player._groundSlamTimer=0; }
+    else{ bot.activeSpell='SpellGroundSlam'; bot.spellTimer=sp.duration; }
+    addFloat('💥',ent.x,ent.y-50,'#ff8800',0.4,true); playSound('hit');
+    return true;
+  }
+  return false;
+}
+function updateSpells(dt){
+  if(globalSpellCD>0) globalSpellCD--;
+
+  if(player.activeSpell && player.spellTimer>0){
+    player.spellTimer--;
+    if(player.activeSpell==='SpellVortex'){
+      pVortexAngle+=0.18;
+      if(WEAPONS[player.weapon]?.special!=='crossbow' && WEAPONS[player.weapon]?.special!='spear' && WEAPONS[player.weapon]?.special!='wand') player.swordAngle=pVortexAngle;
+      if(player.spellTimer%3===0){
+        let pWp2=WEAPONS[player.weapon]||WEAPONS.longsword;
+        let pOff2=getSwordOffset(player.vx,player.vy);
+        let ox2=player.x+22+pOff2.x+Math.cos(player.swordAngle)*pWp2.len*80;
+        let oy2=player.y-20+pOff2.y+Math.sin(player.swordAngle)*pWp2.len*80;
+        floats.push({t:'·',x:ox2,y:oy2,c:'#4488ff',life:10});
+      }
+    }
+    if(player.activeSpell==='SpellGroundSlam'){
+      player._groundSlamTimer=(player._groundSlamTimer||0)+1;
+      if(!player._groundSlamFired && player._groundSlamTimer>=110){
+        player._groundSlamFired=true;
+        applyShake(20);
+        let ranges=getCombatRanges(player.weapon,bot.weapon);
+        let slamR=ranges.R3+(WEAPONS[player.weapon]?.special==='staff'?100:0);
+        let dist=Math.hypot(bot.x-player.x,bot.y-player.y);
+        if(dist<slamR){ applyDamage('b',30,bot.x,bot.y,false,'p',true); let da=Math.atan2(bot.y-player.y,bot.x-player.x); bot.vx+=Math.cos(da)*28; bot.vy+=Math.sin(da)*28; }
+        for(let bx of boxes){ let bd=Math.hypot(bx.x-player.x,bx.y-player.y),ba=Math.atan2(bx.y-player.y,bx.x-player.x); if(bd<slamR){ bx.vx+=Math.cos(ba)*22; bx.vy+=Math.sin(ba)*22; } }
+        for(let i=0;i<24;i++){ let a=i/24*Math.PI*2; blood.push({x:player.x+Math.cos(a)*30,y:player.y+Math.sin(a)*30,vx:Math.cos(a)*(10+Math.random()*8),vy:Math.sin(a)*(10+Math.random()*8),life:50,col:'#ff6600',size:6+Math.random()*5}); }
+      }
+    }
+    if(player.spellTimer<=0){ player._groundSlamTimer=0; player._groundSlamFired=false; player._groundSlamPhase=null; player.activeSpell=null; }
+  }
+
+  if(bot.activeSpell && bot.spellTimer>0){
+    bot.spellTimer--;
+    if(bot.activeSpell==='SpellVortex'){ bVortexAngle+=0.18; if(WEAPONS[bot.weapon]?.special!=='crossbow') bot.swordAngle=bVortexAngle; }
+    if(bot.spellTimer<=0) bot.activeSpell=null;
+  }
+
+  let venomTick=Math.floor(Date.now()/500);
+  for(let v of pVenomStacks){ if(v.lastTick!==venomTick){ v.lastTick=venomTick; v.timer--; player.hp=Math.max(1,player.hp-Math.round(2*phMax/100)); updHP(); addBlood(player.x,player.y+5,Math.random()*Math.PI*2,false); floats.push({t:'☠',x:player.x,y:player.y-30,c:'#00ff44',life:15}); } }
+  pVenomStacks=pVenomStacks.filter(v=>v.timer>0);
+  for(let v of bVenomStacks){ if(v.lastTick!==venomTick){ v.lastTick=venomTick; v.timer--; bot.hp=Math.max(1,bot.hp-Math.round(2*bhMax/100)); updHP(); addBlood(bot.x,bot.y+5,Math.random()*Math.PI*2,false); floats.push({t:'☠',x:bot.x,y:bot.y-30,c:'#00ff44',life:15}); } }
+  bVenomStacks=bVenomStacks.filter(v=>v.timer>0);
+
+   // ========== КРЮК (ТОЛЬКО СТЕНЫ И ЯЩИКИ, ПРИНУДИТЕЛЬНОЕ ОТКЛЮЧЕНИЕ) ==========
+  if(hookActive){
+    hookTimer--;
+    if(!hookPulling && hookTimer<=0){ 
+      hookPulling=true; 
+      hookTimer=35;  // Максимум времени притяжения
+    }
+    if(hookPulling){
+      let dx=hookTargetX-(player.x+22), dy=hookTargetY-(player.y-20), d=Math.hypot(dx,dy);
+      
+      // Принудительное отключение: таймер истёк ИЛИ игрок близко к стене ИЛИ близко к цели
+      if(hookTimer<=0){
+        hookActive=false;
+        player.vx*=0.4;
+        player.vy*=0.4;
+        addFloat('🪝 ОТЦЕПИЛСЯ', player.x, player.y-30, '#ffaa88');
+      } else if(d<50){
+        hookActive=false;
+        player.vx*=0.4;
+        player.vy*=0.4;
+      } else if(player.x<30 || player.x>W-30 || player.y<30 || player.y>H-30){
+        hookActive=false;
+        player.vx*=0.4;
+        player.vy*=0.4;
+        addFloat('🚫 У СТЕНЫ', player.x, player.y-30, '#ff8888');
+      } else {
+        // Тянем к точке зацепа
+        let pullStrength = Math.min(28, Math.max(12, d / 10));
+        player.vx += dx/d * pullStrength;
+        player.vy += dy/d * pullStrength;
+        player.vx = Math.max(-35, Math.min(35, player.vx));
+        player.vy = Math.max(-35, Math.min(35, player.vy));
+        
+        // Визуальный эффект
+        if(Math.random()<0.05){
+          addFloat('➿', player.x, player.y, '#88aaff', 0.05);
+        }
+      }
+    }
+  }
+  // ========== КОНЕЦ КРЮКА ==========
+
+  if(active && !clashActive && ai && ai.bSpellCastCD<=0 && globalSpellCD<=0 && !bot.activeSpell){
+    ai.bSpellCastCD=30;
+    let dist=Math.hypot(player.x-bot.x,player.y-bot.y);
+    let ranges=getCombatRanges(bot.weapon,player.weapon);
+    if(dist<ranges.R3 && Math.random()<0.012){
+      let avail=[...bSpells];
+      if(avail.length>0) castSpell(avail[Math.floor(Math.random()*avail.length)],'b');
+    }
+  }
+  if(ai && ai.bSpellCastCD>0) ai.bSpellCastCD--;
+}
+
+
+// ========== ЕДИНЫЙ КЛАСС CHARACTER ПЕРСОНАЖА ==========
+
+class Character {
+  constructor(isPlayer, x, y, weapon, scale, shield) {
+    this.isPlayer = isPlayer;
+    this.x = x; this.y = y;
+    this.vx = 0; this.vy = 0;
+    this.moveLock = 0;
+    this.swordLock = 0;
+    this.hasWeapon = true;
+    this.weapon = weapon;
+    this.scale = scale;
+    this.shield = shield;
+    this.shieldRaised = false;
+    this.shieldAngle = 0;
+    this._shieldSide = isPlayer ? -1 : 1;
+    this._shieldPushCD = 0;
+    this.crossbowCD = 0;
+    this.swordAngle = isPlayer ? 0 : Math.PI;
+    this.swordVel = 0;
+    this.prevVel = 0;
+    this.atk = 0;
+    this.atkCD = 0;
+    this.hitCD = 0;
+    this.accPeak = 0;
+    this.smSpd = 0;
+    this.flailExt = 0;
+    this.stamina = C.STAMINA_MAX;
+    this.staminaResting = false;
+    this.staminaRestTimer = 0;
+    this.pendingRest = false;
+    this.exhaustFade = 1;
+    this.activeSpell = null;
+    this.spellTimer = 0;
+    this._spearThrusting = false;
+    this._spearTimer = 0;
+    this._vortexSpearShift = 0;
+    this._wandCharging = false;
+    this._wandChargeTimer = 0;
+    this._pendingWandShot = false;
+    this._groundSlamPhase = null;
+    this._groundSlamTimer = 0;
+    this._groundSlamFired = false;
+    this._pendingSpearThrust = false;
+    this.dodgeCooldown = 0;
+    this.dodgeSlide = 0;
+    this.isDodging = false;
+    this.hp = 100;
+    this._tkStunDelay = 0;
+    this._idleSpinTimer = Math.floor(Math.random() * 900 + 180);
+    
+    // Позиция руки для блока
+    this.swordHandOffsetX = 0;
+    this.swordHandOffsetY = 0;
+    this.shieldOffsetX = 0;
+    this.shieldOffsetY = 0;
+    
+    // Для поворота эллипса
+    this.ellipseRotation = 0;  // 0 = нормальный, 90 = повёрнутый
+  }
+
+// В класс Character, после других методов
+getSectorFromAngle(angle) {
+    let rotatedAngle = angle + Math.PI / 4;
+    while (rotatedAngle < 0) rotatedAngle += Math.PI * 2;
+    while (rotatedAngle >= Math.PI * 2) rotatedAngle -= Math.PI * 2;
+    return Math.floor(rotatedAngle / (Math.PI / 2));
+}
+
+  // ========== ПЕРЕКЛЮЧЕНИЕ ЭЛЛИПСА ==========
+  toggleEllipseRotation() {
+    if (this.ellipseRotation === 0) {
+      this.ellipseRotation = 90;
+      addFloat('🔄 ЭЛЛИПС ПОВЁРНУТ НА 90°', this.x, this.y - 60, '#ffaa44', 1, true);
+    } else {
+      this.ellipseRotation = 0;
+      addFloat('🔄 ЭЛЛИПС НОРМАЛЬНЫЙ', this.x, this.y - 60, '#88ffaa', 1, true);
+    }
+  }
+
+  // ========== ОПРЕДЕЛЕНИЕ НАПРАВЛЕНИЙ ==========
+  getDirectionTo(target) {
+    let dx = target.x - this.x;
+    let dy = target.y - this.y;
+    let angle = Math.atan2(dy, dx);
+    
+    let rotatedAngle = angle + Math.PI / 4;
+    while (rotatedAngle < 0) rotatedAngle += Math.PI * 2;
+    while (rotatedAngle >= Math.PI * 2) rotatedAngle -= Math.PI * 2;
+    let sector = Math.floor(rotatedAngle / (Math.PI / 2));
+    
+    const directions = ['➡️ ПРАВО', '⬆️ ВВЕРХ', '⬅️ ЛЕВО', '⬇️ ВНИЗ'];
+    const arrows = ['→', '↑', '←', '↓'];
+    const angles = [0, 90, 180, -90];
+    
+    return {
+      sector: sector,
+      name: directions[sector],
+      arrow: arrows[sector],
+      angle: angles[sector],
+      rawAngle: angle
+    };
+  }
+
+  // ========== ОПРЕДЕЛЕНИЕ НАПРАВЛЕНИЯ АТАКИ ==========
+  getAttackDirection(attackAngle) {
+    let rotatedAngle = attackAngle + Math.PI / 4;
+    while (rotatedAngle < 0) rotatedAngle += Math.PI * 2;
+    while (rotatedAngle >= Math.PI * 2) rotatedAngle -= Math.PI * 2;
+    let sector = Math.floor(rotatedAngle / (Math.PI / 2));
+    
+    const directions = ['АТАКА СПРАВА', 'АТАКА СВЕРХУ', 'АТАКА СЛЕВА', 'АТАКА СНИЗУ'];
+    const arrows = ['← БЛОК ВПРАВО', '↓ БЛОК ВВЕРХ', '→ БЛОК ВЛЕВО', '↑ БЛОК ВНИЗ'];
+    
+    return {
+      sector: sector,
+      name: directions[sector],
+      blockHint: arrows[sector],
+      angle: attackAngle
+    };
+  }
+
+  // ========== ПОЛУЧИТЬ ПОЗИЦИЮ РУКИ ==========
+  getSwordHandPosition() {
+    let centerX = this.x + 1 * this.scale;
+    let centerY = this.y - 8 * this.scale;
+    return {
+      x: centerX + this.swordHandOffsetX,
+      y: centerY + this.swordHandOffsetY
+    };
+  }
+
+  // ========== ПОЛУЧИТЬ ПОЗИЦИЮ ЩИТА ==========
+  getShieldPosition() {
+    let side = this._shieldSide || (this.isPlayer ? -1 : 1);
+    return {
+      x: this.x + side * 22 + this.shieldOffsetX,
+      y: this.y - 8 + this.shieldOffsetY
+    };
+  }
+
+  // ========== ОБНОВЛЕНИЕ ПОЗИЦИИ РУКИ ==========
+  updateHandPosition(swordAngle) {
+    if (swordAngle === undefined || swordAngle === null) {
+        this.swordHandOffsetX *= 0.9;
+        this.swordHandOffsetY *= 0.9;
+        return;
+    }
+    
+    let intensity = 1.6;
+    let sector = this.getSectorFromAngle(swordAngle);
+    
+    // sector 0 = право, 1 = вверх, 2 = лево, 3 = вниз
+    let offsetX, offsetY;
+    
+    if (sector === 1 || sector === 3) {
+        // Вертикальные секторы: меч идёт В ТУ ЖЕ сторону по Y
+        offsetX = Math.cos(swordAngle) * 12 * intensity;
+        offsetY = Math.sin(swordAngle) * 12 * intensity - 8;  // БЕЗ минуса
+    } else {
+        // Горизонтальные секторы: стандартная инверсия (как сейчас)
+        offsetX = Math.cos(swordAngle) * 12 * intensity;
+        offsetY = -Math.sin(swordAngle) * 12 * intensity - 8;  // С минусом
+    }
+    
+    this.swordHandOffsetX = clamp(offsetX, -25, 25);
+    this.swordHandOffsetY = clamp(offsetY, -30, 20);
+}
+
+  // ========== ПОТРАТИТЬ СТАМИНУ ==========
+  consumeStamina(amount) {
+    if (this.staminaResting) return false;
+    this.stamina = Math.max(0, this.stamina - amount * staminaMult);
+    if (this.stamina <= 0 && !this.staminaResting && !this.pendingRest) {
+      this.pendingRest = true;
+      addFloat('😫 ИСТОЩЕНИЕ', this.x, this.y - 50, '#ffaa88');
+      for (let i = 0; i < 12; i++) addSweat(this.x, this.y);
+      playSound('exhaust');
+    }
+    return true;
+  }
+
+  // ========== ОБНОВЛЕНИЕ СТАМИНЫ ==========
+  updateStamina(dt, isMoving, isAttacking) {
+    if (this.pendingRest && this.atk === 0) {
+      this.pendingRest = false;
+      this.staminaResting = true;
+      let restTime = (WEAPONS[this.weapon]?.restTime || 0.5) * restMult;
+      restTime = Math.max(3.0, restTime * 3);
+      this.staminaRestTimer = restTime;
+    }
+    
+    if (this.staminaResting) {
+      this.staminaRestTimer -= dt;
+      let restDuration = Math.max(4.0, (WEAPONS[this.weapon]?.restTime || 0.5) * restMult * 3);
+      let regenSpeed = C.STAMINA_MAX / restDuration;
+      this.stamina = Math.min(C.STAMINA_MAX, this.stamina + regenSpeed * dt);
+      
+      if (exhaustMode === 'smooth') {
+        let totalRest = restDuration;
+        let progress = 1 - this.staminaRestTimer / Math.max(0.001, totalRest);
+        if (progress < 0.5) {
+          this.exhaustFade = 1.0 - (1.0 - 0.3) * (progress * 2);
+        } else {
+          this.exhaustFade = 0.3 + (1.0 - 0.3) * ((progress - 0.5) * 2);
+        }
+      } else {
+        this.exhaustFade = 0.3;
+      }
+      
+      if (this.staminaRestTimer <= 0) {
+        this.staminaResting = false;
+        this.stamina = C.STAMINA_MAX;
+        this.exhaustFade = 1.0;
+        addFloat('💪 ОТДОХНУЛ', this.x, this.y - 50, '#88ff88');
+        updHP();
+      } else {
+        updHP();
+      }
+    } else {
+      this.exhaustFade = 1.0;
+      if (!isMoving && !isAttacking && this.stamina < C.STAMINA_MAX) {
+        let regenSpeed = 20;
+        this.stamina = Math.min(C.STAMINA_MAX, this.stamina + regenSpeed * dt);
+        updHP();
+      }
+    }
+  }
+
+  // ========== ДОДЖ (РЫВОК) ==========
+  dodge(dx, dy) {
+    if (this.dodgeCooldown > 0 || this.moveLock > 0 || this.staminaResting) return false;
+    if (!this.consumeStamina(2)) return false;
+    this.vx = dx * C.DODGE_IMPULSE;
+    this.vy = dy * C.DODGE_IMPULSE;
+    this.dodgeCooldown = C.DODGE_CD;
+    this.dodgeSlide = C.DODGE_RUSH + C.DODGE_SLIDE;
+    this.isDodging = true;
+    playSound('dodge');
+    addDodgeTrail(this.x, this.y);
+    return true;
+  }
+
+  // ========== ОБНОВЛЕНИЕ ДОДЖА ==========
+  updateDodge(dt) {
+    if (this.dodgeSlide > 0) {
+      if (this.dodgeSlide > C.DODGE_SLIDE) {
+        this.vx *= 0.85;
+        this.vy *= 0.85;
+      } else {
+        this.vx *= 0.95;
+        this.vy *= 0.95;
+      }
+      this.dodgeSlide--;
+      if (this.dodgeSlide <= 0) this.isDodging = false;
+      addDodgeTrail(this.x, this.y);
+    }
+    if (this.dodgeCooldown > 0) this.dodgeCooldown--;
+  }
+
+  // ========== РАСЧЁТ УРОНА ==========
+  calculateDamage(targetChar, isActiveAttack, spd) {
+    let wp = WEAPONS[this.weapon] || WEAPONS.longsword;
+    let isThrust = (wp.special === 'spear');
+    let normalizedSpd = spd;
+    let attackType = '⚔️ РУБКА';
+    
+    if (isThrust) {
+      normalizedSpd = spd / 10;
+      attackType = '🗡️ УКОЛ';
+    }
+    
+    let mul = isThrust ? wp.thrustMul : wp.slashMul;
+    let baseDmg = 5 + Math.floor(normalizedSpd * 100);
+    let dmg = Math.round(baseDmg * mul);
+    
+    if (!isActiveAttack) {
+      dmg = Math.floor(dmg * 0.4);
+      attackType = '💫 КАСАНИЕ';
+    }
+    
+    let crit = normalizedSpd > 0.15 && isActiveAttack;
+    if (crit) dmg = Math.round(dmg * 1.8);
+    
+    let heavy = false;
+    if (wp.special === 'hammer') {
+      heavy = true;
+      attackType = '🔨 МОЛОТ';
+      if (normalizedSpd < 0.1) dmg = 0;
+      else dmg = Math.round(baseDmg * 1.3);
+      if (!isActiveAttack) dmg = Math.floor(dmg * 0.4);
+    }
+    
+    let isPlayer = this.isPlayer;
+    if (isActiveAttack) {
+      dmg = Math.max(1, Math.min(isPlayer ? 45 : 40, dmg));
+    } else {
+      dmg = Math.max(1, Math.min(isPlayer ? 15 : 12, dmg));
+    }
+    
+    return { dmg, crit, heavy, attackType };
+  }
+
+  // ========== АНИМАЦИЯ МЕЧА ==========
+  updateSwing(targetAngle, isActiveInput = false) {
+    let wp = WEAPONS[this.weapon] || WEAPONS.longsword;
+    let isCrossbowOrWand = wp.special === 'crossbow' || wp.special === 'wand';
+    let canControl = (!this.activeSpell || this.activeSpell !== 'SpellVortex' || isCrossbowOrWand);
+    let attackSpeedMult = this.staminaResting ? Math.max(0.3, this.exhaustFade) : 1.0;
+    
+    if (this.hasWeapon && this.swordLock <= 0 && canControl) {
+      if (isCrossbowOrWand) {
+        let d2 = angDiff(targetAngle, this.swordAngle);
+        this.swordAngle += d2 * 0.25 * attackSpeedMult;
+        this.swordVel = 0;
+      } else {
+        let off = getSwordOffset(this.vx, this.vy);
+        let handPos = this.getSwordHandPosition();
+        let ox = handPos.x + off.x;
+        let oy = handPos.y + off.y;
+        let d2 = angDiff(targetAngle, this.swordAngle);
+        let delta = d2 * (this.isDodging ? 0.3 : 0.13 / wp.weight) * attackSpeedMult;
+        this.swordAngle += delta;
+        this.prevVel = this.swordVel;
+        this.swordVel = this.swordVel * 0.55 + delta * 0.45;
+        let acc = Math.abs(this.swordVel - this.prevVel) * 1000;
+        this.accPeak = Math.max(acc, this.accPeak * 0.85);
+        
+        if (this.hitCD <= 0 && this.accPeak >= 30 && isActiveInput && !this.staminaResting) {
+          let str = Math.min(0.85, (this.accPeak - 30) / 90);
+          let arc = 50 + 60 * Math.min(1, str), fr = 16, r_ = 0.84, sum = (1 - Math.pow(r_, fr)) / (1 - r_);
+          let vel = Math.min(0.72, (arc * Math.PI / 180 / sum) * 2.2 / wp.weight) * Math.sign(d2);
+          this.swordVel = vel;
+          this.atk = fr;
+          this.hitCD = 18;
+          this.accPeak = 0;
+          this.consumeStamina((wp.staminaCost || 10) * 0.3);
+        }
+        if (this.hitCD > 0) this.hitCD--;
+      }
+    } else if (this.activeSpell === 'SpellVortex' && !isCrossbowOrWand && wp.special !== 'spear') {
+      this.swordAngle = pVortexAngle;
+    }
+    
+    if (this.atk > 0) {
+      let atkSpeedMult = this.staminaResting ? Math.max(0.3, this.exhaustFade) : 1.0;
+      this.swordAngle += this.swordVel * atkSpeedMult;
+      this.swordVel *= 0.84;
+      this.atk--;
+    }
+    
+    if (this.atk === 0) {
+      this.swordVel *= 0.94;
+      if (Math.abs(this.swordVel) < 0.02) this.swordVel = 0;
+    }
+  }
+
+  // ========== УВОРОТ (ДЛЯ AI) ==========
+  dodgeRoll(angle, power = 12) {
+    if (this.moveLock > 0) return false;
+    if (this.dodgeCooldown > 0) return false;
+    if (this.staminaResting) return false;
+    if (!this.consumeStamina(5)) return false;
+    
+    this.vx += Math.cos(angle) * power;
+    this.vy += Math.sin(angle) * power;
+    this.dodgeCooldown = 40;
+    this.dodgeSlide = 8;
+    this.isDodging = true;
+    
+    addDodgeTrail(this.x, this.y);
+    playSound('dodge');
+    return true;
+  }
+
+  // ========== ДВИЖЕНИЕ ==========
+  move(inputX, inputY, maxSpeed) {
+    if (this.moveLock > 0) return;
+    
+    if (this.dodgeSlide > 0) {
+      let decel = this.dodgeSlide > C.DODGE_SLIDE ? 0.85 : 0.95;
+      this.vx *= decel;
+      this.vy *= decel;
+      this.dodgeSlide--;
+      if (this.dodgeSlide <= 0) this.isDodging = false;
+    } else {
+      let targetVx = inputX * maxSpeed;
+      let targetVy = inputY * maxSpeed;
+      this.vx += (targetVx - this.vx) * 0.28;
+      this.vy += (targetVy - this.vy) * 0.28;
+    }
+    
+    this.x += this.vx;
+    this.y += this.vy;
+    this.x = clamp(this.x, 60, W - 60);
+    this.y = clamp(this.y, 60, H - 60);
+    applyBoxCollision(this, this.scale);
+  }
+}
+
+
+
+// ========== End CHARACTER ==========
+
+
+// ========== КОНТРОЛЛЕР ИГРОКА (ОДИН РАЗ) ==========
+class PlayerController {
+  constructor(character) {
+    this.char = character;
+    this.keys = {};
+    this.tapKey = null;
+    this.tapTime = 0;
+    this.tapTimer = null;
+    this.mouseX = W/2;
+    this.mouseY = W/2;
+    this.mdX = 0;
+    this.mdY = 0;
+    this.smSpd = 0;
+    this.hitCD = 0;
+    this.accPeak = 0;
+    this._lastMX = this.mouseX;
+    this._lastMY = this.mouseY;
+  }
+
+  handleMove() {
+    let mx = 0, my = 0;
+    if (this.keys['a'] || this.keys['arrowleft'] || this.keys['ф']) mx = -1;
+    if (this.keys['d'] || this.keys['arrowright'] || this.keys['в']) mx = 1;
+    if (this.keys['w'] || this.keys['arrowup'] || this.keys['ц']) my = -1;
+    if (this.keys['s'] || this.keys['arrowdown'] || this.keys['ы']) my = 1;
+    
+    if (mx !== 0 || my !== 0) {
+      let len = Math.hypot(mx, my);
+      mx /= len;
+      my /= len;
+    }
+    
+    let speedMod = 1;
+    if ((mx !== 0 || my !== 0) && !this.char.isDodging && this.char.hasWeapon) {
+      let moveAngle = Math.atan2(my, mx);
+      speedMod = getSpeedModifier(moveAngle, this.char.swordAngle);
+    }
+    
+    let exhaustFactor = this.char.staminaResting ? this.char.exhaustFade : 1.0;
+    let wandSlowFactor = (this.char._wandCharging && WEAPONS[this.char.weapon]?.special === 'wand') ? 0.3 : 1.0;
+    let slamSlowFactor = (this.char.activeSpell === 'SpellGroundSlam' && this.char._groundSlamPhase === 'charge') ? 0.01 : 1.0;
+    let shieldSlowFactor = (this.char.shieldRaised && this.char.shield !== 'none' && !(WEAPONS[this.char.weapon]?.special === 'spear' && this.char.activeSpell === 'SpellVortex')) ? 0.5 : 1.0;
+    
+    let maxSpeed = C.PLAYER_SPEED / (1 + (this.char.scale - 1) * 0.15);
+    maxSpeed *= speedMod * exhaustFactor * shieldSlowFactor * wandSlowFactor * slamSlowFactor;
+
+    this.char.move(mx, my, maxSpeed);
+  }
+
+  updateSwing() {
+    let targetAngle = Math.atan2(this.mouseY - (this.char.y - 20), this.mouseX - (this.char.x + 22));
+    let isActive = Math.hypot(this.mdX, this.mdY) > 0.8;
+    this.char.updateSwing(targetAngle, isActive);
+    
+    this.smSpd = this.smSpd * 0.9 + Math.hypot(this.mdX, this.mdY) * 0.1;
+    this.mdX *= 0.3;
+    this.mdY *= 0.3;
+  }
+  
+  update() {
+    this.handleMove();
+    this.updateSwing();
+    this.char.updateDodge();
+    
+    // Вычисляем угол курсора
+    let dx = this.mouseX - (this.char.x + 22);
+    let dy = this.mouseY - (this.char.y - 20);
+    let cursorAngle = Math.atan2(dy, dx);
+    
+    // АВТОМАТИЧЕСКОЕ ПЕРЕКЛЮЧЕНИЕ ЭЛЛИПСА
+    let sector = this.char.getSectorFromAngle(cursorAngle);
+    let targetRotation = (sector === 0 || sector === 2) ? 0 : 90;
+    
+    if (this.char.ellipseRotation !== targetRotation) {
+        this.char.ellipseRotation = targetRotation;
+    }
+    
+    // Обновляем позицию руки
+    this.char.updateHandPosition(this.char.swordAngle);
+    
+    // ... остальной код (отладка, crossbowCD и т.д.)
+}
+}
+
+
+
+// ---------- AI ПОВЕДЕНИЕ (ПОЛНОСТЬЮ) ----------
+
+
+class AIBehaviour {
+  constructor(character, enemy){
+  this.sideChangeTimer = 0;
+    this.aiDodgeDelay = 0;
+    this.char=character; this.enemy=enemy;
+    this.tactic='defense'; this.stance='block'; this.stanceTimer=0;
+    this.tacticTimer=Math.floor(Math.random()*360+240);
+    this.defenseSide=0; this.defenseTimer=Math.floor(Math.random()*720+240);
+    this.consecutiveHits=0; this.retreatTimer=0;
+    this.crossbowDodgeTimer=0; this.crossbowDodgeDir=1;
+    this.shelterBox=null; this.shelterTimer=0; this.shelterThrowCooldown=0;
+    this.shelterTargetUpdate=0; this._shelterTargetX=0; this._shelterTargetY=0;
+    this.pathTimer=0; this.pathAngle=0; this.pathLastCheck=0;
+    this.haulDragX=0; this.haulDragY=0;
+    this.microStepDir=1; this.rushActive=false;
+    this.throwStun=0; this.attackCD=0; this.botSpawnTimer=600;
+    this.botAllWeaponTimer=0; this.cbWanderX=W/2; this.cbWanderY=H/2; this.cbWanderTimer=0;
+    this.bSpellCastCD=0;
+    this._prevBMouseX=0; this._prevBMouseY=0;
+    this._mouseX=W/2; this._mouseY=H/2;
+    this._noWeaponTimer = 0;
+    
+    // Поля для движения
+    this._inputX = 0;
+    this._inputY = 0;
+    
+    // Система агрессивности
+    this.aggression = {
+        mode: 'normal',
+        timer: Math.floor(Math.random() * 300 + 300), // первый раз через 5-10 сек
+        attackDuration: 180,
+        defenseDuration: 300,
+        throwChance: 0.01,
+        rushChance: 0.02
+    };
+  }
+  
+  // ========== ДЕТЕКТ УГРОЗ И УВОРОТ ==========
+  checkAndDodge() {
+    if (this.aiDodgeDelay > 0) return false;
+    if (this.char.isDodging) return false;
+    if (this.char.dodgeCooldown > 0) return false;
+    if (Math.random() > 0.5) return false;
+    
+    // ========== 1. ДЕТЕКТ ЛЕТЯЩЕГО МЕЧА ==========
+    for (let s of dropped) {
+        if (!s.isFlying) continue;
+        if (s.owner === 'b') continue;
+        
+        let dx = this.char.x - s.x;
+        let dy = this.char.y - s.y;
+        let dist = Math.hypot(dx, dy);
+        if (dist > 150) continue;
+        
+        let swordAngle = Math.atan2(s.vy, s.vx);
+        let toCharX = dx / dist;
+        let toCharY = dy / dist;
+        let dirX = Math.cos(swordAngle);
+        let dirY = Math.sin(swordAngle);
+        
+        let dot = dirX * toCharX + dirY * toCharY;
+        
+        if (dot > 0.7 && dist < 120) {
+            let dodgeAngle = swordAngle + Math.PI / 2 * (Math.random() < 0.5 ? 1 : -1);
+            this.char.dodgeRoll(dodgeAngle, 12);
+            addFloat('🗡️ УКЛОНЕНИЕ!', this.char.x, this.char.y - 40, '#88ffaa');
+            
+            // МЕНЯЕМ СТОРОНУ ОБОРОНЫ!
+            this.defenseSide = -this.defenseSide;
+            addFloat('🔄 СМЕНА СТОРОНЫ', this.char.x, this.char.y - 50, '#ffaa88');
+            
+            this.aiDodgeDelay = RndI(1,8)*60;
+            return true;
+        }
+    }
+    
+    // ========== 2. ДЕТЕКТ ЛЕТЯЩЕЙ СТРЕЛЫ ==========
+    for (let bolt of bolts) {
+        if (bolt.owner === 'b') continue;
+        if (bolt.life <= 0) continue;
+        
+        let dx = this.char.x - bolt.x;
+        let dy = this.char.y - bolt.y;
+        let dist = Math.hypot(dx, dy);
+        
+        if (dist < 50) {
+            let boltAngle = Math.atan2(bolt.vy, bolt.vx);
+            let dodgeAngle = boltAngle + Math.PI / 2 * (Math.random() < 0.5 ? 1 : -1);
+            this.char.dodgeRoll(dodgeAngle, 14);
+            addFloat('🏹 УКЛОНЕНИЕ!', this.char.x, this.char.y - 40, '#88ffaa');
+            
+            // МЕНЯЕМ СТОРОНУ ОБОРОНЫ!
+            this.defenseSide = -this.defenseSide;
+            addFloat('🔄 СМЕНА СТОРОНЫ', this.char.x, this.char.y - 50, '#ffaa88');
+            
+            this.aiDodgeDelay = RndI(1,8)*60;
+            return true;
+        }
+        
+        let boltAngle = Math.atan2(bolt.vy, bolt.vx);
+        let toCharX = dx / dist;
+        let toCharY = dy / dist;
+        let dirX = Math.cos(boltAngle);
+        let dirY = Math.sin(boltAngle);
+        
+        let dot = dirX * toCharX + dirY * toCharY;
+        
+        if (dot > 0.5 && dist < 100) {
+            let dodgeAngle = boltAngle + Math.PI / 2 * (Math.random() < 0.5 ? 1 : -1);
+            this.char.dodgeRoll(dodgeAngle, 12);
+            addFloat('🏹 УКЛОНЕНИЕ!', this.char.x, this.char.y - 40, '#88ffaa');
+            
+            // МЕНЯЕМ СТОРОНУ ОБОРОНЫ!
+            this.defenseSide = -this.defenseSide;
+            addFloat('🔄 СМЕНА СТОРОНЫ', this.char.x, this.char.y - 50, '#ffaa88');
+            
+            this.aiDodgeDelay = RndI(1,8)*60;
+            return true;
+        }
+    }
+    
+    // ========== 3. ДЕТЕКТ ДОДЖА ИГРОКА ==========
+    if (player.isDodging) {
+        let dx = this.char.x - player.x;
+        let dy = this.char.y - player.y;
+        let dist = Math.hypot(dx, dy);
+        
+        if (dist < 120) {
+            let playerDir = Math.atan2(player.vy, player.vx);
+            let toBot = Math.atan2(dy, dx);
+            let angleDiff = angDiff(playerDir, toBot);
+            
+            if (Math.abs(angleDiff) < Math.PI / 2.5) {
+                let dodgeAngle = toBot + Math.PI / 2 * (Math.random() < 0.5 ? 1 : -1);
+                this.char.dodgeRoll(dodgeAngle, 14);
+                addFloat('💨 РЕАКЦИЯ!', this.char.x, this.char.y - 40, '#ffaa66');
+                
+                // МЕНЯЕМ СТОРОНУ ОБОРОНЫ!
+                this.defenseSide = -this.defenseSide;
+                addFloat('🔄 СМЕНА СТОРОНЫ', this.char.x, this.char.y - 50, '#ffaa88');
+                
+                this.aiDodgeDelay = 120;
+                return true;
+            }
+        }
+    }
+    
+    return false;
+}
+
+
+
+  update() {
+    if (!active || mode === 'dummy') {
+      this.char.vx = this.char.vy = 0;
+      this.char.atk = 0;
+      return;
+    }
+    
+    if (this.char.moveLock > 0) {
+      this.char.moveLock--;
+      if (this.char.moveLock <= 0) this.char._tkStunDelay = 0;
+      return;
+    }
+    
+    if (this.char.swordLock > 0) {
+      this.char.swordLock--;
+      if (this.char.hasWeapon && this.char.swordLock > 0) {
+        let t = Math.atan2(this.enemy.y - (this.char.y - 20), this.enemy.x - (this.char.x + 22));
+        let d2 = angDiff(t, this.haulDragY);
+        this.haulDragY += Math.min(0.12, Math.max(-0.12, d2 * 0.04));
+        this.char.swordAngle = this.haulDragY;
+      }
+    }
+    
+    if (this.char.crossbowCD > 0) this.char.crossbowCD--;
+    if (this.retreatTimer > 0) this.retreatTimer--;
+    if (this.attackCD > 0) this.attackCD--;
+    if (this.throwStun > 0) this.throwStun--;
+    if (this.botSpawnTimer > 0) this.botSpawnTimer--;
+    
+    if (gameMode === 'all_weapon' && this.char.hasWeapon) {
+      this.botAllWeaponTimer--;
+      if (this.botAllWeaponTimer <= 0) {
+        this.char.weapon = rndWeapon();
+        this.botAllWeaponTimer = Math.floor(Math.random() * 2400 + 600);
+        addFloat('🔄 ' + WEAPONS[this.char.weapon].name, this.char.x, this.char.y - 50, '#ffcc88');
+        updateWeaponHUD();
+      }
+    }
+
+    let dx = this.enemy.x - this.char.x, dy = this.enemy.y - this.char.y, dist = Math.hypot(dx, dy);
+    let wp = WEAPONS[this.char.weapon] || WEAPONS.longsword;
+    let ranges = getCombatRanges(this.char.weapon, this.enemy.weapon);
+    let zone = dist < ranges.R1 ? 1 : dist < ranges.R2 ? 2 : dist < ranges.R3 ? 3 : dist < ranges.R4 ? 4 : 5;
+
+    // ========== ПОИСК ОРУЖИЯ (ЕСЛИ НЕТ) ==========
+    if (!this.char.hasWeapon) {
+      let nearest = null, minD = 999;
+      for (let s of dropped) {
+        let d = Math.hypot(this.char.x - s.x, this.char.y - s.y);
+        if (d < minD && (!s.isFlying || s.owner !== 'b')) {
+          minD = d;
+          nearest = s;
+        }
+      }
+      if (gameMode === 'arena') {
+        for (let sp of arenaSpawns) if (sp.timer <= 0) {
+          let d = Math.hypot(this.char.x - sp.x, this.char.y - sp.y);
+          if (d < minD) {
+            minD = d;
+            nearest = { x: sp.x, y: sp.y, arena: true };
+          }
+        }
+      }
+
+      this.tactic = 'defense';
+      this.stance = 'block';
+      this.char.atk = 0;
+      this.char.swordVel = 0;
+      if (this.char.shield !== 'none') this.char.shieldRaised = true;
+
+      let botSwordFlying = dropped.some(d => d.owner === 'b' && d.isFlying);
+
+      if (botSwordFlying && !nearest) {
+        let aToP = Math.atan2(dy, dx);
+        this._inputX = -Math.cos(aToP) * 0.5;
+        this._inputY = -Math.sin(aToP) * 0.5;
+        
+      } else if (!nearest && dropped.length === 0 && arenaSpawns.length === 0) {
+        if (!this._noWeaponTimer) this._noWeaponTimer = 0;
+        this._noWeaponTimer++;
+        if (this._noWeaponTimer > 280) {
+          this.char.hasWeapon = true;
+          this.char.weapon = 'dagger';
+          updateWeaponHUD();
+          this.tactic = 'attack';
+          this.tacticTimer = 120;
+          this._noWeaponTimer = 0;
+          addFloat('🔪 БОТ ВЗЯЛ КИНЖАЛ', this.char.x, this.char.y - 40, '#ffaa88');
+        } else {
+          this._inputX = 0;
+          this._inputY = 0;
+          if (!hideDebug) document.getElementById('ai-debug').innerHTML = `🤖 ОБОРОНА | ЖДУ ОРУЖИЕ | ${Math.ceil((180 - this._noWeaponTimer) / 60)}с`;
+        }
+      } else if (nearest) {
+        let toSx = nearest.x - this.char.x, toSy = nearest.y - this.char.y, len = Math.hypot(toSx, toSy);
+        if (len > 5) {
+          this._inputX = toSx / len;
+          this._inputY = toSy / len;
+        } else {
+          this._inputX = 0;
+          this._inputY = 0;
+        }
+        if (minD < C.PICKUP_RADIUS) tryPickup('b');
+        if (!hideDebug) document.getElementById('ai-debug').innerHTML = `🤖 ИЩУ МЕЧ | D:${Math.floor(minD)} | ОБОРОНА`;
+      } else {
+        this._inputX = 0;
+        this._inputY = 0;
+        if (!hideDebug) document.getElementById('ai-debug').innerHTML = '🤖 ЖДУ МЕЧ | ОБОРОНА';
+      }
+
+      let moveSpeed = C.BOT_NO_SWORD_SPEED * this.char.scale * botSpeedMult;
+      this.char.move(this._inputX, this._inputY, moveSpeed);
+      return;
+    }
+
+    // ========== ЕСЛИ ЕСТЬ ОРУЖИЕ — ОБРАБОТКА ТАКТИК ==========
+    if (this.char.hasWeapon) {
+      if (this.tactic === 'sword') {
+        this.tactic = 'attack';
+        this.tacticTimer = 0;
+      }
+    }
+
+    // ========== СИСТЕМА АГРЕССИВНОСТИ (обновляется каждые 10-25 сек) ==========
+    this.aggression.timer--;
+    if (this.aggression.timer <= 0) {
+      let r = Math.random();
+      if (r < 0.1) {
+        this.aggression.mode = 'passive';
+        this.aggression.attackDuration = 60;
+        this.aggression.defenseDuration = 600;
+        this.aggression.throwChance = 0.005;
+        this.aggression.rushChance = 0.005;
+        addFloat('😴 ПАССИВНЫЙ', this.char.x, this.char.y - 50, '#88aaff');
+      } else if (r < 0.3) {
+        this.aggression.mode = 'normal';
+        this.aggression.attackDuration = 180;
+        this.aggression.defenseDuration = 300;
+        this.aggression.throwChance = 0.01;
+        this.aggression.rushChance = 0.02;
+        addFloat('⚖️ НОРМАЛЬНЫЙ', this.char.x, this.char.y - 50, '#ffff88');
+      } else {
+        this.aggression.mode = 'aggressive';
+        this.aggression.attackDuration = 450;
+        this.aggression.defenseDuration = 120;
+        this.aggression.throwChance = 0.03;
+        this.aggression.rushChance = 0.05;
+        addFloat('💢 АГРЕССИВНЫЙ!', this.char.x, this.char.y - 50, '#ff8844');
+      }
+      this.aggression.timer = Math.floor(Math.random() * 900 + 600);
+    }
+
+    // ========== ПЕРЕХОДЫ МЕЖДУ ТАКТИКАМИ ==========
+    // Оборона → Атака
+    if (this.tactic === 'defense') {
+      this.defenseTimer--;
+      if (this.defenseTimer <= 0) {
+        this.tactic = 'attack';
+        this.tacticTimer = this.aggression.attackDuration;
+        this.defenseTimer = 0;
+        addFloat('⚔️ В АТАКУ!', this.char.x, this.char.y - 40, '#ff8844');
+      }
+    }
+    
+    // Атака → Оборона
+    if (this.tactic === 'attack') {
+      this.tacticTimer--;
+      if (this.tacticTimer <= 0) {
+        this.tactic = 'defense';
+        this.defenseTimer = Math.floor(Math.random() * this.aggression.defenseDuration + this.aggression.defenseDuration/2);
+        addFloat('🛡️ В ОБОРОНУ!', this.char.x, this.char.y - 40, '#88aaff');
+      }
+    }
+
+    // Поиск укрытия (только в обороне)
+    if (this.tactic === 'defense' && this.tacticTimer > 0 && !clashActive) {
+      if (chanceDelay(3, 'sheltAtt')) {
+        let f = findShelterBox();
+        if (f) {
+          this.shelterBox = f;
+          this.shelterTimer = rnd(5, 10);
+          this.tactic = 'shelter';
+        }
+      }
+    }
+
+    // ========== АРБАЛЕТ ==========
+// ========== АРБАЛЕТ ==========
+if (this.char.hasWeapon && wp.special === 'crossbow') {
+    let aToP = Math.atan2(dy, dx);  // угол на игрока
+    let cbSpd = C.BOT_SPEED * this.char.scale * botSpeedMult * 0.5;
+    
+    // ========== ПОСТОЯННО ЦЕЛИМСЯ В ИГРОКА ==========
+    let targetAngle = Math.atan2(this.enemy.y - (this.char.y - 20), this.enemy.x - (this.char.x + 22));
+    
+    // Плавный поворот арбалета в сторону игрока (чтобы не было резких дёрганий)
+    let angleDiff = angDiff(targetAngle, this.char.swordAngle);
+    this.char.swordAngle += angleDiff * 0.25;  // 0.25 = скорость поворота (1 = мгновенно)
+    
+    // Движение при стрельбе из арбалета
+    if (this.crossbowDodgeTimer > 0) {
+        this.crossbowDodgeTimer--;
+        let dd = aToP + Math.PI / 2 * this.crossbowDodgeDir;
+        this._inputX = Math.cos(dd);
+        this._inputY = Math.sin(dd);
+    } else if (this.char.x < 100 || this.char.x > W - 100 || this.char.y < 100 || this.char.y > H - 100) {
+        let tcx = W / 2 - this.char.x, tcy = H / 2 - this.char.y, tcL = Math.hypot(tcx, tcy);
+        if (tcL > 0.01) {
+            this._inputX = tcx / tcL;
+            this._inputY = tcy / tcL;
+        }
+    } else if (dist < ranges.R5) {
+        this._inputX = -Math.cos(aToP);
+        this._inputY = -Math.sin(aToP);
+    } else {
+        this.cbWanderTimer--;
+        if (this.cbWanderTimer <= 0 || Math.hypot(this.char.x - this.cbWanderX, this.char.y - this.cbWanderY) < 40) {
+            this.cbWanderX = 80 + Math.random() * (W - 160);
+            this.cbWanderY = 80 + Math.random() * (H - 160);
+            this.cbWanderTimer = 300;
+        }
+        let wdx = this.cbWanderX - this.char.x, wdy = this.cbWanderY - this.char.y, wL = Math.hypot(wdx, wdy);
+        if (wL > 20) {
+            this._inputX = wdx / wL;
+            this._inputY = wdy / wL;
+        }
+    }
+    
+    this.stance = 'range';
+    
+    // СТРЕЛЬБА
+    if (this.char.crossbowCD <= 0 && dist < ranges.R4 && Math.random() < 0.05) {  // 5% шанс в кадр
+        let obstacle = getObstacleInDirection(this.char, aToP, dist - 20);
+        if (!obstacle) {
+            fireCrossbow('b');
+        }
+    }
+    
+    this.char.move(this._inputX, this._inputY, cbSpd);
+    
+    if (!hideDebug) document.getElementById('ai-debug').innerHTML = `🤖 АРБАЛЕТ|Z${zone}|D:${Math.floor(dist)}|CD:${this.char.crossbowCD}|угол:${Math.floor(this.char.swordAngle * 180 / Math.PI)}°`;
+    return;
+}
+    // ========== ВЫЧИСЛЕНИЕ НАПРАВЛЕНИЯ ДЛЯ ОБЫЧНОГО БОЯ ==========
+    let inputX = 0, inputY = 0;
+    let aToP = Math.atan2(dy, dx);
+    
+    // Тактика АТАКА
+    if (this.tactic === 'attack' && !this.char.staminaResting) {
+      let td = ranges.R1 - 10;
+      if (wp.special === 'spear') td = ranges.R1 * 1.1;
+      if (wp.special === 'flail') td = ranges.R1 * 1.8;
+      
+      if (dist > td + 20) {
+        inputX = Math.cos(aToP);
+        inputY = Math.sin(aToP);
+      } else if (dist < td - 20) {
+        inputX = -Math.cos(aToP) * 0.4;
+        inputY = -Math.sin(aToP) * 0.4;
+      }
+      
+      // Микро-шаги
+      if (Math.random() < 0.08 && zone <= 2) {
+        let s = aToP + Math.PI / 2 * this.microStepDir;
+        inputX += Math.cos(s) * 0.3;
+        inputY += Math.sin(s) * 0.3;
+        this.microStepDir *= -1;
+      }
+      
+      // Выпад (rush)
+      if (!botNoThrust && Math.random() < this.aggression.rushChance && zone <= 2 && wp.special !== 'spear' && wp.special !== 'flail' && dist < ranges.R1 * (0.3 + Math.random() * globalThrustRange)) {
+        this.rushActive = true;
+        this.stance = 'thrust';
+        this.stanceTimer = 40;
+        this.char.vx += Math.cos(aToP) * 10;
+        this.char.vy += Math.sin(aToP) * 10;
+      }
+      if (this.rushActive && this.stanceTimer <= 0) this.rushActive = false;
+      
+      // Атака
+      let bCanAttackDist = wp.special === 'flail' ? dist < ranges.R1 * 2.0 : zone === 1;
+      if (bCanAttackDist && this.char.atk <= 0 && this.attackCD <= 0 && !this.char.staminaResting && !this.char.pendingRest && this.retreatTimer <= 0) {
+        if (this.char.smSpd < 3) {
+          let swAng = Math.atan2(this.enemy.y - (this.char.y - 20), this.enemy.x - (this.char.x + 22));
+          let swDir = Math.sin(Date.now() * 0.01) > 0 ? 1 : -1;
+          let sweepAngle = swAng + swDir * Math.PI * 0.6;
+          let sweepR = 100;
+          this._mouseX = this.char.x + 22 + Math.cos(sweepAngle) * sweepR;
+          this._mouseY = this.char.y - 20 + Math.sin(sweepAngle) * sweepR;
+          this.char.smSpd = 8;
+        }
+        this.attackCD = 50;
+      }
+      
+      let targetAngle = Math.atan2(this.enemy.y - (this.char.y - 20), this.enemy.x - (this.char.x + 22));
+      let isActive = this.attackCD <= 0;
+      this.char.updateSwing(targetAngle, isActive);
+      
+      if(wp.special === 'flail'){
+        let bTargetExt = Math.min(1, Math.abs(this.char.swordVel) * flailSpeedMult * 3);
+        this.char.flailExt = this.char.flailExt * 0.85 + bTargetExt * 0.15;
+      } else {
+        this.char.flailExt *= 0.75;
+      }
+      
+      this.char.smSpd = this.char.smSpd * 0.9 + Math.hypot(this._mouseX - this._prevBMouseX || 0, this._mouseY - this._prevBMouseY || 0) * 0.1;
+      this._prevBMouseX = this._mouseX;
+      this._prevBMouseY = this._mouseY;
+    }
+    
+    // Тактика ЗАЩИТА
+else if (this.tactic === 'defense') {
+    // Меняем сторону случайно каждые 3-5 секунд
+    this.sideChangeTimer--;
+    if (this.sideChangeTimer <= 0) {
+        if (Math.random() < 0.3) {  // 30% шанс сменить сторону
+            this.defenseSide = -this.defenseSide;
+            addFloat('🔄 СМЕНА', this.char.x, this.char.y - 45, '#ffaa88');
+        }
+        this.sideChangeTimer = RndI(180, 300);  // 3-5 секунд
+    }
+    
+    if (this.defenseSide === 0) this.defenseSide = Math.random() < 0.5 ? 1 : -1;
+    let orb = aToP + Math.PI / 2 * this.defenseSide;
+    inputX = Math.cos(orb) * 0.7;
+    inputY = Math.sin(orb) * 0.7;
+}
+    
+    // Тактика УКРЫТИЕ
+    else if (this.tactic === 'shelter' && this.shelterBox) {
+      let toX = this.shelterBox.x + this.shelterBox.w/2 - this.char.x;
+      let toY = this.shelterBox.y + this.shelterBox.h/2 - this.char.y;
+      let len = Math.hypot(toX, toY);
+      if (len > 5) {
+        inputX = toX / len;
+        inputY = toY / len;
+      }
+      this.shelterTimer--;
+      if (this.shelterTimer <= 0 || len < 50) {
+        this.tactic = 'defense';
+        this.shelterBox = null;
+      }
+    }
+    
+    // Отступление
+    else if (this.retreatTimer > 0) {
+      inputX = -Math.cos(aToP);
+      inputY = -Math.sin(aToP);
+    }
+    
+    // Агрессивное движение по умолчанию
+    else {
+      inputX = Math.cos(aToP);
+      inputY = Math.sin(aToP);
+    }
+    
+    // Нормализация направления
+    if (inputX !== 0 || inputY !== 0) {
+      let len = Math.hypot(inputX, inputY);
+      inputX /= len;
+      inputY /= len;
+    }
+    
+    // Модификаторы скорости
+    let speedMod = 1;
+    if ((inputX !== 0 || inputY !== 0) && !this.char.isDodging && this.char.hasWeapon) {
+      let moveAngle = Math.atan2(inputY, inputX);
+      speedMod = getSpeedModifier(moveAngle, this.char.swordAngle);
+    }
+    
+    let shieldSlow = (this.char.shieldRaised && this.char.shield !== 'none') ? 0.5 : 1.0;
+    let maxSpeed = C.BOT_SPEED * this.char.scale * botSpeedMult;
+    maxSpeed *= speedMod * shieldSlow;
+    maxSpeed *= this.char.staminaResting ? this.char.exhaustFade : 1.0;
+    
+	
+ // Уменьшаем AI кулдаун
+    if (this.aiDodgeDelay > 0) {
+        this.aiDodgeDelay--;
+    }
+this.checkAndDodge();  // детект и уворот
+    // ========== ДВИЖЕНИЕ ==========
+    this.char.move(inputX, inputY, maxSpeed);
+    
+    // ========== БЛОКИРОВАНИЕ ==========
+    if (this.stance === 'block' && this.char.hasWeapon) {
+      let atP = Math.atan2(this.enemy.y - (this.char.y - 20), this.enemy.x - (this.char.x + 22));
+      if (Math.abs(angDiff(player.swordAngle, atP)) < Math.PI * 2 / 3) {
+        this.char.swordAngle = player.swordAngle;
+      } else {
+        let d2 = angDiff(atP, this.char.swordAngle);
+        this.char.swordAngle += d2 * 0.15;
+      }
+    }
+    
+    // ========== ТАЙМЕРЫ (только stanceTimer и atkCD, tacticTimer уже уменьшается в переходе) ==========
+    if (this.stanceTimer > 0) this.stanceTimer--;
+    if (this.char.atkCD > 0) this.char.atkCD--;
+    
+    // ========== БРОСОК ОРУЖИЯ ==========
+    if (this.tactic === 'attack' && this.char.hasWeapon && wp.throwRange >= 0.6 && botThrowCD <= 0 && dist > ranges.R2 * 0.8 && Math.random() < this.aggression.throwChance && this.botSpawnTimer <= 0) {
+      throwSword('b');
+    }
+    if (this.tactic === 'defense' && wp.throwRange >= 0.6 && botThrowCD <= 0 && dist > ranges.R2 && Math.random() < (this.aggression.throwChance * 2) && this.botSpawnTimer <= 0) {
+      throwSword('b');
+    }
+    
+    // ========== ЩИТ ==========
+    if (this.char.shield !== 'none') {
+      let face = Math.atan2(this.enemy.y - (this.char.y - 20), this.enemy.x - (this.char.x + 22));
+      let sway = Math.sin(Date.now() * 0.006) * Math.hypot(this.char.vx, this.char.vy) * 0.01;
+      this.char.shieldAngle += angDiff(face - Math.PI / 2 + sway, this.char.shieldAngle) * 0.12;
+      this.char.shieldRaised = (this.tactic === 'defense' || this.tactic === 'shelter');
+      this.char._shieldSide = this.enemy.x > this.char.x ? 1 : -1;
+    }
+    
+
+
+    // Отладка
+    if (!hideDebug && Math.random() < 0.02) {
+      console.log(`Тактика: ${this.tactic}, defenseTimer: ${this.defenseTimer}, tacticTimer: ${this.tacticTimer}, агрессия: ${this.aggression.mode}`);
+    }
+    
+    let tName = { attack: 'АТАКА', defense: 'ОБОРОНА', sword: 'ЗА МЕЧОМ', shelter: 'УКРЫТИЕ', path: 'ОБХОД' };
+    if (!hideDebug) document.getElementById('ai-debug').innerHTML = `🤖 ${tName[this.tactic] || this.tactic} | ${this.stance} | ${this.aggression.mode} | Z${zone} | D:${Math.floor(dist)} | ${this.char.hasWeapon ? WEAPONS[this.char.weapon].emoji : '✖️'}`;
+  }
+}
+
+
+// <- закрытие класса AIBehaviour
+
+
+// ---------- CLASH (ПРОТИВОСТОЯНИЕ) ----------
+function startClash(isDeath=false,attacker=null){
+  if(clashActive) return;
+  if(!player.hasWeapon || !bot.hasWeapon || WEAPONS[player.weapon]?.special==='crossbow' || WEAPONS[bot.weapon]?.special==='crossbow') return;
+  clashActive=true; clashPower=50; clashPhase=0; clashPhaseStart=performance.now()/1000;
+  clashPlayerPower=0; clashBotPower=0; clashEscape=false; clashRestoreHp=0; clashRestoreWho=null;
+  throwBlockTimer=120;
+  if(isDeath){ clashRestoreWho=attacker; clashRestoreHp=20; addFloat('💀 ПРОТИВОСТОЯНИЕ СМЕРТИ!',W/2,H/2-100,'#ff4444',2); }
+  document.getElementById('clash-ui').classList.remove('hidden');
+  applyShake(5); playSound('clashStart'); lastClashTime=performance.now()/1000;
+}
+
+function updateClash(){
+  if(!clashActive) return;
+  let el=(performance.now()/1000)-clashPhaseStart;
+  clashPhase=Math.min(2.2,el);
+  let decay=Math.pow(clashPhase/2.2,1.5)*40, target=50-decay;
+  let pb=Math.min(30,clashPlayerPower*0.3), bb=Math.min(30,clashBotPower*0.2+Math.random()*5);
+  clashPower=clashPower*0.85+clamp(target+pb-bb,5,95)*0.15;
+  document.getElementById('clash-fill').style.width=clashPower+'%';
+  document.getElementById('clash-marker').style.left=clashPower+'%';
+  if(clashEscape) endClash(true);
+  else if(clashPhase>=2.2) endClash(false);
+}
+
+function endClash(escaped){
+  if(!clashActive) return;
+  clashActive=false;
+  document.getElementById('clash-ui').classList.add('hidden');
+  if(escaped){ addFloat('💨 ОТСТУПЛЕНИЕ!',player.x,player.y-50,'#88aaff'); applyShake(5); clashLoserInvincible=60; return; }
+  let winner=clashPower>=50?'player':'bot', loser=winner=='player'?'bot':'player', dmg=15;
+  clashWinnerInvincible=60; clashLoserInvincible=60;
+  if(clashRestoreWho && clashRestoreHp>0 && clashRestoreWho===winner){
+    if(winner==='player'){ player.hp=Math.min(phMax,player.hp+clashRestoreHp); } else { bot.hp=Math.min(bhMax,bot.hp+clashRestoreHp); }
+    updHP();
+  }
+  if(loser==='player'){ player.hp=Math.max(0,player.hp-dmg); updHP(); addFloat(`💀 -${dmg}`,player.x,player.y-45,'#ff4444'); for(let i=0;i<15;i++) blood.push({x:player.x,y:player.y,vx:(Math.random()-0.5)*9,vy:(Math.random()-0.5)*9-4,life:18}); applyShake(15); if(player.hp<=0){ dropSwordOnDeath('p'); active=false; showGameOver('💀 ВЫ ПАЛИ 💀'); } }
+  else{ bot.hp=Math.max(0,bot.hp-dmg); updHP(); addFloat(`💀 -${dmg}`,bot.x,bot.y-45,'#ff4444'); for(let i=0;i<15;i++) blood.push({x:bot.x,y:bot.y,vx:(Math.random()-0.5)*9,vy:(Math.random()-0.5)*9-4,life:18}); applyShake(15); if(bot.hp<=0){ dropSwordOnDeath('b'); active=false; showGameOver('🏆 ПОБЕДА! 🏆'); } }
+  cinematicFlash=8; playSound('knockout');
+}
+
+let clashWinnerInvincible=0, clashLoserInvincible=0;
+
+// ---------- СТОЛКНОВЕНИЯ И УРОН ----------
+function applyDamage(who,dmg,fx,fy,crit,attacker,isHeavy,isMelee, spd){
+  if(dmg>0) damageLog.push({t:(Date.now()/1000).toFixed(2),who,dmg:Math.round(dmg),from:attacker});
+  if(who==='p' && attacker==='p') return; if(who==='b' && attacker==='b') return;
+  if(who==='p' && clashWinnerInvincible>0 && attacker==='b') return; if(who==='b' && clashWinnerInvincible>0 && attacker==='p') return;
+  if(who==='p' && clashLoserInvincible>0) return; if(who==='b' && clashLoserInvincible>0) return;
+  let newHp=(who==='p'?player.hp:bot.hp)-dmg;
+  if(newHp<=0 && isMelee && !clashActive && !pendingDeathClash && (performance.now()/1000)-lastClashTime>60){ pendingDeathClash=true; startClash(true,attacker); return; }
+  if(who==='p'){
+    if(pDamageCD>0) return; pDamageCD=18;
+    player.hp=Math.max(0,player.hp-dmg); updHP();
+    // addFloat удалён — он уже есть в checkTouch
+    addBlood(player.x,player.y+10,Math.atan2(player.y-fy,player.x-fx),crit); addPuddle(player.x,player.y+10);
+    if(isHeavy) knockOut('p',fx,fy,true); applyShake(10);
+    if(player.hp<=0){ dropSwordOnDeath('p'); active=false; showGameOver('💀 ВЫ ПАЛИ 💀'); }
+    playSound(isHeavy?'heavyhit':'damage');
+    if(isMelee && Math.random()<0.2 && ai && ai.tactic!=='defense' && ai.tactic!=='shelter'){
+      ai.tactic='defense'; ai.tacticTimer=Math.floor(Math.random()*5+5)*60; ai.defenseTimer=ai.tacticTimer; ai.defenseSide=Math.random()<0.5?1:-1;
+    }
+  } else {
+    if(bDamageCD>0) return; bDamageCD=18;
+    bot.hp=Math.max(0,bot.hp-dmg); updHP();
+    // addFloat удалён — он уже есть в checkTouch
+    addBlood(bot.x,bot.y+10,Math.atan2(bot.y-fy,bot.x-fx),crit); addPuddle(bot.x,bot.y+10);
+    if(isHeavy) knockOut('b',fx,fy,true); applyShake(8);
+    if(bot.hp<=0){ dropSwordOnDeath('b'); active=false; showGameOver('🏆 ПОБЕДА! 🏆'); }
+    playSound(isHeavy?'heavyhit':'damage');
+  }
+  
+  if(dmg>0 && document.getElementById('dmg-log-panel').style.display === 'block'){
+    updateDamageLogPanel();
+  }
+}
+
+function updateDamageLogPanel(){
+  let panel = document.getElementById('dmg-log-panel');
+  let content = document.getElementById('dmg-log-content');
+  if(!content || panel.style.display !== 'block') return;
+  content.innerHTML = damageLog.slice(-50).reverse().map(d => 
+    `<div style="border-bottom:1px solid #335;padding:2px;font-size:11px">[${d.t}] ${d.from} → ${d.who}: <b style="color:#ff8888">${d.dmg}</b></div>`
+  ).join('');
+}
+
+let pendingDeathClash=false;
+
+function checkSwordClash(){
+  if(clashCDTimer>0){ clashCDTimer--; return; }
+  if(!player.hasWeapon || !bot.hasWeapon) return;
+  let pWp=WEAPONS[player.weapon], bWp=WEAPONS[bot.weapon];
+  if(pWp.special==='crossbow' || bWp.special==='crossbow') return;
+  if(player._shieldPushCD>0)player._shieldPushCD--; if(bot._shieldPushCD>0)bot._shieldPushCD--;
+  if(player.shieldRaised && player.shield!=='none' && player._shieldPushCD<=0){
+    let shX=player.x+(player._shieldSide||-1)*22, shY=player.y-8, dd=Math.hypot(bot.x-shX,bot.y-shY);
+    if(dd<28){ let ag=Math.atan2(bot.y-shY,bot.x-shX); bot.vx+=Math.cos(ag)*12; bot.vy+=Math.sin(ag)*12; if(dd<18) bot.moveLock=Math.max(bot.moveLock,10); player._shieldPushCD=20; }
+  }
+  if(bot.shieldRaised && bot.shield!=='none' && bot._shieldPushCD<=0){
+    let shX=bot.x+(bot._shieldSide||1)*22, shY=bot.y-8, dd=Math.hypot(player.x-shX,player.y-shY);
+    if(dd<28){ let ag=Math.atan2(player.y-shY,player.x-shX); player.vx+=Math.cos(ag)*12; player.vy+=Math.sin(ag)*12; bot._shieldPushCD=20; }
+  }
+  let pOff=getSwordOffset(player.vx,player.vy), bOff=getSwordOffset(bot.vx,bot.vy);
+  let pCenterWep=pWp.special==='spear'||pWp.special==='staff';
+  let bCenterWep=bWp.special==='spear'||bWp.special==='staff';
+  let pSpearShift=(pWp.special==='spear'?((player._vortexSpearShift||0)+(player._spearThrusting?0.4:0))*140:0);
+  let pSX=(pCenterWep?player.x+5:player.x+22)+pOff.x - Math.cos(player.swordAngle)*(pCenterWep?pWp.len*50:0);
+  let pSY=(pCenterWep?player.y+2:player.y-20)+pOff.y - Math.sin(player.swordAngle)*(pCenterWep?pWp.len*50:0);
+  let bSX=(bCenterWep?bot.x+5:bot.x+22)+bOff.x - Math.cos(bot.swordAngle)*(bCenterWep?bWp.len*50:0);
+  let bSY=(bCenterWep?bot.y+2:bot.y-20)+bOff.y - Math.sin(bot.swordAngle)*(bCenterWep?bWp.len*50:0);
+  let pClashLen = pWp.special==='flail' ? (0.3+1.9*player.flailExt) : pWp.len;
+  let bClashLen = bWp.special==='flail' ? (0.3+1.9*bot.flailExt) : bWp.len;
+  let s1=swordSeg(pSX+Math.cos(player.swordAngle)*pSpearShift,pSY+Math.sin(player.swordAngle)*pSpearShift,player.swordAngle,pClashLen,pWp.collisionType);
+  let s2=swordSeg(bSX,bSY,bot.swordAngle,bClashLen,bWp.collisionType);
+if(segCollide(s1,s2)){
+  let ang=Math.atan2(s1.y2-s2.y2,s1.x2-s2.x2);
+  let pPow=1/pWp.weight, bPow=1/bWp.weight;
+  player.swordVel=Math.cos(ang)*2.5*bPow+player.swordVel*0.2;
+  bot.swordVel=-Math.cos(ang)*2.5*pPow+bot.swordVel*0.2;
+  
+  if(!clashActive && (Math.abs(player.swordVel)+Math.abs(bot.swordVel))>0.2){
+    let push=12, pa=Math.atan2(bot.y-player.y,bot.x-player.x);
+    player.vx-=Math.cos(pa)*push; player.vy-=Math.sin(pa)*push;
+    bot.vx+=Math.cos(pa)*push; bot.vy+=Math.sin(pa)*push;
+  }
+  
+  // ОПРЕДЕЛЯЕМ КТО АТАКУЕТ, А КТО БЛОКИРУЕТ
+  // Атакует тот, у кого скорость меча выше
+  let isPlayerAttacking = Math.abs(player.swordVel) > Math.abs(bot.swordVel);
+  
+  if(isPlayerAttacking){
+    // Игрок атакует, бот блокирует
+    player.consumeStamina(5);   // атакующий тратит 5
+    bot.consumeStamina(2);      // блокирующий тратит 2
+    addFloat('💢 СИЛЬНЫЙ УДАР', player.x, player.y-40, '#ffaa44');
+  } else {
+    // Бот атакует, игрок блокирует
+    bot.consumeStamina(5);      // атакующий тратит 5
+    player.consumeStamina(2);   // блокирующий тратит 2
+    addFloat('🛡️ БЛОК', player.x, player.y-40, '#88aaff');
+  }
+  
+  clashCDTimer=8;
+  addFloat('КЛАЦ!',(s1.x2+s2.x2)/2,(s1.y2+s2.y2)/2,'#ccccaa'); 
+  playSound('clash');
+  clashCount++;
+  // ...
+}
+}
+
+function shieldBlocks(ent,ax,ay){
+  let sh=SHIELDS[ent.shield];
+  if(!sh||sh.shape==='none'||!ent.shieldRaised) return false;
+  if(WEAPONS[ent.weapon]?.special==='crossbow') return false;
+  let ox=ent.x+22, oy=ent.y-20;
+  let ang=ent.shieldAngle-Math.PI;
+  let dist=22, shx=ox+Math.cos(ang)*dist, shy=oy+Math.sin(ang)*dist;
+  let s=ent.scale;
+  let r=(sh.shape==='oval'?26:sh.shape==='kite'?36:44)*s;
+  return Math.hypot(ax-shx,ay-shy)<r;
+}
+
+function checkTouch(){ 
+  if(pDamageCD>0)pDamageCD--; if(bDamageCD>0)bDamageCD--;
+  if(playerThrowCD>0)playerThrowCD--; if(botThrowCD>0)botThrowCD--;
+  if(throwBlockTimer>0)throwBlockTimer--;
+  if(lastClashCDTimer>0)lastClashCDTimer--;
+  if(clashWinnerInvincible>0)clashWinnerInvincible--; if(clashLoserInvincible>0)clashLoserInvincible--;
+  if(player.crossbowCD>0 && player.crossbowCD<=0) document.getElementById('reload-bar').style.display='none';
+  for(let sp of arenaSpawns) if(sp.timer>0) sp.timer--;
+
+  let pWp=WEAPONS[player.weapon]||WEAPONS.longsword, bWp=WEAPONS[bot.weapon]||WEAPONS.longsword;
+  let pOff=getSwordOffset(player.vx,player.vy), bOff=getSwordOffset(bot.vx,bot.vy);
+  let pSX=player.x+22+pOff.x, pSY=player.y-20+pOff.y;
+  let bSX=bot.x+22+bOff.x, bSY=bot.y-20+bOff.y;
+  let pRect=hitRect(player.x,player.y,player.scale), bRect=hitRect(bot.x,bot.y,bot.scale);
+
+  // Ящики
+  for(let i=0;i<boxes.length;i++){
+    let box=boxes[i], spd=Math.hypot(box.vx,box.vy);
+    if(spd<1.5) continue;
+    let boxRect={x:box.x,y:box.y,w:box.w,h:box.h};
+    let bSeg1=swordSeg(pSX,pSY,player.swordAngle,pWp.special==='flail'?(0.3+1.9*player.flailExt):pWp.len,pWp.collisionType);
+    let bSeg2=swordSeg(bSX,bSY,bot.swordAngle,bWp.special==='flail'?(0.3+1.9*bot.flailExt):bWp.len,bWp.collisionType);
+    let blocked=false;
+    if(player.hasWeapon && pWp.special!=='crossbow' && box.owner!=='p' && segHitBox(bSeg1,boxRect)){ let ang=Math.atan2(box.vy,box.vx)+Math.PI; box.vx=Math.cos(ang)*spd*0.85; box.vy=Math.sin(ang)*spd*0.85; player.swordVel*=-0.35; addFloat('БЛОК!',box.x,box.y-20,'#88aaff'); blocked=true; }
+    if(!blocked && bot.hasWeapon && bWp.special!=='crossbow' && box.owner!=='b' && segHitBox(bSeg2,boxRect)){ let ang=Math.atan2(box.vy,box.vx)+Math.PI; box.vx=Math.cos(ang)*spd*0.85; box.vy=Math.sin(ang)*spd*0.85; bot.swordVel*=-0.35; addFloat('БЛОК!',box.x,box.y-20,'#88aaff'); blocked=true; }
+    if(!blocked){
+      if(rectCollide(boxRect,pRect) && box.owner!=='p'){ 
+        applyDamage('p', Math.min(20, 6 + Math.floor(spd * 0.7)), box.x + 14, box.y + 14, false, box.owner, true, false, spd);
+        let ang = Math.atan2(box.vy, box.vx);
+        player.vx += Math.cos(ang) * 8;
+        player.vy += Math.sin(ang) * 8;
+        box.vx *= 0.3;
+        box.vy *= 0.3;
+      } else if(rectCollide(boxRect,bRect) && box.owner!=='b'){ 
+        applyDamage('b', Math.min(20, 6 + Math.floor(spd * 0.7)), box.x + 14, box.y + 14, false, box.owner, true, false, spd);
+        let ang = Math.atan2(box.vy, box.vx);
+        bot.vx += Math.cos(ang) * 8;
+        bot.vy += Math.sin(ang) * 8;
+        box.vx *= 0.3;
+        box.vy *= 0.3;
+      }
+    }
+  }
+
+  // Атака игрока
+  if(player.hasWeapon && pWp.special!=='crossbow' && (!player.staminaResting || exhaustMode==='smooth') && Math.abs(player.swordVel)>0.05 && pDamageCD<=0){
+    let pEffLen = (pWp.special==='flail') ? (0.3+1.9*player.flailExt) : pWp.len;
+    let seg = swordSeg(pSX, pSY, player.swordAngle, pEffLen, pWp.collisionType);
+    if(segHitBox(seg, bRect)){
+      let spd = Math.abs(player.swordVel);
+      let isActiveAttack = player.atk > 0.15;
+      
+      // ЕДИНЫЙ РАСЧЁТ УРОНА
+      let { dmg, crit, heavy, attackType } = player.calculateDamage(bot, isActiveAttack, spd);
+      
+      addFloat(`-${dmg}${crit?' 💥КРИТ!':''} ${attackType} [${spd.toFixed(2)}]`, player.x, player.y-25, crit?'#ffaa44':'#ff8866', 0.1, true);
+      
+      if(bot.shield!=='none' && bot.shieldRaised && shieldBlocks(bot,seg.x2,seg.y2)){ 
+        player.swordVel *= -0.65; 
+        player.consumeStamina((pWp.staminaCost||10)*0.4); 
+        addFloat('ЩИТ!',bot.x,bot.y-30,'#aaccff'); 
+        playSound('clash'); 
+      } else {
+        applyDamage('b', dmg, pSX, pSY, crit, 'p', heavy, true, spd);
+        player.consumeStamina((pWp.staminaCost||10) * (isActiveAttack ? 1.0 : 0.2));
+        if(player.activeSpell==='SpellVenomAttack') bVenomStacks.push({timer:20,lastTick:0});
+        if(pWp.disarmsOnHit && bot.hasWeapon) knockOut('b',pSX,pSY,true);
+        if(ai){ ai.consecutiveHits=0; }
+      }
+      player.hitCD = 12;
+      player.swordVel *= -0.5;
+      if(isActiveAttack) player.atk = 4;
+    }
+  }
+  
+  
+     // Атака бота
+  if(bot.hasWeapon && bWp.special!=='crossbow' && Math.abs(bot.swordVel)>0.05 && bDamageCD<=0){
+    let bEffLen = (bWp.special==='flail') ? (0.3+1.9*bot.flailExt) : bWp.len;
+    let seg = swordSeg(bSX, bSY, bot.swordAngle, bEffLen, bWp.collisionType);
+    if(segHitBox(seg, pRect)){
+      let spd = Math.abs(bot.swordVel);
+      let isActiveAttack = bot.atk > 0.15;
+      
+      // ЕДИНЫЙ РАСЧЁТ УРОНА
+      let { dmg, crit, heavy, attackType } = bot.calculateDamage(player, isActiveAttack, spd);
+      
+      addFloat(`-${dmg}${crit?' 💥КРИТ!':''} ${attackType} [${spd.toFixed(2)}]`, player.x, player.y-25, crit?'#ffaa44':'#ff8866', 0.1, true);
+      
+      if(player.shield!=='none' && player.shieldRaised && shieldBlocks(player,seg.x2,seg.y2)){ 
+        bot.swordVel *= -0.6; 
+        bot.consumeStamina((bWp.staminaCost||10)*0.5); 
+        addFloat('ЩИТ!', player.x, player.y-30, '#88aaff'); 
+        playSound('clash'); 
+      } else { 
+        applyDamage('p', dmg, bSX, bSY, crit, 'b', heavy, true, spd);
+        if(bWp.disarmsOnHit && player.hasWeapon) knockOut('p',bSX,bSY,true); 
+      }
+      if(bot.activeSpell==='SpellVenomAttack') pVenomStacks.push({timer:20,lastTick:0});
+      bot.swordVel *= -0.5;
+      if(ai){ 
+        ai.consecutiveHits++; 
+        if(ai.consecutiveHits >= 2){ 
+          ai.consecutiveHits = 0; 
+          ai.retreatTimer = Math.floor(Math.random() * 20 + 20); 
+          addFloat('↩️ ОТХОД', bot.x, bot.y - 40, '#88aaff'); 
+        } 
+      }
+    }
+  }
+ 
+  // Болты
+  for(let i=bolts.length-1;i>=0;i--){
+    let bolt=bolts[i];
+    if(bolt.life<=0||bolt.hit){ bolts.splice(i,1); continue; }
+    let hitObstacle=false;
+    for(let box of boxes){
+      let boxRect={x:box.x,y:box.y,w:box.w,h:box.h};
+      if(sweptPointHitBox(bolt.prevX,bolt.prevY,bolt.x,bolt.y,boxRect)){ hitObstacle=true; addBoltDestroy(bolt.x,bolt.y); break; }
+    }
+    if(hitObstacle){ bolt.life=0; bolt.hit=true; continue; }
+    if(bolt.noCollideTimer<=0){
+      let boltSeg={x1:bolt.prevX,y1:bolt.prevY,x2:bolt.x,y2:bolt.y};
+      let bBlocked=false;
+      if(bolt.owner!=='p' && player.hasWeapon && pWp.special!=='crossbow'){
+        let ps=swordSeg(pSX,pSY,player.swordAngle,pWp.len,pWp.collisionType);
+        if(segCollide(ps,boltSeg)){ bBlocked=true; let ang2=Math.atan2(bolt.vy,bolt.vx)+Math.PI; bolt.vx=Math.cos(ang2)*14; bolt.vy=Math.sin(ang2)*14; bolt.owner='p'; bolt.noCollideTimer=30; addFloat('БЛОК БОЛТА!',bolt.x,bolt.y-20,'#88ffaa'); }
+      }
+      if(!bBlocked && bolt.owner!=='b' && bot.hasWeapon && bWp.special!=='crossbow'){
+        let bs=swordSeg(bSX,bSY,bot.swordAngle,bWp.len,bWp.collisionType);
+        if(segCollide(bs,boltSeg)){ bBlocked=true; let ang2=Math.atan2(bolt.vy,bolt.vx)+Math.PI; bolt.vx=Math.cos(ang2)*14; bolt.vy=Math.sin(ang2)*14; bolt.owner='b'; bolt.noCollideTimer=30; addFloat('БЛОК!',bolt.x,bolt.y-20,'#88ffaa'); }
+      }
+      if(!bBlocked){
+        let pRE={x:pRect.x-8,y:pRect.y-8,w:pRect.w+16,h:pRect.h+16};
+        let bRE={x:bRect.x-8,y:bRect.y-8,w:bRect.w+16,h:bRect.h+16};
+        if(bolt.owner!=='p' && sweptPointHitBox(bolt.prevX,bolt.prevY,bolt.x,bolt.y,pRE)){
+          if(player.shield!=='none' && player.shieldRaised && shieldBlocks(player,bolt.x,bolt.y)){ bolt.vx=-bolt.vx*0.6; bolt.vy=-bolt.vy*0.6; addFloat('ЩИТ!',player.x,player.y-30,'#88aaff'); }
+          else{ let dmg=5+Math.floor(Math.random()*16); applyDamage('p', dmg, bolt.x, bolt.y, false, bolt.owner, false, false, 0); bolt.hit=true; }
+        } else if(bolt.owner!=='b' && sweptPointHitBox(bolt.prevX,bolt.prevY,bolt.x,bolt.y,bRE)){
+          let dmg=5+Math.floor(Math.random()*16);
+          applyDamage('b', dmg, bolt.x, bolt.y, false, bolt.owner, false, false, 0);
+          bolt.hit=true;
+          if(bolt.isVenom) bVenomStacks.push({timer:20,lastTick:0});
+        }
+      }
+    }
+  }
+
+    // Летящее оружие
+  for(let i=dropped.length-1;i>=0;i--){
+    let d=dropped[i]; if(!d.isFlying) continue;
+    let dWp=WEAPONS[d.weapon]||WEAPONS.longsword;
+    let dLen=dWp.len;
+    let dAng=Math.atan2(d.vy,d.vx);
+    let dSeg={x1:d.x-Math.cos(dAng)*40*dLen, y1:d.y-Math.sin(dAng)*40*dLen, x2:d.x+Math.cos(dAng)*40*dLen, y2:d.y+Math.sin(dAng)*40*dLen};
+    let blocked=false;
+    if(player.hasWeapon && d.noCollideTimer<=0 && d.owner!=='p' && pWp.special!=='crossbow'){
+      let ps=swordSeg(pSX,pSY,player.swordAngle,pWp.len,pWp.collisionType);
+      let pierced=Math.random()<(dWp.pierceBlock||0);
+      if(!pierced && segCollide(ps,dSeg)){ blocked=true; let spd_=Math.hypot(d.vx,d.vy); let bang=Math.atan2(d.vy,d.vx)+Math.PI/2; d.vx=Math.cos(bang)*spd_*0.8; d.vy=Math.sin(bang)*spd_*0.8; d.noCollideTimer=60; player.swordVel*=-0.25; addFloat('БЛОК!',d.x,d.y-20,'#88aaff'); }
+    }
+    if(!blocked && bot.hasWeapon && d.noCollideTimer<=0 && d.owner!=='b' && bWp.special!=='crossbow'){
+      let bs=swordSeg(bSX,bSY,bot.swordAngle,bWp.len,bWp.collisionType);
+      let pierced=Math.random()<(dWp.pierceBlock||0);
+      if(!pierced && segCollide(bs,dSeg)){ blocked=true; let spd_=Math.hypot(d.vx,d.vy); let bang=Math.atan2(d.vy,d.vx)+Math.PI/2; d.vx=Math.cos(bang)*spd_*0.8; d.vy=Math.sin(bang)*spd_*0.8; d.noCollideTimer=60; bot.swordVel*=-0.25; addFloat('БЛОК!',d.x,d.y-20,'#88aaff'); }
+    }
+    if(blocked) continue;
+    let dHr={x:d.x-15*dLen,y:d.y-20*dLen,w:30*dLen,h:40*dLen};
+    if(d.noCollideTimer<=0){
+      let flySpeed = Math.hypot(d.vx, d.vy);
+      let dmg = Math.min(14, 6 + Math.floor(flySpeed * 0.5));
+      if(d.owner!=='p' && rectCollide(dHr,pRect)){ 
+        applyDamage('p', dmg, d.x, d.y, false, d.owner, false, false, flySpeed);
+        d.isFlying=false; 
+      } else if(d.owner!=='b' && rectCollide(dHr,bRect)){ 
+        applyDamage('b', dmg, d.x, d.y, false, d.owner, false, false, flySpeed);
+        d.isFlying=false; 
+      }
+    }
+  }
+}
+
+
+
+// ---------- РИСОВАНИЕ ----------
+function drawWeaponShape(wp,isPlayer,locked,dropped_){
+  let L=100*wp.len; let col=isPlayer?'#ddeeff':'#aa8866'; let darkCol=isPlayer?'#88aacc':'#664422'; let lockMul=locked?0.4:1;
+  function tint(c){ let r=parseInt(c.slice(1,3),16), g=parseInt(c.slice(3,5),16), bl=parseInt(c.slice(5,7),16); return `rgb(${Math.floor(r*lockMul)},${Math.floor(g*lockMul)},${Math.floor(bl*lockMul)})`; }
+  if(wp.special==='crossbow'){
+    ctx.fillStyle=tint('#7B4B2A'); ctx.fillRect(-18,-7,36,14);
+    ctx.fillStyle=tint('#553311'); ctx.fillRect(-20,-3,40,6);
+    ctx.strokeStyle=tint('#ccaa66'); ctx.lineWidth=4; ctx.beginPath(); ctx.moveTo(-24,-2); ctx.lineTo(24,-2); ctx.stroke();
+    ctx.strokeStyle=tint('#dddddd'); ctx.lineWidth=1.5; ctx.beginPath(); ctx.moveTo(-24,-2); ctx.lineTo(0,-10); ctx.lineTo(24,-2); ctx.stroke();
+    ctx.fillStyle=tint('#884422'); ctx.fillRect(-4,2,8,10);
+    ctx.strokeStyle=tint('#aaaaaa'); ctx.lineWidth=2; ctx.beginPath(); ctx.arc(0, -14, 8, Math.PI, 0); ctx.stroke();
+  } else if(wp.special==='hammer'){
+    ctx.fillStyle=tint('#7B5A2B'); ctx.fillRect(-4,0,8,L*0.72);
+    ctx.fillStyle=tint('#888888'); ctx.fillRect(-12,L*0.6,24,L*0.32);
+    ctx.fillStyle=tint('#aaaaaa'); ctx.fillRect(-10,L*0.62,20,L*0.28);
+    ctx.fillStyle=tint('#555555'); ctx.fillRect(-12,L*0.6,24,4);
+    ctx.fillStyle=tint('#5a3c10'); ctx.fillRect(-4,L*0.32,8,4);
+  } else if(wp.special==='spear'){
+    let spS=-L*0.5; ctx.fillStyle=tint('#8B6914'); ctx.fillRect(-3,spS,6,L);
+    ctx.fillStyle=tint(col); ctx.beginPath();ctx.moveTo(-6,L*0.38);ctx.lineTo(6,L*0.38);ctx.lineTo(0,L*0.5);ctx.closePath();ctx.fill();
+    ctx.fillStyle=tint('#aaaaaa'); ctx.beginPath();ctx.moveTo(-2,L*0.42);ctx.lineTo(2,L*0.42);ctx.lineTo(0,L*0.49);ctx.closePath();ctx.fill();
+    ctx.strokeStyle=tint('#5B3010');ctx.lineWidth=5;ctx.lineCap='round'; ctx.beginPath();ctx.moveTo(0,spS);ctx.lineTo(0,spS+L*0.15);ctx.stroke();
+  } else if(wp.special==='staff'){
+    let stS=-L*0.5; ctx.strokeStyle=tint('#7B5A2B');ctx.lineWidth=7;ctx.lineCap='round'; ctx.beginPath();ctx.moveTo(0,stS);ctx.lineTo(0,L*0.5);ctx.stroke();
+    ctx.strokeStyle=tint('#9B7A4B');ctx.lineWidth=3; ctx.beginPath();ctx.moveTo(0,stS);ctx.lineTo(0,L*0.5);ctx.stroke();
+    ctx.fillStyle=tint('#aa88ff');ctx.beginPath();ctx.arc(0,stS,7,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle=tint('#ddc8ff');ctx.beginPath();ctx.arc(-2,stS-2,3,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle=tint('#888');ctx.beginPath();ctx.arc(0,L*0.5,4,0,Math.PI*2);ctx.fill();
+  } else if(wp.special==='wand'){
+    ctx.strokeStyle=tint('#6b4423');ctx.lineWidth=5;ctx.lineCap='round'; ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(0,L);ctx.stroke();
+    ctx.fillStyle=tint('#ffcc44');ctx.beginPath();ctx.arc(0,L,8,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='rgba(255,255,200,0.7)';ctx.beginPath();ctx.arc(-2,L-3,3,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#fff8';ctx.beginPath();ctx.arc(-1,-2,2.5,0,Math.PI*2);ctx.fill();
+  } else if(wp.special==='scythe'){
+    ctx.strokeStyle=tint('#6b4423'); ctx.lineWidth=5; ctx.lineCap='round'; ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(0,L); ctx.stroke();
+    let sc2 = L * 0.0018; let blade_y = L * 0.8 - 80;
+    ctx.save(); ctx.translate(0, blade_y); ctx.scale(-1, -1);
+    let bx1=-160*sc2, by1=-430*sc2, bx2=-80*sc2, by2=-320*sc2, bx3=310*sc2, by3=-220*sc2;
+    ctx.fillStyle=tint('#c8c8c8'); ctx.beginPath(); ctx.moveTo(bx1,by1); ctx.lineTo(bx2,by2); ctx.lineTo(bx3,by3); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle=tint('#555'); ctx.lineWidth=1.5; ctx.stroke(); ctx.restore();
+  } else if(wp.special==='sickle'){
+    ctx.fillStyle=tint('#7B5A2B'); ctx.fillRect(-3,0,6,L*0.5);
+    let br = L*0.32, bcx = -br*0.6, bcy = L*0.35;
+    ctx.strokeStyle=tint('#bbbbcc'); ctx.lineWidth=7; ctx.lineCap='round'; ctx.beginPath(); ctx.arc(bcx, bcy, br, Math.PI*2.1, Math.PI*3.1, false); ctx.stroke();
+    ctx.strokeStyle=tint('#dddde8'); ctx.lineWidth=2.5; ctx.beginPath(); ctx.arc(bcx, bcy, br*0.75, Math.PI*2.15, Math.PI*3.05, false); ctx.stroke();
+    ctx.fillStyle=tint('#888899'); ctx.fillRect(-6, L*0.28, 12, 5);
+  } else if(wp.special==='flail'){
+    ctx.fillStyle=tint('#7B5A2B'); ctx.fillRect(-4,0,8,L*0.45);
+    let ext = isPlayer ? player.flailExt : bot.flailExt;
+    let dynLen = 30 + 190*ext;
+    let links = 6;
+    for(let i=0;i<=links;i++){
+      let t = i/links, ly = L*0.45 + t*dynLen, lx = Math.sin(t*Math.PI*0.8)*4*ext;
+      ctx.strokeStyle=tint(i%2===0?'#aaa':'#888'); ctx.lineWidth=2; ctx.beginPath(); ctx.arc(lx,ly,4,0,Math.PI*2); ctx.stroke();
+      if(i<links){ let nly = L*0.45 + ((i+1)/links)*dynLen, nlx = Math.sin(((i+1)/links)*Math.PI*0.8)*4*ext; ctx.strokeStyle=tint('#777'); ctx.lineWidth=1.5; ctx.beginPath(); ctx.moveTo(lx,ly); ctx.lineTo(nlx,nly); ctx.stroke(); }
+    }
+    let ballY = L*0.45 + dynLen, ballX = Math.sin(Math.PI*0.8)*4*ext;
+    ctx.fillStyle=tint('#666'); ctx.beginPath(); ctx.arc(ballX,ballY,9,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle=tint('#888'); ctx.beginPath(); ctx.arc(ballX,ballY,6,0,Math.PI*2); ctx.fill();
+    for(let i=0;i<6;i++){ let sa=i*Math.PI/3; ctx.fillStyle=tint('#555'); ctx.beginPath(); ctx.moveTo(ballX+Math.cos(sa)*9,ballY+Math.sin(sa)*9); ctx.lineTo(ballX+Math.cos(sa+0.25)*13,ballY+Math.sin(sa+0.25)*13); ctx.lineTo(ballX+Math.cos(sa-0.25)*13,ballY+Math.sin(sa-0.25)*13); ctx.closePath(); ctx.fill(); }
+  } else {
+    let hw=Math.max(3,5*wp.len); let grad=ctx.createLinearGradient(0,0,0,L);
+    grad.addColorStop(0,tint(col)); grad.addColorStop(1,tint(darkCol)); ctx.fillStyle=grad;
+    ctx.beginPath(); ctx.moveTo(-5,0); ctx.lineTo(5,0); ctx.lineTo(hw,L*0.55); ctx.lineTo(0,L); ctx.lineTo(-hw,L*0.55); ctx.closePath(); ctx.fill();
+    let gw=Math.min(20,13*wp.len); ctx.fillStyle=tint('#996633'); ctx.fillRect(-gw,-4,gw*2,8);
+    ctx.fillStyle=tint('#775522'); ctx.fillRect(-gw+1,-3,gw*2-2,6);
+    ctx.fillStyle=tint('#aa7744'); ctx.beginPath(); ctx.arc(-gw,0,4,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle=tint('#aa7744'); ctx.beginPath(); ctx.arc(gw,0,4,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle=tint('#ddbb77'); ctx.beginPath(); ctx.arc(0,-16,5,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle=tint('#ffdd99'); ctx.beginPath(); ctx.arc(0,-16,2.5,0,Math.PI*2); ctx.fill();
+  }
+}
+
+function drawWeapon(ent, sAng, isPlayer) {
+    let wp = WEAPONS[ent.weapon] || WEAPONS.longsword;
+    let off = getSwordOffset(ent.vx, ent.vy);
+    
+    // ИСПОЛЬЗУЕМ getSwordHandPosition()
+    let handPos = ent.getSwordHandPosition();
+    let centerWep = wp.special === 'spear' || wp.special === 'staff';
+    
+    let ox = (centerWep ? ent.x + 5 : handPos.x) + off.x;
+    let oy = (centerWep ? ent.y + 2 : handPos.y) + off.y;
+  
+  if((wp.special==='spear'||wp.special==='staff')&&isPlayer){
+    let shift=(ent._vortexSpearShift||0)+(ent._spearThrusting?0.4:0);
+    if(shift>0){ ox+=Math.cos(sAng)*shift*140; oy+=Math.sin(sAng)*shift*140; }
+  }
+  ctx.save(); ctx.translate(ox,oy); ctx.rotate(sAng-Math.PI/2);
+  drawWeaponShape(wp,isPlayer,ent.swordLock>0,false);
+  ctx.restore();
+}
+
+function drawShield(ent,isPlayer){
+  let sh=SHIELDS[ent.shield]; if(!sh||sh.shape==='none') return;
+  if(WEAPONS[ent.weapon]?.special==='crossbow') return;
+  
+  let raised=ent.shieldRaised;
+  let shieldPos = ent.getShieldPosition();
+  let s=raised?1.0:0.8;
+  let bob=Math.sin(Date.now()*0.006)*Math.hypot(ent.vx,ent.vy)*0.2;
+  
+  let sx=shieldPos.x;
+  let sy=shieldPos.y+bob;
+  let tilt=raised?-0.15:0.08;
+  
+  if(isPlayer&&raised){
+    let relY=playerCtrl.mouseY-(ent.y-20);
+    if(relY<-40) tilt=0.26;
+    else if(relY>40) tilt=-0.26;
+  }
+  
+  ctx.save(); ctx.translate(sx,sy); ctx.rotate(tilt); ctx.globalAlpha=raised?0.95:0.5;
+  let baseCol=isPlayer?'#3a5fa0':'#a05030', rimCol=isPlayer?'#88aaff':'#ffaa66';
+  
+  if(sh.shape==='oval'){
+    let w=14*s,h=22*s;
+    ctx.fillStyle=baseCol;
+    ctx.beginPath(); ctx.ellipse(0,0,w,h,0,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle=rimCol; ctx.lineWidth=2; ctx.stroke();
+    ctx.fillStyle=rimCol; ctx.beginPath(); ctx.arc(0,0,3*s,0,Math.PI*2); ctx.fill();
+  }
+  else if(sh.shape==='kite'){
+    let w=17*s,h=30*s;
+    ctx.fillStyle=baseCol;
+    ctx.beginPath(); ctx.moveTo(0,-h); ctx.lineTo(w,-h*0.3); ctx.lineTo(w*0.6,h*0.4); ctx.lineTo(0,h); ctx.lineTo(-w*0.6,h*0.4); ctx.lineTo(-w,-h*0.3); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle=rimCol; ctx.lineWidth=2; ctx.stroke();
+    ctx.strokeStyle=rimCol+'88'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(0,-h); ctx.lineTo(0,h); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-w,-h*0.3); ctx.lineTo(w,-h*0.3); ctx.stroke();
+  }
+  else {
+    let w=19*s,h=38*s;
+    ctx.fillStyle=baseCol; ctx.fillRect(-w,-h,w*2,h*2);
+    ctx.strokeStyle=rimCol; ctx.lineWidth=2; ctx.strokeRect(-w,-h,w*2,h*2);
+    ctx.strokeStyle=rimCol+'55'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(-w,0); ctx.lineTo(w,0); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0,-h); ctx.lineTo(0,h); ctx.stroke();
+  }
+  
+  ctx.globalAlpha=1; ctx.restore();
+}
+
+function drawChar(ent,isPlayer,dead){
+  let s=ent.scale;
+  let isResting = isPlayer ? player.staminaResting : bot.staminaResting;
+  ctx.save(); ctx.translate(ent.x,ent.y); ctx.rotate(ent.vx*0.03);
+  ctx.fillStyle='#00000033'; ctx.beginPath(); ctx.ellipse(5,15*s,22*s,10*s,0,0,Math.PI*2); ctx.fill();
+  let bodyCol=isPlayer?(ent.hasWeapon?'#cc3333':'#774444'):(ent.hasWeapon?'#aa4422':'#664433');
+  ctx.fillStyle='rgba(0,0,0,0.4)'; ctx.fillRect(-9*s,-3*s,18*s,18*s);
+  ctx.fillStyle=bodyCol; ctx.fillRect(-8*s,-2*s,16*s,16*s);
+  ctx.fillStyle=isPlayer?'#88aacc':'#aa8866'; ctx.fillRect(-7*s,-10*s,14*s,12*s);
+  ctx.fillStyle=isPlayer?'#6688aa':'#886688'; ctx.beginPath(); ctx.arc(0,-16*s,9*s,Math.PI,0); ctx.fill();
+  ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(-3*s,-17*s,2*s,0,Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(3*s,-17*s,2*s,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle=isPlayer?'#223344':'#cc3333'; ctx.beginPath(); ctx.arc(-3*s,-17*s,1*s,0,Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(3*s,-17*s,1*s,0,Math.PI*2); ctx.fill();
+  if(isResting){
+    let br2=1+Math.sin(Date.now()*0.01)*0.25, rA=0.4+Math.sin(Date.now()*0.01)*0.25;
+    ctx.fillStyle=`rgba(160,210,255,${rA})`; ctx.beginPath();ctx.arc(0,-13*s,8*s*br2,0,Math.PI*2);ctx.fill();
+    let zT=Date.now()*0.002; ctx.globalAlpha=0.6+Math.sin(zT)*0.3; ctx.fillStyle='rgba(200,230,255,0.9)';
+    ctx.font=`bold ${Math.round(9*s)}px monospace`; ctx.fillText('z',Math.round(5*s),Math.round(-22*s+Math.sin(zT)*3));
+    ctx.font=`bold ${Math.round(6*s)}px monospace`; ctx.globalAlpha=0.45+Math.sin(zT+1)*0.3; ctx.fillText('z',Math.round(10*s),Math.round(-28*s+Math.sin(zT+1)*3));
+    ctx.globalAlpha=1;
+  }
+  if(dead){ ctx.fillStyle='#cc3333'; ctx.beginPath(); ctx.arc(0,-20*s,6*s,0,Math.PI*2); ctx.fill(); }
+  ctx.restore();
+  if(isPlayer && player.staminaResting){ for(let i=0;i<sweatParticles.length;i++){ let sp=sweatParticles[i]; ctx.fillStyle=`rgba(170,255,255,${sp.life/30})`; ctx.beginPath(); ctx.arc(sp.x, sp.y, 2, 0, Math.PI*2); ctx.fill(); } }
+}
+
+function drawShield(ent,isPlayer){
+  let sh=SHIELDS[ent.shield]; if(!sh||sh.shape==='none') return;
+  if(WEAPONS[ent.weapon]?.special==='crossbow') return;
+  let raised=ent.shieldRaised, side=ent._shieldSide||(ent===player?-1:1);
+  let s=raised?1.0:0.8, bob=Math.sin(Date.now()*0.006)*Math.hypot(ent.vx,ent.vy)*0.2;
+  let sx=ent.x+(side*22*s), sy=(ent.y-8)+bob, tilt=raised?-0.15:0.08;
+  if(isPlayer&&raised){let relY=playerCtrl.mouseY-(ent.y-20);if(relY<-40)tilt=0.26;else if(relY>40)tilt=-0.26;}
+  ctx.save();ctx.translate(sx,sy); ctx.rotate(tilt); ctx.globalAlpha=raised?0.95:0.5;
+  let baseCol=isPlayer?'#3a5fa0':'#a05030', rimCol=isPlayer?'#88aaff':'#ffaa66';
+  if(sh.shape==='oval'){ let w=14*s,h=22*s; ctx.fillStyle=baseCol;ctx.beginPath();ctx.ellipse(0,0,w,h,0,0,Math.PI*2);ctx.fill(); ctx.strokeStyle=rimCol;ctx.lineWidth=2;ctx.stroke(); ctx.fillStyle=rimCol;ctx.beginPath();ctx.arc(0,0,3*s,0,Math.PI*2);ctx.fill(); }
+  else if(sh.shape==='kite'){ let w=17*s,h=30*s; ctx.fillStyle=baseCol; ctx.beginPath();ctx.moveTo(0,-h);ctx.lineTo(w,-h*0.3);ctx.lineTo(w*0.6,h*0.4);ctx.lineTo(0,h);ctx.lineTo(-w*0.6,h*0.4);ctx.lineTo(-w,-h*0.3);ctx.closePath();ctx.fill(); ctx.strokeStyle=rimCol;ctx.lineWidth=2;ctx.stroke(); ctx.strokeStyle=rimCol+'88';ctx.lineWidth=1; ctx.beginPath();ctx.moveTo(0,-h);ctx.lineTo(0,h);ctx.stroke(); ctx.beginPath();ctx.moveTo(-w,-h*0.3);ctx.lineTo(w,-h*0.3);ctx.stroke(); }
+  else { let w=19*s,h=38*s; ctx.fillStyle=baseCol;ctx.fillRect(-w,-h,w*2,h*2); ctx.strokeStyle=rimCol;ctx.lineWidth=2;ctx.strokeRect(-w,-h,w*2,h*2); ctx.strokeStyle=rimCol+'55';ctx.lineWidth=1; ctx.beginPath();ctx.moveTo(-w,0);ctx.lineTo(w,0);ctx.stroke(); ctx.beginPath();ctx.moveTo(0,-h);ctx.lineTo(0,h);ctx.stroke(); }
+  ctx.globalAlpha=1;ctx.restore();
+}
+
+function drawSpellEffects(){
+  let t=Date.now()*0.001;
+  if(player.activeSpell==='SpellGroundSlam'){
+    let pct=Math.min(1,(player._groundSlamTimer||0)/120), ranges=getCombatRanges(player.weapon,bot.weapon), pulse2=0.5+Math.sin(t*8)*0.5;
+    ctx.fillStyle=`rgba(255,80,0,${0.04+pulse2*0.06*pct})`; ctx.beginPath();ctx.arc(player.x,player.y,ranges.R3,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle=`rgba(255,150,0,${0.5+pulse2*0.5})`;ctx.lineWidth=3+pct*3; ctx.setLineDash([8,6]); ctx.beginPath();ctx.arc(player.x,player.y,ranges.R3,0,Math.PI*2);ctx.stroke(); ctx.setLineDash([]);
+    ctx.shadowColor='#ff4400';ctx.shadowBlur=30*pct; ctx.strokeStyle=`rgba(255,140,0,${pct*0.9})`;ctx.lineWidth=6+pct*4; ctx.beginPath();ctx.arc(player.x,player.y,18+pct*18,0,Math.PI*2);ctx.stroke(); ctx.shadowBlur=0;
+  }
+  if(player._wandCharging && WEAPONS[player.weapon]?.special==='wand'){
+    let pct=Math.min(1,(player._wandChargeTimer||0)/55), wpW=WEAPONS['wand'], wL=100*(wpW?.len||0.55);
+    let wandTipX=(player.x+22)+Math.cos(player.swordAngle)*wL, wandTipY=(player.y-20)+Math.sin(player.swordAngle)*wL;
+    ctx.save(); ctx.shadowColor='#ffcc44';ctx.shadowBlur=24*pct; ctx.strokeStyle=`rgba(255,200,50,${0.5+pct*0.5})`;ctx.lineWidth=3+pct*4; ctx.beginPath();ctx.arc(wandTipX,wandTipY,8+pct*18,0,Math.PI*2*pct);ctx.stroke(); ctx.restore();
+  }
+  if(hookActive){ let ox=player.x+22, oy=player.y-20; ctx.strokeStyle='#88aaff';ctx.lineWidth=2.5;ctx.setLineDash([8,5]); ctx.beginPath();ctx.moveTo(ox,oy);ctx.lineTo(hookTargetX,hookTargetY);ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle='#aaccff';ctx.beginPath();ctx.arc(hookTargetX,hookTargetY,7,0,Math.PI*2);ctx.fill(); ctx.strokeStyle='#ffffff';ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(hookTargetX,hookTargetY,7,0,Math.PI*2);ctx.stroke(); }
+  if(player.activeSpell==='SpellVortex' && WEAPONS[player.weapon]?.special!=='crossbow'){ for(let ri=0;ri<4;ri++){ let r=26+ri*16+Math.sin(t*2+ri)*5; ctx.strokeStyle=`rgba(100,180,255,${0.1+ri*0.05})`; ctx.lineWidth=1.5+ri*0.5; ctx.beginPath(); ctx.arc(player.x+5,player.y,r,0,Math.PI*2); ctx.stroke(); } for(let pi=0;pi<6;pi++){ let a=t*3+pi*Math.PI/3, r=35+Math.sin(t*2+pi)*8; ctx.fillStyle=`rgba(150,210,255,${0.4+Math.sin(t*4+pi)*0.3})`; ctx.beginPath(); ctx.arc(player.x+5+Math.cos(a)*r,player.y+Math.sin(a)*r,3,0,Math.PI*2); ctx.fill(); } }
+  if(bot.activeSpell==='SpellVortex'){ for(let ri=0;ri<4;ri++){ ctx.strokeStyle=`rgba(100,180,255,${0.08+ri*0.04})`; ctx.lineWidth=1+ri*0.4; ctx.beginPath(); ctx.arc(bot.x+5,bot.y,24+ri*14+Math.sin(t*2+ri)*4,0,Math.PI*2); ctx.stroke(); } for(let pi=0;pi<6;pi++){ let a=t*3+pi*Math.PI/3, r=32+Math.sin(t*2+pi)*6; ctx.fillStyle=`rgba(150,210,255,${0.3+Math.sin(t*4+pi)*0.25})`; ctx.beginPath(); ctx.arc(bot.x+5+Math.cos(a)*r,bot.y+Math.sin(a)*r,2.5,0,Math.PI*2); ctx.fill(); } }
+  if(player.activeSpell==='SpellRage'){ let pulse=0.6+Math.sin(t*5)*0.35; ctx.fillStyle=`rgba(255,0,0,${0.07+pulse*0.04})`; ctx.fillRect(player.x-40*player.scale,player.y-50*player.scale,80*player.scale,80*player.scale); ctx.shadowColor='#ff2200';ctx.shadowBlur=36; ctx.strokeStyle=`rgba(255,20,0,${pulse})`;ctx.lineWidth=6; ctx.beginPath();ctx.arc(player.x+5,player.y,22*player.scale,0,Math.PI*2);ctx.stroke(); ctx.strokeStyle=`rgba(255,80,0,${pulse*0.5})`;ctx.lineWidth=14; ctx.beginPath();ctx.arc(player.x+5,player.y,32*player.scale,0,Math.PI*2);ctx.stroke(); ctx.shadowBlur=0; }
+  if(bot.activeSpell==='SpellRage'){ let pulse=0.5+Math.sin(t*6)*0.3; ctx.strokeStyle=`rgba(255,60,20,${pulse})`;ctx.lineWidth=4; ctx.beginPath();ctx.arc(bot.x+5,bot.y,24*bot.scale,0,Math.PI*2);ctx.stroke(); }
+  if(player.activeSpell==='SpellVenomAttack' && player.hasWeapon){ let pWp2=WEAPONS[player.weapon]||WEAPONS.longsword; let pOff2=getSwordOffset(player.vx,player.vy); let pCW2=pWp2.special==='spear'||pWp2.special==='staff'; let ox=(pCW2?player.x+5:player.x+22)+pOff2.x, oy=(pCW2?player.y+2:player.y-20)+pOff2.y; let effLen2=pWp2.special==='flail'?(0.3+1.9*player.flailExt):pWp2.len; let seg=swordSeg(ox,oy,player.swordAngle,effLen2,'full'); ctx.save(); ctx.shadowColor='#00ff55'; ctx.shadowBlur=28; ctx.strokeStyle=`rgba(0,255,80,${0.7+Math.sin(t*4)*0.25})`; ctx.lineWidth=12; ctx.beginPath();ctx.moveTo(seg.x1,seg.y1);ctx.lineTo(seg.x2,seg.y2);ctx.stroke(); ctx.strokeStyle=`rgba(180,255,180,0.6)`; ctx.lineWidth=4; ctx.shadowBlur=0; ctx.beginPath();ctx.moveTo(seg.x1,seg.y1);ctx.lineTo(seg.x2,seg.y2);ctx.stroke(); ctx.restore(); }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+if (!CanvasRenderingContext2D.prototype.roundRect) {
+  CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+    if (w < 2 * r) r = w / 2;
+    if (h < 2 * r) r = h / 2;
+    this.moveTo(x + r, y);
+    this.lineTo(x + w - r, y);
+    this.quadraticCurveTo(x + w, y, x + w, y + r);
+    this.lineTo(x + w, y + h - r);
+    this.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    this.lineTo(x + r, y + h);
+    this.quadraticCurveTo(x, y + h, x, y + h - r);
+    this.lineTo(x, y + r);
+    this.quadraticCurveTo(x, y, x + r, y);
+    return this;
+  };
+}
+
+
+// Функция отрисовки HUD заклинаний
+function drawSpellHUD() {
+  let spellsArray = [...pSpells];
+  let n = spellsArray.length;
+  if (n === 0) return;
+  
+  let barW = 52, gap = 6, totalW = n * (barW + gap) - gap;
+  let startX = (W - totalW) / 2, baseY = H - 60;
+  
+  for (let i = 0; i < n; i++) {
+    let sk = spellsArray[i];
+    let sp = SPELLS[sk];
+    if (!sp) continue;
+    let x = startX + i * (barW + gap);
+    let isActive = (player.activeSpell === sk);
+    let onCD = (globalSpellCD > 0 && !noSpellCD);
+    let cdFrac = onCD ? Math.min(1, globalSpellCD / sp.cd) : 0;
+    
+    // Фон
+    ctx.fillStyle = isActive ? 'rgba(60,130,255,0.45)' : 'rgba(8,5,18,0.82)';
+    ctx.beginPath();
+    ctx.roundRect(x, baseY, barW, 44, 6);
+    ctx.fill();
+    
+    // Рамка
+    ctx.strokeStyle = isActive ? '#88ddff' : (onCD ? 'rgba(60,40,90,0.9)' : 'rgba(100,70,160,0.8)');
+    ctx.lineWidth = isActive ? 2 : 1;
+    ctx.beginPath();
+    ctx.roundRect(x, baseY, barW, 44, 6);
+    ctx.stroke();
+    
+    // Затемнение CD
+    if (cdFrac > 0) {
+      ctx.fillStyle = 'rgba(0,0,0,0.7)';
+      ctx.save();
+      ctx.beginPath();
+      ctx.roundRect(x, baseY, barW * cdFrac, 44, 6);
+      ctx.clip();
+      ctx.fillRect(x, baseY, barW, 44);
+      ctx.restore();
+    }
+    
+    // Иконка (emoji)
+    ctx.font = '22px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.globalAlpha = (onCD && !isActive) ? 0.45 : 1.0;
+    ctx.fillText(sp.icon || '?', x + barW/2, baseY + 24);
+    ctx.globalAlpha = 1;
+    
+    // CD или клавиша
+    if (cdFrac > 0) {
+      let secsLeft = Math.ceil(globalSpellCD / 60);
+      ctx.fillStyle = 'rgba(255,255,255,0.9)';
+      ctx.font = 'bold 13px monospace';
+      ctx.fillText(secsLeft + 's', x + barW/2, baseY + 38);
+    } else {
+      ctx.fillStyle = 'rgba(180,150,255,0.7)';
+      ctx.font = '9px monospace';
+      ctx.fillText('[' + sp.key + ']', x + barW/2, baseY + 38);
+    }
+  }
+  ctx.textAlign = 'left';
+  ctx.globalAlpha = 1;
+}
+
+function draw(){
+
+
+  ctx.filter='none'; ctx.save(); ctx.translate(shakeX,shakeY);
+  ctx.fillStyle='#0a0810'; ctx.fillRect(0,0,W,H);
+  ctx.strokeStyle='rgba(255,255,255,0.018)'; ctx.lineWidth=1; let gs=80;
+  for(let gx=gs/2;gx<W;gx+=gs){ ctx.beginPath();ctx.moveTo(gx,0);ctx.lineTo(gx,H);ctx.stroke(); }
+  for(let gy=gs/2;gy<H;gy+=gs){ ctx.beginPath();ctx.moveTo(0,gy);ctx.lineTo(W,gy);ctx.stroke(); }
+  let vig=ctx.createRadialGradient(W/2,H/2,H*0.3,W/2,H/2,H*0.85);
+  vig.addColorStop(0,'transparent'); vig.addColorStop(1,'rgba(0,0,0,0.5)'); ctx.fillStyle=vig; ctx.fillRect(0,0,W,H);
+  for(let box of boxes) box.draw();
+  for(let d of dropped) d.draw();
+  
+  
+  
+  
+  
+  
+  
+  // ========== ОТРИСОВКА СЕКТОРОВ ВОКРУГ ПЕРСОНАЖА (ДЛЯ ОТЛАДКИ) ==========
+    if (!hideDebug && player) {
+        let centerX = player.x + 15;
+        let centerY = player.y - 10;
+        let radius = 80;
+        
+        // Рисуем 4 сектора разными цветами
+        for (let i = 0; i < 4; i++) {
+            let startAngle = i * Math.PI / 2 - Math.PI / 4;
+            let endAngle = (i + 1) * Math.PI / 2 - Math.PI / 4;
+            
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY);
+            ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+            ctx.closePath();
+            
+            // Полупрозрачные цвета
+            let colors = ['rgba(255,0,0,0.15)', 'rgba(0,255,0,0.15)', 'rgba(0,0,255,0.15)', 'rgba(255,255,0,0.15)'];
+            ctx.fillStyle = colors[i];
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+            ctx.stroke();
+        }
+        
+        // Рисуем линию к боту
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY);
+        ctx.lineTo(bot.x + 15, bot.y - 10);
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        
+        // Текст с направлением
+        if (playerCtrl._debugDir) {
+            ctx.font = 'bold 14px monospace';
+            ctx.fillStyle = '#ffff00';
+            ctx.shadowBlur = 0;
+            ctx.fillText(`${playerCtrl._debugDir.arrow} ${playerCtrl._debugDir.name}`, player.x - 30, player.y - 50);
+            
+            if (playerCtrl._debugAttack) {
+                ctx.font = '12px monospace';
+                ctx.fillStyle = '#ffaa66';
+                ctx.fillText(`${playerCtrl._debugAttack.blockHint}`, player.x - 40, player.y - 35);
+            }
+        }
+        
+        // Рисуем угол меча бота
+        let botCenterX = bot.x + 15;
+        let botCenterY = bot.y - 10;
+        let attackLineLen = 60;
+        let attackEndX = botCenterX + Math.cos(bot.swordAngle) * attackLineLen;
+        let attackEndY = botCenterY + Math.sin(bot.swordAngle) * attackLineLen;
+        
+        ctx.beginPath();
+        ctx.moveTo(botCenterX, botCenterY);
+        ctx.lineTo(attackEndX, attackEndY);
+        ctx.strokeStyle = '#ff4444';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+        
+        // Рисуем сектора вокруг бота
+        for (let i = 0; i < 4; i++) {
+            let startAngle = i * Math.PI / 2 - Math.PI / 4;
+            let endAngle = (i + 1) * Math.PI / 2 - Math.PI / 4;
+            
+            ctx.beginPath();
+            ctx.moveTo(botCenterX, botCenterY);
+            ctx.arc(botCenterX, botCenterY, radius, startAngle, endAngle);
+            ctx.closePath();
+            ctx.fillStyle = 'rgba(255,100,100,0.1)';
+            ctx.fill();
+        }
+    }
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  ctx.restore();  // ← здесь восстанавливается трансформация
+  // ========== ОТЛАДКА: РИСУЕМ ТОЧКУ ПОСЛЕ RESTORE ==========
+  if (!hideDebug) {
+    let handPos = player.getSwordHandPosition();
+    ctx.fillStyle = '#ff0000';
+    ctx.beginPath();
+    ctx.arc(handPos.x, handPos.y, 8, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.fillStyle = 'white';
+    ctx.font = 'bold 12px monospace';
+    ctx.fillText(`off:${player.swordHandOffsetX.toFixed(0)},${player.swordHandOffsetY.toFixed(0)}`, handPos.x + 10, handPos.y - 5);
+    
+    // Также рисуем базовую точку руки (без смещения)
+    ctx.fillStyle = '#00ff00';
+    ctx.beginPath();
+    ctx.arc(player.x + 22, player.y - 20, 5, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  
+  // ОТРИСОВКА БОЛТОВ С УЧЕТОМ ЯДА
+  for(let bolt of bolts) {
+    // СНАЧАЛА МАГИЧЕСКИЕ БОЛТЫ (жезл) - круглые, не нужно rotate
+    if(bolt.isMagic) {
+      ctx.save();
+      ctx.translate(bolt.x, bolt.y);
+      // Для круга rotate не нужен
+      let mc = bolt.isVenom ? '#44ff88' : '#aaccff';
+      ctx.fillStyle = mc;
+      ctx.shadowColor = bolt.isVenom ? '#00ff55' : '#88aaff';
+      ctx.shadowBlur = 14;
+      ctx.beginPath(); ctx.arc(0, 0, 7, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = bolt.isVenom ? '#aaffcc' : '#ffffff';
+      ctx.beginPath(); ctx.arc(-1, -1, 3, 0, Math.PI*2); ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.restore();
+    }
+    // ПОТОМ ЯДОВИТЫЕ СТРЕЛЫ (арбалет + яд)
+    else if(bolt.isVenom) {
+      ctx.save();
+      ctx.translate(bolt.x, bolt.y);
+      ctx.rotate(bolt.ang);
+      ctx.shadowColor = '#00ff55';
+      ctx.shadowBlur = 14;
+      ctx.fillStyle = '#44ff88';
+      ctx.fillRect(-20,-2,32,4);
+      ctx.fillStyle = '#88ffaa';
+      ctx.beginPath(); ctx.moveTo(12,-4); ctx.lineTo(20,0); ctx.lineTo(12,4); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#aaff66';
+      ctx.beginPath(); ctx.moveTo(-20,0); ctx.lineTo(-14,-6); ctx.lineTo(-10,0); ctx.closePath(); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(-20,0); ctx.lineTo(-14,6); ctx.lineTo(-10,0); ctx.closePath(); ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.restore();
+    }
+    // ОБЫЧНЫЕ БОЛТЫ (арбалет)
+    else {
+      bolt.draw();
+    }
+  }
+  
+  if(gameMode==='arena'){ for(let sp of arenaSpawns){ let alpha=sp.timer>0?0.3*(1-sp.timer/180):0.8; ctx.globalAlpha=alpha; ctx.fillStyle='#ffcc44'; ctx.beginPath(); ctx.arc(sp.x,sp.y,18,0,Math.PI*2); ctx.fill(); ctx.fillStyle='#ffaa00'; ctx.font='bold 14px monospace'; ctx.textAlign='center'; ctx.fillText(sp.timer>0?`${Math.ceil(sp.timer/60)}с`:'🗡️',sp.x,sp.y+5); ctx.textAlign='left'; ctx.globalAlpha=1; } }
+  if(clashActive){ let t2=Date.now()*0.001, clashAlpha=0.25+Math.sin(t2*3)*0.08; ctx.fillStyle=`rgba(255,90,40,${clashAlpha})`; ctx.fillRect(0,0,W,H); ctx.strokeStyle=`rgba(255,180,80,0.12)`;ctx.lineWidth=2; for(let sl=0;sl<H;sl+=6){ ctx.beginPath();ctx.moveTo(0,sl);ctx.lineTo(W,sl);ctx.stroke(); } }
+  for(let t of dodgeTrail){ let da=t.life/6; ctx.globalAlpha=da*0.4; ctx.fillStyle=`hsl(220,80%,${65+da*20}%)`; ctx.beginPath(); ctx.ellipse(t.x+5,t.y+8,20*da,12*da,0,0,Math.PI*2); ctx.fill(); }
+  ctx.globalAlpha=1;
+  for(let i=puddles.length-1;i>=0;i--){ let pp=puddles[i]; ctx.globalAlpha=0.5*(pp.life/150); ctx.fillStyle='#aa2222'; ctx.beginPath(); ctx.ellipse(pp.x,pp.y,14,6,0,0,Math.PI*2); ctx.fill(); pp.life--; if(pp.life<=0) puddles.splice(i,1); }
+  for(let i=blood.length-1;i>=0;i--){ let bb=blood[i]; ctx.globalAlpha=Math.min(0.9,bb.life/(bb.life>10?16:8)); ctx.fillStyle=bb.col||bb.color||'#cc2222'; let br=bb.size||2; ctx.beginPath(); ctx.arc(bb.x,bb.y,br,0,Math.PI*2); ctx.fill(); bb.x+=bb.vx; bb.y+=bb.vy; bb.vx*=0.93; bb.vy=bb.vy*0.93+0.12; bb.life--; if(bb.life<=0) blood.splice(i,1); }
+  ctx.globalAlpha=1;
+  drawChar(bot,false,bot.hp<=0);
+  if(bot.hasWeapon) drawWeapon(bot,bot.swordAngle,false);
+  else{ ctx.save(); ctx.translate(bot.x+22,bot.y-20); ctx.fillStyle='#555'; ctx.font='bold 16px monospace'; ctx.fillText('✖',-8,-15); ctx.restore(); }
+  drawShield(bot,false);
+  drawChar(player,true,player.hp<=0);	
+  if(player.hasWeapon) drawWeapon(player,player.swordAngle,true);
+  else{ ctx.save(); ctx.translate(player.x+22,player.y-20); ctx.fillStyle='#555'; ctx.font='bold 16px monospace'; ctx.fillText('✖',-8,-15); ctx.restore(); }
+  drawSpellEffects();
+  drawShield(player,true);
+    // ПРИНУДИТЕЛЬНЫЙ ВЫЗОВ HUD
+  if(typeof drawSpellHUD === 'function') {
+    drawSpellHUD();
+  } else {
+    console.warn('drawSpellHUD not found');
+  }
+  if(cinematicFlash>0){ let cf=cinematicFlash/8; ctx.fillStyle=`rgba(255,220,150,${cf*0.55})`; ctx.fillRect(0,0,W,H); }
+  
+  ctx.restore();
+  for(let i=floats.length-1;i>=0;i--){ let f=floats[i]; let fSize=11+Math.floor((40-f.life)/5), fAlpha=Math.min(1,f.life/10); ctx.font=`bold ${fSize}px monospace`; ctx.globalAlpha=fAlpha; ctx.strokeStyle='rgba(0,0,0,0.85)'; ctx.strokeText(f.t,f.x-15,f.y-25); ctx.fillStyle=f.c; ctx.fillText(f.t,f.x-15,f.y-25); ctx.globalAlpha=1; f.life--; f.y-=1.1; if(f.life<=0) floats.splice(i,1); }
+}
+
+
+
+// ---------- ОСНОВНОЙ ЦИКЛ ----------
+let lastFrameTime=0;
+
+function updateGame(dt){
+  if(!active) return;
+  if(clashActive){ updateClash(); player.vx=0; player.vy=0; bot.vx=0; bot.vy=0; for(let box of boxes) box.update(); for(let d of dropped) d.update(); for(let i=bolts.length-1;i>=0;i--){ bolts[i].update(); if(bolts[i].life<=0||bolts[i].hit) bolts.splice(i,1); } return; }
+  
+  updateSpells(dt);
+  
+  // ВИХРЬ: автоматическая стрельба для арбалета и жезла
+  if(player.activeSpell === 'SpellVortex'){
+    let pWpV = WEAPONS[player.weapon];
+    if(pWpV?.special === 'crossbow'){
+      if(!player._vortexShotTimer) player._vortexShotTimer = 0;
+      player._vortexShotTimer--;
+      if(player._vortexShotTimer <= 0){
+        fireCrossbow('p');
+        player._vortexShotTimer = 30;
+        addFloat('💨', player.x, player.y-30, '#88ffaa', 0.2);
+      }
+    } else if(pWpV?.special === 'wand'){
+      if(!player._vortexShotTimer) player._vortexShotTimer = 0;
+      player._vortexShotTimer--;
+      if(player._vortexShotTimer <= 0){
+        fireMagicBolt('p');
+        player._vortexShotTimer = 20;
+        addFloat('✨', player.x, player.y-30, '#ff88ff', 0.2);
+      }
+    }
+  }
+  
+  // ОБНОВЛЕНИЕ СТАМИНЫ (вместо updateStaminaRestSystem)
+  let isPlayerMoving = Math.hypot(player.vx, player.vy) > 0.5;
+  let isPlayerAttacking = player.atk > 0 || Math.abs(player.swordVel) > 0.1;
+  player.updateStamina(dt, isPlayerMoving, isPlayerAttacking);
+  
+  let isBotMoving = Math.hypot(bot.vx, bot.vy) > 0.5;
+  let isBotAttacking = bot.atk > 0 || Math.abs(bot.swordVel) > 0.1;
+  bot.updateStamina(dt, isBotMoving, isBotAttacking);
+  
+  if(cinematicFlash>0) cinematicFlash--; if(shakeTimer>0){ shakeTimer--; if(shakeTimer<=0){ shakeX=0; shakeY=0; } }
+  for(let i=dodgeTrail.length-1;i>=0;i--){ dodgeTrail[i].life--; if(dodgeTrail[i].life<=0) dodgeTrail.splice(i,1); }
+  for(let i=0;i<sweatParticles.length;i++){ let s=sweatParticles[i]; s.life--; s.x+=s.vx; s.y+=s.vy; if(s.life<=0) sweatParticles.splice(i--,1); }
+  tryPickup('p');
+  playerCtrl.update(); ai.update();
+  if(player.moveLock>0) player.moveLock--; if(player.swordLock>0) player.swordLock--; if(player.crossbowCD>0 && player.crossbowCD<=0) document.getElementById('reload-bar').style.display='none';
+  if(bot.moveLock>0) bot.moveLock--; if(bot.swordLock>0) bot.swordLock--; if(bot.crossbowCD>0) bot.crossbowCD--;
+  for(let i=0;i<boxes.length;i++) boxes[i].update();
+  for(let i=0;i<dropped.length;i++) dropped[i].update();
+  for(let i=bolts.length-1;i>=0;i--){ bolts[i].update(); if(bolts[i].life<=0||bolts[i].hit) bolts.splice(i,1); }
+  for(let sp of arenaSpawns) if(sp.timer>0) sp.timer--;
+  checkSwordClash(); checkTouch();
+  updHP();
+}
+
+function frameLoop(ts){
+  if(!lastFrameTime) lastFrameTime=ts;
+  let delta=Math.min(0.033,(ts-lastFrameTime)/1000);
+  lastFrameTime=ts;
+  let steps=Math.max(1,Math.floor(delta*60));
+  for(let s=0;s<steps;s++) updateGame(1/60);
+  draw();
+  requestAnimationFrame(frameLoop);
+}
+
+// ---------- ИНИЦИАЛИЗАЦИЯ ----------
+function resetGame(){
+  active=true; mode='normal'; clashActive=false; clashEscape=false; clashCount=0; clashCDTimer=0; lastClashCDTimer=0;
+  pDamageCD=0; bDamageCD=0; playerThrowCD=0; botThrowCD=0; throwBlockTimer=0; cinematicFlash=0; shakeTimer=0; shakeX=0; shakeY=0;
+  clashWinnerInvincible=0; clashLoserInvincible=0; pendingDeathClash=false;
+  player.hp=phMax; bot.hp=bhMax; player.stamina=C.STAMINA_MAX; bot.stamina=C.STAMINA_MAX;
+  player.staminaResting=false; bot.staminaResting=false; player.staminaRestTimer=0; bot.staminaRestTimer=0;
+  player.pendingRest=false; bot.pendingRest=false; player.exhaustFade=1.0; bot.exhaustFade=1.0;
+  player.x=W/2-120; player.y=H/2; bot.x=W/2+120; bot.y=H/2; player.vx=0; player.vy=0; bot.vx=0; bot.vy=0;
+  player.hasWeapon=true; bot.hasWeapon=true; player.swordLock=0; bot.swordLock=0; player.moveLock=0; bot.moveLock=0;
+  player.atk=0; bot.atk=0; player.atkCD=0; bot.atkCD=0; player.hitCD=0; bot.hitCD=0; player.swordVel=0; bot.swordVel=0;
+  player.accPeak=0; bot.accPeak=0; player.smSpd=0; bot.smSpd=0; player.flailExt=0; bot.flailExt=0; player.crossbowCD=0; bot.crossbowCD=0;
+  player.activeSpell=null; bot.activeSpell=null; player.spellTimer=0; bot.spellTimer=0; globalSpellCD=0;
+  pVenomStacks=[]; bVenomStacks=[]; hookActive=false; hookPulling=false; hookVictim=null;
+  player._spearThrusting=false; bot._spearThrusting=false; player._wandCharging=false; bot._wandCharging=false;
+  player._groundSlamPhase=null; bot._groundSlamPhase=null; player._groundSlamTimer=0; bot._groundSlamTimer=0;
+  player._groundSlamFired=false; bot._groundSlamFired=false; player.shieldRaised=false; bot.shieldRaised=false;
+  player.shieldAngle=0; bot.shieldAngle=0;
+  if(ai){ ai.tactic='defense'; ai.stance='block'; ai.tacticTimer=Math.floor(Math.random()*120+60); ai.defenseTimer=Math.floor(Math.random()*120+60); ai.consecutiveHits=0; ai.retreatTimer=0; ai.crossbowDodgeTimer=0; ai.shelterBox=null; ai.shelterTimer=0; ai.pathTimer=0; ai.throwStun=0; ai.attackCD=0; ai.botSpawnTimer=600; ai.cbWanderX=W/2; ai.cbWanderY=H/2; ai.bSpellCastCD=0; }
+  dropped=[]; bolts=[]; arenaSpawns=[]; dodgeTrail=[]; sweatParticles=[]; blood=[]; puddles=[]; floats=[];  damageLog = []; 
+  resetBoxes();
+  document.getElementById('clash-ui').classList.add('hidden'); document.getElementById('game-over').classList.add('hidden');
+  document.getElementById('restart-btn').classList.add('hidden'); document.getElementById('reload-bar').style.display='none';
+  updateWeaponHUD(); updHP();
+  addFloat('БОЙ ПРОДОЛЖАЕТСЯ',W/2,H/2-100,'#ffcc66');
+}
+// Переключение режима манекена
+function toggleMode() {
+  mode = mode === 'normal' ? 'dummy' : 'normal';
+  document.getElementById('debug-mode').innerHTML = mode === 'normal' ? '🛠 ОБЫЧНЫЙ' : '🛠 МАНЕКЕН';
+  // Останавливаем бота при включении манекена
+  if (mode === 'dummy') {
+    bot.vx = 0;
+    bot.vy = 0;
+    bot.atk = 0;
+    bot.swordVel = 0;
+  }
+  addFloat(mode === 'dummy' ? '🤖 МАНЕКЕН ВКЛ' : '🤖 МАНЕКЕН ВЫКЛ', player.x, player.y - 60, '#ffcc88');
+}
+
+function init(){
+  canvas=document.getElementById('c'); ctx=canvas.getContext('2d');
+  W=canvas.width=window.innerWidth; H=canvas.height=window.innerHeight;
+  player=new Character(true, W/2-120, H/2, 'longsword', 1, 'none');
+  bot=new Character(false, W/2+120, H/2, 'longsword', 1, 'none');
+  playerCtrl=new PlayerController(player);
+  ai=new AIBehaviour(bot,player);
+  phMax=100; bhMax=100; player.hp=100; bot.hp=100; player.stamina=100; bot.stamina=100;
+  for(let i=0;i<3;i++){ let bx=W/2-200+Math.random()*400, by=H/2-150+Math.random()*300; initialBoxes.push({x:bx,y:by}); boxes.push(new Box(bx,by,null)); }
+  updateWeaponHUD(); updHP();
+  
+  canvas.addEventListener('mousemove',e=>{ let r=canvas.getBoundingClientRect(); playerCtrl.mouseX=(e.clientX-r.left)*W/r.width; playerCtrl.mouseY=(e.clientY-r.top)*H/r.height; playerCtrl.mdX=playerCtrl.mouseX-(playerCtrl._lastMX||playerCtrl.mouseX); playerCtrl.mdY=playerCtrl.mouseY-(playerCtrl._lastMY||playerCtrl.mouseY); playerCtrl._lastMX=playerCtrl.mouseX; playerCtrl._lastMY=playerCtrl.mouseY; });
+canvas.addEventListener('mousedown', e => {
+  if (e.button === 0 && clashActive) {
+    clashPlayerPower = Math.min(100, clashPlayerPower + 12);
+    cinematicFlash = 3;
+    playSound('clashSpam');
+    return;
+  }
+
+
+  // ЖЕЗЛ: начало зарядки
+  if (e.button === 0 && !clashActive && player.hasWeapon && WEAPONS[player.weapon]?.special === 'wand' && (player.crossbowCD || 0) <= 0 && active) {
+    player._wandCharging = true;
+    player._wandChargeTimer = 0;
+    return;
+  }
+  
+  // Обычный щит (не копье, не жезл, не арбалет)
+  if (e.button === 0 && !clashActive && active && player.shield !== 'none' && WEAPONS[player.weapon]?.special !== 'crossbow' && WEAPONS[player.weapon]?.special !== 'wand') {
+    player.shieldRaised = true;
+    return;
+  }
+  
+  // Арбалет: мгновенный выстрел
+  if (e.button === 0 && !clashActive && player.hasWeapon && WEAPONS[player.weapon]?.special === 'crossbow' && player.crossbowCD <= 0 && active) {
+    fireCrossbow('p');
+    if (Math.random() < 0.5 && ai) {
+      ai.crossbowDodgeTimer = 15 + Math.floor(Math.random() * 10);
+      ai.crossbowDodgeDir = Math.random() < 0.5 ? 1 : -1;
+    }
+  }
+});
+canvas.addEventListener('mouseup', e => {
+  if (e.button === 0) {
+    player.shieldRaised = false;
+    player._spearThrusting = false;
+    
+    // ЖЕЗЛ: выстрел при отпускании (зарядка)
+    if (player._wandCharging && WEAPONS[player.weapon]?.special === 'wand') {
+      if ((player._wandChargeTimer || 0) >= 55) {
+        fireMagicBolt('p');
+      }
+      player._wandCharging = false;
+      player._wandChargeTimer = 0;
+    }
+    
+    // Альтернативный вариант (если был зажат щит)
+    if (player._pendingWandShot && WEAPONS[player.weapon]?.special === 'wand') {
+      player._pendingWandShot = false;
+      fireMagicBolt('p');
+    }
+  }
+});window.addEventListener('keydown', e => {
+  let k = e.key.toLowerCase();
+  playerCtrl.keys[k] = true;
+  if (e.repeat) return;
+  
+ 
+if (k === 'g' || k === 'п') {
+  player.toggleEllipseRotation();
+  e.preventDefault();
+}
+  // Манекен T/t
+  if (k === 't' || k === 'е') toggleMode();
+
+  // Дебаг: удалить оружие у бота (C/c)
+  if(k === 'c' || k === 'с'){
+    if(bot.hasWeapon){
+      bot.hasWeapon = false;
+      let ang = Math.atan2(player.y - bot.y, player.x - bot.x);
+      let dropAng = ang + (Math.random() - 0.5) * 1.5;
+      
+      // ИСПРАВЛЕНО: добавил создание дропа и push в массив
+    //  let d = new Drop(
+     //   bot.x + 22, bot.y - 20,
+     //   Math.cos(dropAng) * 8 + bot.vx,
+     //   Math.sin(dropAng) * 8 + bot.vy,
+     //   'b', bot.swordAngle, false, bot.weapon
+     // );// не дропаем иначе сразу подберет
+      //dropped.push(d);
+      
+      addFloat('🗡️ ОРУЖИЕ ВЫБИТО (ДЕБАГ)', bot.x, bot.y - 50, '#ff8888');
+      playSound('knockout');
+      bot.atk = 0;
+      bot.swordVel = 0;
+      updateWeaponHUD();
+    } else {
+      addFloat('⚠️ У БОТА НЕТ ОРУЖИЯ', bot.x, bot.y - 50, '#ffaa44');
+    }
+  }	
+  
+// Клавиша L для лога урона
+if(k === 'l' || k === 'д'){
+  let panel = document.getElementById('dmg-log-panel');
+  if(panel.style.display === 'none'){
+    updateDamageLogPanel();
+    panel.style.display = 'block';
+  } else {
+    panel.style.display = 'none';
+  }
+}
+
+  // Рестарт и бросок
+  if (k === 'r' && !clashActive && active) throwSword('p');
+  if (k === 'r' && clashActive) clashEscape = true;
+  
+  // Clash управление
+  if (k === 'e' && clashActive) {
+    clashPlayerPower = Math.min(100, clashPlayerPower + 12);
+    cinematicFlash = 3;
+    playSound('clashSpam');
+  }
+  if (k === 'e' && !clashActive && player.shield !== 'none') player._shieldSide = 1;
+  if (k === 'q' && !clashActive && player.shield !== 'none') player._shieldSide = -1;
+  
+  // Переключение оружия
+  if (k === 'z' || k === 'я') cycleWeapon(1);
+  if (e.key === 'Z' || e.key === 'Я') cycleWeapon(-1);
+  if (k === 'x' || k === 'ч') {
+    let bi = WEAPON_ORDER.indexOf(bot.weapon);
+    bot.weapon = WEAPON_ORDER[(bi + 1) % WEAPON_ORDER.length];
+    updateWeaponHUD();
+    addFloat('🔄 ' + WEAPONS[bot.weapon].name, bot.x, bot.y - 50, '#ffcc88');
+  }
+  if (e.key === 'X' || e.key === 'Ч') {
+    let bi = WEAPON_ORDER.indexOf(bot.weapon);
+    bot.weapon = WEAPON_ORDER[(bi - 1 + WEAPON_ORDER.length) % WEAPON_ORDER.length];
+    updateWeaponHUD();
+    addFloat('🔄 ' + WEAPONS[bot.weapon].name, bot.x, bot.y - 50, '#ffcc88');
+  }
+  
+  // Дебаг меню
+  if (k === 'm' || k === 'ь') {
+    document.getElementById('debug-menu').style.display =
+      document.getElementById('debug-menu').style.display === 'none' ? 'flex' : 'none';
+  }
+  
+  // Чит-режим
+  if (k === '`' || k === 'ё') {
+    noSpellCD = !noSpellCD;
+    addFloat(noSpellCD ? '⚡МГНОВ' : '⚡НОРМ', player.x, player.y - 60, '#ffff44');
+  }
+  
+  // Ящики и предметы на F/f
+  if (k === 'f' || k === 'а') {
+    tryPickup('p');
+    let cx = player.x + 22, cy = player.y - 20;
+    // Толкаем ящики
+    for (let bx of boxes) {
+      let bd = Math.hypot(bx.x + bx.w / 2 - cx, bx.y + bx.h / 2 - cy);
+      if (bd < 80) {
+        let ba = Math.atan2(bx.y + bx.h / 2 - cy, bx.x + bx.w / 2 - cx);
+        bx.vx += Math.cos(ba) * 15;
+        bx.vy += Math.sin(ba) * 15;
+        bx.owner = 'p';
+        bx.protectTimer = 30;
+      }
+    }
+    // Толкаем брошенное оружие
+    for (let drp of dropped) {
+      let ddd = Math.hypot(drp.x - cx, drp.y - cy);
+      if (ddd < 60) {
+        let da = Math.atan2(drp.y - cy, drp.x - cx);
+        drp.vx += Math.cos(da) * 12;
+        drp.vy += Math.sin(da) * 12;
+      }
+    }
+    playSound('throw');
+  }
+  
+  // Заклинания
+  const SK = {
+    '1': 'SpellTelecinesis',
+    '2': 'SpellHook',
+    '3': 'SpellVoidStep',
+    '4': 'SpellVortex',
+    '5': 'SpellRage',
+    '6': 'SpellVenomAttack',
+    '7': 'SpellGroundSlam'
+  };
+  if (SK[k]) castSpell(SK[k], 'p');
+  
+  // Двойной тап для доджа
+  let dir = { x: 0, y: 0 };
+  if (k === 'w' || k === 'arrowup' || k === 'ц') dir.y = -1;
+  else if (k === 's' || k === 'arrowdown' || k === 'ы') dir.y = 1;
+  else if (k === 'a' || k === 'arrowleft' || k === 'ф') dir.x = -1;
+  else if (k === 'd' || k === 'arrowright' || k === 'в') dir.x = 1;
+  else return;
+  
+  let now = Date.now();
+  if (playerCtrl.tapKey === k && now - playerCtrl.tapTime < 400 && now - playerCtrl.tapTime > 80) {
+    player.dodge(dir.x, dir.y);
+    playerCtrl.tapKey = null;
+  } else {
+    playerCtrl.tapKey = k;
+    playerCtrl.tapTime = now;
+    setTimeout(() => {
+      if (playerCtrl.tapKey === k) playerCtrl.tapKey = null;
+    }, 450);
+  }
+});
+
+ window.addEventListener('keyup',e=>{ let k=e.key.toLowerCase(); playerCtrl.keys[k]=false; });
+  
+  function cycleWeapon(dir){ pWeaponIdx=(pWeaponIdx+dir+WEAPON_ORDER.length)%WEAPON_ORDER.length; if(player.hasWeapon){ player.weapon=WEAPON_ORDER[pWeaponIdx]; addFloat('🔄 '+WEAPONS[player.weapon].name,player.x,player.y-50,'#ffcc88'); } player.crossbowCD=0; document.getElementById('reload-bar').style.display='none'; updateWeaponHUD(); }
+  
+  // Кнопки меню
+  document.getElementById('btn-random-all').onclick=()=>{ gameMode='random_all'; document.getElementById('start-screen').style.display='none'; player.weapon=rndWeapon(); bot.weapon=rndWeapon(); player.scale=0.7+Math.random()*1.5; bot.scale=0.7+Math.random()*1.5; phMax=Math.round(player.scale*100); bhMax=Math.round(bot.scale*100); player.hp=phMax; bot.hp=bhMax; player.x=W/2-120; player.y=H/2; bot.x=W/2+120; bot.y=H/2; updateWeaponHUD(); resetGame(); };
+  document.getElementById('btn-random-enemy').onclick=()=>{ gameMode='random_enemy'; document.getElementById('start-screen').style.display='none'; player.weapon='longsword'; bot.weapon=rndWeapon(); player.scale=1; bot.scale=1; phMax=100; bhMax=100; player.hp=100; bot.hp=100; resetGame(); };
+  document.getElementById('btn-all-weapon').onclick=()=>{ gameMode='all_weapon'; document.getElementById('start-screen').style.display='none'; player.weapon='longsword'; bot.weapon=rndWeapon(); player.scale=1; bot.scale=1; if(ai) ai.botAllWeaponTimer=Math.floor(Math.random()*2400+600); resetGame(); };
+  document.getElementById('btn-arena').onclick=()=>{ gameMode='arena'; document.getElementById('start-screen').style.display='none'; player.weapon='longsword'; bot.weapon='longsword'; player.scale=1; bot.scale=1; resetGame(); };
+  document.getElementById('restart-btn').onclick=()=>resetGame();
+  document.getElementById('btn-dummy').onclick=()=>{ mode=mode==='normal'?'dummy':'normal'; document.getElementById('debug-mode').innerHTML=mode==='normal'?'🛠 ОБЫЧНЫЙ':'🛠 МАНЕКЕН'; };
+  document.getElementById('btn-hide-debug').onclick=()=>{ hideDebug=!hideDebug; document.getElementById('ai-debug').style.display=hideDebug?'none':'block'; document.getElementById('debug-menu').style.display='none'; };
+  document.getElementById('btn-resume').onclick=()=>{ document.getElementById('debug-menu').style.display='none'; };
+  document.getElementById('sl-pscale').oninput=function(){ player.scale=+this.value; document.getElementById('lbl-pscale').textContent=(+this.value).toFixed(1); phMax=Math.round(clamp(player.scale*100,60,250)); player.hp=Math.min(player.hp,phMax); updHP(); };
+  document.getElementById('sl-bscale').oninput=function(){ bot.scale=+this.value; document.getElementById('lbl-bscale').textContent=(+this.value).toFixed(1); bhMax=Math.round(clamp(bot.scale*100,60,250)); bot.hp=Math.min(bot.hp,bhMax); updHP(); };
+  document.getElementById('sl-stamina').oninput=function(){ staminaMult=+this.value; document.getElementById('lbl-stamina').textContent=(+this.value).toFixed(1); };
+  document.getElementById('sl-rest').oninput=function(){ restMult=+this.value; document.getElementById('lbl-rest').textContent=this.value; };
+  document.getElementById('sl-botspeed').oninput=function(){ botSpeedMult=+this.value; document.getElementById('lbl-botspeed').textContent=(+this.value).toFixed(2); };
+  document.getElementById('sl-thrust').oninput=function(){ globalThrustRange=+this.value; document.getElementById('lbl-thrust').textContent=(+this.value).toFixed(2); };
+  document.getElementById('sl-flail').oninput=function(){ flailSpeedMult=+this.value; document.getElementById('lbl-flail').textContent=(+this.value).toFixed(1); };
+  document.getElementById('sel-exhaust').onchange=function(){ exhaustMode=this.value; };
+  document.getElementById('sel-pshield').onchange=function(){ player.shield=this.value; };
+  document.getElementById('sel-bshield').onchange=function(){ bot.shield=this.value; };
+  document.getElementById('btn-no-dodge').onclick=function(){ botNoDodge=!botNoDodge; this.innerHTML=botNoDodge?'✅ ДОДЖ БОТА ЗАПРЕЩЁН':'🚫 ЗАПРЕТ ДОДЖА БОТА'; };
+  document.getElementById('btn-no-thrust').onclick=function(){ botNoThrust=!botNoThrust; this.innerHTML=botNoThrust?'✅ УКОЛ БОТА ЗАПРЕЩЁН':'🚫 ЗАПРЕТ УКОЛА БОТА'; };
+  document.getElementById('chk-nospellcd').onchange=function(){ noSpellCD=this.checked; };
+document.getElementById('btn-dmg-log').onclick = () => {
+  let panel = document.getElementById('dmg-log-panel');
+  if(panel.style.display === 'none'){
+    updateDamageLogPanel();  // Обновляем при открытии
+    panel.style.display = 'block';
+  } else {
+    panel.style.display = 'none';
+  }
+};
+
+
+  let selP=document.getElementById('sel-pwep'), selB=document.getElementById('sel-bwep');
+  for(let w of WEAPON_ORDER){ let o=document.createElement('option'); o.value=w; o.textContent=WEAPONS[w].emoji+' '+WEAPONS[w].name; selP.appendChild(o); selB.appendChild(o.cloneNode(true)); }
+  selP.onchange=()=>{ player.weapon=selP.value; updateWeaponHUD(); };
+  selB.onchange=()=>{ bot.weapon=selB.value; updateWeaponHUD(); };
+  
+  // Spell toggles
+  function makeToggles(containerId, spellSet){
+    let el=document.getElementById(containerId); if(!el) return;
+    el.innerHTML='';
+    for(let sk of SPELL_ORDER2){
+      let btn=document.createElement('button'); btn.style.cssText='font-size:9px;padding:2px 5px;border-radius:4px;cursor:pointer;font-family:monospace;background:'+(spellSet.has(sk)?'#553322':'#221111')+';border:1px solid '+(spellSet.has(sk)?'#ffaa44':'#442222')+';color:'+(spellSet.has(sk)?'#ffcc88':'#664444');
+      btn.textContent=(spellSet.has(sk)?'✅ ':'❌ ')+SPELLS[sk].name;
+      btn.onclick=()=>{ if(spellSet.has(sk))spellSet.delete(sk);else spellSet.add(sk); makeToggles('p-spell-toggles',pSpells); makeToggles('b-spell-toggles',bSpells); };
+      el.appendChild(btn);
+    }
+  }
+  makeToggles('p-spell-toggles',pSpells); makeToggles('b-spell-toggles',bSpells);
+  document.getElementById('debug-menu').addEventListener('click',()=>{ makeToggles('p-spell-toggles',pSpells); makeToggles('b-spell-toggles',bSpells); });
+  
+  resetGame();
+  requestAnimationFrame(frameLoop);
+}
+
+
+init();
+</script>
+</body>
+</html>

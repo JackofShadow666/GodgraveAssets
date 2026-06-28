@@ -1,6 +1,6 @@
 ; Список файлов из папок Music и Sound
-; Создано: 14.06.2026 18:21:29
-; Корневая папка: F:\Jack\Jack_Project\Godgrave\GodgraveAssets\Source
+; Создано: 15.06.2026 20:34:04
+; Корневая папка: F:\Jack\Project\Godgrave\Public\Godgrave\Source
 
 === Папка: Music ===
 Source\Music\Battle\DarkEpicTechno.mp3
@@ -88,4 +88,21 @@ Source\Weapon\Sword\T_Sword_09.png
 Source\Weapon\Sword\T_Sword_10.png
 Source\Weapon\Sword\T_Sword_11.png
 Source\Weapon\Sword\T_Sword_12.png
+
+=== Папка: UI ===
+Source\UI\Bar.psd
+Source\UI\T_BarA.psd
+Source\UI\T_BarEdge.png
+Source\UI\T_BarLeft.png
+Source\UI\T_BarLine.png
+Source\UI\T_BarMiddle.png
+Source\UI\T_LocationPreview.png
+Source\UI\T_MaskA � �����.png
+Source\UI\T_MaskA.png
+Source\UI\UISystem.html
+
+=== Папка: Font ===
+Source\Font\BloodyDrip-Regular.ttf
+Source\Font\Font.png
+Source\Font\index.html
 
