@@ -1,0 +1,16 @@
+{
+  "name": "peerjs-signaling-server",
+  "version": "1.0.0",
+  "description": "Запасной сигнальный сервер PeerJS — на случай если 0.peerjs.com заблокирован",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "peer": "^1.0.2",
+    "express": "^4.18.2"
+  },
+  "engines": {
+    "node": "18.x"
+  }
+}
