@@ -1,5 +1,5 @@
 ; Список файлов из папок Music и Sound
-; Создано: 02.07.2026 20:38:31
+; Создано: 02.07.2026 20:40:46
 ; Корневая папка: F:\Jack\Project\Godgrave\Public\Godgrave\Source
 
 === Папка: Music ===
@@ -65,10 +65,10 @@ Source\Sound\Sword\SwordSwing\SFX_SwordSwing_03.mp3
 Source\Sound\Sword\SwordSwing\SFX_SwordSwing_04.mp3
 Source\Sound\Sword\SwordSwing\SFX_SwordSwing_05.mp3
 Source\Sound\Sword\SwordSwing\SFX_SwordSwing_06.mp3
-Source\Sound\Ui\SFX_UI_Error_01.mp3
 Source\Sound\Ui\SFX_UI_Hover_01.mp3
 Source\Sound\Ui\SFX_UI_Hover_02.mp3
 Source\Sound\Ui\SFX_UI_Hover_03.mp3
+Source\Sound\Ui\SFX_UI_Note_01.mp3
 Source\Sound\Ui\SFX_UI_Tap_01.mp3
 Source\Sound\Ui\SFX_UI_Tap_02.mp3
 
