@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Wav/MP3_SilenceSplitter — Pro Timeline Editor</title>
+    <meta name="description" content="Редактор MP3/WAV: автоматическое разделение по тишине, ручная настройка границ сегментов перетаскиванием, фейд-ин и фейд-аут с ползунками.">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: radial-gradient(circle at 10% 20%, #0a0c12, #030507);
+            min-height: 100vh;
+            padding: 20px;
+            color: #eef2ff;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(12px);
+            border-radius: 44px;
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            padding: 24px 28px 32px;
+            box-shadow: 0 25px 40px -12px rgba(0,0,0,0.5);
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+            border-bottom: 1px solid rgba(56, 189, 248, 0.3);
+            padding-bottom: 14px;
+        }
+        h1 {
+            font-size: 1.9rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #e0f2fe, #38bdf8, #a78bfa);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+        }
+        .badge { background: rgba(56,189,248,0.2); border-radius: 40px; padding: 5px 14px; font-size: 0.7rem; border: 1px solid rgba(56,189,248,0.5); }
+        .sub { color: #94a3b8; margin-bottom: 28px; font-size: 0.85rem; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; }
+        .drop-zone {
+            background: rgba(30, 41, 59, 0.5);
+            border: 2px dashed rgba(56, 189, 248, 0.5);
+            border-radius: 40px;
+            padding: 28px 20px;
+            text-align: center;
+            cursor: pointer;
+            margin-bottom: 28px;
+            transition: 0.2s;
+        }
+        .drop-zone.drag-over { border-color: #38bdf8; background: rgba(56,189,248,0.2); transform: scale(0.98); }
+        .file-label {
+            background: linear-gradient(95deg, #1e293b, #0f172a);
+            padding: 10px 24px;
+            border-radius: 60px;
+            display: inline-flex;
+            gap: 10px;
+            font-weight: 600;
+            border: 1px solid #38bdf8;
+            cursor: pointer;
+        }
+        input[type="file"] { display: none; }
+        .controls-panel {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 14px;
+            justify-content: space-between;
+            background: rgba(0,0,0,0.4);
+            padding: 14px 20px;
+            border-radius: 32px;
+            margin-bottom: 24px;
+        }
+        .param-group { display: flex; flex-direction: column; gap: 5px; }
+        .param-group label { font-size: 0.65rem; font-weight: 600; color: #7dd3fc; }
+        .param-group input, .param-group select {
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 28px;
+            padding: 6px 14px;
+            color: white;
+            width: 130px;
+        }
+        .name-group input { width: 160px; }
+        button {
+            background: #1e293b;
+            border: none;
+            color: white;
+            font-weight: 600;
+            padding: 6px 18px;
+            border-radius: 40px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            transition: 0.1s;
+        }
+        button.primary { background: linear-gradient(95deg, #2563eb, #1e40af); }
+        button.danger { background: #7f1a1a; }
+        button.success { background: #065f46; }
+        .timeline-container {
+            background: #05070f;
+            border-radius: 24px;
+            padding: 16px;
+            margin: 20px 0;
+            border: 1px solid #2d3a5a;
+        }
+        .canvas-wrapper { position: relative; margin-bottom: 20px; cursor: crosshair; }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 170px;
+            background: #010314;
+            border-radius: 20px;
+            cursor: crosshair;
+        }
+        .timeline-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-top: 12px;
+        }
+        .fade-panel {
+            display: flex;
+            gap: 20px;
+            background: rgba(0,0,0,0.6);
+            padding: 8px 18px;
+            border-radius: 60px;
+            align-items: center;
+        }
+        .fade-panel label {
+            font-size: 0.7rem;
+            color: #94a3b8;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .fade-panel input {
+            width: 140px;
+            background: #0f172a;
+            border-radius: 30px;
+            cursor: pointer;
+        }
+        .segment-card {
+            background: rgba(15,23,42,0.8);
+            border-radius: 60px;
+            padding: 5px 14px;
+            margin: 6px;
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            border: 1px solid #38bdf8;
+            cursor: pointer;
+            transition: 0.1s;
+        }
+        .segment-card.selected { background: #1e3a5f; border-color: #facc15; }
+        .segment-badge {
+            background: #38bdf8;
+            color: #0f172a;
+            border-radius: 30px;
+            padding: 2px 10px;
+            font-weight: bold;
+            font-size: 0.7rem;
+        }
+        .delete-seg-btn {
+            background: #dc2626;
+            padding: 2px 10px;
+            font-size: 0.7rem;
+            border-radius: 30px;
+        }
+        .delete-seg-btn:hover { background: #b91c1c; }
+        .author-line { text-align: center; margin-top: 20px; font-size: 0.75rem; color: #38bdf8; letter-spacing: 0.5px; }
+        @media (max-width: 700px) { .container { padding: 16px; } .segment-card { width: 100%; } }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>Wav/MP3_SilenceSplitter</h1>
+        <div class="badge"></div>
+    </div>
+    <div class="sub"><span>✂️ Авторазделение + ручная настройка границ</span><span>📂 Перетащите MP3</span></div>
+
+    <div class="drop-zone" id="dropZone">
+        <label class="file-label">🎵 ВЫБРАТЬ MP3<input type="file" id="fileInput" accept="audio/mpeg,audio/mp3"></label>
+        <div style="margin-top: 8px; font-size:0.7rem;">⬇️ перетащите файл сюда</div>
+        <div id="fileNameDisplay" style="margin-top: 6px; font-size:0.7rem; color:#7dd3fc;"></div>
+    </div>
+
+    <div id="controlsPanel" style="display:none;">
+        <div class="controls-panel">
+            <div class="param-group"><label>🔇 порог dBFS</label><input type="number" id="silenceThreshold" value="-42" step="1"></div>
+            <div class="param-group"><label>⏱️ мин пауза (сек)</label><input type="number" id="minSilenceDuration" value="0.45" step="0.1"></div>
+            <div class="param-group name-group"><label>🏷️ префикс</label><input type="text" id="exportBaseName" placeholder="имя"></div>
+            <div class="param-group"><label>📀 формат</label><select id="exportFormat"><option value="mp3">MP3</option><option value="wav">WAV</option></select></div>
+            <button id="autoSplitBtn" class="primary">🔪 авторазделение</button>
+            <button id="resetSegmentsBtn" class="danger">↺ сброс всех</button>
+        </div>
+    </div>
+
+    <div id="timelineArea" style="display:none;">
+        <div class="timeline-container">
+            <div class="canvas-wrapper">
+                <canvas id="waveCanvas" width="1000" height="170"></canvas>
+            </div>
+            <div class="timeline-controls">
+                <div class="fade-panel">
+                    <label>🎚️ FADE-IN <input type="range" id="fadeInSlider" min="0" max="2.5" step="0.01" value="0.2"> <span id="fadeInVal">0.20</span>с</label>
+                    <label>🎚️ FADE-OUT <input type="range" id="fadeOutSlider" min="0" max="2.5" step="0.01" value="0.2"> <span id="fadeOutVal">0.20</span>с</label>
+                    <button id="applyFadeBtn" class="success" style="padding:4px 14px;">✅ применить</button>
+                    <button id="clearFadeBtn" class="danger" style="padding:4px 12px;">❌ сброс фейдов</button>
+                </div>
+            </div>
+            <div style="font-size:0.7rem; color:#94a3b8; margin-top:12px;">💡 клик на сегмент — выделить. Тяни за белые маркеры (левая/правая граница) | фейды применяются к выделенному</div>
+        </div>
+    </div>
+
+    <div id="segmentsPanel" style="display:none;">
+        <div style="background:rgba(0,0,0,0.5); border-radius:32px; padding:14px; margin-top:16px;">
+            <div style="display:flex; justify-content:space-between; flex-wrap:wrap; margin-bottom:12px;">
+                <span>🧩 <span id="segCount">0</span> сегментов</span>
+                <div><button id="copyNamesBtn" class="success" style="padding:4px 12px;">📋 копировать имена</button>
+                <button id="downloadAllZipBtn" class="primary" style="padding:4px 12px;">📦 ZIP все</button></div>
+            </div>
+            <div id="segmentItemsList" style="display:flex; flex-wrap:wrap; gap:8px;"></div>
+        </div>
+    </div>
+    <div class="author-line">by jackofshadow</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+    (function(){
+        // DOM
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const fileNameDisplay = document.getElementById('fileNameDisplay');
+        const controlsPanel = document.getElementById('controlsPanel');
+        const timelineArea = document.getElementById('timelineArea');
+        const segmentsPanelDiv = document.getElementById('segmentsPanel');
+        const waveCanvas = document.getElementById('waveCanvas');
+        const silenceThreshold = document.getElementById('silenceThreshold');
+        const minSilenceDuration = document.getElementById('minSilenceDuration');
+        const exportBaseName = document.getElementById('exportBaseName');
+        const exportFormat = document.getElementById('exportFormat');
+        const autoSplitBtn = document.getElementById('autoSplitBtn');
+        const resetSegmentsBtn = document.getElementById('resetSegmentsBtn');
+        const fadeInSlider = document.getElementById('fadeInSlider');
+        const fadeOutSlider = document.getElementById('fadeOutSlider');
+        const fadeInVal = document.getElementById('fadeInVal');
+        const fadeOutVal = document.getElementById('fadeOutVal');
+        const applyFadeBtn = document.getElementById('applyFadeBtn');
+        const clearFadeBtn = document.getElementById('clearFadeBtn');
+        const copyNamesBtn = document.getElementById('copyNamesBtn');
+        const downloadAllZipBtn = document.getElementById('downloadAllZipBtn');
+        const segCountSpan = document.getElementById('segCount');
+        const segmentItemsList = document.getElementById('segmentItemsList');
+
+        let audioCtx = null;
+        let originalBuffer = null;
+        let workingBuffer = null;
+        let segments = [];
+        let selectedSegmentIdx = -1;
+        
+        let isDragging = false;
+        let dragEdge = null;
+        let dragSegIdx = -1;
+        let startMouseX = 0;
+        let startTimeVal = 0;
+
+        function initAudioContext() { if(!audioCtx) { audioCtx = new (window.AudioContext||window.webkitAudioContext)(); } if(audioCtx.state === 'suspended') audioCtx.resume(); return audioCtx; }
+
+        async function loadMP3(file) {
+            const ab = await file.arrayBuffer();
+            const ctx = initAudioContext();
+            return new Promise((resolve,reject)=>ctx.decodeAudioData(ab, resolve, reject));
+        }
+
+        function computeAutoSegments(buffer, threshDB, minGapSec) {
+            const linear = Math.pow(10, threshDB/20);
+            const data = buffer.getChannelData(0);
+            const sr = buffer.sampleRate;
+            const winSize = Math.floor(sr * 0.025);
+            const num = Math.floor(data.length / winSize);
+            const active = new Array(num).fill(false);
+            for(let i=0;i<num;i++){
+                let max=0;
+                for(let j=0;j<winSize && i*winSize+j<data.length;j++) max=Math.max(max, Math.abs(data[i*winSize+j]));
+                if(max>=linear) active[i]=true;
+            }
+            const winDur = winSize/sr;
+            let intervals=[];
+            let inSpeech=false, startT=0;
+            for(let i=0;i<num;i++){
+                let t=i*winDur;
+                if(active[i] && !inSpeech){ inSpeech=true; startT=t; }
+                if(!active[i] && inSpeech){ intervals.push({start:startT, end:t}); inSpeech=false; }
+            }
+            if(inSpeech) intervals.push({start:startT, end:buffer.duration});
+            if(minGapSec>0 && intervals.length>1){
+                let merged=[intervals[0]];
+                for(let i=1;i<intervals.length;i++){
+                    if(intervals[i].start - merged[merged.length-1].end <= minGapSec) merged[merged.length-1].end = intervals[i].end;
+                    else merged.push(intervals[i]);
+                }
+                intervals=merged;
+            }
+            return intervals.map(s=>({start:s.start, end:s.end, fadeIn:0.15, fadeOut:0.15}));
+        }
+
+        function applyAutoSplit(){
+            if(!workingBuffer) return;
+            const thr = parseFloat(silenceThreshold.value);
+            const minGap = parseFloat(minSilenceDuration.value);
+            segments = computeAutoSegments(workingBuffer, thr, minGap);
+            selectedSegmentIdx = segments.length>0 ? 0 : -1;
+            refreshUI();
+        }
+
+        function getSegmentFileName(index) {
+            let base = exportBaseName.value.trim();
+            if (base === "") base = currentFileName;
+            const padded = String(index).padStart(2, '0');
+            return `${base}_${padded}.${exportFormat.value}`;
+        }
+
+        function deleteSegment(index) {
+            if(index < 0 || index >= segments.length) return;
+            segments.splice(index, 1);
+            if(segments.length === 0) {
+                selectedSegmentIdx = -1;
+            } else {
+                selectedSegmentIdx = Math.min(index, segments.length-1);
+            }
+            refreshUI();
+        }
+
+        function refreshUI(){
+            if(!workingBuffer) return;
+            drawWaveform();
+            updateSegmentsList();
+            segCountSpan.innerText = segments.length;
+            if(selectedSegmentIdx>=0 && segments[selectedSegmentIdx]){
+                let s = segments[selectedSegmentIdx];
+                fadeInSlider.value = s.fadeIn;
+                fadeOutSlider.value = s.fadeOut;
+                fadeInVal.innerText = s.fadeIn.toFixed(2);
+                fadeOutVal.innerText = s.fadeOut.toFixed(2);
+            } else {
+                fadeInSlider.value = 0.2;
+                fadeOutSlider.value = 0.2;
+            }
+        }
+
+        function drawWaveform(){
+            if(!waveCanvas || !workingBuffer) return;
+            const w = waveCanvas.clientWidth, h = 170;
+            waveCanvas.width = w; waveCanvas.height = h;
+            const ctx = waveCanvas.getContext('2d');
+            const data = workingBuffer.getChannelData(0);
+            const step = Math.ceil(data.length / w);
+            ctx.fillStyle = '#010314';
+            ctx.fillRect(0,0,w,h);
+            ctx.beginPath();
+            ctx.strokeStyle = '#38bdf8';
+            ctx.lineWidth = 1.6;
+            for(let x=0;x<w;x++){
+                let min=1,max=-1;
+                for(let j=0;j<step;j++){
+                    let idx = x*step+j;
+                    if(idx<data.length){ let v=data[idx]; if(v<min) min=v; if(v>max) max=v; }
+                }
+                let y1 = (1+min)*(h/2);
+                let y2 = (1+max)*(h/2);
+                ctx.beginPath(); ctx.moveTo(x,y1); ctx.lineTo(x,y2); ctx.stroke();
+            }
+            if(segments.length && workingBuffer.duration){
+                segments.forEach((seg,idx)=>{
+                    let x1 = (seg.start/workingBuffer.duration)*w;
+                    let x2 = (seg.end/workingBuffer.duration)*w;
+                    ctx.globalAlpha = selectedSegmentIdx===idx ? 0.5 : 0.25;
+                    ctx.fillStyle = '#facc15';
+                    ctx.fillRect(x1, 0, x2-x1, h);
+                    ctx.globalAlpha = 1;
+                    ctx.strokeStyle = selectedSegmentIdx===idx ? '#ffaa33' : '#888';
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(x1, 0, x2-x1, h);
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillRect(x1-4, h/2-12, 8, 24);
+                    ctx.fillRect(x2-4, h/2-12, 8, 24);
+                });
+                if(selectedSegmentIdx>=0 && segments[selectedSegmentIdx]){
+                    let seg = segments[selectedSegmentIdx];
+                    let x1 = (seg.start/workingBuffer.duration)*w;
+                    let x2 = (seg.end/workingBuffer.duration)*w;
+                    let fadeInPx = (seg.fadeIn / workingBuffer.duration) * w;
+                    let fadeOutPx = (seg.fadeOut / workingBuffer.duration) * w;
+                    ctx.fillStyle = '#4ade80';
+                    ctx.globalAlpha = 0.7;
+                    ctx.fillRect(x1, h-20, Math.min(fadeInPx, x2-x1), 8);
+                    ctx.fillRect(x2-Math.min(fadeOutPx, x2-x1), h-20, Math.min(fadeOutPx, x2-x1), 8);
+                    ctx.globalAlpha = 1;
+                }
+            }
+        }
+
+        function updateSegmentsList(){
+            let html = '';
+            segments.forEach((seg,idx)=>{
+                let fileName = getSegmentFileName(idx+1);
+                html += `<div class="segment-card ${selectedSegmentIdx===idx ? 'selected' : ''}" data-idx="${idx}">
+                            <span class="segment-badge">#${idx+1}</span>
+                            <span style="font-family:monospace; font-size:0.75rem;">📄 ${fileName}</span>
+                            <button class="previewSeg" data-idx="${idx}">▶</button>
+                            <button class="downloadSeg" data-idx="${idx}">⬇️</button>
+                            <button class="deleteSegBtn" data-idx="${idx}" style="background:#dc2626; padding:2px 10px; border-radius:30px;">🗑️</button>
+                         </div>`;
+            });
+            segmentItemsList.innerHTML = html || '<span>нет сегментов, нажмите авторазделение</span>';
+            
+            document.querySelectorAll('.previewSeg').forEach(btn=>{
+                btn.addEventListener('click',(e)=>{
+                    e.stopPropagation();
+                    let idx = parseInt(btn.dataset.idx);
+                    let buf = extractSegmentWithFade(segments[idx]);
+                    if(buf) playBuffer(buf);
+                });
+            });
+            document.querySelectorAll('.downloadSeg').forEach(btn=>{
+                btn.addEventListener('click',async(e)=>{
+                    e.stopPropagation();
+                    let idx = parseInt(btn.dataset.idx);
+                    let buf = extractSegmentWithFade(segments[idx]);
+                    if(buf){
+                        let name = getSegmentFileName(idx+1);
+                        await downloadBuffer(buf, name);
+                    }
+                });
+            });
+            document.querySelectorAll('.deleteSegBtn').forEach(btn=>{
+                btn.addEventListener('click',(e)=>{
+                    e.stopPropagation();
+                    let idx = parseInt(btn.dataset.idx);
+                    deleteSegment(idx);
+                });
+            });
+            document.querySelectorAll('.segment-card').forEach(card=>{
+                card.addEventListener('click',(e)=>{
+                    if(e.target.tagName!=='BUTTON'){
+                        let idx = parseInt(card.dataset.idx);
+                        if(!isNaN(idx)) { selectedSegmentIdx = idx; refreshUI(); }
+                    }
+                });
+            });
+        }
+
+        function extractSegmentWithFade(seg){
+            if(!workingBuffer) return null;
+            let sr = workingBuffer.sampleRate;
+            let startSample = Math.floor(seg.start * sr);
+            let endSample = Math.floor(seg.end * sr);
+            let length = endSample - startSample;
+            if(length<=0) return null;
+            let newBuf = audioCtx.createBuffer(workingBuffer.numberOfChannels, length, sr);
+            let fadeInSamples = Math.min(Math.floor(seg.fadeIn * sr), length);
+            let fadeOutSamples = Math.min(Math.floor(seg.fadeOut * sr), length);
+            for(let ch=0; ch<workingBuffer.numberOfChannels; ch++){
+                let src = workingBuffer.getChannelData(ch);
+                let dst = newBuf.getChannelData(ch);
+                for(let i=0; i<length; i++) dst[i] = src[startSample+i];
+                for(let i=0; i<fadeInSamples; i++){
+                    let gain = i/fadeInSamples;
+                    dst[i] *= gain;
+                }
+                for(let i=0; i<fadeOutSamples; i++){
+                    let gain = 1 - (i/fadeOutSamples);
+                    let idx = length-1-i;
+                    if(idx>=0) dst[idx] *= gain;
+                }
+            }
+            return newBuf;
+        }
+
+        function playBuffer(buf){
+            if(window.currentSrc) try{ window.currentSrc.stop(); }catch(e){}
+            let src = audioCtx.createBufferSource();
+            src.buffer = buf;
+            src.connect(audioCtx.destination);
+            src.start();
+            window.currentSrc = src;
+        }
+
+        async function downloadBuffer(buffer, filename){
+            if(exportFormat.value === 'wav') exportAsWav(buffer, filename);
+            else await exportAsMp3(buffer, filename);
+        }
+        function exportAsWav(buffer, filename){
+            let samples = buffer.getChannelData(0);
+            let sr = buffer.sampleRate;
+            let bufArr = new ArrayBuffer(44 + samples.length*2);
+            let view = new DataView(bufArr);
+            const writeStr = (off,str)=>{for(let i=0;i<str.length;i++) view.setUint8(off+i, str.charCodeAt(i));};
+            writeStr(0,'RIFF'); view.setUint32(4,36+samples.length*2,true);
+            writeStr(8,'WAVE'); writeStr(12,'fmt ');
+            view.setUint32(16,16,true); view.setUint16(20,1,true); view.setUint16(22,1,true);
+            view.setUint32(24,sr,true); view.setUint32(28,sr*2,true);
+            view.setUint16(32,2,true); view.setUint16(34,16,true);
+            writeStr(36,'data'); view.setUint32(40,samples.length*2,true);
+            let off=44;
+            for(let i=0;i<samples.length;i++){
+                let s = Math.max(-1,Math.min(1,samples[i]));
+                let intS = s<0 ? s*0x8000 : s*0x7FFF;
+                view.setInt16(off,intS,true); off+=2;
+            }
+            let blob = new Blob([bufArr],{type:'audio/wav'});
+            let url = URL.createObjectURL(blob);
+            let a = document.createElement('a'); a.href=url; a.download=filename; a.click();
+            URL.revokeObjectURL(url);
+        }
+        async function exportAsMp3(buffer, filename){
+            if(!window.lamejs) await new Promise(r=>{let s=document.createElement('script'); s.src='https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js'; s.onload=r; document.head.appendChild(s);});
+            if(!window.lamejs) { exportAsWav(buffer,filename.replace('.mp3','.wav')); return; }
+            let samples = buffer.getChannelData(0);
+            let sr = buffer.sampleRate;
+            let pcm = new Int16Array(samples.length);
+            for(let i=0;i<samples.length;i++) pcm[i] = samples[i]<0 ? samples[i]*0x8000 : samples[i]*0x7FFF;
+            let enc = new lamejs.Mp3Encoder(1,sr,192);
+            let mp3=[], block=1152;
+            for(let i=0;i<pcm.length;i+=block){
+                let chunk = pcm.subarray(i, Math.min(i+block, pcm.length));
+                let buf = enc.encodeBuffer(chunk);
+                if(buf.length) mp3.push(buf);
+            }
+            let flush = enc.flush(); if(flush.length) mp3.push(flush);
+            let blob = new Blob(mp3,{type:'audio/mp3'});
+            let url = URL.createObjectURL(blob);
+            let a = document.createElement('a'); a.href=url; a.download=filename; a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function handleMouseDown(e){
+            if(!workingBuffer || segments.length===0) return;
+            const rect = waveCanvas.getBoundingClientRect();
+            const scaleX = waveCanvas.width / rect.width;
+            const mouseX = (e.clientX - rect.left) * scaleX;
+            const totalW = waveCanvas.width;
+            const thresholdPx = 12;
+            for(let i=0;i<segments.length;i++){
+                let s = segments[i];
+                let xStart = (s.start/workingBuffer.duration)*totalW;
+                let xEnd = (s.end/workingBuffer.duration)*totalW;
+                if(Math.abs(mouseX - xStart) < thresholdPx){
+                    isDragging = true;
+                    dragEdge = 'left';
+                    dragSegIdx = i;
+                    startMouseX = mouseX;
+                    startTimeVal = s.start;
+                    e.preventDefault();
+                    return;
+                }
+                if(Math.abs(mouseX - xEnd) < thresholdPx){
+                    isDragging = true;
+                    dragEdge = 'right';
+                    dragSegIdx = i;
+                    startMouseX = mouseX;
+                    startTimeVal = s.end;
+                    e.preventDefault();
+                    return;
+                }
+            }
+        }
+
+        function handleMouseMove(e){
+            if(!isDragging || dragSegIdx===-1 || !workingBuffer) return;
+            const rect = waveCanvas.getBoundingClientRect();
+            const scaleX = waveCanvas.width / rect.width;
+            const mouseX = (e.clientX - rect.left) * scaleX;
+            const deltaX = mouseX - startMouseX;
+            const deltaTime = (deltaX / waveCanvas.width) * workingBuffer.duration;
+            let newTime = startTimeVal + deltaTime;
+            newTime = Math.max(0, Math.min(workingBuffer.duration, newTime));
+            let seg = segments[dragSegIdx];
+            if(dragEdge === 'left'){
+                if(newTime < seg.end - 0.03) seg.start = newTime;
+                else seg.start = seg.end - 0.03;
+            } else {
+                if(newTime > seg.start + 0.03) seg.end = newTime;
+                else seg.end = seg.start + 0.03;
+            }
+            segments.sort((a,b)=>a.start - b.start);
+            selectedSegmentIdx = segments.findIndex(s=>s===seg);
+            refreshUI();
+        }
+
+        function handleMouseUp(){
+            isDragging = false;
+            dragSegIdx = -1;
+            dragEdge = null;
+        }
+
+        function attachCanvasEvents(){
+            waveCanvas.addEventListener('mousedown', handleMouseDown);
+            window.addEventListener('mousemove', handleMouseMove);
+            window.addEventListener('mouseup', handleMouseUp);
+            waveCanvas.addEventListener('click', (e)=>{
+                if(isDragging) return;
+                const rect = waveCanvas.getBoundingClientRect();
+                const scaleX = waveCanvas.width / rect.width;
+                const mouseX = (e.clientX - rect.left) * scaleX;
+                const totalW = waveCanvas.width;
+                const time = (mouseX / totalW) * workingBuffer.duration;
+                for(let i=0;i<segments.length;i++){
+                    let s = segments[i];
+                    if(time >= s.start && time <= s.end){
+                        selectedSegmentIdx = i;
+                        refreshUI();
+                        break;
+                    }
+                }
+            });
+        }
+
+        function applyFadeToSelected(){
+            if(selectedSegmentIdx>=0 && segments[selectedSegmentIdx]){
+                segments[selectedSegmentIdx].fadeIn = parseFloat(fadeInSlider.value);
+                segments[selectedSegmentIdx].fadeOut = parseFloat(fadeOutSlider.value);
+                refreshUI();
+            } else if(segments.length>0){
+                selectedSegmentIdx = 0;
+                segments[0].fadeIn = parseFloat(fadeInSlider.value);
+                segments[0].fadeOut = parseFloat(fadeOutSlider.value);
+                refreshUI();
+            }
+        }
+        function clearFadeSelected(){
+            if(selectedSegmentIdx>=0 && segments[selectedSegmentIdx]){
+                segments[selectedSegmentIdx].fadeIn = 0;
+                segments[selectedSegmentIdx].fadeOut = 0;
+                fadeInSlider.value = 0;
+                fadeOutSlider.value = 0;
+                fadeInVal.innerText = "0.00";
+                fadeOutVal.innerText = "0.00";
+                refreshUI();
+            }
+        }
+
+        fadeInSlider.addEventListener('input',()=>{ fadeInVal.innerText = parseFloat(fadeInSlider.value).toFixed(2); if(selectedSegmentIdx>=0) applyFadeToSelected(); });
+        fadeOutSlider.addEventListener('input',()=>{ fadeOutVal.innerText = parseFloat(fadeOutSlider.value).toFixed(2); if(selectedSegmentIdx>=0) applyFadeToSelected(); });
+        applyFadeBtn.addEventListener('click', applyFadeToSelected);
+        clearFadeBtn.addEventListener('click', clearFadeSelected);
+        resetSegmentsBtn.addEventListener('click',()=>{ segments=[]; selectedSegmentIdx=-1; refreshUI(); });
+        autoSplitBtn.addEventListener('click', applyAutoSplit);
+
+        async function downloadAllZip(){
+            if(segments.length===0) return alert('нет сегментов');
+            let zip = new JSZip();
+            for(let i=0;i<segments.length;i++){
+                let buf = extractSegmentWithFade(segments[i]);
+                if(buf){
+                    let name = getSegmentFileName(i+1);
+                    if(exportFormat.value === 'wav'){
+                        let samples = buf.getChannelData(0);
+                        let sr = buf.sampleRate;
+                        let arr = new ArrayBuffer(44+samples.length*2);
+                        let dv = new DataView(arr);
+                        let wstr=(off,str)=>{for(let i=0;i<str.length;i++) dv.setUint8(off+i,str.charCodeAt(i));};
+                        wstr(0,'RIFF'); dv.setUint32(4,36+samples.length*2,true); wstr(8,'WAVE'); wstr(12,'fmt ');
+                        dv.setUint32(16,16,true); dv.setUint16(20,1,true); dv.setUint16(22,1,true);
+                        dv.setUint32(24,sr,true); dv.setUint32(28,sr*2,true); dv.setUint16(32,2,true); dv.setUint16(34,16,true);
+                        wstr(36,'data'); dv.setUint32(40,samples.length*2,true);
+                        let off=44;
+                        for(let s=0;s<samples.length;s++){ let v=Math.max(-1,Math.min(1,samples[s])); let intV=v<0?v*0x8000:v*0x7FFF; dv.setInt16(off,intV,true); off+=2; }
+                        zip.file(name, new Blob([arr],{type:'audio/wav'}));
+                    } else {
+                        if(!window.lamejs) await new Promise(r=>{let s=document.createElement('script'); s.src='https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js'; s.onload=r; document.head.appendChild(s);});
+                        let samples = buf.getChannelData(0);
+                        let sr = buf.sampleRate;
+                        let pcm = new Int16Array(samples.length);
+                        for(let i=0;i<samples.length;i++) pcm[i] = samples[i]<0 ? samples[i]*0x8000 : samples[i]*0x7FFF;
+                        let enc = new lamejs.Mp3Encoder(1,sr,192);
+                        let mp3chunks=[], block=1152;
+                        for(let i=0;i<pcm.length;i+=block){
+                            let chunk = pcm.subarray(i, Math.min(i+block,pcm.length));
+                            let bufMp3 = enc.encodeBuffer(chunk);
+                            if(bufMp3.length) mp3chunks.push(bufMp3);
+                        }
+                        let flush = enc.flush(); if(flush.length) mp3chunks.push(flush);
+                        zip.file(name, new Blob(mp3chunks,{type:'audio/mp3'}));
+                    }
+                }
+            }
+            let content = await zip.generateAsync({type:"blob"});
+            let url = URL.createObjectURL(content);
+            let a = document.createElement('a'); a.href=url; a.download=(exportBaseName.value.trim()||currentFileName)+"_segments.zip"; a.click();
+            URL.revokeObjectURL(url);
+        }
+        downloadAllZipBtn.addEventListener('click', downloadAllZip);
+        copyNamesBtn.addEventListener('click',()=>{
+            if(!segments.length) return;
+            let names = segments.map((_,i)=>getSegmentFileName(i+1));
+            navigator.clipboard.writeText(names.join(", "));
+            alert(`скопировано ${names.length} имён`);
+        });
+
+        let currentFileName = "audio";
+        async function onFileSelected(file){
+            if(!file) return;
+            try{
+                let buf = await loadMP3(file);
+                originalBuffer = buf;
+                workingBuffer = buf;
+                currentFileName = file.name.replace(/\.[^/.]+$/,'');
+                exportBaseName.value = currentFileName;
+                fileNameDisplay.innerText = `📁 ${file.name}`;
+                controlsPanel.style.display = 'block';
+                timelineArea.style.display = 'block';
+                segmentsPanelDiv.style.display = 'block';
+                segments = [];
+                selectedSegmentIdx = -1;
+                applyAutoSplit();
+                attachCanvasEvents();
+                refreshUI();
+            }catch(e){ alert("ошибка mp3: "+e.message); }
+        }
+
+        function prevent(e){ e.preventDefault(); e.stopPropagation(); }
+        ['dragenter','dragover','dragleave','drop'].forEach(ev=>dropZone.addEventListener(ev,prevent));
+        dropZone.addEventListener('dragover',()=>dropZone.classList.add('drag-over'));
+        dropZone.addEventListener('dragleave',()=>dropZone.classList.remove('drag-over'));
+        dropZone.addEventListener('drop',(e)=>{
+            dropZone.classList.remove('drag-over');
+            let f = e.dataTransfer.files[0];
+            if(f && f.type.includes('audio')) onFileSelected(f);
+            else alert("нужен MP3");
+        });
+        fileInput.addEventListener('change',e=>{ if(e.target.files.length) onFileSelected(e.target.files[0]); });
+        dropZone.addEventListener('click',()=>fileInput.click());
+        initAudioContext();
+    })();
+</script>
+</body>
+</html>

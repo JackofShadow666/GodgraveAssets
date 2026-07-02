@@ -1,8 +1,10 @@
 ; Список файлов из папок Music и Sound
-; Создано: 15.06.2026 20:35:07
+; Создано: 02.07.2026 19:20:00
 ; Корневая папка: F:\Jack\Project\Godgrave\Public\Godgrave\Source
 
 === Папка: Music ===
+Source\Music\Battle\Dance of the DemonA.mp3
+Source\Music\Battle\Dance of the DemonB.mp3
 Source\Music\Battle\DarkEpicTechno.mp3
 Source\Music\Battle\DarkTechno.mp3
 Source\Music\Battle\EpicBattleA.mp3
@@ -63,6 +65,12 @@ Source\Sound\Sword\SwordSwing\SFX_SwordSwing_03.mp3
 Source\Sound\Sword\SwordSwing\SFX_SwordSwing_04.mp3
 Source\Sound\Sword\SwordSwing\SFX_SwordSwing_05.mp3
 Source\Sound\Sword\SwordSwing\SFX_SwordSwing_06.mp3
+Source\Sound\Ui\SFX_UI_Error_01.mp3
+Source\Sound\Ui\SFX_UI_Over_01.mp3
+Source\Sound\Ui\SFX_UI_Over_02.mp3
+Source\Sound\Ui\SFX_UI_Over_03.mp3
+Source\Sound\Ui\SFX_UI_Tap_01.mp3
+Source\Sound\Ui\SFX_UI_Tap_02.mp3
 
 === Папка: Character ===
 Source\Character\Knight\T_Character_01.png
@@ -76,6 +84,11 @@ Source\Character\Knight\T_Character_08.png
 Source\Character\Knight\T_Character_09.png
 
 === Папка: Weapon ===
+Source\Weapon\BigSword\T_BigSword_01.png
+Source\Weapon\Knife\T_Knife_01.png
+Source\Weapon\Shield\T_Shield_01.png
+Source\Weapon\Shield\T_Shield_02.png
+Source\Weapon\Shield\T_Shield_03.png
 Source\Weapon\Sword\T_Sword_01.png
 Source\Weapon\Sword\T_Sword_02.png
 Source\Weapon\Sword\T_Sword_03.png
@@ -105,4 +118,5 @@ Source\UI\UISystem.html
 Source\Font\BloodyDrip-Regular.ttf
 Source\Font\Font.png
 Source\Font\index.html
+Source\Font\MedievalSharp-Regular.ttf
 
