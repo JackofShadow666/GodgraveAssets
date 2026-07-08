@@ -1,5 +1,5 @@
 ; Список файлов из папок Music и Sound
-; Создано: 02.07.2026 21:24:47
+; Создано: 08.07.2026 11:53:00
 ; Корневая папка: F:\Jack\Project\Godgrave\Public\Godgrave\Source
 
 === Папка: Music ===
@@ -10,10 +10,13 @@ Source\Music\Battle\DarkTechno.mp3
 Source\Music\Battle\EpicBattleA.mp3
 Source\Music\Battle\IrishTechno.mp3
 Source\Music\Battle\IrishTechnoB.mp3
+Source\Music\Battle\Iron Creaks and Sirens.mp3
+Source\Music\Battle\Iron Creaks and SirensB.mp3
 Source\Music\Battle\MusicCyber.mp3
 Source\Music\Battle\MusicEpic.mp3
 Source\Music\Battle\MusicSad.mp3
 Source\Music\Battle\TechnoFolk.mp3
+Source\Music\Battle\The Ritual of the Neon Shaman.mp3
 
 === Папка: Sound ===
 Source\Sound\Arrow\SFX_ArrowHit_01.mp3
@@ -82,13 +85,64 @@ Source\Character\Knight\T_Character_06.png
 Source\Character\Knight\T_Character_07.png
 Source\Character\Knight\T_Character_08.png
 Source\Character\Knight\T_Character_09.png
+Source\Character\Knight\.mayaSwatches\T_Character_02.png_hcm.swatch
 
 === Папка: Weapon ===
+Source\Weapon\Arrow\T_Arrow_01.png
+Source\Weapon\Axe\T_Axe_01.png
+Source\Weapon\Axe\T_Axe_02.png
+Source\Weapon\Axe\T_Axe_03.png
+Source\Weapon\Axe\T_Axe_04.png
+Source\Weapon\Axe\T_Axe_05.png
+Source\Weapon\Axe\T_Axe_06.png
+Source\Weapon\Axe\T_Axe_07.png
+Source\Weapon\Axe\T_Axe_08.png
 Source\Weapon\BigSword\T_BigSword_01.png
+Source\Weapon\Crossbow\T_�rossbow_01.png
+Source\Weapon\Crossbow\T_�rossbow_02.png
+Source\Weapon\Crossbow\T_�rossbow_03.png
+Source\Weapon\Flail\T_FlailChain_01.png
+Source\Weapon\Flail\T_FlailChain_02.png
+Source\Weapon\Flail\T_Flail_01.png
+Source\Weapon\Flail\T_Flail_02.png
+Source\Weapon\Flail\T_Flail_03.png
+Source\Weapon\Flail\T_Flail_04.png
+Source\Weapon\Flail\T_Flail_05.png
+Source\Weapon\Flail\T_Flail_06.png
+Source\Weapon\Flail\T_Flail_07.png
+Source\Weapon\Flail\T_Flail_08.png
+Source\Weapon\Flail\T_Flail_09.png
+Source\Weapon\Flail\T_Flail_10.png
+Source\Weapon\Hammer\T_Hammer_01.png
+Source\Weapon\Hammer\T_Hammer_02.png
+Source\Weapon\Hammer\T_Hammer_03.png
+Source\Weapon\Hammer\T_Hammer_04.png
+Source\Weapon\Hammer\T_Hammer_05.png
+Source\Weapon\Hammer\T_Hammer_06.png
+Source\Weapon\Hammer\T_Hammer_07.png
 Source\Weapon\Knife\T_Knife_01.png
+Source\Weapon\Scythe\T_Scythe_01.png
 Source\Weapon\Shield\T_Shield_01.png
 Source\Weapon\Shield\T_Shield_02.png
 Source\Weapon\Shield\T_Shield_03.png
+Source\Weapon\Spear\T_Spear_01.png
+Source\Weapon\Spear\T_Spear_02.png
+Source\Weapon\Spear\T_Spear_03.png
+Source\Weapon\Spear\T_Spear_04.png
+Source\Weapon\Spear\T_Spear_05.png
+Source\Weapon\Spear\T_Spear_06.png
+Source\Weapon\Spear\T_Spear_07.png
+Source\Weapon\Spear\T_Spear_08.png
+Source\Weapon\Spear\T_Spear_09.png
+Source\Weapon\Staff\T_Staff_01.png
+Source\Weapon\Staff\T_Staff_02.png
+Source\Weapon\Staff\T_Staff_03.png
+Source\Weapon\Staff\T_Staff_04.png
+Source\Weapon\Staff\T_Staff_05.png
+Source\Weapon\Staff\T_Staff_06.png
+Source\Weapon\Staff\T_Staff_07.png
+Source\Weapon\Staff\T_Staff_08.png
+Source\Weapon\Staff\T_Staff_09.png
 Source\Weapon\Sword\T_Sword_01.png
 Source\Weapon\Sword\T_Sword_02.png
 Source\Weapon\Sword\T_Sword_03.png
@@ -101,6 +155,13 @@ Source\Weapon\Sword\T_Sword_09.png
 Source\Weapon\Sword\T_Sword_10.png
 Source\Weapon\Sword\T_Sword_11.png
 Source\Weapon\Sword\T_Sword_12.png
+Source\Weapon\Wand\T_Wand_01.png
+Source\Weapon\Wand\T_Wand_02.png
+Source\Weapon\Wand\T_Wand_03.png
+Source\Weapon\Wand\T_Wand_04.png
+Source\Weapon\Wand\T_Wand_05.png
+Source\Weapon\Wand\T_Wand_06.png
+Source\Weapon\Wand\T_Wand_07.png
 
 === Папка: UI ===
 Source\UI\Bar.psd
