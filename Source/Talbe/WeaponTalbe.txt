@@ -26,11 +26,11 @@
 #                    knockback — сильный доп. нокбэк по телу/щиту цели при попадании
 #
 # key        |name            |category|throwSpeed|scale|dmgBase|dmgPerSpeed|maxDmgPercent|spinMin|spinMax|weight|staminaMult|cutMult|pierceMult|collision|flags
-sword        |Меч             |sword   |17.92     |1.0  |8      |6          |0.20         |0.24   |0.48   |1.0   |1.0        |1.0    |1.0       |full     |
+sword        |Меч             |sword   |15.92     |1.0  |8      |6          |0.20         |0.24   |0.48   |1.0   |1.0        |1.0    |1.0       |full     |
 dagger       |Кинжал          |knife   |17.92     |0.4  |4      |6          |0.20         |0.24   |0.48   |0.4   |0.01       |1.0    |2.0       |full     |
-spear        |Копьё           |spear   |17.92     |1.6  |8      |6          |0.20         |0      |0      |1.0   |0.3        |0.1    |1.5       |tip      |
-axe          |Топор           |axe     |10.752    |0.7  |8      |6          |0.20         |0.24   |0      |1.2   |1.5        |1.5    |0.5       |full     |
-longsword    |Длинный меч     |sword   |10.752    |1.0  |8      |6          |0.20         |0.1    |0      |1.0   |0.5        |1.1    |1.2       |full     |
-greatsword   |Огромный меч    |sword   |3.584     |1.6  |8      |6          |0.20         |0.05   |0      |1.6   |2.0        |1.2    |1.2       |full     |
-hammer       |Молот           |hammer  |10.752    |0.8  |8      |6          |0.20         |0.1    |0.48   |1.2   |1.5        |1.5    |0.1       |full     |disarm,knockback
-staff        |Посох           |staff   |14.336    |1.8  |8      |6          |0.20         |0.1    |0.48   |0.8   |0.3        |0.5    |0.5       |full     |knockback
+spear        |Копьё           |spear   |22.92     |1.6  |8      |6          |0.20         |0      |0      |1.0   |0.3        |0.1    |1.5       |tip      |
+axe          |Топор           |axe     |17.752    |0.7  |8      |6          |0.20         |0.24   |0.24   |1.2   |1.5        |1.5    |0.5       |full     |
+longsword    |Длинный меч     |sword   |10.752    |1.0  |8      |6          |0.20         |0.1    |0.24   |1.0   |0.5        |1.1    |1.2       |full     |
+greatsword   |Огромный меч    |sword   |3.584     |1.6  |8      |6          |0.20         |0.05   |0.1    |1.6   |2.0        |1.2    |1.2       |full     |
+hammer       |Молот           |hammer  |15.752    |0.8  |8      |6          |0.20         |0.1    |0.2    |1.2   |1.5        |1.5    |0.1       |full     |disarm,knockback
+staff        |Посох           |staff   |10.336    |1.8  |8      |6          |0.20         |0.1    |0.2    |0.8   |0.3        |0.5    |0.5       |full     |knockback
