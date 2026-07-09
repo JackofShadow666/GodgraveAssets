@@ -26,3 +26,4 @@ cmdFinal = "cmd.exe /c git add " & objFSO.GetFileName(ScriptPath) & " && git com
 objShell.Run cmdFinal, 0, True' 31193,67
 ' 34146,56
 ' 34505,05
+' 53516,52
