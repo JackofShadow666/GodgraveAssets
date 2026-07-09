@@ -24,3 +24,4 @@ objShell.Run cmdCommand, 0, True
 ' 3. ДЕЛАЕМ СКРИПТ "ЗЕЛЁНЫМ" (коммитим только сам скрипт локально)
 cmdFinal = "cmd.exe /c git add " & objFSO.GetFileName(ScriptPath) & " && git commit -m ""script status update"""
 objShell.Run cmdFinal, 0, True' 31193,67
+' 34146,56
