@@ -1,10 +1,26 @@
 Set objShell = CreateObject("WScript.Shell")
+Set objFSO = CreateObject("Scripting.FileSystemObject")
 
-' Укажите здесь путь к репозиторию, если скрипт лежит в другом месте:
-' objShell.CurrentDirectory = "C:\path\to\your\project"
+' Исправлено: получаем полный путь к запущенному скрипту
+ScriptPath = WScript.ScriptFullName
 
-' Формируем команду с фиксированным сообщением коммита "up"
-cmdCommand = "cmd.exe /c git add . && git commit -m ""up"" && git push origin main"
+' Автоматически определяем папку, в которой лежит скрипт
+CurrentDir = objFSO.GetParentFolderName(ScriptPath)
+objShell.CurrentDirectory = CurrentDir
 
-' Запуск в скрытом режиме (0) с ожиданием завершения (True)
+' 1. ДЕЛАЕМ СКРИПТ "КРАСНЫМ" (дописываем метку времени в конец файла)
+Set objFile = objFSO.OpenTextFile(ScriptPath, 8) ' 8 = Добавление в конец
+objFile.WriteLine "' " & Timer
+objFile.Close
+
+' Ждем 1 секунду, чтобы Проводник успел обновить иконку на красную
+WScript.Sleep 1000
+
+' 2. ЗАПУСКАЕМ ОСНОВНОЙ ПУШ ваших рабочих файлов
+' Исключаем сам скрипт из этого коммита, чтобы он оставался красным
+cmdCommand = "cmd.exe /c git add . && git reset " & objFSO.GetFileName(ScriptPath) & " && git commit -m ""up"" && git push origin main"
 objShell.Run cmdCommand, 0, True
+
+' 3. ДЕЛАЕМ СКРИПТ "ЗЕЛЁНЫМ" (коммитим только сам скрипт локально)
+cmdFinal = "cmd.exe /c git add " & objFSO.GetFileName(ScriptPath) & " && git commit -m ""script status update"""
+objShell.Run cmdFinal, 0, True' 31193,67
