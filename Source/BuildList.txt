@@ -1,5 +1,5 @@
 ; Список файлов из папок Music и Sound
-; Создано: 10.07.2026 0:06:28
+; Создано: 10.07.2026 2:43:24
 ; Корневая папка: F:\Jack\Project\Godgrave\Public\Godgrave\Source
 
 === Папка: Music ===
@@ -34,11 +34,24 @@ Source\Sound\Arrow\SFX_ArrowHit_06.mp3
 Source\Sound\Arrow\SFX_ArrowPush_01.mp3
 Source\Sound\Arrow\SFX_ArrowPush_02.mp3
 Source\Sound\Arrow\SFX_ArrowPush_03.mp3
+Source\Sound\Arrow\SFX_ArrowPush_04.mp3
+Source\Sound\Arrow\SFX_CrossbowReloading_01.mp3
+Source\Sound\Arrow\SFX_CrossbowReloading_02.mp3
+Source\Sound\Damage\Hummer\SFX_DamageHummer_01.mp3
+Source\Sound\Damage\Hummer\SFX_DamageHummer_02.mp3
+Source\Sound\Damage\Hummer\SFX_DamageHummer_03.mp3
 Source\Sound\Damage\Sword\SFX_DamageSword_01.mp3
 Source\Sound\Damage\Sword\SFX_DamageSword_02.mp3
 Source\Sound\Damage\Sword\SFX_DamageSword_03.mp3
 Source\Sound\Damage\Sword\SFX_DamageSword_04.mp3
 Source\Sound\Damage\Sword\SFX_DamageSword_05.mp3
+Source\Sound\Destructable\kling_20260710_Text_to_Audio_Dark_fanta_1708_0.mp3
+Source\Sound\Destructable\kling_20260710_Text_to_Audio_Dark_fanta_1708_1.mp3
+Source\Sound\Destructable\kling_20260710_Text_to_Audio_Dark_fanta_1708_2.mp3
+Source\Sound\Destructable\kling_20260710_Text_to_Audio_Dark_fanta_1708_3.mp3
+Source\Sound\Dodge\SFX_Dodge_01.mp3
+Source\Sound\Dodge\SFX_Dodge_02.mp3
+Source\Sound\Dodge\SFX_Dodge_03.mp3
 Source\Sound\Empty\SFX_Empty_01.mp3
 Source\Sound\HammerSwing\SFX_HammerSwing_01.mp3
 Source\Sound\HammerSwing\SFX_HammerSwing_02.mp3
@@ -53,18 +66,30 @@ Source\Sound\Magic\SFX_MagicHit_02.mp3
 Source\Sound\Magic\SFX_MagicPush_01.mp3
 Source\Sound\Magic\SFX_MagicPush_02.mp3
 Source\Sound\Magic\SFX_MagicPush_03.mp3
+Source\Sound\Other\teleport.mp3
 Source\Sound\Rage\SFX_Rage_01.mp3
+Source\Sound\Rock\kling_20260710_Text_to_Audio_fantasy_wa_1677_0.mp3
+Source\Sound\Rock\kling_20260710_Text_to_Audio_fantasy_wa_1677_1.mp3
+Source\Sound\Rock\kling_20260710_Text_to_Audio_fantasy_wa_1677_2.mp3
+Source\Sound\Rock\kling_20260710_Text_to_Audio_fantasy_wa_1677_3.mp3
 Source\Sound\Shield\SFX_Shield_01.mp3
 Source\Sound\Shield\SFX_Shield_02.mp3
 Source\Sound\Shield\SFX_Shield_03.mp3
 Source\Sound\Shield\SFX_Shield_04.mp3
+Source\Sound\Shield\SFX_Shield_05.mp3
 Source\Sound\Sword\SwordClink\SFX_SwordClink_01.mp3
 Source\Sound\Sword\SwordClink\SFX_SwordClink_02.mp3
 Source\Sound\Sword\SwordClink\SFX_SwordClink_03.mp3
+Source\Sound\Sword\SwordClink\SFX_SwordClink_04.mp3
+Source\Sound\Sword\SwordClink\SFX_SwordClink_05.mp3
+Source\Sound\Sword\SwordClink\SFX_SwordClink_06.mp3
 Source\Sound\Sword\SwordHit\SFX_SwordHitRare_01.mp3
 Source\Sound\Sword\SwordHit\SFX_SwordHit_01.mp3
 Source\Sound\Sword\SwordHit\SFX_SwordHit_02.mp3
 Source\Sound\Sword\SwordHit\SFX_SwordHit_03.mp3
+Source\Sound\Sword\SwordHit\SFX_SwordHit_05.mp3
+Source\Sound\Sword\SwordHit\SFX_SwordHit_06.mp3
+Source\Sound\Sword\SwordHit\SFX_SwordHit_07.mp3
 Source\Sound\Sword\SwordSwing\SFX_SwordSwingAgressive_01.mp3
 Source\Sound\Sword\SwordSwing\SFX_SwordSwingAgressive_02.mp3
 Source\Sound\Sword\SwordSwing\SFX_SwordSwingAgressive_03.mp3
@@ -74,12 +99,21 @@ Source\Sound\Sword\SwordSwing\SFX_SwordSwing_03.mp3
 Source\Sound\Sword\SwordSwing\SFX_SwordSwing_04.mp3
 Source\Sound\Sword\SwordSwing\SFX_SwordSwing_05.mp3
 Source\Sound\Sword\SwordSwing\SFX_SwordSwing_06.mp3
+Source\Sound\Throw\SFX_Throw_01.mp3
+Source\Sound\Throw\SFX_Throw_02.mp3
+Source\Sound\Throw\SFX_Throw_03.mp3
+Source\Sound\Ui\SFX_UI_Death_01.mp3
+Source\Sound\Ui\SFX_UI_Death_02.mp3
 Source\Sound\Ui\SFX_UI_Hover_01.mp3
 Source\Sound\Ui\SFX_UI_Hover_02.mp3
 Source\Sound\Ui\SFX_UI_Hover_03.mp3
+Source\Sound\Ui\SFX_UI_NextLevel_01.mp3
 Source\Sound\Ui\SFX_UI_Note_01.mp3
+Source\Sound\Ui\SFX_UI_Pickdown_01.mp3
+Source\Sound\Ui\SFX_UI_Pickup_01.mp3
 Source\Sound\Ui\SFX_UI_Tap_01.mp3
 Source\Sound\Ui\SFX_UI_Tap_02.mp3
+Source\Sound\Ui\SFX_UI_Win_01.mp3
 
 === Папка: Character ===
 Source\Character\Knight\T_Character_01.png
