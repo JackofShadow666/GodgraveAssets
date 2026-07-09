@@ -1,5 +1,5 @@
 ; Список файлов из папок Music и Sound
-; Создано: 08.07.2026 11:53:00
+; Создано: 09.07.2026 23:16:25
 ; Корневая папка: F:\Jack\Project\Godgrave\Public\Godgrave\Source
 
 === Папка: Music ===
@@ -12,10 +12,12 @@ Source\Music\Battle\IrishTechno.mp3
 Source\Music\Battle\IrishTechnoB.mp3
 Source\Music\Battle\Iron Creaks and Sirens.mp3
 Source\Music\Battle\Iron Creaks and SirensB.mp3
+Source\Music\Battle\Iron Creaks and SirensC.mp3
 Source\Music\Battle\MusicCyber.mp3
 Source\Music\Battle\MusicEpic.mp3
 Source\Music\Battle\MusicSad.mp3
 Source\Music\Battle\TechnoFolk.mp3
+Source\Music\Battle\The Iron Abyss.mp3
 Source\Music\Battle\The Ritual of the Neon Shaman.mp3
 
 === Папка: Sound ===
@@ -122,6 +124,7 @@ Source\Weapon\Hammer\T_Hammer_06.png
 Source\Weapon\Hammer\T_Hammer_07.png
 Source\Weapon\Knife\T_Knife_01.png
 Source\Weapon\Scythe\T_Scythe_01.png
+Source\Weapon\Scythe\.mayaSwatches\T_Scythe_01.png_hcm.swatch
 Source\Weapon\Shield\T_Shield_01.png
 Source\Weapon\Shield\T_Shield_02.png
 Source\Weapon\Shield\T_Shield_03.png
@@ -155,6 +158,8 @@ Source\Weapon\Sword\T_Sword_09.png
 Source\Weapon\Sword\T_Sword_10.png
 Source\Weapon\Sword\T_Sword_11.png
 Source\Weapon\Sword\T_Sword_12.png
+Source\Weapon\Sword\.mayaSwatches\T_Sword_11.png_hcm.swatch
+Source\Weapon\Sword\.mayaSwatches\T_Sword_12.png_hcm.swatch
 Source\Weapon\Wand\T_Wand_01.png
 Source\Weapon\Wand\T_Wand_02.png
 Source\Weapon\Wand\T_Wand_03.png
