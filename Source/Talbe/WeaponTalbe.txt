@@ -15,5 +15,5 @@
 #   spinMax        — максимальная угловая скорость вращения в полёте/при отскоке (рад/кадр)
 #
 # key    |name   |category|throwSpeed|scale|dmgBase|dmgPerSpeed|maxDmgPercent|spinMin|spinMax
-sword    |Меч    |sword   |17.92     |3.0  |8      |6          |0.20         |0.24   |0.48
+sword    |Меч    |sword   |17.92     |1.0  |8      |6          |0.20         |0.24   |0.48
 dagger   |Кинжал |knife   |22.4      |0.55 |4      |6          |0.20         |0.24   |0.48
