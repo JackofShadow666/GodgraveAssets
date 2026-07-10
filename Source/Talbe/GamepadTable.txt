@@ -1,0 +1,37 @@
+# GamepadTable.txt
+# Формат: action|buttonIndex|type
+#   action      — что делает кнопка (см. список ниже)
+#   buttonIndex — индекс кнопки в стандарте Standard Gamepad (W3C):
+#                 0=A/Cross 1=B/Circle 2=X/Square 3=Y/Triangle
+#                 4=LB 5=RB 6=LT 7=RT 8=Back/Select 9=Start
+#                 10=LS(нажатие стика) 11=RS(нажатие стика)
+#                 12=D-pad Up 13=Down 14=Left 15=Right
+#   type        — "trigger" (удержание, только для attack) или пусто (одиночное нажатие)
+#
+# Оси стиков заданы отдельными строками AXIS_MOVE_X / AXIS_MOVE_Y / AXIS_AIM_X / AXIS_AIM_Y
+# (обычно 0,1 = левый стик; 2,3 = правый стик — стандартная раскладка Xbox/PS).
+#
+# Строки, начинающиеся с '#', и пустые строки — игнорируются.
+#
+# Доступные action: attack, dodge, swapWeapon, shieldFlip, swordStyle,
+#                    throwWeapon, zoneToggle, spawnBot, musicToggle, pause
+
+AXIS_MOVE_X|0
+AXIS_MOVE_Y|1
+AXIS_AIM_X|2
+AXIS_AIM_Y|3
+
+DEADZONE_MOVE|0.18
+DEADZONE_AIM|0.22
+AIM_STICK_RADIUS|60
+
+attack|7|trigger
+dodge|6|trigger
+swapWeapon|0
+shieldFlip|1
+swordStyle|2
+throwWeapon|3
+zoneToggle|4
+spawnBot|5
+musicToggle|8
+pause|9
