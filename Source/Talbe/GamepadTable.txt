@@ -6,15 +6,16 @@
 #                 4=LB 5=RB 6=LT 7=RT 8=Back/Select 9=Start
 #                 10=LS(нажатие стика) 11=RS(нажатие стика)
 #                 12=D-pad Up 13=Down 14=Left 15=Right
-#   type        — "trigger" (удержание, только для attack) или пусто (одиночное нажатие)
+#   type        — "trigger" (удержание, только для attack/shieldFlip) или пусто (одиночное нажатие)
 #
 # Оси стиков заданы отдельными строками AXIS_MOVE_X / AXIS_MOVE_Y / AXIS_AIM_X / AXIS_AIM_Y
 # (обычно 0,1 = левый стик; 2,3 = правый стик — стандартная раскладка Xbox/PS).
 #
 # Строки, начинающиеся с '#', и пустые строки — игнорируются.
 #
-# Доступные action: attack, dodge, swapWeapon, shieldFlip, swordStyle,
-#                    throwWeapon, zoneToggle, spawnBot, musicToggle, pause
+# Доступные action: attack, dodge, swapWeapon, shieldFlip, shieldType,
+#                    swordStyle, throwWeapon, zoneToggle, spawnBot,
+#                    musicToggle, pause
 
 AXIS_MOVE_X|0
 AXIS_MOVE_Y|1
@@ -25,13 +26,19 @@ DEADZONE_MOVE|0.18
 DEADZONE_AIM|0.22
 AIM_STICK_RADIUS|60
 
+# ── Основные ──
 attack|7|trigger
-dodge|6|trigger
-swapWeapon|0
-shieldFlip|1
-swordStyle|2
-throwWeapon|3
-zoneToggle|4
-spawnBot|5
-musicToggle|8
+shieldFlip|6|trigger
+dodge|0
+throwWeapon|4
 pause|9
+
+# ── D-pad ──
+swordStyle|12
+zoneToggle|13
+swapWeapon|14
+shieldType|15
+
+# ── Свободные (не задействованы, можно переназначить) ──
+spawnBot|1
+musicToggle|2
