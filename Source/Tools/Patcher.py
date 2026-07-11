@@ -645,23 +645,51 @@ class PatchEngine:
         if use_regex:
             try:
                 pattern = re.compile(find_text, re.MULTILINE | re.DOTALL)
-                if pattern.search(content):
-                    new_content = pattern.sub(replace_text, content)
+                matches = pattern.findall(content)
+                if matches:
+                    # lambda защищает от интерпретации '\1', '\g<name>' и т.п.
+                    # внутри replace_text как ссылок на группы regex
+                    new_content, n = pattern.subn(lambda m: replace_text, content)
+                    if n > 1:
+                        return new_content, True, f"⚠️ Заменено {n} совпадений по regex (проверьте результат!)"
                     return new_content, True, "Заменено по регулярному выражению"
                 return content, False, "Регулярное выражение не найдено"
             except re.error as e:
                 return content, False, f"Ошибка в регулярном выражении: {e}"
-        
-        if find_text in content:
-            new_content = content.replace(find_text, replace_text)
+
+        # Точный поиск: заменяем ТОЛЬКО первое вхождение, а не все сразу.
+        # content.replace(x, y) без лимита менял бы все совпадения по всему
+        # файлу — если find_text встречался ещё где-то, там тоже пропадал
+        # бы код. Теперь при неоднозначности мы честно предупреждаем.
+        occurrences = content.count(find_text)
+        if occurrences >= 1:
+            new_content = content.replace(find_text, replace_text, 1)
+            if occurrences > 1:
+                return new_content, True, (
+                    f"⚠️ Найдено {occurrences} совпадений, заменено только первое. "
+                    f"Уточните 'найти:', добавив больше контекста, если нужно другое место"
+                )
             return new_content, True, "Найдено и заменено"
-        
+
+        # Fallback: поиск строки с игнорированием пробелов.
+        # Раньше здесь тоже был content.replace(line, replace_text), который
+        # менял ВСЕ строки файла с таким же текстом (например, все "}"
+        # или все пустые отступы) — это и есть причина "пропажи" случайных
+        # строк. Теперь меняем строго строку по её индексу.
         find_stripped = find_text.strip()
-        for line in content.split('\n'):
-            if line.strip() == find_stripped:
-                new_content = content.replace(line, replace_text)
-                return new_content, True, "Найдено (с игнорированием пробелов)"
-        
+        lines = content.split('\n')
+        matching_indices = [i for i, line in enumerate(lines) if line.strip() == find_stripped]
+        if matching_indices:
+            idx = matching_indices[0]
+            lines[idx] = replace_text
+            new_content = '\n'.join(lines)
+            if len(matching_indices) > 1:
+                return new_content, True, (
+                    f"⚠️ Найдено {len(matching_indices)} одинаковых строк, "
+                    f"заменена первая (строка {idx + 1}). Остальные не тронуты"
+                )
+            return new_content, True, "Найдено (с игнорированием пробелов)"
+
         return content, False, "Текст не найден"
     
     def apply_insert(self, content: str, insert_text: str) -> Tuple[str, bool, str]:
@@ -1236,12 +1264,20 @@ class AnalyzerPatcher:
         self.error_log = []
         self.update_error_button()
         
+        # ВАЖНО: раньше здесь фильтровались ещё и пустые строки
+        # (`and line.strip()`). Это ломало многострочные блоки
+        # "заменить:"/"вставить:" — parse_patch_commands специально
+        # сохраняет пустые строки-разделители внутри такого блока,
+        # но они вырезались ещё до парсинга, и итоговый код "склеивался"
+        # без пустых строк, а иногда терялись целые логические куски.
+        # Теперь убираем только строки-комментарии патча (#...),
+        # пустые строки внутри блоков остаются нетронутыми.
         clean_patch = '\n'.join(
-            line for line in patch.split('\n') 
-            if not line.strip().startswith('#') and line.strip()
+            line for line in patch.split('\n')
+            if not line.strip().startswith('#')
         )
         
-        if not clean_patch:
+        if not clean_patch.strip():
             self.log("⚠️ Патч содержит только комментарии!", 'warning')
             return
         
