@@ -821,46 +821,119 @@ class AnalyzerPatcher:
         self.log("💡 Команды: /list, /find <имя>, /find #цвет", 'info')
     
     def _fix_clipboard(self):
-        """Исправляет проблемы с Ctrl+C и Ctrl+V во всех текстовых полях"""
+        """Исправляет проблемы с копированием/вставкой во всех текстовых полях.
+
+        Старая версия всегда возвращала "break", даже если операция не
+        удалась — это отключало встроенную (родную) обработку Ctrl+C/Ctrl+V
+        у Tkinter и не подставляла ничего взамен. Также не было Ctrl+X,
+        Ctrl+A и контекстного меню правой кнопкой.
+        """
+        def get_selected_text(widget):
+            try:
+                # Entry и Text по-разному хранят индексы выделения
+                if isinstance(widget, tk.Text):
+                    return widget.get('sel.first', 'sel.last')
+                return widget.selection_get()
+            except tk.TclError:
+                return None
+
+        def delete_selected(widget):
+            try:
+                if isinstance(widget, tk.Text):
+                    widget.delete('sel.first', 'sel.last')
+                else:
+                    widget.delete('sel.first', 'sel.last')
+                return True
+            except tk.TclError:
+                return False
+
         def copy_text(event):
             widget = event.widget
-            try:
-                if widget.selection_get():
-                    self.root.clipboard_clear()
-                    self.root.clipboard_append(widget.selection_get())
-            except:
-                pass
+            text = get_selected_text(widget)
+            if not text:
+                # Выделения нет — отдаём событие родному обработчику,
+                # а не блокируем его молча
+                return None
+            self.root.clipboard_clear()
+            self.root.clipboard_append(text)
             return "break"
-        
+
+        def cut_text(event):
+            widget = event.widget
+            text = get_selected_text(widget)
+            if not text:
+                return None
+            self.root.clipboard_clear()
+            self.root.clipboard_append(text)
+            if not delete_selected(widget):
+                return None
+            return "break"
+
         def paste_text(event):
             widget = event.widget
             try:
                 text = self.root.clipboard_get()
-                if text:
-                    widget.insert(tk.INSERT, text)
-            except:
+            except tk.TclError:
+                # Буфер обмена пуст или недоступен — ничего не делаем,
+                # но и не блокируем событие
+                return None
+            if not text:
+                return None
+            delete_selected(widget)  # заменяем выделение, как и положено при вставке
+            widget.insert(tk.INSERT, text)
+            return "break"
+
+        def select_all(event):
+            widget = event.widget
+            try:
+                if isinstance(widget, tk.Text):
+                    widget.tag_add('sel', '1.0', 'end-1c')
+                else:
+                    widget.selection_range(0, 'end')
+                widget.focus_set()
+            except tk.TclError:
                 pass
             return "break"
-        
-        # Для всех текстовых полей
-        for widget in [self.patch_text, self.code_text, self.analyzer_text, self.search_entry]:
-            if widget:
-                widget.bind('<Control-c>', copy_text)
-                widget.bind('<Control-C>', copy_text)
-                widget.bind('<Control-v>', paste_text)
-                widget.bind('<Control-V>', paste_text)
-        
-        # Особо для ScrolledText
-        for widget in [self.patch_text, self.code_text, self.analyzer_text]:
-            if widget:
-                widget.bind('<Control-c>', copy_text)
-                widget.bind('<Control-C>', copy_text)
-                widget.bind('<Control-v>', paste_text)
-                widget.bind('<Control-V>', paste_text)
-                # Также для выделения правой кнопкой
-                widget.bind('<Button-3>', lambda e: None)
-        
-        self.log("📋 Ctrl+C/Ctrl+V исправлены для всех полей", 'info')
+
+        editable_widgets = [
+            self.patch_text, self.code_text, self.analyzer_text,
+            self.log_text, self.search_entry, self.file_entry,
+        ]
+
+        for widget in editable_widgets:
+            if not widget:
+                continue
+            for seq in ('<Control-c>', '<Control-C>'):
+                widget.bind(seq, copy_text)
+            for seq in ('<Control-x>', '<Control-X>'):
+                widget.bind(seq, cut_text)
+            for seq in ('<Control-v>', '<Control-V>'):
+                widget.bind(seq, paste_text)
+            for seq in ('<Control-a>', '<Control-A>'):
+                widget.bind(seq, select_all)
+            self._add_context_menu(widget)
+
+        self.log("📋 Ctrl+C/X/V/A исправлены для всех полей", 'info')
+
+    def _add_context_menu(self, widget):
+        """Добавляет контекстное меню по правой кнопке мыши
+        (копировать/вырезать/вставить/выделить всё)."""
+        menu = tk.Menu(widget, tearoff=0, bg='#2d2d2d', fg='#d4d4d4',
+                       activebackground='#264f78', activeforeground='#ffffff')
+        menu.add_command(label="Копировать", command=lambda: widget.event_generate('<<Copy>>'))
+        menu.add_command(label="Вырезать", command=lambda: widget.event_generate('<<Cut>>'))
+        menu.add_command(label="Вставить", command=lambda: widget.event_generate('<<Paste>>'))
+        menu.add_separator()
+        menu.add_command(label="Выделить всё", command=lambda: widget.event_generate('<Control-a>'))
+
+        def show_menu(event):
+            try:
+                menu.tk_popup(event.x_root, event.y_root)
+            finally:
+                menu.grab_release()
+            return "break"
+
+        widget.bind('<Button-3>', show_menu)
     
     def setup_theme(self):
         self.root.configure(bg='#1e1e1e')
