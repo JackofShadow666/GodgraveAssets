@@ -1,8 +1,10 @@
 ; Список файлов из папок Music и Sound
-; Создано: 12.07.2026 23:50:46
+; Создано: 13.07.2026 0:36:59
 ; Корневая папка: F:\Jack\Project\Godgrave\Public\Godgrave\Source
 
 === Папка: Music ===
+Source\Music\Battle\Bleak Cold Cathedral.mp3
+Source\Music\Battle\Bleak Cold CathedralC.mp3
 Source\Music\Battle\Dance of the DemonA.mp3
 Source\Music\Battle\Dance of the DemonB.mp3
 Source\Music\Battle\DarkEpicTechno.mp3
@@ -19,8 +21,12 @@ Source\Music\Battle\MusicSad.mp3
 Source\Music\Battle\TechnoFolk.mp3
 Source\Music\Battle\The Elder Abyss(1).mp3
 Source\Music\Battle\The Elder Abyss.mp3
-Source\Music\Battle\The Hollowed Throne(1).mp3
+Source\Music\Battle\The Hollow Cathedral.mp3
+Source\Music\Battle\The Hollow CathedralB.mp3
+Source\Music\Battle\The Hollow CathedralD.mp3
+Source\Music\Battle\The Hollow CathedralE.mp3
 Source\Music\Battle\The Hollowed Throne.mp3
+Source\Music\Battle\The Hollowed ThroneB.mp3
 Source\Music\Battle\The Iron Abyss.mp3
 Source\Music\Battle\The Ritual of the Neon Shaman.mp3
 
