@@ -1,5 +1,5 @@
 ; Список файлов из папок Music и Sound
-; Создано: 11.07.2026 1:15:24
+; Создано: 12.07.2026 16:45:10
 ; Корневая папка: F:\Jack\Project\Godgrave\Public\Godgrave\Source
 
 === Папка: Music ===
@@ -138,6 +138,9 @@ Source\Weapon\Axe\T_Axe_06.png
 Source\Weapon\Axe\T_Axe_07.png
 Source\Weapon\Axe\T_Axe_08.png
 Source\Weapon\BigSword\T_BigSword_01.png
+Source\Weapon\Claws\T_Claws_01.png
+Source\Weapon\Claws\T_Claws_02.png
+Source\Weapon\Claws\T_Claws_03.png
 Source\Weapon\Crossbow\T_Crrossbow_01.png
 Source\Weapon\Crossbow\T_Crrossbow_02.png
 Source\Weapon\Crossbow\T_Crrossbow_03.png
@@ -161,11 +164,19 @@ Source\Weapon\Hammer\T_Hammer_05.png
 Source\Weapon\Hammer\T_Hammer_06.png
 Source\Weapon\Hammer\T_Hammer_07.png
 Source\Weapon\Knife\T_Knife_01.png
+Source\Weapon\Rapier\T_Rapier_01.png
+Source\Weapon\Rapier\T_Rapier_02.png
+Source\Weapon\Rapier\T_Rapier_03.png
+Source\Weapon\Rapier\T_Rapier_04.png
+Source\Weapon\Rapier\T_Rapier_05.png
 Source\Weapon\Scythe\T_Scythe_01.png
 Source\Weapon\Scythe\.mayaSwatches\T_Scythe_01.png_hcm.swatch
 Source\Weapon\Shield\T_Shield_01.png
 Source\Weapon\Shield\T_Shield_02.png
 Source\Weapon\Shield\T_Shield_03.png
+Source\Weapon\ShieldSpike\T_ShieldSpike_01.png
+Source\Weapon\ShieldSpike\T_ShieldSpike_02.png
+Source\Weapon\ShieldSpike\T_ShieldSpike_03.png
 Source\Weapon\Spear\T_Spear_01.png
 Source\Weapon\Spear\T_Spear_02.png
 Source\Weapon\Spear\T_Spear_03.png
