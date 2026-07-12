@@ -1,6 +1,11 @@
+у когтей нет поворота только анимация атаки на лкм
 
 новое оружие когти
-
+Source\Weapon\Claws\T_Claws_01.png
+Source\Weapon\Claws\T_Claws_02.png
+Source\Weapon\Claws\T_Claws_03.png
+в  двух руках, когда когти то щит спятан (его не видно и колизии нет)
+урон как у кинжала
 
 
 

@@ -1,5 +1,5 @@
 ; Список файлов из папок Music и Sound
-; Создано: 12.07.2026 16:45:10
+; Создано: 12.07.2026 23:50:46
 ; Корневая папка: F:\Jack\Project\Godgrave\Public\Godgrave\Source
 
 === Папка: Music ===
@@ -141,6 +141,7 @@ Source\Weapon\BigSword\T_BigSword_01.png
 Source\Weapon\Claws\T_Claws_01.png
 Source\Weapon\Claws\T_Claws_02.png
 Source\Weapon\Claws\T_Claws_03.png
+Source\Weapon\Claws\.mayaSwatches\T_Claws_01.png_hcm.swatch
 Source\Weapon\Crossbow\T_Crrossbow_01.png
 Source\Weapon\Crossbow\T_Crrossbow_02.png
 Source\Weapon\Crossbow\T_Crrossbow_03.png
