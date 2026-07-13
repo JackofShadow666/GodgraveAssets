@@ -47,7 +47,12 @@ Source\Weapon\Bow\T_Bow_03.png
 Source\Weapon\Bow\T_Bow_04.png
 Source\Weapon\Bow\T_Bow_05.png
 
-
+выстрел
+Source\Sound\Bow\SFX_BowPush.mp3
+натяжение
+Source\Sound\Bow\SFX_BowTension.mp3
+перезарядился
+Source\Sound\Bow\SFX_Reload.mp3
 
 
 
