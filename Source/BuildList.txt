@@ -1,5 +1,5 @@
 ; Список файлов из папок Music и Sound
-; Создано: 13.07.2026 23:05:25
+; Создано: 13.07.2026 23:43:23
 ; Корневая папка: F:\Jack\Project\Godgrave\Public\Godgrave\Source
 
 === Папка: Music ===
@@ -43,8 +43,12 @@ Source\Sound\Arrow\SFX_ArrowPush_03.mp3
 Source\Sound\Arrow\SFX_ArrowPush_04.mp3
 Source\Sound\Arrow\SFX_CrossbowReloading_01.mp3
 Source\Sound\Arrow\SFX_CrossbowReloading_02.mp3
-Source\Sound\Bow\BowPush\SFX_BowPush.mp3
-Source\Sound\Bow\BowReload\SFX_BowReload.mp3
+Source\Sound\Bow\BowPush\SFX_BowPush_01.mp3
+Source\Sound\Bow\BowPush\SFX_BowPush_02.mp3
+Source\Sound\Bow\BowPush\SFX_BowPush_03.mp3
+Source\Sound\Bow\BowPush\SFX_BowPush_04.mp3
+Source\Sound\Bow\BowReload\SFX_BowReload_01.mp3
+Source\Sound\Bow\BowReload\SFX_BowReload_02.mp3
 Source\Sound\Bow\BowTension\SFX_BowTension.mp3
 Source\Sound\Damage\Hummer\SFX_DamageHummer_01.mp3
 Source\Sound\Damage\Hummer\SFX_DamageHummer_02.mp3
