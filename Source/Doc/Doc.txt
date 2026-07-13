@@ -19,7 +19,7 @@ Source\Weapon\Claws\T_Claws_03.png
 
 
 магчический посох, похож на боево также держим по цкнтру
-staff        |Посох           |staff   |10.336    |1.8  |8      |6          |0.20         |0.1    |0.2    |0.8   |1.5        |0.5    |0.4       |full     | |          |1.0
+magicstaff        |Магическй посох           |magicstaff   |10.336    |1.8  |8      |6          |0.20         |0.1    |0.2    |0.8   |1.5        |0.5    |0.4       |full     | |          |1.0
  лкм с магией отбрасывает противника накладывая баш и нанося урон в обасти радиус примерно 2 посоха, 
  нуэен красивый эффект опасной зоны (но не красный) нужен эффект накопления. нужен эффект вызрыва 
  центр накопления и взрыва в центре героя.
@@ -43,6 +43,19 @@ Source\Weapon\Bow\T_Bow_02.png
 Source\Weapon\Bow\T_Bow_03.png
 Source\Weapon\Bow\T_Bow_04.png
 Source\Weapon\Bow\T_Bow_05.png
+
+
+Алебарда 
+работает как и копье но может наносить еще и рубящий урон, плохо подходит для бросков
+halberd        |Алебарда          |halberd | 8     |1.0  |4     |6          |0.20         |0      |0      |1.6   |1.6        |1.2     |1.5       |tip      |                 |          |1.0
+Source\Weapon\Halberd\T_Halberd_01.png
+Source\Weapon\Halberd\T_Halberd_02.png
+Source\Weapon\Halberd\T_Halberd_03.png
+Source\Weapon\Halberd\T_Halberd_04.png
+Source\Weapon\Halberd\T_Halberd_05.png
+Source\Weapon\Halberd\T_Halberd_06.png
+Source\Weapon\Halberd\T_Halberd_07.png
+
 
 хлыст махи для блока лкм растягивает
 меч лезвие как обычный но лкм растягивает сильно 

@@ -1,5 +1,5 @@
 ; Список файлов из папок Music и Sound
-; Создано: 13.07.2026 20:25:22
+; Создано: 13.07.2026 20:50:51
 ; Корневая папка: F:\Jack\Project\Godgrave\Public\Godgrave\Source
 
 === Папка: Music ===
@@ -177,6 +177,13 @@ Source\Weapon\Flail\Tip\T_Flail_07.png
 Source\Weapon\Flail\Tip\T_Flail_08.png
 Source\Weapon\Flail\Tip\T_Flail_09.png
 Source\Weapon\Flail\Tip\T_Flail_10.png
+Source\Weapon\Halberd\T_Halberd_01.png
+Source\Weapon\Halberd\T_Halberd_02.png
+Source\Weapon\Halberd\T_Halberd_03.png
+Source\Weapon\Halberd\T_Halberd_04.png
+Source\Weapon\Halberd\T_Halberd_05.png
+Source\Weapon\Halberd\T_Halberd_06.png
+Source\Weapon\Halberd\T_Halberd_07.png
 Source\Weapon\Hammer\T_Hammer_01.png
 Source\Weapon\Hammer\T_Hammer_02.png
 Source\Weapon\Hammer\T_Hammer_03.png
