@@ -1,4 +1,4 @@
-
+ии ботов с луком рука
 
 
 на геймпаде замедление стика работает похоже не толко в меню но и в плее, нада убрать в плее
@@ -29,16 +29,17 @@ magicstaff        |Магическй посох           |magicstaff   |10.336
  урон отбрасывания зависит от накопления 1-4 сек до 2 сек урона нет, 2-4 урон как у жезла макс
 а таблицу обнови сразу
 
+Source\Weapon\Magicstaff\T_Magicstaff_01.png
+Source\Weapon\Magicstaff\T_Magicstaff_02.png
+Source\Weapon\Magicstaff\T_Magicstaff_03.png
+Source\Weapon\Magicstaff\T_Magicstaff_04.png
+Source\Weapon\Magicstaff\T_Magicstaff_05.png
+Source\Weapon\Magicstaff\T_Magicstaff_06.png
+Source\Weapon\Magicstaff\T_Magicstaff_07.png
+Source\Weapon\Magicstaff\T_Magicstaff_08.png
+Source\Weapon\Magicstaff\T_Magicstaff_09.png
 
-Source\Weapon\Crosier\T_Crosier_01.png
-Source\Weapon\Crosier\T_Crosier_02.png
-Source\Weapon\Crosier\T_Crosier_03.png
-Source\Weapon\Crosier\T_Crosier_04.png
-Source\Weapon\Crosier\T_Crosier_05.png
-Source\Weapon\Crosier\T_Crosier_06.png
-Source\Weapon\Crosier\T_Crosier_07.png
-Source\Weapon\Crosier\T_Crosier_08.png
-Source\Weapon\Crosier\T_Crosier_09.png
+есть вопросы?
 
 лук быстрее арбалета 1 лкм натяжение 3 арбалет урон 2, нужен эффет натяжения звки как у арбалета
 Source\Weapon\Bow\T_Bow_01.png
