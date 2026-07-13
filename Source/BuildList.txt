@@ -1,5 +1,5 @@
 ; Список файлов из папок Music и Sound
-; Создано: 13.07.2026 20:50:51
+; Создано: 13.07.2026 21:32:58
 ; Корневая папка: F:\Jack\Project\Godgrave\Public\Godgrave\Source
 
 === Папка: Music ===
@@ -153,15 +153,6 @@ Source\Weapon\Claws\T_Claws_01.png
 Source\Weapon\Claws\T_Claws_02.png
 Source\Weapon\Claws\T_Claws_03.png
 Source\Weapon\Claws\.mayaSwatches\T_Claws_01.png_hcm.swatch
-Source\Weapon\Crosier\T_Crosier_01.png
-Source\Weapon\Crosier\T_Crosier_02.png
-Source\Weapon\Crosier\T_Crosier_03.png
-Source\Weapon\Crosier\T_Crosier_04.png
-Source\Weapon\Crosier\T_Crosier_05.png
-Source\Weapon\Crosier\T_Crosier_06.png
-Source\Weapon\Crosier\T_Crosier_07.png
-Source\Weapon\Crosier\T_Crosier_08.png
-Source\Weapon\Crosier\T_Crosier_09.png
 Source\Weapon\Crossbow\T_Crrossbow_01.png
 Source\Weapon\Crossbow\T_Crrossbow_02.png
 Source\Weapon\Crossbow\T_Crrossbow_03.png
@@ -192,6 +183,15 @@ Source\Weapon\Hammer\T_Hammer_05.png
 Source\Weapon\Hammer\T_Hammer_06.png
 Source\Weapon\Hammer\T_Hammer_07.png
 Source\Weapon\Knife\T_Knife_01.png
+Source\Weapon\Magicstaff\T_Magicstaff_01.png
+Source\Weapon\Magicstaff\T_Magicstaff_02.png
+Source\Weapon\Magicstaff\T_Magicstaff_03.png
+Source\Weapon\Magicstaff\T_Magicstaff_04.png
+Source\Weapon\Magicstaff\T_Magicstaff_05.png
+Source\Weapon\Magicstaff\T_Magicstaff_06.png
+Source\Weapon\Magicstaff\T_Magicstaff_07.png
+Source\Weapon\Magicstaff\T_Magicstaff_08.png
+Source\Weapon\Magicstaff\T_Magicstaff_09.png
 Source\Weapon\Rapier\gude-2026-07-13.log
 Source\Weapon\Rapier\T_Rapier_01.png
 Source\Weapon\Rapier\T_Rapier_02.png
