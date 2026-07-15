@@ -1,5 +1,5 @@
 ; Список файлов из папок Music и Sound
-; Создано: 14.07.2026 15:32:12
+; Создано: 15.07.2026 4:23:27
 ; Корневая папка: F:\Jack\Project\Godgrave\Public\Godgrave\Source
 
 === Папка: Music ===
@@ -139,6 +139,12 @@ Source\Character\Knight\T_Character_06.png
 Source\Character\Knight\T_Character_07.png
 Source\Character\Knight\T_Character_08.png
 Source\Character\Knight\T_Character_09.png
+Source\Character\Knight\T_Character_10.png
+Source\Character\Knight\T_Character_11.png
+Source\Character\Knight\T_Character_12.png
+Source\Character\Knight\T_Character_13.png
+Source\Character\Knight\T_Character_14.png
+Source\Character\Knight\Untitled-1_02.png
 Source\Character\Knight\.mayaSwatches\T_Character_02.png_hcm.swatch
 
 === Папка: Weapon ===
