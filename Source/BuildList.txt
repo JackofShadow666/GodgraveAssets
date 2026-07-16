@@ -1,5 +1,5 @@
 ; Список файлов из папок Music и Sound
-; Создано: 15.07.2026 4:23:27
+; Создано: 16.07.2026 5:47:15
 ; Корневая папка: F:\Jack\Project\Godgrave\Public\Godgrave\Source
 
 === Папка: Music ===
@@ -10,6 +10,8 @@ Source\Music\Battle\Dance of the DemonB.mp3
 Source\Music\Battle\DarkEpicTechno.mp3
 Source\Music\Battle\DarkTechno.mp3
 Source\Music\Battle\EpicBattleA.mp3
+Source\Music\Battle\Fog Factory Siren.mp3
+Source\Music\Battle\Fog Gate.mp3
 Source\Music\Battle\IrishTechno.mp3
 Source\Music\Battle\IrishTechnoB.mp3
 Source\Music\Battle\Iron Creaks and Sirens.mp3
@@ -18,6 +20,8 @@ Source\Music\Battle\Iron Creaks and SirensC.mp3
 Source\Music\Battle\MusicCyber.mp3
 Source\Music\Battle\MusicEpic.mp3
 Source\Music\Battle\MusicSad.mp3
+Source\Music\Battle\Rust Belt Echo.mp3
+Source\Music\Battle\Rust in the Boiler Room.mp3
 Source\Music\Battle\TechnoFolk.mp3
 Source\Music\Battle\The Elder Abyss(1).mp3
 Source\Music\Battle\The Elder Abyss.mp3
