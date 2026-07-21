@@ -1,0 +1,13 @@
+Windows Registry Editor Version 5.00
+
+[HKEY_CLASSES_ROOT\.godgrave]
+@="GodgraveGame"
+
+[HKEY_CLASSES_ROOT\GodgraveGame]
+@="Godgrave Game File"
+
+[HKEY_CLASSES_ROOT\GodgraveGame\DefaultIcon]
+@="C:\\Program Files\\Godgrave\\icon.ico,0"
+
+[HKEY_CLASSES_ROOT\GodgraveGame\shell\open\command]
+@="\"C:\\Program Files\\Godgrave\\GodgraveLauncher.exe\" \"%1\""
