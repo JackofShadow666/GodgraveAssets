@@ -58,7 +58,7 @@ regenStamina(P, dt, mDown);
       mDown = false;
     }
     // Не начинаем ЛКМ, если нельзя оплатить его полностью.
-    if(!inRageBuff && mDown && !P.lmbWasDown && weaponKeyOf(P) !== 'flail' && P.stamina < lmbStaminaCost){
+    if(!inRageBuff && P.rage < 30 && mDown && !P.lmbWasDown && weaponKeyOf(P) !== 'flail' && P.stamina < lmbStaminaCost){
       mDown = false;
       if((P._lmbNoStaminaTextUntil || 0) <= GameTime){
         const rc = rootCenter();

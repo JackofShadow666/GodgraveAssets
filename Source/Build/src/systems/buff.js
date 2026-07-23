@@ -168,7 +168,9 @@ function applyExhaust(ent, duration){
 function regenStamina(ent, dt, isUsingStamina = false){
   if(isUsingStamina || isExhausted(ent) || (ent._exhaustedEndTime || 0) > GameTime) return;
   const regenMult = (ent._staminaRegenBoostUntil || 0) > GameTime ? 8 : 1;
-  ent.stamina = Math.min(ent.stamMax, ent.stamina + dt * ent.stamRegen * 0.2 * regenMult);
+  const isStanding = Math.hypot(ent.vx || 0, ent.vy || 0) < 0.1;
+  const standingRegenMult = isStanding ? 3 : 1;
+  ent.stamina = Math.min(ent.stamMax, ent.stamina + dt * ent.stamRegen * 0.2 * regenMult * standingRegenMult);
 }
 function applyDisbalance(ent, duration = 2){
   startBuff(ent, 'DISBALANCE', 1, Math.max(2, duration || 2));

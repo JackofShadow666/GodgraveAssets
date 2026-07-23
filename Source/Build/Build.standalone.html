@@ -548,12 +548,12 @@ body.menu-open #mob-zone-btn{ visibility:hidden !important; }
     <div class="sec" style="border:1px solid #3a1010;padding:8px;border-radius:3px;">
       <div class="sec-title" style="color:#cc3030;">█ УСТАЛОСТЬ</div>
       <div class="row">
-        <div class="row-head"><label style="color:#8a3030;">Длительность (сек)</label><span class="val" id="vl-exhdur2">2.5</span></div>
-        <input type="range" id="sl-exhdur2" min="0.5" max="8" step="0.5" value="2.5" style="accent-color:#cc2020;">
+        <div class="row-head"><label style="color:#8a3030;">Длительность (сек)</label><span class="val" id="vl-exhdur2">1.8</span></div>
+        <input type="range" id="sl-exhdur2" min="0.5" max="8" step="0.5" value="1.8" style="accent-color:#cc2020;">
       </div>
       <div class="row">
         <div class="row-head"><label style="color:#8a3030;">Замедл. движения</label><span class="val" id="vl-exhspd2">0.4</span></div>
-        <input type="range" id="sl-exhspd2" min="0.1" max="1" step="0.05" value="0.4" style="accent-color:#cc2020;">
+        <input type="range" id="sl-exhspd2" min="0.1" max="1" step="0.05" value="0.5" style="accent-color:#cc2020;">
       </div>
       <div class="row">
         <div class="row-head"><label style="color:#8a3030;">Замедл. меча</label><span class="val" id="vl-exhswd2">0.13</span></div>
@@ -1773,7 +1773,9 @@ function applyExhaust(ent, duration){
 function regenStamina(ent, dt, isUsingStamina = false){
   if(isUsingStamina || isExhausted(ent) || (ent._exhaustedEndTime || 0) > GameTime) return;
   const regenMult = (ent._staminaRegenBoostUntil || 0) > GameTime ? 8 : 1;
-  ent.stamina = Math.min(ent.stamMax, ent.stamina + dt * ent.stamRegen * 0.2 * regenMult);
+  const isStanding = Math.hypot(ent.vx || 0, ent.vy || 0) < 0.1;
+  const standingRegenMult = isStanding ? 3 : 1;
+  ent.stamina = Math.min(ent.stamMax, ent.stamina + dt * ent.stamRegen * 0.2 * regenMult * standingRegenMult);
 }
 function applyDisbalance(ent, duration = 2){
   startBuff(ent, 'DISBALANCE', 1, Math.max(2, duration || 2));
@@ -11065,8 +11067,7 @@ regenStamina(P, dt, mDown);
 
 
   const inRageBuff = P.rageBuffEnd > GameTime;
-  // Цена ЛКМ задаётся абсолютным числом стамины, без множителя оружия.
-  const lmbStaminaCost = sv('lmbcost');
+  const lmbStaminaCost = P.stamMax * (sv('lmbcost') / 100) * weaponLmbStaminaMult(P);
 
   if(isRangedWeapon(P)){
     // ── Жезл/Арбалет: ЛКМ полностью заменяет бафф ярости — вместо него стрельба ──
@@ -11089,7 +11090,7 @@ regenStamina(P, dt, mDown);
       mDown = false;
     }
     // Не начинаем ЛКМ, если нельзя оплатить его полностью.
-    if(!inRageBuff && mDown && !P.lmbWasDown && weaponKeyOf(P) !== 'flail' && P.stamina < lmbStaminaCost){
+    if(!inRageBuff && P.rage < 30 && mDown && !P.lmbWasDown && weaponKeyOf(P) !== 'flail' && P.stamina < lmbStaminaCost){
       mDown = false;
       if((P._lmbNoStaminaTextUntil || 0) <= GameTime){
         const rc = rootCenter();
