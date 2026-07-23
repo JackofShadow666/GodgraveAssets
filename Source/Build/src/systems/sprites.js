@@ -44,7 +44,7 @@ const BLADEFIXSCALE = 0.75;
 // Относится ТОЛЬКО к столкновению клинок-клинок (парирование/клэш) и
 // клинок-щит: часть оружия ближе HANDRANGE к руке (pivot) не участвует в
 // этих столкновениях — иначе рукояти двух мечей задевали бы друг друга
-// вплотную к рукам. НЕ влияет на попадание по телу.
+// вплотную к рукам. Та же зона исключается из попаданий по телу.
 const HANDRANGE = 10;
 
 // Возвращает {back, front} — насколько далеко назад/вперёд от pivot (точки
@@ -297,17 +297,13 @@ function assignRandomSkin(ent){
 // MODULE: BOT SHARED HELPERS  (общая логика для всех ботов)
 // ════════════════════════════════════════════════════════════════════════════
 
-// Восстанавливает стамину ТОЛЬКО после усталости
+// Использует те же правила восстановления, что и игрок.
 function botRegenStamina(bot, dt){
-  if(bot._hadExhaustion && bot.exhausted <= 0){
-    bot.stamina = Math.min(bot.stamMax, bot.stamina + dt * 15);
-    if(bot.stamina >= bot.stamMax) bot._hadExhaustion = false;
-  }
+  regenStamina(bot, dt, !!bot._fakeMDown);
 }
 
 // Обновляет усталость и дисбаланс
 function botUpdateExhaustion(bot, dt){
-  if(isExhausted(bot)) bot._hadExhaustion = true;
   updateBuffs(bot, dt);
 }
 

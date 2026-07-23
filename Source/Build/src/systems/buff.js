@@ -162,9 +162,13 @@ function applyExhaust(ent, duration){
     ent.exhaustSpd !== undefined ? ent.exhaustSpd : sv('exhspd2'),
     effectDuration);
   ent._exhaustedEndTime = GameTime + effectDuration + (ent.exhaustRegenDelay || 0);
-  if(typeof P !== 'undefined' && ent === P){
-    ent._staminaRegenBoostUntil = ent._exhaustedEndTime + 1.5;
-  }
+  // После короткой задержки восстановление ускорено для всех сущностей одинаково.
+  ent._staminaRegenBoostUntil = ent._exhaustedEndTime + 1.5;
+}
+function regenStamina(ent, dt, isUsingStamina = false){
+  if(isUsingStamina || isExhausted(ent) || (ent._exhaustedEndTime || 0) > GameTime) return;
+  const regenMult = (ent._staminaRegenBoostUntil || 0) > GameTime ? 8 : 1;
+  ent.stamina = Math.min(ent.stamMax, ent.stamina + dt * ent.stamRegen * 0.2 * regenMult);
 }
 function applyDisbalance(ent, duration = 2){
   startBuff(ent, 'DISBALANCE', 1, Math.max(2, duration || 2));

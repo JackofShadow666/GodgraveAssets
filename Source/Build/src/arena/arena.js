@@ -963,7 +963,10 @@ function drawSword(pivX, pivY, angle){
   
   // 🔥 ДЛЯ ЛУКА — ИСПОЛЬЗУЕМ СПЕЦИАЛЬНУЮ ФУНКЦИЮ С ДРОЖАНИЕМ
   if(weaponKey === 'bow'){
+    ctx.save();
+    ctx.globalAlpha = _exhAlpha;
     drawWeaponWithShake(P, pivX, pivY);
+    ctx.restore();
     return;
   }
   

@@ -1052,7 +1052,7 @@ function updateRangedWeaponFire(ent, fireHeld, aimAngleOverride){
           const rageMult = 1 + clamp(ent.rage||0, 0, 100)/100;
           spawnProjectile(ent, 'wand', aimAngle, WAND_BASE_DMG * rageMult);
           ent.stamina = Math.max(0, ent.stamina - sv('stamswing') * weaponStaminaMult(ent));
-          if(ent.stamina <= 0 && !isExhausted(ent)) ent.exhausted = sv('exhdur2');
+          if(ent.stamina <= 0 && !isExhausted(ent)) applyExhaust(ent);
           playSound('magicPush');
           ent.rage = 0;
           ent._rangedShotCD = GameTime + WAND_SHOT_CD;
@@ -1082,7 +1082,7 @@ function updateRangedWeaponFire(ent, fireHeld, aimAngleOverride){
       
       // ✅ Если стамина кончилась - включаем усталость, НО НЕ ПРЕРЫВАЕМ
       if(ent.stamina <= 0 && !isExhausted(ent)){
-        ent.exhausted = sv('exhdur2');
+        applyExhaust(ent);
 		 ent._hadExhaustion = true;  // ← ДОБАВИТЬ ЭТУ СТРОЧКУ
       }
       
@@ -1138,7 +1138,7 @@ ent.stamina = Math.max(0, ent.stamina - staminaCost);
         
         // ✅ ЕСЛИ СТАМИНА СТАЛА 0 - УСТАЛОСТЬ
         if(ent.stamina <= 0 && !isExhausted(ent)){
-          ent.exhausted = sv('exhdur2');
+          applyExhaust(ent);
 		   ent._hadExhaustion = true;  // ← ДОБАВИТЬ ЭТУ СТРОЧКУ
         }
         
@@ -1298,7 +1298,7 @@ if ((ent.rage || 0) < 1 || ent.stamina < 1) {
     ent._magicChargeSoundObj = null;
   }
   clearMagicStaffFX(ent);
-  if (!isExhausted(ent)) ent.exhausted = sv('exhdur2');
+  if (!isExhausted(ent)) applyExhaust(ent);
   
   // Показываем сообщение о нехватке ресурсов
   if ((ent.rage || 0) < 1) {
@@ -1517,7 +1517,7 @@ if (state.hasFired && !state._penaltyApplied && state._penaltyTimer > 0) {
      // hitFX.push({x: ent.x, y: ent.y - 40, t: '❌ НЕТ ЯРОСТИ! 💧 -30 СТАМ', life: 35, big: true, col: '#ff8844'});
     }
     
-    if (ent.stamina <= 0 && !isExhausted(ent)) ent.exhausted = sv('exhdur2');
+    if (ent.stamina <= 0 && !isExhausted(ent)) applyExhaust(ent);
     
     // Сбрасываем флаг
     state.hasFired = false;
@@ -1577,7 +1577,7 @@ function updateProjectiles(dt){
       if(ent === w.owner && GameTime < w.ownerImmuneUntil) continue;
       
       // Блок клинком
-      if(ent.hasWeapon !== false){
+      if(ent.hasWeapon !== false && !isExhausted(ent)){
         const piv = entityPivot(ent);
         const reach = weaponReach(ent) * sv('swlen') * (isBot(ent)?sv('botswordscale'):1);
         const tipX = piv.x + Math.cos(ent.angle)*reach, tipY = piv.y + Math.sin(ent.angle)*reach;
@@ -2097,7 +2097,6 @@ if(magicAI.state === 'charging'){
   }
 // ── ВЗРЫВ ──
 if(chargeTime >= MAGICSTAFF_CHARGE_FULLTIME){
- bot.stamina = Math.min(bot.stamMax || 100, bot.stamina + dt * 30)
   console.log('💥 ВЗРЫВ МАГИИ!');
   const progress = Math.min(1, (chargeTime - 2.0) / 2.0);
   const dmg = MAGICSTAFF_DMG_MIN + (MAGICSTAFF_DMG_MAX - MAGICSTAFF_DMG_MIN) * progress ;
@@ -2232,7 +2231,6 @@ if(!bot._wandCharging){
 // 🔥 ВАЖНО: синхронизируем угол меча с aimAngle перед выстрелом
 bot.angle = aimAngle; // ← ДОБАВЬТЕ ЭТУ СТРОЧКУ
 
-bot.stamina = Math.min(bot.stamMax||100, bot.stamina + rawDt*40);
 const chargeDone = bot._wandCharging && (GameTime - bot._wandChargeStart >= wandChargeTimeFor(bot));
 const fireHeld = bot.stamina > 20 && bot.exhausted <= 0 && !chargeDone;
 updateRangedWeaponFire(bot, fireHeld, aimAngle);

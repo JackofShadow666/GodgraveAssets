@@ -186,7 +186,6 @@ bindSlider('botdodgetoward');
 bindSlider('botscale');
 bindSlider('botswordscale');
 bindSlider('lmbcost');
-bindSlider('lmbdrain');
 bindSlider('lmbdmg');
 bindSlider('rageper');
 bindSlider('ragebuf');

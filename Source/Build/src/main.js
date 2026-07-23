@@ -20,11 +20,8 @@ function update(dt){
   if(keys['w']||keys['ц']) my=-1; if(keys['s']||keys['ы']) my=1;
   if(mx||my){ const l=Math.hypot(mx,my); mx/=l; my/=l; }
   
-  // Восстановление стамины
-if(!isExhausted(P) && (P._exhaustedEndTime||0) <= GameTime && !mDown){
-  const regenMult = (P._staminaRegenBoostUntil || 0) > GameTime ? 4 : 1;
-  P.stamina = Math.min(P.stamMax, P.stamina + dt*P.stamRegen*0.2*regenMult);
-}
+// Восстановление стамины
+regenStamina(P, dt, mDown);
   
   // ── ОБНОВЛЕНИЕ ЗАЩИТЫ ОТ МУЛЬТИУРОНА ────────────
   if(P._multiHitProtection){
@@ -38,6 +35,7 @@ if(!isExhausted(P) && (P._exhaustedEndTime||0) <= GameTime && !mDown){
 
 
   const inRageBuff = P.rageBuffEnd > GameTime;
+  const lmbStaminaCost = P.stamMax * (sv('lmbcost') / 100) * weaponLmbStaminaMult(P);
 
   if(isRangedWeapon(P)){
     // ── Жезл/Арбалет: ЛКМ полностью заменяет бафф ярости — вместо него стрельба ──
@@ -59,6 +57,15 @@ if(!isExhausted(P) && (P._exhaustedEndTime||0) <= GameTime && !mDown){
       // Усталость: ЛКМ принудительно отжимается
       mDown = false;
     }
+    // Не начинаем ЛКМ, если нельзя оплатить его полностью.
+    if(!inRageBuff && mDown && !P.lmbWasDown && weaponKeyOf(P) !== 'flail' && P.stamina < lmbStaminaCost){
+      mDown = false;
+      if((P._lmbNoStaminaTextUntil || 0) <= GameTime){
+        const rc = rootCenter();
+        hitFX.push({x:rc.x, y:rc.y-55, t:'⚠ НЕТ СТАМИНЫ', life:35, big:false, col:'#ff8844'});
+        P._lmbNoStaminaTextUntil = GameTime + 0.5;
+      }
+    }
     if(mDown && weaponKeyOf(P) !== 'flail'){
       if(!P.lmbWasDown){
         P.lmbWasDown = true;
@@ -68,23 +75,18 @@ if(!isExhausted(P) && (P._exhaustedEndTime||0) <= GameTime && !mDown){
           playSound('hammerSwing');
         }
         if(!inRageBuff){
+          P.stamina = Math.max(0, P.stamina - lmbStaminaCost);
           if(P.rage >= 30){
             P.rage = Math.max(0, P.rage - 30);
             P.rageBuffEnd = GameTime + 1.0;
             P._rageTextShown = false;
-            P.stamina = P.stamMax;
             playSound('rage');
-          } else {
-            P.stamina = Math.max(0, P.stamina - P.stamMax * (sv('lmbcost')/100) * weaponLmbStaminaMult(P));
           }
         }
       }
-      if(inRageBuff && !P._rageTextShown && (GameTime - (P.lmbHoldStart||0)) >= 0.5){
+      if(P.rageBuffEnd > GameTime && !P._rageTextShown && (GameTime - (P.lmbHoldStart||0)) >= 0.5){
         P._rageTextShown = true;
         hitFX.push({x:W/2,y:H/2-50,t:'🔥 ЯРОСТЬ!',life:40,big:true,col:'#ff2020'});
-      }
-      if(!inRageBuff && P.stamina > 0){
-        P.stamina = Math.max(0, P.stamina - sv('lmbdrain') * dt * 0.5);
       }
     } else {
       P.lmbWasDown = false;
@@ -93,7 +95,7 @@ if(!isExhausted(P) && (P._exhaustedEndTime||0) <= GameTime && !mDown){
   }
 
   // Усталость при стамина=0 (только если нет баффа)
-if(P.stamina <= 0 && !isExhausted(P) && !inRageBuff && (P._exhaustedEndTime||0) <= GameTime){
+if(P.stamina <= 0 && !isExhausted(P) && !(P.rageBuffEnd > GameTime) && (P._exhaustedEndTime||0) <= GameTime){
   P.stamina = 0;
   applyExhaust(P);
   P._exhaustedEndTime = GameTime + (P.exhaustDur||sv('exhdur2')) + P.exhaustRegenDelay;
@@ -892,8 +894,8 @@ if(k==='v'||k==='м'){ // смена оружия бота
 }
   if(k==='1'){ throwWeapon(P); } // бросок оружия игроком
   if(e.key==='g' || k==='g' || k==='п'){
-    // 🔥 ЕДИНЫЙ ДЕБАФФ - УСТАЛОСТЬ
-    applyDebuff(P, 'exhaust', sv('exhdur2'), 0.7);
+    // Тот же путь, что и при естественном истощении стамины.
+    applyExhaust(P);
     P.stamina = 0;
   }
   if(e.key==='h' || k==='h' || k==='р'){
@@ -908,16 +910,8 @@ if(k==='v'||k==='м'){ // смена оружия бота
     }
   }
   if(e.key==='U' || k==='u' || k==='Г'|| k==='г'){
-    // Принудительный BladeBind на игрока (тест)
-    if(dummyOn) triggerBladeBind(D, P);
-    else {
-      // Без бота — применяем дисбаланс напрямую
-      const rc0 = rootCenter();
-      P.unbAngle = P.angle;
-applyDisbalance(P);
-      P.pvX = Math.cos(P.angle + Math.PI/2) * csv('ex') * 1.5;
-      P.pvY = Math.sin(P.angle + Math.PI/2) * csv('ey') * 1.5;
-    }
+    // Тестовый вызов того же дисбаланса, что применяется при блоке.
+    if(!isUnbalanced(P)) applyDisbalance(P);
   }
   e.preventDefault();
 });
@@ -1031,4 +1025,3 @@ initBoxes();
 // ──────────────── END LAYER: BOOTSTRAP ────────────────
 
 requestAnimationFrame(loop);
-

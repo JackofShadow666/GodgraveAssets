@@ -217,9 +217,7 @@ function applyBotCount(){
     const ang = (idx / target) * Math.PI * 2;
     const spawnX = clamp(W/2 + 110 + Math.cos(ang)*140, 60, W-100);
     const spawnY = clamp(H/2 + Math.sin(ang)*140, 60, H-60);
-    const nb = makeEntity(spawnX, spawnY, 0.8, '#4a1a10', { 
-      stamRegen: 1, exhaustDur: 2, exhaustSpd: 0.3, exhaustSwd: 0.3 
-    });
+    const nb = makeEntity(spawnX, spawnY, 0.8, '#4a1a10', { stamRegen: 28 });
     nb._aiState = freshAIState();
     // Если игра сейчас на паузе (T/Е) — новый бот тоже должен родиться замороженным
     if(typeof AI!=='undefined' && AI && AI.enabled===false) nb._aiState.enabled = false;
@@ -541,6 +539,8 @@ function estimateThrowRange(def){
   const angToPlayer = Math.atan2(pBodyC.y - bBodyC.y, pBodyC.x - bBodyC.x);
   const distToPlayer = Math.hypot(pBodyC.x - bBodyC.x, pBodyC.y - bBodyC.y);
   const cscl = sv('cscl');
+  const moveLocked = GameTime < (bot._moveLockUntil || 0);
+  const lockedFakeKeys = { w:false, a:false, s:false, d:false };
   
   // ════════════════════════════════════════════════════════════════════
   // 🔥 ПРОВЕРКА: ИГРОК ЗАРЯЖАЕТ МАГИЧЕСКИЙ ПОСОХ?
@@ -637,10 +637,11 @@ function estimateThrowRange(def){
       const ax = dx / d;
       const ay = dy / d;
       
-      ai._fakeKeys.a = ax < -0.3;
-      ai._fakeKeys.d = ax > 0.3;
-      ai._fakeKeys.w = ay < -0.3;
-      ai._fakeKeys.s = ay > 0.3;
+      const fleeKeys = moveLocked ? lockedFakeKeys : ai._fakeKeys;
+      fleeKeys.a = ax < -0.3;
+      fleeKeys.d = ax > 0.3;
+      fleeKeys.w = ay < -0.3;
+      fleeKeys.s = ay > 0.3;
       
       const dpivX = bBodyC.x + bot.pvX;
       const dpivY = bBodyC.y + bot.pvY;
@@ -701,7 +702,7 @@ function estimateThrowRange(def){
 
   // ── БЕЗОРУЖНЫЙ БОТ: ищет упавшее оружие вместо боя ──────────────────────
   if(bot.hasWeapon === false){
-    const k = ai._fakeKeys;
+    const k = moveLocked ? lockedFakeKeys : ai._fakeKeys;
     ai._fakeMDown = false;
 
     let nearest = null, nearestD = Infinity;
@@ -750,7 +751,7 @@ function estimateThrowRange(def){
     k.w = ay < -0.3; k.s = ay > 0.3;
     return;
   }
-  const k = ai._fakeKeys;
+  const k = moveLocked ? lockedFakeKeys : ai._fakeKeys;
 
   // ── РЕЖИМ: ЗАЩИТА (не главный) ──────────────────
  // 👇 ЕСЛИ НЕ ГЛАВНЫЙ — ТОЛЬКО ЗАЩИТА, ВЫХОДИМ
@@ -1171,7 +1172,7 @@ if(ai._contactCD > 0 && ai.phase === 'attack' && ai._contactCD <= GameTime){
     // цели вместо разумного сокращения дистанции для укола.
     const _canPokeDodge = ai.phase==='attack' && !ai._lungeActive && !ai._feintActive && !ai._spinActive
                         && bot.exhausted<=0 && bot.unbalanced<=0 && bot.stamina >= 30
-                        && distToPlayer > Math.max(55*cscl, _botReach) && distToPlayer > 300*cscl
+                        && distToPlayer > Math.max(400, 55*cscl, _botReach)
                         && !(ai._botDodgeCooldown>0)
                         && weaponKeyOf(bot) !== 'flail'; // цепом боты не колют
     if(_canPokeDodge){

@@ -472,8 +472,8 @@ body.menu-open #mob-zone-btn{ visibility:hidden !important; }
         <input type="range" id="sl-botspd" min="0.3" max="1.5" step="0.05" value="0.8">
       </div>
       <div class="row">
-        <div class="row-head"><label>Шанс доджа бота при ударе %</label><span class="val" id="vl-botdodgechance">90</span></div>
-        <input type="range" id="sl-botdodgechance" min="0" max="100" step="1" value="90">
+        <div class="row-head"><label>Шанс доджа бота при ударе %</label><span class="val" id="vl-botdodgechance">50</span></div>
+        <input type="range" id="sl-botdodgechance" min="0" max="100" step="1" value="50">
       </div>
       <div class="row">
         <div class="row-head"><label>Шанс доджа В СТОРОНУ героя %</label><span class="val" id="vl-botdodgetoward">20</span></div>
@@ -522,12 +522,8 @@ body.menu-open #mob-zone-btn{ visibility:hidden !important; }
         <input type="range" id="sl-stamreg" min="1" max="60" step="1" value="28">
       </div>
       <div class="row">
-        <div class="row-head"><label>Стам. ЛКМ (начало)</label><span class="val" id="vl-lmbcost">50</span></div>
-        <input type="range" id="sl-lmbcost" min="0" max="80" step="5" value="50">
-      </div>
-      <div class="row">
-        <div class="row-head"><label>Стам. ЛКМ (в сек)</label><span class="val" id="vl-lmbdrain">25</span></div>
-        <input type="range" id="sl-lmbdrain" min="0" max="60" step="5" value="25">
+        <div class="row-head"><label>Стам. ЛКМ (начало)</label><span class="val" id="vl-lmbcost">40</span></div>
+        <input type="range" id="sl-lmbcost" min="0" max="80" step="5" value="40">
       </div>
       <div class="row">
         <div class="row-head"><label>Урон при ЛКМ (x)</label><span class="val" id="vl-lmbdmg">1.5</span></div>
@@ -573,8 +569,8 @@ body.menu-open #mob-zone-btn{ visibility:hidden !important; }
         <input type="range" id="sl-swres" min="0" max="1" step="0.05" value="0.85">
       </div>
       <div class="row">
-        <div class="row-head"><label style="color:#4060cc;">Откат при столкн. мечей</label><span class="val" id="vl-bladeKB" style="color:#5080ff;">5</span></div>
-        <input type="range" id="sl-bladeKB" min="0" max="20" step="0.5" value="5" style="accent-color:#3060cc;">
+        <div class="row-head"><label style="color:#4060cc;">Откат при столкн. мечей</label><span class="val" id="vl-bladeKB" style="color:#5080ff;">3.5</span></div>
+        <input type="range" id="sl-bladeKB" min="0" max="20" step="0.5" value="3.5" style="accent-color:#3060cc;">
       </div>
       <div class="row">
         <div class="row-head"><label style="color:#9040cc;">Откат от меча по телу</label><span class="val" id="vl-bodyKB" style="color:#bb60ff;">1</span></div>
@@ -1219,7 +1215,6 @@ bindSlider('botdodgetoward');
 bindSlider('botscale');
 bindSlider('botswordscale');
 bindSlider('lmbcost');
-bindSlider('lmbdrain');
 bindSlider('lmbdmg');
 bindSlider('rageper');
 bindSlider('ragebuf');
@@ -1772,9 +1767,13 @@ function applyExhaust(ent, duration){
     ent.exhaustSpd !== undefined ? ent.exhaustSpd : sv('exhspd2'),
     effectDuration);
   ent._exhaustedEndTime = GameTime + effectDuration + (ent.exhaustRegenDelay || 0);
-  if(typeof P !== 'undefined' && ent === P){
-    ent._staminaRegenBoostUntil = ent._exhaustedEndTime + 1.5;
-  }
+  // После короткой задержки восстановление ускорено для всех сущностей одинаково.
+  ent._staminaRegenBoostUntil = ent._exhaustedEndTime + 1.5;
+}
+function regenStamina(ent, dt, isUsingStamina = false){
+  if(isUsingStamina || isExhausted(ent) || (ent._exhaustedEndTime || 0) > GameTime) return;
+  const regenMult = (ent._staminaRegenBoostUntil || 0) > GameTime ? 8 : 1;
+  ent.stamina = Math.min(ent.stamMax, ent.stamina + dt * ent.stamRegen * 0.2 * regenMult);
 }
 function applyDisbalance(ent, duration = 2){
   startBuff(ent, 'DISBALANCE', 1, Math.max(2, duration || 2));
@@ -2241,8 +2240,8 @@ const BLADEFIXSCALE = 0.75;
 // Относится ТОЛЬКО к столкновению клинок-клинок (парирование/клэш) и
 // клинок-щит: часть оружия ближе HANDRANGE к руке (pivot) не участвует в
 // этих столкновениях — иначе рукояти двух мечей задевали бы друг друга
-// вплотную к рукам. НЕ влияет на попадание по телу.
-const HANDRANGE = 33; //ПОКА ЗАКОМЕНТИЛ ИБО СТАЛО СЛИШКОМ СЛОЖНО
+// вплотную к рукам. Та же зона исключается из попаданий по телу.
+const HANDRANGE = 10;
 
 // Возвращает {back, front} — насколько далеко назад/вперёд от pivot (точки
 // хвата в руке) простирается коллайдер оружия ВДОЛЬ его линии, в тех же
@@ -2494,17 +2493,13 @@ function assignRandomSkin(ent){
 // MODULE: BOT SHARED HELPERS  (общая логика для всех ботов)
 // ════════════════════════════════════════════════════════════════════════════
 
-// Восстанавливает стамину ТОЛЬКО после усталости
+// Использует те же правила восстановления, что и игрок.
 function botRegenStamina(bot, dt){
-  if(bot._hadExhaustion && bot.exhausted <= 0){
-    bot.stamina = Math.min(bot.stamMax, bot.stamina + dt * 15);
-    if(bot.stamina >= bot.stamMax) bot._hadExhaustion = false;
-  }
+  regenStamina(bot, dt, !!bot._fakeMDown);
 }
 
 // Обновляет усталость и дисбаланс
 function botUpdateExhaustion(bot, dt){
-  if(isExhausted(bot)) bot._hadExhaustion = true;
   updateBuffs(bot, dt);
 }
 
@@ -2657,8 +2652,8 @@ const WEAPON_TYPES = [
 // chargeTime — время накопления заряда перед выстрелом, сек (используется
 //   только жезлом; для остального оружия можно не указывать — не используется).
 // lmbStaminaMult — множитель стоимости стамины ЛКМ-удара (сверху общего % из
-//   настроек sl-lmbcost, по умолчанию 50%). 1.0 = обычная стоимость (50%),
-//   0.5 = вдвое дешевле (25%, как у рапиры). Если не указано — 1.0.
+//   настроек sl-lmbcost, по умолчанию 40%). 1.0 = обычная стоимость (40%),
+//   0.5 = вдвое дешевле (20%, как у рапиры). Если не указано — 1.0.
 // Строки, начинающиеся с '#', и пустые строки — игнорируются (комментарии).
 // Если файл не найден/не грузится — остаёмся на встроенных значениях выше.
 const WEAPON_TABLE_URL = PROJECT_PATH_AUDIO + "Source/Talbe/WeaponTalbe.txt";
@@ -2743,7 +2738,7 @@ function applyCutSwingPenalty(ent, damage){
   return damage;
 }
 // Множитель стоимости стамины за ЛКМ-удар (поверх общего % из настроек sl-lmbcost).
-// 1.0 = обычная стоимость (по умолчанию 50% из настроек), 0.5 = вдвое дешевле (25%).
+// 1.0 = обычная стоимость (по умолчанию 40% из настроек), 0.5 = вдвое дешевле (20%).
 function weaponLmbStaminaMult(ent){
   const d = weaponDefFor(ent);
   return (d && d.lmbStaminaMult != null) ? d.lmbStaminaMult : 1.0;
@@ -4844,7 +4839,7 @@ function updateRangedWeaponFire(ent, fireHeld, aimAngleOverride){
           const rageMult = 1 + clamp(ent.rage||0, 0, 100)/100;
           spawnProjectile(ent, 'wand', aimAngle, WAND_BASE_DMG * rageMult);
           ent.stamina = Math.max(0, ent.stamina - sv('stamswing') * weaponStaminaMult(ent));
-          if(ent.stamina <= 0 && !isExhausted(ent)) ent.exhausted = sv('exhdur2');
+          if(ent.stamina <= 0 && !isExhausted(ent)) applyExhaust(ent);
           playSound('magicPush');
           ent.rage = 0;
           ent._rangedShotCD = GameTime + WAND_SHOT_CD;
@@ -4874,7 +4869,7 @@ function updateRangedWeaponFire(ent, fireHeld, aimAngleOverride){
       
       // ✅ Если стамина кончилась - включаем усталость, НО НЕ ПРЕРЫВАЕМ
       if(ent.stamina <= 0 && !isExhausted(ent)){
-        ent.exhausted = sv('exhdur2');
+        applyExhaust(ent);
 		 ent._hadExhaustion = true;  // ← ДОБАВИТЬ ЭТУ СТРОЧКУ
       }
       
@@ -4930,7 +4925,7 @@ ent.stamina = Math.max(0, ent.stamina - staminaCost);
         
         // ✅ ЕСЛИ СТАМИНА СТАЛА 0 - УСТАЛОСТЬ
         if(ent.stamina <= 0 && !isExhausted(ent)){
-          ent.exhausted = sv('exhdur2');
+          applyExhaust(ent);
 		   ent._hadExhaustion = true;  // ← ДОБАВИТЬ ЭТУ СТРОЧКУ
         }
         
@@ -5090,7 +5085,7 @@ if ((ent.rage || 0) < 1 || ent.stamina < 1) {
     ent._magicChargeSoundObj = null;
   }
   clearMagicStaffFX(ent);
-  if (!isExhausted(ent)) ent.exhausted = sv('exhdur2');
+  if (!isExhausted(ent)) applyExhaust(ent);
   
   // Показываем сообщение о нехватке ресурсов
   if ((ent.rage || 0) < 1) {
@@ -5309,7 +5304,7 @@ if (state.hasFired && !state._penaltyApplied && state._penaltyTimer > 0) {
      // hitFX.push({x: ent.x, y: ent.y - 40, t: '❌ НЕТ ЯРОСТИ! 💧 -30 СТАМ', life: 35, big: true, col: '#ff8844'});
     }
     
-    if (ent.stamina <= 0 && !isExhausted(ent)) ent.exhausted = sv('exhdur2');
+    if (ent.stamina <= 0 && !isExhausted(ent)) applyExhaust(ent);
     
     // Сбрасываем флаг
     state.hasFired = false;
@@ -5369,7 +5364,7 @@ function updateProjectiles(dt){
       if(ent === w.owner && GameTime < w.ownerImmuneUntil) continue;
       
       // Блок клинком
-      if(ent.hasWeapon !== false){
+      if(ent.hasWeapon !== false && !isExhausted(ent)){
         const piv = entityPivot(ent);
         const reach = weaponReach(ent) * sv('swlen') * (isBot(ent)?sv('botswordscale'):1);
         const tipX = piv.x + Math.cos(ent.angle)*reach, tipY = piv.y + Math.sin(ent.angle)*reach;
@@ -5889,7 +5884,6 @@ if(magicAI.state === 'charging'){
   }
 // ── ВЗРЫВ ──
 if(chargeTime >= MAGICSTAFF_CHARGE_FULLTIME){
- bot.stamina = Math.min(bot.stamMax || 100, bot.stamina + dt * 30)
   console.log('💥 ВЗРЫВ МАГИИ!');
   const progress = Math.min(1, (chargeTime - 2.0) / 2.0);
   const dmg = MAGICSTAFF_DMG_MIN + (MAGICSTAFF_DMG_MAX - MAGICSTAFF_DMG_MIN) * progress ;
@@ -6024,7 +6018,6 @@ if(!bot._wandCharging){
 // 🔥 ВАЖНО: синхронизируем угол меча с aimAngle перед выстрелом
 bot.angle = aimAngle; // ← ДОБАВЬТЕ ЭТУ СТРОЧКУ
 
-bot.stamina = Math.min(bot.stamMax||100, bot.stamina + rawDt*40);
 const chargeDone = bot._wandCharging && (GameTime - bot._wandChargeStart >= wandChargeTimeFor(bot));
 const fireHeld = bot.stamina > 20 && bot.exhausted <= 0 && !chargeDone;
 updateRangedWeaponFire(bot, fireHeld, aimAngle);
@@ -6239,10 +6232,7 @@ function makeEntity(x, y, swordScale, color, charParams){
   const defaults = {
     stamRegen: 28,       // восст. стамины в сек
     stamMax: 100,        // макс стамина
-    exhaustDur: 1,       // длительность усталости
-    exhaustSpd: 0.3,     // замедл. движения при усталости
-    exhaustSwd: 0.3,     // matches the shared swordSlow used by disbalance
-    exhaustRegenDelay: 2,// пауза перед усиленной регенерацией после усталости
+    exhaustRegenDelay: 0.1, // короткая пауза перед регенерацией после усталости
 	_bowSeed: Math.random() * 100, // 🔥 ДЛЯ ДРОЖАНИЯ ЛУКА
 	   _recoilOffset: 0,
     _recoilAnimTime: 0,
@@ -6320,10 +6310,10 @@ _hitCount: 0,
 }
 
 const P = makeEntity(W/2 - 80, H/2, 0.8, '#1e4a72', {
-  stamRegen: 28, exhaustDur: 1, exhaustSpd: 0.3, exhaustSwd: 0.3
+  stamRegen: 28
 });
 let D = makeEntity(W/2 + 110, H/2, 0.8, '#4a1a10', {
-  stamRegen: 1,  exhaustDur: 1, exhaustSpd: 0.3, exhaustSwd: 0.3
+  stamRegen: 28
 });
 const trailPts = [];
 const SWORD_LEN = 85;
@@ -6399,11 +6389,15 @@ function determineAttacker(){
 }
 
 // Обработка столкновения мечей
+function blockStaminaCost(attacker){
+  // Зажатая ЛКМ отменяет расход, когда удар игрока блокирует противник.
+  if(attacker === P && mDown) return 0;
+  return sv('stamblock') * (isBot(attacker) ? 2 : 1);
+}
 function swordHit(entA, entB){
-  const botMult = 1.5;
   const attacker = entA.isAttacker ? entA : entB;
   const defender = entA.isAttacker ? entB : entA;
-  const cost = sv('stamblock') * (isBot(attacker) ? botMult : 1);
+  const cost = blockStaminaCost(attacker);
   attacker.stamina = Math.max(0, attacker.stamina - cost);
   if(attacker.stamina <= 0 && !isExhausted(attacker)){
     applyExhaust(attacker);
@@ -6526,14 +6520,15 @@ const bodySwB = weaponReach(entB) * sv('swlen') * (isBot(entB)?sv('botswordscale
   const segsB = [[bladeBx,bladeBy, tipBx,tipBy]];
   if(spanB.back > 0) segsB.push([backHandBx,backHandBy, backBx,backBy]);
 
-  let res = null;
-  for(const sa of segsA){
-    for(const sb of segsB){
-      const r = segSegDist(sa[0],sa[1],sa[2],sa[3], sb[0],sb[1],sb[2],sb[3]);
-      if(!res || r.d < res.d) res = r;
+  if(!isExhausted(entA) && !isExhausted(entB)){
+    let res = null;
+    for(const sa of segsA){
+      for(const sb of segsB){
+        const r = segSegDist(sa[0],sa[1],sa[2],sa[3], sb[0],sb[1],sb[2],sb[3]);
+        if(!res || r.d < res.d) res = r;
+      }
     }
-  }
-  if(res.d < BLADE_W){
+    if(res.d < BLADE_W){
     const sep = BLADE_W - res.d;
     const nx = res.px!==undefined ? (res.px-res.qx)/(res.d||1) : Math.cos(entA.angle+Math.PI/2);
     const ny = res.py!==undefined ? (res.py-res.qy)/(res.d||1) : Math.sin(entA.angle+Math.PI/2);
@@ -6594,7 +6589,8 @@ const bodySwB = weaponReach(entB) * sv('swlen') * (isBot(entB)?sv('botswordscale
       if(_otherBot && isBot(_otherBot)) switchSmartBot(_otherBot);
       aiNotifyContact();
     }
-  } // ← ЗАКРЫВАЕМ if(res.d < BLADE_W)
+    } // столкновение активных клинков
+  }
 
   // ── ПРОВЕРКА УРОНА ПО ТЕЛУ ────────────────────────────────────────────
   checkBladeVsBody(entA, entB, pivA.x, pivA.y, bodyTipAx, bodyTipAy);
@@ -6617,6 +6613,8 @@ const bodySwB = weaponReach(entB) * sv('swlen') * (isBot(entB)?sv('botswordscale
 function checkBladeVsBody(attacker, defender, pivX, pivY, tipX2, tipY2) {
   // Нет урона во время экрана победы/поражения
   if (DEATH.pDead || DEATH.dDead) return;
+  // Оружие уставшего персонажа не имеет активного коллайдера.
+  if (isExhausted(attacker)) return;
   // В сетевом ПВП D — локальная интерполированная кукла противника
   if (defender === P && attacker === D && typeof NET_SYNC !== 'undefined' && NET_SYNC.active) return;
   // Iframes во время доджа
@@ -6670,7 +6668,8 @@ function checkBladeVsBody(attacker, defender, pivX, pivY, tipX2, tipY2) {
         AI._dodgeLockUntil = GameTime + 0.35;
         let awayX = D.x - P.x,
             awayY = D.y - P.y;
-        if (Math.random() < (sv('botdodgetoward') / 100)) {
+        const canDodgeToward = Math.hypot(D.x - P.x, D.y - P.y) >= 400;
+        if (canDodgeToward && Math.random() < (sv('botdodgetoward') / 100)) {
           awayX = -awayX; awayY = -awayY;
         }
         const awayLen = Math.hypot(awayX, awayY) || 1;
@@ -6902,6 +6901,8 @@ function checkBladeVsBody(attacker, defender, pivX, pivY, tipX2, tipY2) {
   const nearX = pivX_adj + t2 * segDX;
   const nearY = pivY_adj + t2 * segDY;
   const dist = Math.hypot(bC.x - nearX, bC.y - nearY);
+  const hand = entityPivot(attacker);
+  if(Math.hypot(nearX - hand.x, nearY - hand.y) < HANDRANGE) return;
   
   const BODY_HIT_R = 14;
   const hitR = BODY_HIT_R * sv('cscl');
@@ -6921,7 +6922,8 @@ function checkBladeVsBody(attacker, defender, pivX, pivY, tipX2, tipY2) {
       AI._dodgeLockUntil = GameTime + 0.35;
       let awayX = D.x - P.x,
           awayY = D.y - P.y;
-      if (Math.random() < (sv('botdodgetoward') / 100)) {
+      const canDodgeToward = Math.hypot(D.x - P.x, D.y - P.y) >= 400;
+      if (canDodgeToward && Math.random() < (sv('botdodgetoward') / 100)) {
         awayX = -awayX; awayY = -awayY;
       }
       const awayLen = Math.hypot(awayX, awayY) || 1;
@@ -6959,7 +6961,7 @@ function checkBladeVsBody(attacker, defender, pivX, pivY, tipX2, tipY2) {
                   _bl = Math.hypot(_bvx, _bvy) || 1;
             attacker.vx -= _bvx / _bl * 3;
             attacker.vy -= _bvy / _bl * 3;
-            const blockCost = sv('stamblock') * (isBot(attacker) ? 2 : 1);
+            const blockCost = blockStaminaCost(attacker);
             attacker.stamina = Math.max(0, attacker.stamina - blockCost);
             if(attacker.stamina <= 0 && !isExhausted(attacker)){
               applyExhaust(attacker);
@@ -7311,6 +7313,7 @@ function getDebuffSwordMult(ent) {
 
 // ── ПОЛУЧИТЬ ПРОЗРАЧНОСТЬ МЕЧА ОТ ДЕБАФФА ──────────────────────────────
 function getDebuffAlpha(ent) {
+    if (ent && isExhausted(ent)) return 0.3;
     if (!ent || !ent._debuffActive || (ent._debuffUntil || 0) < GameTime) {
         if (ent._debuffActive) {
             ent._debuffActive = false;
@@ -7799,8 +7802,13 @@ function doClash(entA, entB, res, strongSwing){
     );
     const finalAng = bodyAng + clamp(angDiff(swordBias, bodyAng), -Math.PI/6, Math.PI/6);
     const pushX = Math.cos(finalAng), pushY = Math.sin(finalAng);
-    entA.vx -= pushX*push; entA.vy -= pushY*push;
-    entB.vx += pushX*push; entB.vy += pushY*push;
+    // Separate knockback impulse cannot be overwritten by held movement.
+    entA._dvx = (entA._dvx || 0) - pushX*push;
+    entA._dvy = (entA._dvy || 0) - pushY*push;
+    entB._dvx = (entB._dvx || 0) + pushX*push;
+    entB._dvy = (entB._dvy || 0) + pushY*push;
+    entA._moveLockUntil = Math.max(entA._moveLockUntil || 0, GameTime + 0.35);
+    entB._moveLockUntil = Math.max(entB._moveLockUntil || 0, GameTime + 0.35);
   }
 
 // Блок-отбрасывание если включено
@@ -7836,7 +7844,7 @@ function doClash(entA, entB, res, strongSwing){
   }
 
   // Эффект: молния + КЛАЦ
-  hitFX.push({x:hitX, y:hitY-4, t:'вљЎ', life:12, big:true, col:'#ffffff'});
+  hitFX.push({x:hitX, y:hitY-4, t:'⚡', life:12, big:true, col:'#ffffff'});
   hitFX.push({x:hitX, y:hitY+14, t:'КЛАЦ!', life:35, big:false, col:'#ccccaa'});
   // strongSwing передаётся как параметр
   if(strongSwing && Math.random() < 0.04) spawnFX('flash', hitX, hitY);
@@ -8273,9 +8281,7 @@ function applyBotCount(){
     const ang = (idx / target) * Math.PI * 2;
     const spawnX = clamp(W/2 + 110 + Math.cos(ang)*140, 60, W-100);
     const spawnY = clamp(H/2 + Math.sin(ang)*140, 60, H-60);
-    const nb = makeEntity(spawnX, spawnY, 0.8, '#4a1a10', { 
-      stamRegen: 1, exhaustDur: 2, exhaustSpd: 0.3, exhaustSwd: 0.3 
-    });
+    const nb = makeEntity(spawnX, spawnY, 0.8, '#4a1a10', { stamRegen: 28 });
     nb._aiState = freshAIState();
     // Если игра сейчас на паузе (T/Е) — новый бот тоже должен родиться замороженным
     if(typeof AI!=='undefined' && AI && AI.enabled===false) nb._aiState.enabled = false;
@@ -8597,6 +8603,8 @@ function estimateThrowRange(def){
   const angToPlayer = Math.atan2(pBodyC.y - bBodyC.y, pBodyC.x - bBodyC.x);
   const distToPlayer = Math.hypot(pBodyC.x - bBodyC.x, pBodyC.y - bBodyC.y);
   const cscl = sv('cscl');
+  const moveLocked = GameTime < (bot._moveLockUntil || 0);
+  const lockedFakeKeys = { w:false, a:false, s:false, d:false };
   
   // ════════════════════════════════════════════════════════════════════
   // 🔥 ПРОВЕРКА: ИГРОК ЗАРЯЖАЕТ МАГИЧЕСКИЙ ПОСОХ?
@@ -8693,10 +8701,11 @@ function estimateThrowRange(def){
       const ax = dx / d;
       const ay = dy / d;
       
-      ai._fakeKeys.a = ax < -0.3;
-      ai._fakeKeys.d = ax > 0.3;
-      ai._fakeKeys.w = ay < -0.3;
-      ai._fakeKeys.s = ay > 0.3;
+      const fleeKeys = moveLocked ? lockedFakeKeys : ai._fakeKeys;
+      fleeKeys.a = ax < -0.3;
+      fleeKeys.d = ax > 0.3;
+      fleeKeys.w = ay < -0.3;
+      fleeKeys.s = ay > 0.3;
       
       const dpivX = bBodyC.x + bot.pvX;
       const dpivY = bBodyC.y + bot.pvY;
@@ -8757,7 +8766,7 @@ function estimateThrowRange(def){
 
   // ── БЕЗОРУЖНЫЙ БОТ: ищет упавшее оружие вместо боя ──────────────────────
   if(bot.hasWeapon === false){
-    const k = ai._fakeKeys;
+    const k = moveLocked ? lockedFakeKeys : ai._fakeKeys;
     ai._fakeMDown = false;
 
     let nearest = null, nearestD = Infinity;
@@ -8806,7 +8815,7 @@ function estimateThrowRange(def){
     k.w = ay < -0.3; k.s = ay > 0.3;
     return;
   }
-  const k = ai._fakeKeys;
+  const k = moveLocked ? lockedFakeKeys : ai._fakeKeys;
 
   // ── РЕЖИМ: ЗАЩИТА (не главный) ──────────────────
  // 👇 ЕСЛИ НЕ ГЛАВНЫЙ — ТОЛЬКО ЗАЩИТА, ВЫХОДИМ
@@ -9227,7 +9236,7 @@ if(ai._contactCD > 0 && ai.phase === 'attack' && ai._contactCD <= GameTime){
     // цели вместо разумного сокращения дистанции для укола.
     const _canPokeDodge = ai.phase==='attack' && !ai._lungeActive && !ai._feintActive && !ai._spinActive
                         && bot.exhausted<=0 && bot.unbalanced<=0 && bot.stamina >= 30
-                        && distToPlayer > Math.max(55*cscl, _botReach) && distToPlayer > 300*cscl
+                        && distToPlayer > Math.max(400, 55*cscl, _botReach)
                         && !(ai._botDodgeCooldown>0)
                         && weaponKeyOf(bot) !== 'flail'; // цепом боты не колют
     if(_canPokeDodge){
@@ -10621,7 +10630,10 @@ function drawSword(pivX, pivY, angle){
   
   // 🔥 ДЛЯ ЛУКА — ИСПОЛЬЗУЕМ СПЕЦИАЛЬНУЮ ФУНКЦИЮ С ДРОЖАНИЕМ
   if(weaponKey === 'bow'){
+    ctx.save();
+    ctx.globalAlpha = _exhAlpha;
     drawWeaponWithShake(P, pivX, pivY);
+    ctx.restore();
     return;
   }
   
@@ -11038,11 +11050,8 @@ function update(dt){
   if(keys['w']||keys['ц']) my=-1; if(keys['s']||keys['ы']) my=1;
   if(mx||my){ const l=Math.hypot(mx,my); mx/=l; my/=l; }
   
-  // Восстановление стамины
-if(!isExhausted(P) && (P._exhaustedEndTime||0) <= GameTime && !mDown){
-  const regenMult = (P._staminaRegenBoostUntil || 0) > GameTime ? 4 : 1;
-  P.stamina = Math.min(P.stamMax, P.stamina + dt*P.stamRegen*0.2*regenMult);
-}
+// Восстановление стамины
+regenStamina(P, dt, mDown);
   
   // ── ОБНОВЛЕНИЕ ЗАЩИТЫ ОТ МУЛЬТИУРОНА ────────────
   if(P._multiHitProtection){
@@ -11056,6 +11065,8 @@ if(!isExhausted(P) && (P._exhaustedEndTime||0) <= GameTime && !mDown){
 
 
   const inRageBuff = P.rageBuffEnd > GameTime;
+  // Цена ЛКМ задаётся абсолютным числом стамины, без множителя оружия.
+  const lmbStaminaCost = sv('lmbcost');
 
   if(isRangedWeapon(P)){
     // ── Жезл/Арбалет: ЛКМ полностью заменяет бафф ярости — вместо него стрельба ──
@@ -11077,6 +11088,15 @@ if(!isExhausted(P) && (P._exhaustedEndTime||0) <= GameTime && !mDown){
       // Усталость: ЛКМ принудительно отжимается
       mDown = false;
     }
+    // Не начинаем ЛКМ, если нельзя оплатить его полностью.
+    if(!inRageBuff && mDown && !P.lmbWasDown && weaponKeyOf(P) !== 'flail' && P.stamina < lmbStaminaCost){
+      mDown = false;
+      if((P._lmbNoStaminaTextUntil || 0) <= GameTime){
+        const rc = rootCenter();
+        hitFX.push({x:rc.x, y:rc.y-55, t:'⚠ НЕТ СТАМИНЫ', life:35, big:false, col:'#ff8844'});
+        P._lmbNoStaminaTextUntil = GameTime + 0.5;
+      }
+    }
     if(mDown && weaponKeyOf(P) !== 'flail'){
       if(!P.lmbWasDown){
         P.lmbWasDown = true;
@@ -11086,23 +11106,18 @@ if(!isExhausted(P) && (P._exhaustedEndTime||0) <= GameTime && !mDown){
           playSound('hammerSwing');
         }
         if(!inRageBuff){
+          P.stamina = Math.max(0, P.stamina - lmbStaminaCost);
           if(P.rage >= 30){
             P.rage = Math.max(0, P.rage - 30);
             P.rageBuffEnd = GameTime + 1.0;
             P._rageTextShown = false;
-            P.stamina = P.stamMax;
             playSound('rage');
-          } else {
-            P.stamina = Math.max(0, P.stamina - P.stamMax * (sv('lmbcost')/100) * weaponLmbStaminaMult(P));
           }
         }
       }
-      if(inRageBuff && !P._rageTextShown && (GameTime - (P.lmbHoldStart||0)) >= 0.5){
+      if(P.rageBuffEnd > GameTime && !P._rageTextShown && (GameTime - (P.lmbHoldStart||0)) >= 0.5){
         P._rageTextShown = true;
         hitFX.push({x:W/2,y:H/2-50,t:'🔥 ЯРОСТЬ!',life:40,big:true,col:'#ff2020'});
-      }
-      if(!inRageBuff && P.stamina > 0){
-        P.stamina = Math.max(0, P.stamina - sv('lmbdrain') * dt * 0.5);
       }
     } else {
       P.lmbWasDown = false;
@@ -11111,7 +11126,7 @@ if(!isExhausted(P) && (P._exhaustedEndTime||0) <= GameTime && !mDown){
   }
 
   // Усталость при стамина=0 (только если нет баффа)
-if(P.stamina <= 0 && !isExhausted(P) && !inRageBuff && (P._exhaustedEndTime||0) <= GameTime){
+if(P.stamina <= 0 && !isExhausted(P) && !(P.rageBuffEnd > GameTime) && (P._exhaustedEndTime||0) <= GameTime){
   P.stamina = 0;
   applyExhaust(P);
   P._exhaustedEndTime = GameTime + (P.exhaustDur||sv('exhdur2')) + P.exhaustRegenDelay;
@@ -11910,8 +11925,8 @@ if(k==='v'||k==='м'){ // смена оружия бота
 }
   if(k==='1'){ throwWeapon(P); } // бросок оружия игроком
   if(e.key==='g' || k==='g' || k==='п'){
-    // 🔥 ЕДИНЫЙ ДЕБАФФ - УСТАЛОСТЬ
-    applyDebuff(P, 'exhaust', sv('exhdur2'), 0.7);
+    // Тот же путь, что и при естественном истощении стамины.
+    applyExhaust(P);
     P.stamina = 0;
   }
   if(e.key==='h' || k==='h' || k==='р'){
@@ -11926,16 +11941,8 @@ if(k==='v'||k==='м'){ // смена оружия бота
     }
   }
   if(e.key==='U' || k==='u' || k==='Г'|| k==='г'){
-    // Принудительный BladeBind на игрока (тест)
-    if(dummyOn) triggerBladeBind(D, P);
-    else {
-      // Без бота — применяем дисбаланс напрямую
-      const rc0 = rootCenter();
-      P.unbAngle = P.angle;
-applyDisbalance(P);
-      P.pvX = Math.cos(P.angle + Math.PI/2) * csv('ex') * 1.5;
-      P.pvY = Math.sin(P.angle + Math.PI/2) * csv('ey') * 1.5;
-    }
+    // Тестовый вызов того же дисбаланса, что применяется при блоке.
+    if(!isUnbalanced(P)) applyDisbalance(P);
   }
   e.preventDefault();
 });
@@ -12049,7 +12056,6 @@ initBoxes();
 // ──────────────── END LAYER: BOOTSTRAP ────────────────
 
 requestAnimationFrame(loop);
-
 
 </script>
 

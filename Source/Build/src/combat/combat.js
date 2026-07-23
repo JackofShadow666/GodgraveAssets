@@ -199,10 +199,7 @@ function makeEntity(x, y, swordScale, color, charParams){
   const defaults = {
     stamRegen: 28,       // восст. стамины в сек
     stamMax: 100,        // макс стамина
-    exhaustDur: 1,       // длительность усталости
-    exhaustSpd: 0.3,     // замедл. движения при усталости
-    exhaustSwd: 0.3,     // matches the shared swordSlow used by disbalance
-    exhaustRegenDelay: 2,// пауза перед усиленной регенерацией после усталости
+    exhaustRegenDelay: 0.1, // короткая пауза перед регенерацией после усталости
 	_bowSeed: Math.random() * 100, // 🔥 ДЛЯ ДРОЖАНИЯ ЛУКА
 	   _recoilOffset: 0,
     _recoilAnimTime: 0,
@@ -280,10 +277,10 @@ _hitCount: 0,
 }
 
 const P = makeEntity(W/2 - 80, H/2, 0.8, '#1e4a72', {
-  stamRegen: 28, exhaustDur: 1, exhaustSpd: 0.3, exhaustSwd: 0.3
+  stamRegen: 28
 });
 let D = makeEntity(W/2 + 110, H/2, 0.8, '#4a1a10', {
-  stamRegen: 1,  exhaustDur: 1, exhaustSpd: 0.3, exhaustSwd: 0.3
+  stamRegen: 28
 });
 const trailPts = [];
 const SWORD_LEN = 85;
@@ -359,11 +356,15 @@ function determineAttacker(){
 }
 
 // Обработка столкновения мечей
+function blockStaminaCost(attacker){
+  // Зажатая ЛКМ отменяет расход, когда удар игрока блокирует противник.
+  if(attacker === P && mDown) return 0;
+  return sv('stamblock') * (isBot(attacker) ? 2 : 1);
+}
 function swordHit(entA, entB){
-  const botMult = 1.5;
   const attacker = entA.isAttacker ? entA : entB;
   const defender = entA.isAttacker ? entB : entA;
-  const cost = sv('stamblock') * (isBot(attacker) ? botMult : 1);
+  const cost = blockStaminaCost(attacker);
   attacker.stamina = Math.max(0, attacker.stamina - cost);
   if(attacker.stamina <= 0 && !isExhausted(attacker)){
     applyExhaust(attacker);
@@ -486,14 +487,15 @@ const bodySwB = weaponReach(entB) * sv('swlen') * (isBot(entB)?sv('botswordscale
   const segsB = [[bladeBx,bladeBy, tipBx,tipBy]];
   if(spanB.back > 0) segsB.push([backHandBx,backHandBy, backBx,backBy]);
 
-  let res = null;
-  for(const sa of segsA){
-    for(const sb of segsB){
-      const r = segSegDist(sa[0],sa[1],sa[2],sa[3], sb[0],sb[1],sb[2],sb[3]);
-      if(!res || r.d < res.d) res = r;
+  if(!isExhausted(entA) && !isExhausted(entB)){
+    let res = null;
+    for(const sa of segsA){
+      for(const sb of segsB){
+        const r = segSegDist(sa[0],sa[1],sa[2],sa[3], sb[0],sb[1],sb[2],sb[3]);
+        if(!res || r.d < res.d) res = r;
+      }
     }
-  }
-  if(res.d < BLADE_W){
+    if(res.d < BLADE_W){
     const sep = BLADE_W - res.d;
     const nx = res.px!==undefined ? (res.px-res.qx)/(res.d||1) : Math.cos(entA.angle+Math.PI/2);
     const ny = res.py!==undefined ? (res.py-res.qy)/(res.d||1) : Math.sin(entA.angle+Math.PI/2);
@@ -554,7 +556,8 @@ const bodySwB = weaponReach(entB) * sv('swlen') * (isBot(entB)?sv('botswordscale
       if(_otherBot && isBot(_otherBot)) switchSmartBot(_otherBot);
       aiNotifyContact();
     }
-  } // ← ЗАКРЫВАЕМ if(res.d < BLADE_W)
+    } // столкновение активных клинков
+  }
 
   // ── ПРОВЕРКА УРОНА ПО ТЕЛУ ────────────────────────────────────────────
   checkBladeVsBody(entA, entB, pivA.x, pivA.y, bodyTipAx, bodyTipAy);
@@ -577,6 +580,8 @@ const bodySwB = weaponReach(entB) * sv('swlen') * (isBot(entB)?sv('botswordscale
 function checkBladeVsBody(attacker, defender, pivX, pivY, tipX2, tipY2) {
   // Нет урона во время экрана победы/поражения
   if (DEATH.pDead || DEATH.dDead) return;
+  // Оружие уставшего персонажа не имеет активного коллайдера.
+  if (isExhausted(attacker)) return;
   // В сетевом ПВП D — локальная интерполированная кукла противника
   if (defender === P && attacker === D && typeof NET_SYNC !== 'undefined' && NET_SYNC.active) return;
   // Iframes во время доджа
@@ -630,7 +635,8 @@ function checkBladeVsBody(attacker, defender, pivX, pivY, tipX2, tipY2) {
         AI._dodgeLockUntil = GameTime + 0.35;
         let awayX = D.x - P.x,
             awayY = D.y - P.y;
-        if (Math.random() < (sv('botdodgetoward') / 100)) {
+        const canDodgeToward = Math.hypot(D.x - P.x, D.y - P.y) >= 400;
+        if (canDodgeToward && Math.random() < (sv('botdodgetoward') / 100)) {
           awayX = -awayX; awayY = -awayY;
         }
         const awayLen = Math.hypot(awayX, awayY) || 1;
@@ -862,6 +868,8 @@ function checkBladeVsBody(attacker, defender, pivX, pivY, tipX2, tipY2) {
   const nearX = pivX_adj + t2 * segDX;
   const nearY = pivY_adj + t2 * segDY;
   const dist = Math.hypot(bC.x - nearX, bC.y - nearY);
+  const hand = entityPivot(attacker);
+  if(Math.hypot(nearX - hand.x, nearY - hand.y) < HANDRANGE) return;
   
   const BODY_HIT_R = 14;
   const hitR = BODY_HIT_R * sv('cscl');
@@ -881,7 +889,8 @@ function checkBladeVsBody(attacker, defender, pivX, pivY, tipX2, tipY2) {
       AI._dodgeLockUntil = GameTime + 0.35;
       let awayX = D.x - P.x,
           awayY = D.y - P.y;
-      if (Math.random() < (sv('botdodgetoward') / 100)) {
+      const canDodgeToward = Math.hypot(D.x - P.x, D.y - P.y) >= 400;
+      if (canDodgeToward && Math.random() < (sv('botdodgetoward') / 100)) {
         awayX = -awayX; awayY = -awayY;
       }
       const awayLen = Math.hypot(awayX, awayY) || 1;
@@ -919,7 +928,7 @@ function checkBladeVsBody(attacker, defender, pivX, pivY, tipX2, tipY2) {
                   _bl = Math.hypot(_bvx, _bvy) || 1;
             attacker.vx -= _bvx / _bl * 3;
             attacker.vy -= _bvy / _bl * 3;
-            const blockCost = sv('stamblock') * (isBot(attacker) ? 2 : 1);
+            const blockCost = blockStaminaCost(attacker);
             attacker.stamina = Math.max(0, attacker.stamina - blockCost);
             if(attacker.stamina <= 0 && !isExhausted(attacker)){
               applyExhaust(attacker);
@@ -1271,6 +1280,7 @@ function getDebuffSwordMult(ent) {
 
 // ── ПОЛУЧИТЬ ПРОЗРАЧНОСТЬ МЕЧА ОТ ДЕБАФФА ──────────────────────────────
 function getDebuffAlpha(ent) {
+    if (ent && isExhausted(ent)) return 0.3;
     if (!ent || !ent._debuffActive || (ent._debuffUntil || 0) < GameTime) {
         if (ent._debuffActive) {
             ent._debuffActive = false;
@@ -1759,8 +1769,13 @@ function doClash(entA, entB, res, strongSwing){
     );
     const finalAng = bodyAng + clamp(angDiff(swordBias, bodyAng), -Math.PI/6, Math.PI/6);
     const pushX = Math.cos(finalAng), pushY = Math.sin(finalAng);
-    entA.vx -= pushX*push; entA.vy -= pushY*push;
-    entB.vx += pushX*push; entB.vy += pushY*push;
+    // Separate knockback impulse cannot be overwritten by held movement.
+    entA._dvx = (entA._dvx || 0) - pushX*push;
+    entA._dvy = (entA._dvy || 0) - pushY*push;
+    entB._dvx = (entB._dvx || 0) + pushX*push;
+    entB._dvy = (entB._dvy || 0) + pushY*push;
+    entA._moveLockUntil = Math.max(entA._moveLockUntil || 0, GameTime + 0.35);
+    entB._moveLockUntil = Math.max(entB._moveLockUntil || 0, GameTime + 0.35);
   }
 
 // Блок-отбрасывание если включено
@@ -1796,7 +1811,7 @@ function doClash(entA, entB, res, strongSwing){
   }
 
   // Эффект: молния + КЛАЦ
-  hitFX.push({x:hitX, y:hitY-4, t:'вљЎ', life:12, big:true, col:'#ffffff'});
+  hitFX.push({x:hitX, y:hitY-4, t:'⚡', life:12, big:true, col:'#ffffff'});
   hitFX.push({x:hitX, y:hitY+14, t:'КЛАЦ!', life:35, big:false, col:'#ccccaa'});
   // strongSwing передаётся как параметр
   if(strongSwing && Math.random() < 0.04) spawnFX('flash', hitX, hitY);

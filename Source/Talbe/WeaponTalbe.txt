@@ -33,7 +33,7 @@
 #
 # key        |name            |category|throwSpeed|scale|dmgBase|dmgPerSpeed|maxDmgPercent|spinMin|spinMax|weight|staminaMult|cutMult|pierceMult|collision|flags            |chargeTime|lmbStaminaMult
 dagger       |Кинжал          |knife   |17.92     |0.5  |4      |6          |0.20         |0.24   |0.48   |0.4   |0.01       |1.0    |3.5       |full     |                 |          |1.0
-rapier       |Рапира          |rapier  |8         |1.1  |8      |6          |0.20         |0.24   |0.48   |0.5   |1.0        |0.3    |2.5         |full     |                 |        |0.5
+rapier       |Рапира          |rapier  |8         |1.1  |8      |6          |0.20         |0.24   |0.48   |0.5   |1.0        |0.3    |2.5         |full     |                 |        |0.8
 sword        |Меч             |sword   |15.92     |1.0  |8      |6          |0.20         |0.24   |0.48   |1.0   |1.0        |1.0    |1.0       |full     |                 |          |1.0
 longsword    |Длинный меч     |sword   |10.752    |1.3  |8      |6          |0.20         |0.1    |0.24   |1.0   |0.5        |1.1    |1.2       |full     |                 |          |1.0
 greatsword   |Огромный меч    |sword   |3.584     |1.7  |8      |6          |0.20         |0.05   |0.1    |1.6   |2.0        |1.5    |1.2       |full     |                 |          |1.0
