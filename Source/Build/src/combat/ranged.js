@@ -1547,10 +1547,11 @@ function updateCrossbowReloadSound(ent){
 
 // ── Физика/столкновения снарядов (как у DROPPED_WEAPONS, но без подбора) ──
 function updateProjectiles(dt){
+  const step = simStep(dt);
   const BOUND_L = 40, BOUND_R = W-80, BOUND_T = 40, BOUND_B = H-40;
   for(let i = PROJECTILES.length-1; i >= 0; i--){
     const w = PROJECTILES[i];
-    w.x += w.vx; w.y += w.vy;
+    w.x += w.vx*step; w.y += w.vy*step;
 
     // Улетел за пределы арены или слишком долго летит — исчезает
     if(w.x < BOUND_L-60 || w.x > BOUND_R+60 || w.y < BOUND_T-60 || w.y > BOUND_B+60 || (GameTime - w.bornAt) > 3.0){
@@ -1559,7 +1560,8 @@ function updateProjectiles(dt){
 
     // Стрела арбалета: теряет скорость и "истаивает" через прозрачность
     if(w.kind === 'arrow'){
-      w.vx *= 0.996; w.vy *= 0.996;
+      w.vx = decayDT(w.vx, 0.996, dt/2);
+      w.vy = decayDT(w.vy, 0.996, dt/2);
       if(Math.hypot(w.vx,w.vy) < CROSSBOW_PROJ_SPEED*0.35){
         w.fade = (w.fade!=null ? w.fade : 1) - dt*1.5;
         if(w.fade <= 0){ PROJECTILES.splice(i,1); continue; }
@@ -1899,7 +1901,7 @@ function updateCrossbowBotAI(dt, bot){
   let mx = bot._cbMoveX||0, my = bot._cbMoveY||0;
 
   // Скорость
-  const exhMult = bot.exhausted > 0 ? bot.exhaustSpd : 1;
+  const exhMult = getMod(bot, 'moveSlow', 1);
   const unbMult = hasMod(bot, 'weaponRecoil') ? 0.3 : 1;
   const speedMult = exhMult * unbMult;
   const _dShDef = shieldDef(bot);
@@ -1916,8 +1918,9 @@ function updateCrossbowBotAI(dt, bot){
   bot.vx = lerpDT(bot.vx, mx*maxV, 0.16, dt);
   bot.vy = lerpDT(bot.vy, my*maxV, 0.16, dt);
   bot.vx = clamp(bot.vx,-15,15); bot.vy = clamp(bot.vy,-15,15);
-  bot.x = clamp(bot.x+bot.vx, 40, W-80);
-  bot.y = clamp(bot.y+bot.vy, 40, H-40);
+  const step = simStep(dt);
+  bot.x = clamp(bot.x+bot.vx*step, 40, W-80);
+  bot.y = clamp(bot.y+bot.vy*step, 40, H-40);
   resolveBoxCollision(bot);
 
 // Усталость/стамина/дисбаланс бота обрабатывает updateDummy(), которая
@@ -2057,8 +2060,9 @@ if(magicAI.state === 'charging'){
   // Бот стоит на месте
   bot.vx = lerpDT(bot.vx, 0, 0.9, dt);
   bot.vy = lerpDT(bot.vy, 0, 0.9, dt);
-  bot.x = clamp(bot.x + bot.vx, 40, W-80);
-  bot.y = clamp(bot.y + bot.vy, 40, H-40);
+  const step = simStep(dt);
+  bot.x = clamp(bot.x + bot.vx*step, 40, W-80);
+  bot.y = clamp(bot.y + bot.vy*step, 40, H-40);
   bot.angle = aimAngle;
   bot.stamina = Math.max(0, bot.stamina - 15 * dt);
   
@@ -2219,13 +2223,14 @@ if(chargeTime >= MAGICSTAFF_CHARGE_FULLTIME){
   let mx=0, my=0;
   if(dist < PREF_DIST*0.8){ mx=-Math.cos(aimAngle); my=-Math.sin(aimAngle); }
 else if(dist > PREF_DIST*1.3){ mx=Math.cos(aimAngle); my=Math.sin(aimAngle); }
-const maxV = 5 * sv('gamespeed');
+const maxV = 5 * getMod(bot, 'moveSlow', 1);
 bot.vx = lerpDT(bot.vx, mx*maxV, 0.2, dt);
 bot.vy = lerpDT(bot.vy, my*maxV, 0.2, dt);
 bot.vx = clamp(bot.vx,-15,15); bot.vy = clamp(bot.vy,-15,15);
 if(!bot._wandCharging){
-  bot.x = clamp(bot.x+bot.vx, 40, W-80);
-  bot.y = clamp(bot.y+bot.vy, 40, H-40);
+  const step = simStep(dt);
+  bot.x = clamp(bot.x+bot.vx*step, 40, W-80);
+  bot.y = clamp(bot.y+bot.vy*step, 40, H-40);
 }
 
 // 🔥 ВАЖНО: синхронизируем угол меча с aimAngle перед выстрелом

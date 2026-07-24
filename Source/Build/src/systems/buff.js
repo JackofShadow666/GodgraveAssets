@@ -38,7 +38,7 @@ const Act = {
       if(label){
         const c = entityBodyCenter(ent);
         const t = typeof label === 'function' ? label(ent) : label;
-        hitFX.push({x:c.x, y:c.y-50, t, life:45, big:true, col: col||'#ff8844'});
+        spawnFloatingText(ent, t, { x:c.x, y:c.y-50, col:col||'#ff8844' });
       }
       return true; // instant
     }};
@@ -79,6 +79,9 @@ const Act = {
 };
 
 // ── Определения эффектов ─────────────────────────────────────────────────
+const DISBALANCE_DURATION = 3;
+const DISBALANCE_RECOIL_DURATION = 1;
+
 const BUFF_DEFS = {
   EXHAUST: {
     steps: (swordSlowMult, moveSlowMult, duration) => [
@@ -100,8 +103,10 @@ const BUFF_DEFS = {
         ent._disbalanceAngularVelocity = (ent.vel >= 0 ? 1 : -1) * Math.max(Math.abs(ent.vel), 5);
       }),
       // Сначала 1 сек инерции, затем общий эффект замедления.
-      Act.parallelModifiers({ weaponRecoil: 1, moveSlow: 0.3 }, Math.max(1, recoilDur || 1)),
-      Act.parallelModifiers({ swordSlow: 0.3, moveSlow: 0.3 }, Math.max(2, slowDur || 2)),
+      Act.parallelModifiers({ weaponRecoil: 1, moveSlow: 0.3 }, recoilDur ?? DISBALANCE_RECOIL_DURATION),
+      ...(slowDur > 0
+        ? [Act.parallelModifiers({ swordSlow: 0.3, moveSlow: 0.3 }, slowDur)]
+        : []),
     ],
   },
 };
@@ -172,11 +177,17 @@ function regenStamina(ent, dt, isUsingStamina = false){
   const standingRegenMult = isStanding ? 3 : 1;
   ent.stamina = Math.min(ent.stamMax, ent.stamina + dt * ent.stamRegen * 0.2 * regenMult * standingRegenMult);
 }
-function applyDisbalance(ent, duration = 2){
-  startBuff(ent, 'DISBALANCE', 1, Math.max(2, duration || 2));
+function applyDisbalance(ent){
+  // unbdur is the full status duration. The opening recoil occupies part of it;
+  // the regular slowdown continues for the remainder.
+  const duration = Math.max(0.1, typeof sv === 'function' ? sv('unbdur') : DISBALANCE_DURATION);
+  const recoilDuration = Math.min(DISBALANCE_RECOIL_DURATION, duration);
+  startBuff(ent, 'DISBALANCE', recoilDuration, Math.max(0, duration - recoilDuration));
 }
 function isExhausted(ent){ return isBuffActive(ent,'EXHAUST'); }
 function isUnbalanced(ent){ return isBuffActive(ent,'DISBALANCE'); }
+// One shared gate for every status that temporarily deactivates a weapon.
+function isWeaponDisabled(ent){ return !!ent && (isExhausted(ent) || isUnbalanced(ent)); }
 function applyBladeBind(ent, duration = 2){ startBuff(ent, 'BLADEBIND', Math.max(2, duration || 2)); }
 function applyRage(ent, duration){ startBuff(ent, 'RAGE', duration || 5); }
 function hasRage(ent){ return isBuffActive(ent, 'RAGE'); }

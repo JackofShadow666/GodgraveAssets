@@ -6,6 +6,43 @@
 const hitFX = [];
 const BLOOD = [];
 
+// All floating combat labels use one visual preset.  `owner` is optional for
+// world/UI messages; labels owned by the same unit replace one another cleanly.
+const FLOATING_TEXT_LIFE = 40;
+const FLOATING_TEXT_FONT = 'bold 14px Share Tech Mono';
+class FloatingText {
+  constructor(x, y, text, options = {}){
+    this.x = x;
+    this.y = y;
+    this.t = text;
+    this.life = options.life || FLOATING_TEXT_LIFE;
+    this.maxLife = this.life;
+    this.col = options.col || '#ffcc44';
+    this.owner = options.owner || null;
+    this.fadeRate = 1;
+  }
+
+  fadeTwiceAsFast(){ this.fadeRate = Math.max(this.fadeRate, 2); }
+}
+
+function spawnFloatingText(owner, text, options = {}){
+  const point = options.x !== undefined && options.y !== undefined
+    ? { x: options.x, y: options.y }
+    : entityBodyCenter(owner);
+  if(owner && owner._lastFloatingText && owner._lastFloatingText.life > 0){
+    owner._lastFloatingText.fadeTwiceAsFast();
+  }
+  const label = new FloatingText(
+    point.x,
+    point.y,
+    text,
+    { ...options, owner }
+  );
+  if(owner) owner._lastFloatingText = label;
+  hitFX.push(label);
+  return label;
+}
+
 function spawnBlood(x, y, nx, ny){
   const count = 6 + Math.floor(Math.random()*5);
   for(let i=0;i<count;i++){

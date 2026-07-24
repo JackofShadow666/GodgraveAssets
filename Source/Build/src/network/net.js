@@ -1464,11 +1464,13 @@ function onPvpReset(msg){
 // ════════════════════════════════════════════════════════════════════════════
 (function(){
   var _wP=0, _wD=0;
+  var _seriesResetTimer=0;
+  const WINS_TO_SERIES = 5;
   function updateWins(){
     const ep=document.getElementById('hud-p-wins');
     const eb=document.getElementById('hud-b-wins');
-    if(ep) ep.textContent=_wP?'★'.repeat(Math.min(_wP,6)):'';
-    if(eb) eb.textContent=_wD?'★'.repeat(Math.min(_wD,6)):'';
+    if(ep) ep.textContent=`СЧЁТ ${_wP}/${WINS_TO_SERIES}`;
+    if(eb) eb.textContent=`СЧЁТ ${_wD}/${WINS_TO_SERIES}`;
   }
   function getWinnerName(isBot){
     if(!isBot) return (typeof PROFILE!=='undefined'&&PROFILE.name) ? PROFILE.name : 'Игрок';
@@ -1477,34 +1479,26 @@ function onPvpReset(msg){
     return (botEl&&botEl.textContent) ? botEl.textContent.trim() : 'Бот';
   }
   window.addWin = function(isBot){
-  if(isBot) _wD++; else _wP++;
-  
-  // 1. Проверяем, не достиг ли кто-то 6 побед
-  if(_wP>=6 || _wD>=6){
-    const winnerName = getWinnerName(_wD>=6);
+    if(isBot) _wD++; else _wP++;
+    updateWins();
+
+    if(_wP < WINS_TO_SERIES && _wD < WINS_TO_SERIES) return;
+
+    const winnerIsBot = _wD >= WINS_TO_SERIES;
+    const winnerName = getWinnerName(winnerIsBot);
     if(typeof hitFX!=='undefined'){
       hitFX.push({x:typeof W!=='undefined'?W/2:400, y:typeof H!=='undefined'?H/2-60:240,
-        t:'🏆 ПОБЕДИЛ ' + winnerName.toUpperCase() + '!',
-        life:300, big:true, col:'#ffd700'});
+        t:'🏆 СЕРИЮ ВЫИГРАЛ ' + winnerName.toUpperCase() + '!',
+        life:180, big:true, col:'#ffd700'});
     }
     if(typeof NET_CORE!=='undefined'&&NET_CORE.isOpen()){
       NET_CORE.send({type:'champion', name:winnerName});
     }
-    // 2. Сбрасываем счётчики ПОСЛЕ 6-й победы (как было)
-    setTimeout(()=>{ _wP=0; _wD=0; updateWins(); }, 3000);
-    return; // <-- Важно: выходим, чтобы не обновить HUD раньше времени
-  }
-  
-  // 3. Это ключевое изменение: после добавления очка (но до 6 побед)
-  // мы просто сбрасываем счётчики для следующего раунда.
-  // Сброс через 3 секунды, чтобы игроки видели результат раунда.
-  setTimeout(() => {
-    _wP = 0;
-    _wD = 0;
-    updateWins();
-  }, 3000);
-};
+    clearTimeout(_seriesResetTimer);
+    _seriesResetTimer=setTimeout(()=>{ _wP=0; _wD=0; updateWins(); }, 3000);
+  };
   window.resetWins=function(){
+    clearTimeout(_seriesResetTimer);
     _wP=0; _wD=0; updateWins();
   };
   // Получаем сообщение о чемпионе по сети
@@ -1513,8 +1507,10 @@ function onPvpReset(msg){
       hitFX.push({x:typeof W!=='undefined'?W/2:400, y:typeof H!=='undefined'?H/2-60:240,
         t:'🏆 ПОБЕДИЛ ' + name.toUpperCase() + '!',
         life:300, big:true, col:'#ffd700'});
+    clearTimeout(_seriesResetTimer);
     _wP=0; _wD=0; updateWins();
   };
+  updateWins();
 })();
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -1688,4 +1684,3 @@ function onPvpReset(msg){
   // Не подключаемся автоматически — ждём явного выбора сервера пользователем
   // (см. кнопки "Основной"/"Запасной" в меню сети)
 })();
-

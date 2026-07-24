@@ -30,7 +30,7 @@
 #                    настроек "Стам. ЛКМ (начало)" / sl-lmbcost, по умолчанию 50%).
 #                    1.0 = обычная стоимость (50%), 0.5 = вдвое дешевле (25%,
 #                    как у рапиры). Если не указано — 1.0.
-#
+#               
 # key        |name            |category|throwSpeed|scale|dmgBase|dmgPerSpeed|maxDmgPercent|spinMin|spinMax|weight|staminaMult|cutMult|pierceMult|collision|flags            |chargeTime|lmbStaminaMult
 dagger       |Кинжал          |knife   |17.92     |0.5  |4      |6          |0.20         |0.24   |0.48   |0.4   |0.01       |1.0    |3.5       |full     |                 |          |1.0
 rapier       |Рапира          |rapier  |8         |1.1  |8      |6          |0.20         |0.24   |0.48   |0.5   |1.0        |0.3    |2.5         |full     |                 |        |0.8

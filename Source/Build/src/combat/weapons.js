@@ -232,6 +232,20 @@ let DROPPED_WEAPONS = [];
 
 // Экипирует entity оружием типа typeIdx (случайный вариант из папки этого вида)
 function setWeapon(ent, typeIdx) {
+  // Drop controller state tied to the previous weapon. In particular, the
+  // magic-staff controller writes the angle directly; keeping its state or an
+  // old smoothed AI mouse target makes every later weapon twitch.
+  if(ent._magicStaffAI){
+    ent._magicStaffAI.state = 'idle';
+    ent._magicStaffAI.fireHeld = false;
+    ent._magicStaffAI.timeInState = 0;
+  }
+  if(ent._aiState){
+    ent._aiState._probingActive = false;
+    ent._aiState._probingPhase = 'approach';
+    ent._aiState._fakeMDown = false;
+    ent._aiState._smoothInited = false;
+  }
   // 🔥 ОЧИЩАЕМ ЭФФЕКТЫ НАКОПЛЕНИЯ ПРИ СМЕНЕ ОРУЖИЯ
   // Жезл
   if (ent._wandCharging) {
@@ -514,6 +528,7 @@ function bounceWeapon(w, nx, ny, restitution){
 
 // Обновление физики брошенного/лежащего оружия + подбор безоружными
 function updateDroppedWeapons(dt){
+  const step = simStep(dt);
   const PICKUP_R = 45;
   const BOUND_L = 40, BOUND_R = W - 80, BOUND_T = 40, BOUND_B = H - 40;
 
@@ -521,7 +536,7 @@ function updateDroppedWeapons(dt){
     const w = DROPPED_WEAPONS[i];
     if(w.rot === undefined) w.rot = Math.atan2(w.vy, w.vx);
     if(w.angVel === undefined) w.angVel = 0;
-    w.x += w.vx; w.y += w.vy;
+    w.x += w.vx*step; w.y += w.vy*step;
 
     // ── Отскок от границ арены ────────────────────────────────────────────
     const preSpd = Math.hypot(w.vx, w.vy);
@@ -616,12 +631,13 @@ if(bounced){
     }
 
     // Затухание скорости
-    w.vx *= 0.9887; w.vy *= 0.9887;
+    const velocityDecay = Math.pow(0.9887, step);
+    w.vx *= velocityDecay; w.vy *= velocityDecay;
     if(Math.hypot(w.vx, w.vy) < 0.05){ w.vx = 0; w.vy = 0; }
 
     // ── Вращение ──
-    w.rot += w.angVel;
-    w.angVel *= 0.985;
+    w.rot += w.angVel * decayingTickStep(dt, 0.985);
+    w.angVel *= Math.pow(0.985, step);
 // 🔥 ДЕБАГ
 if (w.weaponType === 'spear' && Math.abs(w.angVel) > 0.1) {
   console.log('🔄 ВРАЩЕНИЕ: angVel =', w.angVel, 'rot =', w.rot);

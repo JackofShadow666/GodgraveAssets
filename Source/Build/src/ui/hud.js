@@ -80,11 +80,31 @@ function updateHUD(){
     hudBPh.textContent = (NET_SYNC.peerName||'') + ' · ' + pingMs+'ms';
     hudBPh.style.color = pingMs<80?'#4acc80':pingMs<150?'#ccaa30':'#cc5050';
   } else {
-    const phase = AI.phase;
-    const tacticStr = AI.tactic==='COMBAT_HARASS'?' [ИЗМ]':'';
-    const phaseTxt = phase==='attack'?'⚔ АТАКА'+tacticStr:phase==='retreat'?'🏃 ОТСТУП':'😮‍💨 ПЕРЕДЫШКА';
-    const phaseCol = phase==='attack'?'#cc5030':phase==='retreat'?'#3090cc':'#aaaa30';
-    const tLeft = AI._phaseEnd>0?' '+Math.max(0,AI._phaseEnd-GameTime).toFixed(1)+'s':'';
+    let phaseTxt, phaseCol, timerEnd = -1;
+    if(AI._probingActive){
+      const probingNames = {approach:'ПОДХОД · ФЕХТОВАНИЕ', strike:'НАВЕДЕНИЕ', retreat:'ОТХОД', pause:'ПЕРЕДЫШКА'};
+      const probingState = AI._probingPhase === 'strike' && AI._probingMirrorBlock
+        ? 'ЗЕРКАЛЬНЫЙ БЛОК' : (probingNames[AI._probingPhase] || 'ПОДХОД');
+      phaseTxt = '⚔ PROBING · ' + probingState;
+      phaseCol = AI._probingPhase === 'retreat' ? '#3090cc' : '#4aaa70';
+      timerEnd = Math.max(AI._probingModeEnd || -1, AI._probingEnd || -1);
+    } else if(AI._pokeDodgeActive){
+      phaseTxt = '➜ УКОЛ С РЫВКОМ'; phaseCol = '#cc7040'; timerEnd = AI._pokeDodgeEnd;
+    } else if(AI._lungeActive){
+      phaseTxt = AI._lungePhase === 'back' ? '↩ ПОДГОТОВКА ВЫПАДА' : '➜ ВЫПАД';
+      phaseCol = AI._lungePhase === 'back' ? '#ccaa30' : '#cc5030'; timerEnd = AI._lungeEnd;
+    } else if(AI.tactic === 'COMBAT_HARASS' && AI.phase === 'attack'){
+      const harassNames = {approach:'ПОДХОД', strike:'УДАР', orbit:'ОБХОД'};
+      phaseTxt = '⚔ ИЗМАТЫВАНИЕ · ' + (harassNames[AI._harassPhase] || 'ПОДХОД');
+      phaseCol = AI._harassPhase === 'orbit' ? '#3090cc' : '#cc5030';
+      timerEnd = AI._harassTimer;
+    } else {
+      const phase = AI.phase;
+      phaseTxt = phase==='attack'?'⚔ АТАКА':phase==='retreat'?'🏃 ОТСТУП':'😮‍💨 ПЕРЕДЫШКА';
+      phaseCol = phase==='attack'?'#cc5030':phase==='retreat'?'#3090cc':'#aaaa30';
+      timerEnd = AI._phaseEnd;
+    }
+    const tLeft = timerEnd>GameTime?' '+Math.max(0,timerEnd-GameTime).toFixed(1)+'s':'';
     const styleStr = AI.swordStyle==='SWORD_STYLE_DUELIST'?' 🛡DUE':AI.swordStyle==='SWORD_STYLE_MIRROR'?' 🪞MIR':' ⚔SWD';
     hudBPh.textContent = phaseTxt + tLeft + styleStr;
     hudBPh.style.color = phaseCol;

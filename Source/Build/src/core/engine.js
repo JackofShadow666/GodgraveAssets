@@ -154,6 +154,27 @@ function decayDT(val, decay, dt){
   if(!isFinite(val)||!isFinite(dt)) return 0;
   return val * Math.pow(Math.min(Math.max(decay,0), 0.9999), dt * 60);
 }
+// Linear velocities in the older gameplay code are expressed in pixels per
+// 120 Hz simulation tick. Scale every displacement by game time as well as
+// scaling acceleration/decay, otherwise slow motion makes impulses travel
+// farther (at 0.1x a dodge used to last roughly ten times as many ticks).
+const SIM_TICK_RATE = 120;
+function simStep(dt){
+  return Math.max(0, Number.isFinite(dt) ? dt * SIM_TICK_RATE : 0);
+}
+function decayingImpulseStep(dt, decayPerSecond = 0.01){
+  if(!Number.isFinite(dt) || dt <= 0) return 0;
+  const decay = clamp(decayPerSecond, 0, 0.999999);
+  return (1 - Math.pow(decay, dt)) / (1 - Math.pow(decay, 1 / SIM_TICK_RATE));
+}
+// Integral of a legacy per-tick value while that value decays every tick.
+// Useful for spinning/flying objects whose velocity constants predate dt.
+function decayingTickStep(dt, perTickDecay){
+  if(!Number.isFinite(dt) || dt <= 0) return 0;
+  const decay = clamp(perTickDecay, 0, 0.999999);
+  const ticks = simStep(dt);
+  return (1 - Math.pow(decay, ticks)) / (1 - decay);
+}
 function angLerpDT(current, target, speed, dt){
   if(!isFinite(current)||!isFinite(target)||!isFinite(dt)) return current;
   const alpha = 1 - Math.pow(1 - Math.min(Math.max(speed,0), 0.9999), dt * 60);

@@ -104,8 +104,8 @@ function updateLightweightBot(bot, dt){
   const angToPlayer = Math.atan2(dy,dx);
   const cscl = sv('cscl');
 
-botUpdateExhaustion(bot, rawDt);
-  botRegenStamina(bot, rawDt);
+botUpdateExhaustion(bot, dt);
+  botRegenStamina(bot, dt);
 
   // Аггро-слот: сколько других ботов ближе к игроку, чем этот
   const others = ALL_BOTS.filter(b=>b!==bot && b.hp>0 && b!==D);
@@ -139,19 +139,20 @@ botUpdateExhaustion(bot, rawDt);
     bot.vy = decayDT(bot.vy, sv('inertia'), dt);
   }
   bot.vx = clamp(bot.vx,-15,15); bot.vy = clamp(bot.vy,-15,15);
-  bot.x = clamp(bot.x+bot.vx, 40, W-80);
-  bot.y = clamp(bot.y+bot.vy, 40, H-40);
+  const step = simStep(dt);
+  bot.x = clamp(bot.x+bot.vx*step, 40, W-80);
+  bot.y = clamp(bot.y+bot.vy*step, 40, H-40);
   resolveBoxCollision(bot);
 
   bot.prevAngle = bot.angle;
   bot.angle = angToPlayer;
 
-  bot._atkCD = (bot._atkCD||0) - rawDt;
+  bot._atkCD = (bot._atkCD||0) - dt;
   if(canEngage && dist < engageDist*1.3 && bot._atkCD<=0 && bot.stamina>20 && bot.exhausted<=0){
     bot._atkCD = rf(0.6,0.8);
     const swingTarget = (Math.random()<0.5?1:-1) * (sv('swthresh')*1.6);
     if(weaponKeyOf(bot) === 'flail'){
-      updateFlailSwing(bot, angToPlayer, rawDt);
+      updateFlailSwing(bot, angToPlayer, dt);
     } else {
       bot.vel = swingTarget;
     }
@@ -162,7 +163,7 @@ botUpdateExhaustion(bot, rawDt);
     bot.vel = decayDT(bot.vel, 0.85, dt);
   }
 
-  bot._dodgeCD = (bot._dodgeCD||0) - rawDt;
+  bot._dodgeCD = (bot._dodgeCD||0) - dt;
   if(bot._dodgeCD<=0 && dist < 70*cscl && Math.random() < (sv('botdodgechance')/100)*dt*2){
     bot._dodgeCD = 1.5;
     bot._dvx = -Math.cos(angToPlayer)*8;
@@ -193,6 +194,9 @@ function updateDummy(dt, bot){
   
   const ai = bot._aiState;
   if(!ai) return;
+  // Баффы и реген должны обновляться до любых ранних веток ИИ.
+  botUpdateExhaustion(bot, dt);
+  botRegenStamina(bot, dt);
   
   // 🔥 ЕСЛИ БОТ ЗАРЯЖАЕТ МАГИЮ - НЕ ДВИГАЕМ ЕГО
   if(bot._magicCharging === true){
@@ -203,8 +207,9 @@ function updateDummy(dt, bot){
     // Стоим на месте
     bot.vx = lerpDT(bot.vx, 0, 0.9, dt);
     bot.vy = lerpDT(bot.vy, 0, 0.9, dt);
-    bot.x = clamp(bot.x + bot.vx, 40, W-80);
-    bot.y = clamp(bot.y + bot.vy, 40, H-40);
+    const step = simStep(dt);
+    bot.x = clamp(bot.x + bot.vx * step, 40, W-80);
+    bot.y = clamp(bot.y + bot.vy * step, 40, H-40);
     return;
   }
   
@@ -223,11 +228,12 @@ function updateDummy(dt, bot){
     const dx = targetX - bot.x;
     const dy = targetY - bot.y;
     const d = Math.hypot(dx, dy) || 1;
-    const maxV = 7 * sv('botspd') * sv('globalspd');
+    const maxV = 7 * sv('botspd') * sv('globalspd') * getMod(bot, 'moveSlow', 1);
     bot.vx = lerpDT(bot.vx, (dx/d) * maxV, 0.22, dt);
     bot.vy = lerpDT(bot.vy, (dy/d) * maxV, 0.22, dt);
-    bot.x = clamp(bot.x + bot.vx, 40, W-80);
-    bot.y = clamp(bot.y + bot.vy, 40, H-40);
+    const step = simStep(dt);
+    bot.x = clamp(bot.x + bot.vx*step, 40, W-80);
+    bot.y = clamp(bot.y + bot.vy*step, 40, H-40);
     return;
   }
   
@@ -248,8 +254,7 @@ function updateDummy(dt, bot){
   const fmX = ai._fakeMX, fmY = ai._fakeMY;
   const fDown = ai._fakeMDown;
 
-  // Состояния: усталость и дисбаланс
-botUpdateExhaustion(bot, rawDt);
+  // Состояния усталости и дисбаланса уже обновлены в начале функции.
   const speedMult = getMod(bot, 'moveSlow', 1);
 
   // Щит бота — замедление и трата стамины
@@ -258,8 +263,6 @@ botUpdateExhaustion(bot, rawDt);
   const _dShWrong = _dShDef && shieldSameSideAsSword(bot);
   const _dShBaseMult = _dShDef ? (1 - 0.15 - _dShWeight*0.1) : 1.0;
   const _dShWrongMult = _dShWrong ? 0.8 : 1.0;
-
-botRegenStamina(bot, rawDt);
 
   // Движение — пропускаем полностью, если этот бот в этом же кадре уже был
   // передвинут специализированным ranged-контроллером (лук/арбалет/жезл в
@@ -294,18 +297,19 @@ botRegenStamina(bot, rawDt);
       bot.vy = decayDT(bot.vy, sv('inertia'), dt);
     }
     bot.vx = clamp(bot.vx, -15, 15); bot.vy = clamp(bot.vy, -15, 15);
-    bot.x = clamp(bot.x + bot.vx, 40, W-80);
-    bot.y = clamp(bot.y + bot.vy, 40, H-40);
+    const step = simStep(dt);
+    bot.x = clamp(bot.x + bot.vx*step, 40, W-80);
+    bot.y = clamp(bot.y + bot.vy*step, 40, H-40);
     resolveBoxCollision(bot);
   }
 
-botSpawnDust(bot, rawDt);
+botSpawnDust(bot, dt);
 
   // В PVP или при ожидании старта — позиция управляется сетью
   if(typeof NET_SYNC!=='undefined' && (NET_SYNC.active || NET_CORE.isOpen())) return;
   // Тик кулдауна бот-доджа
-if(ai._botDodgeCooldown>0) ai._botDodgeCooldown-=rawDt;
-  botUpdateDodge(bot, rawDt);
+if(ai._botDodgeCooldown>0) ai._botDodgeCooldown-=dt;
+  botUpdateDodge(bot, dt);
 
   // Рут бота (без компенсации — у бота её нет)
   const drc = { x: bot.x + 5, y: bot.y - 8 };
@@ -394,7 +398,7 @@ if(ai._botDodgeCooldown>0) ai._botDodgeCooldown-=rawDt;
         bot._flailTimer = 0;
     }
     
-    bot._flailTimer -= rawDt;
+    bot._flailTimer -= dt;
     
     // ── МЕНЯЕМ СОСТОЯНИЕ КАЖДЫЕ 1-3 СЕКУНДЫ ──
     if(bot._flailTimer <= 0){
@@ -422,7 +426,7 @@ if(ai._botDodgeCooldown>0) ai._botDodgeCooldown-=rawDt;
     let fakeAng;
     if(bot._flailSpinState === 'spinning'){
         // Вращаем прицел по кругу
-        bot._flailSpinAngle += bot._flailSpinDir * bot._flailSpinSpeed * rawDt;
+        bot._flailSpinAngle += bot._flailSpinDir * bot._flailSpinSpeed * dt;
         const spinRadius = 80;
         const fakeX = drc.x + Math.cos(bot._flailSpinAngle) * spinRadius;
         const fakeY = drc.y + Math.sin(bot._flailSpinAngle) * spinRadius;
@@ -433,11 +437,11 @@ if(ai._botDodgeCooldown>0) ai._botDodgeCooldown-=rawDt;
     }
     
     // Раскручиваем цепь с правильным углом
-    updateFlailSwing(bot, fakeAng, rawDt);
+    updateFlailSwing(bot, fakeAng, dt);
     
     // Если в режиме idle — принудительно ускоряем складывание
     if(bot._flailSpinState === 'idle'){
-        bot._flailExt = Math.max(0, (bot._flailExt || 0) - 2.0 * rawDt);
+        bot._flailExt = Math.max(0, (bot._flailExt || 0) - 2.0 * dt);
     }
     
     bot.prevAngle = bot.angle;
@@ -1165,10 +1169,14 @@ function drawDummy(){
 
 function _drawDummySword(){
   const weaponKey = weaponDefFor(D).key;
+  const dAlpha = getDebuffAlpha(D);
   
   // 🔥 ДЛЯ ЛУКА — ИСПОЛЬЗУЕМ СПЕЦИАЛЬНУЮ ФУНКЦИЮ
   if(weaponKey === 'bow'){
+    ctx.save();
+    ctx.globalAlpha = dAlpha;
     drawWeaponWithShake(D, dpivX, dpivY);
+    ctx.restore();
     return;
   }
   
@@ -1182,6 +1190,7 @@ function _drawDummySword(){
   }
   
   ctx.save();
+  ctx.globalAlpha = dAlpha;
   ctx.translate(dpivX + shakeX, dpivY + shakeY);
   ctx.rotate(D.angle + Math.PI/2 + shakeAngle);
   const dSw = effSwordScale(D) * sv('swlen') * sv('botswordscale');
@@ -1239,12 +1248,15 @@ function drawCursor(){
 function drawFX(){
   for(let i=hitFX.length-1;i>=0;i--){
     const f=hitFX[i];
-    ctx.globalAlpha=Math.max(0,f.life/40);
-    ctx.font=f.big?'bold 22px Oswald':'bold 12px Share Tech Mono';
-    ctx.fillStyle=f.col||(f.big?'#ffcc44':'#ff7744');
-    ctx.shadowColor=f.big?'#ff8800':'#ff4400'; ctx.shadowBlur=8;
-    ctx.textAlign='center'; ctx.fillText(f.t, f.x, f.y-(40-f.life)*0.4);
-    ctx.globalAlpha=1; ctx.shadowBlur=0; f.life--;
+    // Legacy callers may still push a plain object, but every label is drawn
+    // through the same visual preset so its size cannot vary by call site.
+    const maxLife = f.maxLife || f.life || FLOATING_TEXT_LIFE;
+    ctx.globalAlpha=Math.max(0,f.life/maxLife);
+    ctx.font=FLOATING_TEXT_FONT;
+    ctx.fillStyle=f.col||'#ffcc44';
+    ctx.shadowColor='#ff8800'; ctx.shadowBlur=8;
+    ctx.textAlign='center'; ctx.fillText(f.t, f.x, f.y-(maxLife-f.life)*0.4);
+    ctx.globalAlpha=1; ctx.shadowBlur=0; f.life -= f.fadeRate || 1;
     if(f.life<=0) hitFX.splice(i,1);
   }
   ctx.textAlign='left';

@@ -123,6 +123,8 @@ document.getElementById('sl-musicvol')?.addEventListener('input', function(){
 bindSlider('aiang');
 bindSlider('duelrad');
 bindSlider('circchance');
+bindSlider('probingchance');
+bindSlider('probingretreat');
 bindSlider('spindur');
 
 // ── ЭКСПОРТ НАСТРОЕК ────────────────────────────────────────────────────────
@@ -177,6 +179,7 @@ bindSlider('stamblock');
 bindSlider('stamswing');
 bindSlider('kbforce');
 bindSlider('unbdur');
+bindSlider('unbcombo');
 bindSlider('stamreg');
 bindSlider('gamespeed');
 bindSlider('camrows');

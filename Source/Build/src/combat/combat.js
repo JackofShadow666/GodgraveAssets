@@ -1,4 +1,4 @@
-﻿// === src/combat/combat.js ===
+// === src/combat/combat.js ===
 // Extracted from Build.html; loaded as a classic script to preserve shared runtime state.
 // LAYER: COMBAT — коллизии, блоки, стамина, статусы и отладочные шарики.
 // First module section: debug balls.
@@ -52,6 +52,7 @@ document.getElementById('btn-balls').addEventListener('click', () => {
 
 function updateBalls(dt){
   if(!ballsActive) return;
+  const step = simStep(dt);
   ballSpawnTimer += dt;
   if(ballSpawnTimer > 0.9){ ballSpawnTimer = 0; spawnBall(); }
 
@@ -74,16 +75,16 @@ function updateBalls(dt){
       const targetX = rc1.x + P.bx, targetY = rc1.y + P.by;
       const angToPlayer = Math.atan2(targetY - b.y, targetX - b.x);
       const homingStr = 0.012;
-      b.vx += Math.cos(angToPlayer) * homingStr;
-      b.vy += Math.sin(angToPlayer) * homingStr;
+      b.vx += Math.cos(angToPlayer) * homingStr * step;
+      b.vy += Math.sin(angToPlayer) * homingStr * step;
       const spd2 = Math.hypot(b.vx, b.vy);
       const maxSpd = Math.hypot(b.initVx, b.initVy) * 1.15;
       if(spd2 > maxSpd){ b.vx = b.vx/spd2*maxSpd; b.vy = b.vy/spd2*maxSpd; }
     }
 
-    b.x += b.vx; b.y += b.vy;
-    b.life--;
-    if(b.hit > 0) b.hit--;
+    b.x += b.vx*step; b.y += b.vy*step;
+    b.life-=step;
+    if(b.hit > 0) b.hit-=step;
 
     // ── Коллизия с мечом ─────────────────────────────────────────────────
     let hit = false;
@@ -361,20 +362,68 @@ function blockStaminaCost(attacker){
   if(attacker === P && mDown) return 0;
   return sv('stamblock') * (isBot(attacker) ? 2 : 1);
 }
+function disbalanceComboDebug(ent, text, col = '#ffcc44'){
+  if(!cb('unbcombodbg') || ent !== P) return;
+  const c = entityBodyCenter(ent);
+  spawnFloatingText(ent, text, { x:c.x, y:c.y-58, col });
+}
+
+function updateDisbalanceCombo(attacker, defender){
+  const windowDuration = Math.max(0.1, sv('unbcombo') || 2);
+  // swordHit() is called only for a confirmed weapon clash. Its `defender`
+  // is already the fighter who blocked the current attacking weapon, so an
+  // extra LMB/AI-input check here incorrectly discarded most real blocks.
+  const defenderCanBlock = defender && defender.hasWeapon !== false &&
+    !isRangedWeapon(defender) && weaponKeyOf(defender) !== 'flail';
+
+  // Final step: the same fighter who made the block now lands a strong
+  // weapon-on-weapon swing or an active LMB lunge against the same opponent.
+  const combo = attacker && attacker._disbalanceCombo;
+  const isLmbLunge =
+    (attacker === P && mDown && P.lmbWasDown &&
+      (GameTime - (P.lmbHoldStart || -99)) <= 0.18) ||
+    (attacker === D && typeof AI !== 'undefined' &&
+      ((AI._pokeDodgeActive && (GameTime - (D._pokeStartTime || -99)) <= 0.3) ||
+       (AI._lungeActive && AI._lungePhase === 'lunge')));
+  const isStrongSwing = Math.abs(attacker.vel) > sv('swthresh') * 2.5;
+  if(combo && GameTime - combo.startedAt <= windowDuration &&
+     combo.target === defender &&
+     (isStrongSwing || isLmbLunge)){
+    delete attacker._disbalanceCombo;
+    const chance = Math.min(100, combo.blocks * 30);
+    const triggered = Math.random() * 100 < chance;
+    if(triggered && !isUnbalanced(defender)) applyDisbalance(defender);
+    disbalanceComboDebug(attacker,
+      triggered
+        ? (isLmbLunge ? `ВЫПАД — ДИСБАЛАНС! (${chance}%)` : `УДАР — ДИСБАЛАНС! (${chance}%)`)
+        : `ДИСБАЛАНС НЕ СРАБОТАЛ (${chance}%)`,
+      triggered ? '#ff8830' : '#ff4040');
+    return triggered;
+  }
+
+  if(!defenderCanBlock) return false;
+
+  // Every weapon block adds a stack and restarts the expiration timer.
+  const state = defender._disbalanceCombo;
+  const expired = state && GameTime - state.startedAt > windowDuration;
+  const blocks = state && state.target === attacker && !expired ? state.blocks + 1 : 1;
+  defender._disbalanceCombo = { target: attacker, blocks, startedAt: GameTime };
+  disbalanceComboDebug(defender,
+    `БЛОКИ: ${blocks} · ШАНС ${Math.min(100, blocks * 30)}%`,
+    '#409cff');
+  return false;
+}
+
 function swordHit(entA, entB){
   const attacker = entA.isAttacker ? entA : entB;
   const defender = entA.isAttacker ? entB : entA;
+  const disbalanceTriggered = updateDisbalanceCombo(attacker, defender);
+  if(disbalanceTriggered) return;
   const cost = blockStaminaCost(attacker);
   attacker.stamina = Math.max(0, attacker.stamina - cost);
   if(attacker.stamina <= 0 && !isExhausted(attacker)){
     applyExhaust(attacker);
     return;
-  }
-  const disbalanceWindow = defender && defender.hasWeapon !== false && !isRangedWeapon(defender) && weaponKeyOf(defender) !== 'flail' &&
-    (defender === P ? (mDown && (GameTime - (P.lmbHoldStart || -99)) <= 0.6) : !!defender._fakeMDown);
-  if(disbalanceWindow && !isUnbalanced(attacker)){
-    attacker.unbAngle = attacker.angle;
-    applyDisbalance(attacker);
   }
 }
 
@@ -487,7 +536,7 @@ const bodySwB = weaponReach(entB) * sv('swlen') * (isBot(entB)?sv('botswordscale
   const segsB = [[bladeBx,bladeBy, tipBx,tipBy]];
   if(spanB.back > 0) segsB.push([backHandBx,backHandBy, backBx,backBy]);
 
-  if(!isExhausted(entA) && !isExhausted(entB)){
+  if(!isWeaponDisabled(entA) && !isWeaponDisabled(entB)){
     let res = null;
     for(const sa of segsA){
       for(const sb of segsB){
@@ -502,10 +551,14 @@ const bodySwB = weaponReach(entB) * sv('swlen') * (isBot(entB)?sv('botswordscale
     const swres = sv('swres');
 
     const sepClamped = Math.min(sep, 8);
-    entA.x += nx*sepClamped*0.5;
-    entA.y += ny*sepClamped*0.5;
-    entB.x -= nx*sepClamped*0.5;
-    entB.y -= ny*sepClamped*0.5;
+    // This contact is evaluated every simulation tick. Without time scaling,
+    // slow motion applies the same full positional shove many more times and
+    // a held blade can tow the opponent at near-normal (or higher) speed.
+    const contactStep = Math.min(1, simStep(dt));
+    entA.x += nx*sepClamped*0.5*contactStep;
+    entA.y += ny*sepClamped*0.5*contactStep;
+    entB.x -= nx*sepClamped*0.5*contactStep;
+    entB.y -= ny*sepClamped*0.5*contactStep;
 
     const dotA = entA.vx*nx + entA.vy*ny;
     if(dotA > 0){ entA.vx -= dotA*nx*swres; entA.vy -= dotA*ny*swres; }
@@ -520,20 +573,20 @@ const bodySwB = weaponReach(entB) * sv('swlen') * (isBot(entB)?sv('botswordscale
       if(spdA > MOVE_THRESH){
         const mxA = entA.vx/spdA, myA = entA.vy/spdA;
         const proj = Math.max(0, mxA*(-nx) + myA*(-ny));
-        entB.vx -= mxA * aikb * 0.4 * proj;
-        entB.vy -= myA * aikb * 0.4 * proj;
+        entB.vx -= mxA * aikb * 0.4 * proj * contactStep;
+        entB.vy -= myA * aikb * 0.4 * proj * contactStep;
       } else {
-        entB.vx -= nx * aikb * 0.3;
-        entB.vy -= ny * aikb * 0.3;
+        entB.vx -= nx * aikb * 0.3 * contactStep;
+        entB.vy -= ny * aikb * 0.3 * contactStep;
       }
       if(spdB > MOVE_THRESH){
         const mxB = entB.vx/spdB, myB = entB.vy/spdB;
         const proj = Math.max(0, mxB*nx + myB*ny);
-        entA.vx -= mxB * aikb * 0.4 * proj;
-        entA.vy -= myB * aikb * 0.4 * proj;
+        entA.vx -= mxB * aikb * 0.4 * proj * contactStep;
+        entA.vy -= myB * aikb * 0.4 * proj * contactStep;
       } else {
-        entA.vx -= nx * aikb * 0.3;
-        entA.vy -= ny * aikb * 0.3;
+        entA.vx -= nx * aikb * 0.3 * contactStep;
+        entA.vy -= ny * aikb * 0.3 * contactStep;
       }
     }
     
@@ -580,8 +633,8 @@ const bodySwB = weaponReach(entB) * sv('swlen') * (isBot(entB)?sv('botswordscale
 function checkBladeVsBody(attacker, defender, pivX, pivY, tipX2, tipY2) {
   // Нет урона во время экрана победы/поражения
   if (DEATH.pDead || DEATH.dDead) return;
-  // Оружие уставшего персонажа не имеет активного коллайдера.
-  if (isExhausted(attacker)) return;
+  // Усталость и дисбаланс деактивируют оружие через общий статусный gate.
+  if (isWeaponDisabled(attacker)) return;
   // В сетевом ПВП D — локальная интерполированная кукла противника
   if (defender === P && attacker === D && typeof NET_SYNC !== 'undefined' && NET_SYNC.active) return;
   // Iframes во время доджа
@@ -1083,7 +1136,7 @@ function checkBladeVsBody(attacker, defender, pivX, pivY, tipX2, tipY2) {
         const _kkL = Math.hypot(_kkX, _kkY) || 1;
         defender.vx += (_kkX / _kkL) * 18;
         defender.vy += (_kkY / _kkL) * 18;
-        if(!isUnbalanced(defender)) applyDisbalance(defender, 0.8);
+        if(!isUnbalanced(defender)) applyDisbalance(defender);
       }
       if (weaponHasFlag(attacker, 'knockback_staff')) {
         const _kkX = bC.x - entityBodyCenter(attacker).x;
@@ -1091,7 +1144,7 @@ function checkBladeVsBody(attacker, defender, pivX, pivY, tipX2, tipY2) {
         const _kkL = Math.hypot(_kkX, _kkY) || 1;
         defender.vx += (_kkX / _kkL) * 10;
         defender.vy += (_kkY / _kkL) * 10;
-        if(!isUnbalanced(defender)) applyDisbalance(defender, 0.4);
+        if(!isUnbalanced(defender)) applyDisbalance(defender);
       }
       
       // Применяем урон
@@ -1103,7 +1156,7 @@ function checkBladeVsBody(attacker, defender, pivX, pivY, tipX2, tipY2) {
         hitstopFrames: 4,
         shakePower: dmg > 15 ? 6 : 3,
         textColor: isPoke ? '#ffdd44' : '#ff4040',
-        textSuffix: isPoke ? 'вљ”' : '',
+        textSuffix: isPoke ? '⚔' : '',
         bloodCount: isPoke ? 4 : 8,
         playSound: false
       });
@@ -1280,7 +1333,7 @@ function getDebuffSwordMult(ent) {
 
 // ── ПОЛУЧИТЬ ПРОЗРАЧНОСТЬ МЕЧА ОТ ДЕБАФФА ──────────────────────────────
 function getDebuffAlpha(ent) {
-    if (ent && isExhausted(ent)) return 0.3;
+    if (isWeaponDisabled(ent)) return 0.3;
     if (!ent || !ent._debuffActive || (ent._debuffUntil || 0) < GameTime) {
         if (ent._debuffActive) {
             ent._debuffActive = false;
@@ -1361,7 +1414,6 @@ function triggerBladeBind(attacker, defender){
   }
   
   // Blade Bind has no separate floating text; disbalance owns the status label.
-  hitFX.push({x:defC.x, y:defC.y-35, t:(attacker.vel>0?'CW→CCW':'CCW→CW'), life:60, big:false, col:'#aaffaa'});
   FX_EFFECTS.push({type:'shieldwave', x:defC.x, y:defC.y, t:0, duration:30, angle:strikeAng, followEntity:defender});
   playSound('bladeblind');
 }

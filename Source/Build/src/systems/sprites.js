@@ -310,8 +310,9 @@ function botUpdateExhaustion(bot, dt){
 // Обновляет додж-импульс
 function botUpdateDodge(bot, dt){
   if(bot._dvx || bot._dvy){
-    bot.x = clamp(bot.x + bot._dvx, 40, W-80);
-    bot.y = clamp(bot.y + bot._dvy, 40, H-40);
+    const step = decayingImpulseStep(dt);
+    bot.x = clamp(bot.x + bot._dvx * step, 40, W-80);
+    bot.y = clamp(bot.y + bot._dvy * step, 40, H-40);
     const decay = Math.pow(0.01, dt);
     bot._dvx *= decay;
     bot._dvy *= decay;

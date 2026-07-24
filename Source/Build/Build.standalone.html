@@ -427,6 +427,14 @@ body.menu-open #mob-zone-btn{ visibility:hidden !important; }
         <div class="row-head"><label style="color:#3a7a50;">Шанс обхода % (отступ)</label><span class="val" id="vl-circchance" style="color:#3acc70;">35</span></div>
         <input type="range" id="sl-circchance" min="0" max="100" step="5" value="35" style="accent-color:#2a9a50;">
       </div>
+      <div class="row">
+        <div class="row-head"><label style="color:#3a7a50;">Шанс probing вместо атаки %</label><span class="val" id="vl-probingchance" style="color:#3acc70;">30</span></div>
+        <input type="range" id="sl-probingchance" min="0" max="100" step="1" value="30" style="accent-color:#2a9a50;">
+      </div>
+      <div class="row">
+        <div class="row-head"><label style="color:#3a7a50;">Дальность отхода probing (x обычной)</label><span class="val" id="vl-probingretreat" style="color:#3acc70;">0.1</span></div>
+        <input type="range" id="sl-probingretreat" min="0.1" max="0.1" step="0.05" value="0.1" style="accent-color:#2a9a50;">
+      </div>
       <div class="row" style="flex-direction:row;align-items:center;gap:7px;">
         <input type="checkbox" id="cb-duel" style="accent-color:#3acc70;cursor:pointer;" checked>
         <label for="cb-duel" style="font-size:8px;color:#3a8a50;cursor:pointer;letter-spacing:0.5px;">Duel Position System</label>
@@ -518,6 +526,14 @@ body.menu-open #mob-zone-btn{ visibility:hidden !important; }
         <input type="range" id="sl-unbdur" min="0.5" max="6" step="0.5" value="3">
       </div>
       <div class="row">
+        <div class="row-head"><label>Дисбаланс: окно комбо (сек)</label><span class="val" id="vl-unbcombo">2</span></div>
+        <input type="range" id="sl-unbcombo" min="0.5" max="5" step="0.1" value="2">
+      </div>
+      <div class="row" style="display:flex;align-items:center;gap:7px;">
+        <input type="checkbox" id="cb-unbcombodbg" style="accent-color:#ccaa30;cursor:pointer;">
+        <label for="cb-unbcombodbg" style="font-size:8px;color:#8a7020;cursor:pointer;letter-spacing:0.5px;">Дебаг: этапы комбо дисбаланса</label>
+      </div>
+      <div class="row">
         <div class="row-head"><label>Восст. стамины / сек</label><span class="val" id="vl-stamreg">28</span></div>
         <input type="range" id="sl-stamreg" min="1" max="60" step="1" value="28">
       </div>
@@ -548,8 +564,8 @@ body.menu-open #mob-zone-btn{ visibility:hidden !important; }
     <div class="sec" style="border:1px solid #3a1010;padding:8px;border-radius:3px;">
       <div class="sec-title" style="color:#cc3030;">█ УСТАЛОСТЬ</div>
       <div class="row">
-        <div class="row-head"><label style="color:#8a3030;">Длительность (сек)</label><span class="val" id="vl-exhdur2">1.8</span></div>
-        <input type="range" id="sl-exhdur2" min="0.5" max="8" step="0.5" value="1.8" style="accent-color:#cc2020;">
+        <div class="row-head"><label style="color:#8a3030;">Длительность (сек)</label><span class="val" id="vl-exhdur2">1</span></div>
+        <input type="range" id="sl-exhdur2" min="0.5" max="8" step="0.1" value="1" style="accent-color:#cc2020;">
       </div>
       <div class="row">
         <div class="row-head"><label style="color:#8a3030;">Замедл. движения</label><span class="val" id="vl-exhspd2">0.4</span></div>
@@ -869,6 +885,27 @@ function decayDT(val, decay, dt){
   if(!isFinite(val)||!isFinite(dt)) return 0;
   return val * Math.pow(Math.min(Math.max(decay,0), 0.9999), dt * 60);
 }
+// Linear velocities in the older gameplay code are expressed in pixels per
+// 120 Hz simulation tick. Scale every displacement by game time as well as
+// scaling acceleration/decay, otherwise slow motion makes impulses travel
+// farther (at 0.1x a dodge used to last roughly ten times as many ticks).
+const SIM_TICK_RATE = 120;
+function simStep(dt){
+  return Math.max(0, Number.isFinite(dt) ? dt * SIM_TICK_RATE : 0);
+}
+function decayingImpulseStep(dt, decayPerSecond = 0.01){
+  if(!Number.isFinite(dt) || dt <= 0) return 0;
+  const decay = clamp(decayPerSecond, 0, 0.999999);
+  return (1 - Math.pow(decay, dt)) / (1 - Math.pow(decay, 1 / SIM_TICK_RATE));
+}
+// Integral of a legacy per-tick value while that value decays every tick.
+// Useful for spinning/flying objects whose velocity constants predate dt.
+function decayingTickStep(dt, perTickDecay){
+  if(!Number.isFinite(dt) || dt <= 0) return 0;
+  const decay = clamp(perTickDecay, 0, 0.999999);
+  const ticks = simStep(dt);
+  return (1 - Math.pow(decay, ticks)) / (1 - decay);
+}
 function angLerpDT(current, target, speed, dt){
   if(!isFinite(current)||!isFinite(target)||!isFinite(dt)) return current;
   const alpha = 1 - Math.pow(1 - Math.min(Math.max(speed,0), 0.9999), dt * 60);
@@ -1152,6 +1189,8 @@ document.getElementById('sl-musicvol')?.addEventListener('input', function(){
 bindSlider('aiang');
 bindSlider('duelrad');
 bindSlider('circchance');
+bindSlider('probingchance');
+bindSlider('probingretreat');
 bindSlider('spindur');
 
 // ── ЭКСПОРТ НАСТРОЕК ────────────────────────────────────────────────────────
@@ -1206,6 +1245,7 @@ bindSlider('stamblock');
 bindSlider('stamswing');
 bindSlider('kbforce');
 bindSlider('unbdur');
+bindSlider('unbcombo');
 bindSlider('stamreg');
 bindSlider('gamespeed');
 bindSlider('camrows');
@@ -1257,6 +1297,43 @@ bindSlider('stamorbit');
 // ════════════════════════════════════════════════════════════════════════════
 const hitFX = [];
 const BLOOD = [];
+
+// All floating combat labels use one visual preset.  `owner` is optional for
+// world/UI messages; labels owned by the same unit replace one another cleanly.
+const FLOATING_TEXT_LIFE = 40;
+const FLOATING_TEXT_FONT = 'bold 14px Share Tech Mono';
+class FloatingText {
+  constructor(x, y, text, options = {}){
+    this.x = x;
+    this.y = y;
+    this.t = text;
+    this.life = options.life || FLOATING_TEXT_LIFE;
+    this.maxLife = this.life;
+    this.col = options.col || '#ffcc44';
+    this.owner = options.owner || null;
+    this.fadeRate = 1;
+  }
+
+  fadeTwiceAsFast(){ this.fadeRate = Math.max(this.fadeRate, 2); }
+}
+
+function spawnFloatingText(owner, text, options = {}){
+  const point = options.x !== undefined && options.y !== undefined
+    ? { x: options.x, y: options.y }
+    : entityBodyCenter(owner);
+  if(owner && owner._lastFloatingText && owner._lastFloatingText.life > 0){
+    owner._lastFloatingText.fadeTwiceAsFast();
+  }
+  const label = new FloatingText(
+    point.x,
+    point.y,
+    text,
+    { ...options, owner }
+  );
+  if(owner) owner._lastFloatingText = label;
+  hitFX.push(label);
+  return label;
+}
 
 function spawnBlood(x, y, nx, ny){
   const count = 6 + Math.floor(Math.random()*5);
@@ -1643,7 +1720,7 @@ const Act = {
       if(label){
         const c = entityBodyCenter(ent);
         const t = typeof label === 'function' ? label(ent) : label;
-        hitFX.push({x:c.x, y:c.y-50, t, life:45, big:true, col: col||'#ff8844'});
+        spawnFloatingText(ent, t, { x:c.x, y:c.y-50, col:col||'#ff8844' });
       }
       return true; // instant
     }};
@@ -1684,6 +1761,9 @@ const Act = {
 };
 
 // ── Определения эффектов ─────────────────────────────────────────────────
+const DISBALANCE_DURATION = 3;
+const DISBALANCE_RECOIL_DURATION = 1;
+
 const BUFF_DEFS = {
   EXHAUST: {
     steps: (swordSlowMult, moveSlowMult, duration) => [
@@ -1705,8 +1785,10 @@ const BUFF_DEFS = {
         ent._disbalanceAngularVelocity = (ent.vel >= 0 ? 1 : -1) * Math.max(Math.abs(ent.vel), 5);
       }),
       // Сначала 1 сек инерции, затем общий эффект замедления.
-      Act.parallelModifiers({ weaponRecoil: 1, moveSlow: 0.3 }, Math.max(1, recoilDur || 1)),
-      Act.parallelModifiers({ swordSlow: 0.3, moveSlow: 0.3 }, Math.max(2, slowDur || 2)),
+      Act.parallelModifiers({ weaponRecoil: 1, moveSlow: 0.3 }, recoilDur ?? DISBALANCE_RECOIL_DURATION),
+      ...(slowDur > 0
+        ? [Act.parallelModifiers({ swordSlow: 0.3, moveSlow: 0.3 }, slowDur)]
+        : []),
     ],
   },
 };
@@ -1777,11 +1859,17 @@ function regenStamina(ent, dt, isUsingStamina = false){
   const standingRegenMult = isStanding ? 3 : 1;
   ent.stamina = Math.min(ent.stamMax, ent.stamina + dt * ent.stamRegen * 0.2 * regenMult * standingRegenMult);
 }
-function applyDisbalance(ent, duration = 2){
-  startBuff(ent, 'DISBALANCE', 1, Math.max(2, duration || 2));
+function applyDisbalance(ent){
+  // unbdur is the full status duration. The opening recoil occupies part of it;
+  // the regular slowdown continues for the remainder.
+  const duration = Math.max(0.1, typeof sv === 'function' ? sv('unbdur') : DISBALANCE_DURATION);
+  const recoilDuration = Math.min(DISBALANCE_RECOIL_DURATION, duration);
+  startBuff(ent, 'DISBALANCE', recoilDuration, Math.max(0, duration - recoilDuration));
 }
 function isExhausted(ent){ return isBuffActive(ent,'EXHAUST'); }
 function isUnbalanced(ent){ return isBuffActive(ent,'DISBALANCE'); }
+// One shared gate for every status that temporarily deactivates a weapon.
+function isWeaponDisabled(ent){ return !!ent && (isExhausted(ent) || isUnbalanced(ent)); }
 function applyBladeBind(ent, duration = 2){ startBuff(ent, 'BLADEBIND', Math.max(2, duration || 2)); }
 function applyRage(ent, duration){ startBuff(ent, 'RAGE', duration || 5); }
 function hasRage(ent){ return isBuffActive(ent, 'RAGE'); }
@@ -2243,7 +2331,7 @@ const BLADEFIXSCALE = 0.75;
 // клинок-щит: часть оружия ближе HANDRANGE к руке (pivot) не участвует в
 // этих столкновениях — иначе рукояти двух мечей задевали бы друг друга
 // вплотную к рукам. Та же зона исключается из попаданий по телу.
-const HANDRANGE = 10;
+const HANDRANGE = 0;
 
 // Возвращает {back, front} — насколько далеко назад/вперёд от pivot (точки
 // хвата в руке) простирается коллайдер оружия ВДОЛЬ его линии, в тех же
@@ -2508,8 +2596,9 @@ function botUpdateExhaustion(bot, dt){
 // Обновляет додж-импульс
 function botUpdateDodge(bot, dt){
   if(bot._dvx || bot._dvy){
-    bot.x = clamp(bot.x + bot._dvx, 40, W-80);
-    bot.y = clamp(bot.y + bot._dvy, 40, H-40);
+    const step = decayingImpulseStep(dt);
+    bot.x = clamp(bot.x + bot._dvx * step, 40, W-80);
+    bot.y = clamp(bot.y + bot._dvy * step, 40, H-40);
     const decay = Math.pow(0.01, dt);
     bot._dvx *= decay;
     bot._dvy *= decay;
@@ -2808,6 +2897,20 @@ let DROPPED_WEAPONS = [];
 
 // Экипирует entity оружием типа typeIdx (случайный вариант из папки этого вида)
 function setWeapon(ent, typeIdx) {
+  // Drop controller state tied to the previous weapon. In particular, the
+  // magic-staff controller writes the angle directly; keeping its state or an
+  // old smoothed AI mouse target makes every later weapon twitch.
+  if(ent._magicStaffAI){
+    ent._magicStaffAI.state = 'idle';
+    ent._magicStaffAI.fireHeld = false;
+    ent._magicStaffAI.timeInState = 0;
+  }
+  if(ent._aiState){
+    ent._aiState._probingActive = false;
+    ent._aiState._probingPhase = 'approach';
+    ent._aiState._fakeMDown = false;
+    ent._aiState._smoothInited = false;
+  }
   // 🔥 ОЧИЩАЕМ ЭФФЕКТЫ НАКОПЛЕНИЯ ПРИ СМЕНЕ ОРУЖИЯ
   // Жезл
   if (ent._wandCharging) {
@@ -3090,6 +3193,7 @@ function bounceWeapon(w, nx, ny, restitution){
 
 // Обновление физики брошенного/лежащего оружия + подбор безоружными
 function updateDroppedWeapons(dt){
+  const step = simStep(dt);
   const PICKUP_R = 45;
   const BOUND_L = 40, BOUND_R = W - 80, BOUND_T = 40, BOUND_B = H - 40;
 
@@ -3097,7 +3201,7 @@ function updateDroppedWeapons(dt){
     const w = DROPPED_WEAPONS[i];
     if(w.rot === undefined) w.rot = Math.atan2(w.vy, w.vx);
     if(w.angVel === undefined) w.angVel = 0;
-    w.x += w.vx; w.y += w.vy;
+    w.x += w.vx*step; w.y += w.vy*step;
 
     // ── Отскок от границ арены ────────────────────────────────────────────
     const preSpd = Math.hypot(w.vx, w.vy);
@@ -3192,12 +3296,13 @@ if(bounced){
     }
 
     // Затухание скорости
-    w.vx *= 0.9887; w.vy *= 0.9887;
+    const velocityDecay = Math.pow(0.9887, step);
+    w.vx *= velocityDecay; w.vy *= velocityDecay;
     if(Math.hypot(w.vx, w.vy) < 0.05){ w.vx = 0; w.vy = 0; }
 
     // ── Вращение ──
-    w.rot += w.angVel;
-    w.angVel *= 0.985;
+    w.rot += w.angVel * decayingTickStep(dt, 0.985);
+    w.angVel *= Math.pow(0.985, step);
 // 🔥 ДЕБАГ
 if (w.weaponType === 'spear' && Math.abs(w.angVel) > 0.1) {
   console.log('🔄 ВРАЩЕНИЕ: angVel =', w.angVel, 'rot =', w.rot);
@@ -5336,10 +5441,11 @@ function updateCrossbowReloadSound(ent){
 
 // ── Физика/столкновения снарядов (как у DROPPED_WEAPONS, но без подбора) ──
 function updateProjectiles(dt){
+  const step = simStep(dt);
   const BOUND_L = 40, BOUND_R = W-80, BOUND_T = 40, BOUND_B = H-40;
   for(let i = PROJECTILES.length-1; i >= 0; i--){
     const w = PROJECTILES[i];
-    w.x += w.vx; w.y += w.vy;
+    w.x += w.vx*step; w.y += w.vy*step;
 
     // Улетел за пределы арены или слишком долго летит — исчезает
     if(w.x < BOUND_L-60 || w.x > BOUND_R+60 || w.y < BOUND_T-60 || w.y > BOUND_B+60 || (GameTime - w.bornAt) > 3.0){
@@ -5348,7 +5454,8 @@ function updateProjectiles(dt){
 
     // Стрела арбалета: теряет скорость и "истаивает" через прозрачность
     if(w.kind === 'arrow'){
-      w.vx *= 0.996; w.vy *= 0.996;
+      w.vx = decayDT(w.vx, 0.996, dt/2);
+      w.vy = decayDT(w.vy, 0.996, dt/2);
       if(Math.hypot(w.vx,w.vy) < CROSSBOW_PROJ_SPEED*0.35){
         w.fade = (w.fade!=null ? w.fade : 1) - dt*1.5;
         if(w.fade <= 0){ PROJECTILES.splice(i,1); continue; }
@@ -5688,7 +5795,7 @@ function updateCrossbowBotAI(dt, bot){
   let mx = bot._cbMoveX||0, my = bot._cbMoveY||0;
 
   // Скорость
-  const exhMult = bot.exhausted > 0 ? bot.exhaustSpd : 1;
+  const exhMult = getMod(bot, 'moveSlow', 1);
   const unbMult = hasMod(bot, 'weaponRecoil') ? 0.3 : 1;
   const speedMult = exhMult * unbMult;
   const _dShDef = shieldDef(bot);
@@ -5705,8 +5812,9 @@ function updateCrossbowBotAI(dt, bot){
   bot.vx = lerpDT(bot.vx, mx*maxV, 0.16, dt);
   bot.vy = lerpDT(bot.vy, my*maxV, 0.16, dt);
   bot.vx = clamp(bot.vx,-15,15); bot.vy = clamp(bot.vy,-15,15);
-  bot.x = clamp(bot.x+bot.vx, 40, W-80);
-  bot.y = clamp(bot.y+bot.vy, 40, H-40);
+  const step = simStep(dt);
+  bot.x = clamp(bot.x+bot.vx*step, 40, W-80);
+  bot.y = clamp(bot.y+bot.vy*step, 40, H-40);
   resolveBoxCollision(bot);
 
 // Усталость/стамина/дисбаланс бота обрабатывает updateDummy(), которая
@@ -5846,8 +5954,9 @@ if(magicAI.state === 'charging'){
   // Бот стоит на месте
   bot.vx = lerpDT(bot.vx, 0, 0.9, dt);
   bot.vy = lerpDT(bot.vy, 0, 0.9, dt);
-  bot.x = clamp(bot.x + bot.vx, 40, W-80);
-  bot.y = clamp(bot.y + bot.vy, 40, H-40);
+  const step = simStep(dt);
+  bot.x = clamp(bot.x + bot.vx*step, 40, W-80);
+  bot.y = clamp(bot.y + bot.vy*step, 40, H-40);
   bot.angle = aimAngle;
   bot.stamina = Math.max(0, bot.stamina - 15 * dt);
   
@@ -6008,13 +6117,14 @@ if(chargeTime >= MAGICSTAFF_CHARGE_FULLTIME){
   let mx=0, my=0;
   if(dist < PREF_DIST*0.8){ mx=-Math.cos(aimAngle); my=-Math.sin(aimAngle); }
 else if(dist > PREF_DIST*1.3){ mx=Math.cos(aimAngle); my=Math.sin(aimAngle); }
-const maxV = 5 * sv('gamespeed');
+const maxV = 5 * getMod(bot, 'moveSlow', 1);
 bot.vx = lerpDT(bot.vx, mx*maxV, 0.2, dt);
 bot.vy = lerpDT(bot.vy, my*maxV, 0.2, dt);
 bot.vx = clamp(bot.vx,-15,15); bot.vy = clamp(bot.vy,-15,15);
 if(!bot._wandCharging){
-  bot.x = clamp(bot.x+bot.vx, 40, W-80);
-  bot.y = clamp(bot.y+bot.vy, 40, H-40);
+  const step = simStep(dt);
+  bot.x = clamp(bot.x+bot.vx*step, 40, W-80);
+  bot.y = clamp(bot.y+bot.vy*step, 40, H-40);
 }
 
 // 🔥 ВАЖНО: синхронизируем угол меча с aimAngle перед выстрелом
@@ -6033,7 +6143,7 @@ return true;
 </script>
 <script>
 // === bundled: src/combat/combat.js ===
-﻿// === src/combat/combat.js ===
+// === src/combat/combat.js ===
 // Extracted from Build.html; loaded as a classic script to preserve shared runtime state.
 // LAYER: COMBAT — коллизии, блоки, стамина, статусы и отладочные шарики.
 // First module section: debug balls.
@@ -6087,6 +6197,7 @@ document.getElementById('btn-balls').addEventListener('click', () => {
 
 function updateBalls(dt){
   if(!ballsActive) return;
+  const step = simStep(dt);
   ballSpawnTimer += dt;
   if(ballSpawnTimer > 0.9){ ballSpawnTimer = 0; spawnBall(); }
 
@@ -6109,16 +6220,16 @@ function updateBalls(dt){
       const targetX = rc1.x + P.bx, targetY = rc1.y + P.by;
       const angToPlayer = Math.atan2(targetY - b.y, targetX - b.x);
       const homingStr = 0.012;
-      b.vx += Math.cos(angToPlayer) * homingStr;
-      b.vy += Math.sin(angToPlayer) * homingStr;
+      b.vx += Math.cos(angToPlayer) * homingStr * step;
+      b.vy += Math.sin(angToPlayer) * homingStr * step;
       const spd2 = Math.hypot(b.vx, b.vy);
       const maxSpd = Math.hypot(b.initVx, b.initVy) * 1.15;
       if(spd2 > maxSpd){ b.vx = b.vx/spd2*maxSpd; b.vy = b.vy/spd2*maxSpd; }
     }
 
-    b.x += b.vx; b.y += b.vy;
-    b.life--;
-    if(b.hit > 0) b.hit--;
+    b.x += b.vx*step; b.y += b.vy*step;
+    b.life-=step;
+    if(b.hit > 0) b.hit-=step;
 
     // ── Коллизия с мечом ─────────────────────────────────────────────────
     let hit = false;
@@ -6396,20 +6507,68 @@ function blockStaminaCost(attacker){
   if(attacker === P && mDown) return 0;
   return sv('stamblock') * (isBot(attacker) ? 2 : 1);
 }
+function disbalanceComboDebug(ent, text, col = '#ffcc44'){
+  if(!cb('unbcombodbg') || ent !== P) return;
+  const c = entityBodyCenter(ent);
+  spawnFloatingText(ent, text, { x:c.x, y:c.y-58, col });
+}
+
+function updateDisbalanceCombo(attacker, defender){
+  const windowDuration = Math.max(0.1, sv('unbcombo') || 2);
+  // swordHit() is called only for a confirmed weapon clash. Its `defender`
+  // is already the fighter who blocked the current attacking weapon, so an
+  // extra LMB/AI-input check here incorrectly discarded most real blocks.
+  const defenderCanBlock = defender && defender.hasWeapon !== false &&
+    !isRangedWeapon(defender) && weaponKeyOf(defender) !== 'flail';
+
+  // Final step: the same fighter who made the block now lands a strong
+  // weapon-on-weapon swing or an active LMB lunge against the same opponent.
+  const combo = attacker && attacker._disbalanceCombo;
+  const isLmbLunge =
+    (attacker === P && mDown && P.lmbWasDown &&
+      (GameTime - (P.lmbHoldStart || -99)) <= 0.18) ||
+    (attacker === D && typeof AI !== 'undefined' &&
+      ((AI._pokeDodgeActive && (GameTime - (D._pokeStartTime || -99)) <= 0.3) ||
+       (AI._lungeActive && AI._lungePhase === 'lunge')));
+  const isStrongSwing = Math.abs(attacker.vel) > sv('swthresh') * 2.5;
+  if(combo && GameTime - combo.startedAt <= windowDuration &&
+     combo.target === defender &&
+     (isStrongSwing || isLmbLunge)){
+    delete attacker._disbalanceCombo;
+    const chance = Math.min(100, combo.blocks * 30);
+    const triggered = Math.random() * 100 < chance;
+    if(triggered && !isUnbalanced(defender)) applyDisbalance(defender);
+    disbalanceComboDebug(attacker,
+      triggered
+        ? (isLmbLunge ? `ВЫПАД — ДИСБАЛАНС! (${chance}%)` : `УДАР — ДИСБАЛАНС! (${chance}%)`)
+        : `ДИСБАЛАНС НЕ СРАБОТАЛ (${chance}%)`,
+      triggered ? '#ff8830' : '#ff4040');
+    return triggered;
+  }
+
+  if(!defenderCanBlock) return false;
+
+  // Every weapon block adds a stack and restarts the expiration timer.
+  const state = defender._disbalanceCombo;
+  const expired = state && GameTime - state.startedAt > windowDuration;
+  const blocks = state && state.target === attacker && !expired ? state.blocks + 1 : 1;
+  defender._disbalanceCombo = { target: attacker, blocks, startedAt: GameTime };
+  disbalanceComboDebug(defender,
+    `БЛОКИ: ${blocks} · ШАНС ${Math.min(100, blocks * 30)}%`,
+    '#409cff');
+  return false;
+}
+
 function swordHit(entA, entB){
   const attacker = entA.isAttacker ? entA : entB;
   const defender = entA.isAttacker ? entB : entA;
+  const disbalanceTriggered = updateDisbalanceCombo(attacker, defender);
+  if(disbalanceTriggered) return;
   const cost = blockStaminaCost(attacker);
   attacker.stamina = Math.max(0, attacker.stamina - cost);
   if(attacker.stamina <= 0 && !isExhausted(attacker)){
     applyExhaust(attacker);
     return;
-  }
-  const disbalanceWindow = defender && defender.hasWeapon !== false && !isRangedWeapon(defender) && weaponKeyOf(defender) !== 'flail' &&
-    (defender === P ? (mDown && (GameTime - (P.lmbHoldStart || -99)) <= 0.6) : !!defender._fakeMDown);
-  if(disbalanceWindow && !isUnbalanced(attacker)){
-    attacker.unbAngle = attacker.angle;
-    applyDisbalance(attacker);
   }
 }
 
@@ -6522,7 +6681,7 @@ const bodySwB = weaponReach(entB) * sv('swlen') * (isBot(entB)?sv('botswordscale
   const segsB = [[bladeBx,bladeBy, tipBx,tipBy]];
   if(spanB.back > 0) segsB.push([backHandBx,backHandBy, backBx,backBy]);
 
-  if(!isExhausted(entA) && !isExhausted(entB)){
+  if(!isWeaponDisabled(entA) && !isWeaponDisabled(entB)){
     let res = null;
     for(const sa of segsA){
       for(const sb of segsB){
@@ -6537,10 +6696,14 @@ const bodySwB = weaponReach(entB) * sv('swlen') * (isBot(entB)?sv('botswordscale
     const swres = sv('swres');
 
     const sepClamped = Math.min(sep, 8);
-    entA.x += nx*sepClamped*0.5;
-    entA.y += ny*sepClamped*0.5;
-    entB.x -= nx*sepClamped*0.5;
-    entB.y -= ny*sepClamped*0.5;
+    // This contact is evaluated every simulation tick. Without time scaling,
+    // slow motion applies the same full positional shove many more times and
+    // a held blade can tow the opponent at near-normal (or higher) speed.
+    const contactStep = Math.min(1, simStep(dt));
+    entA.x += nx*sepClamped*0.5*contactStep;
+    entA.y += ny*sepClamped*0.5*contactStep;
+    entB.x -= nx*sepClamped*0.5*contactStep;
+    entB.y -= ny*sepClamped*0.5*contactStep;
 
     const dotA = entA.vx*nx + entA.vy*ny;
     if(dotA > 0){ entA.vx -= dotA*nx*swres; entA.vy -= dotA*ny*swres; }
@@ -6555,20 +6718,20 @@ const bodySwB = weaponReach(entB) * sv('swlen') * (isBot(entB)?sv('botswordscale
       if(spdA > MOVE_THRESH){
         const mxA = entA.vx/spdA, myA = entA.vy/spdA;
         const proj = Math.max(0, mxA*(-nx) + myA*(-ny));
-        entB.vx -= mxA * aikb * 0.4 * proj;
-        entB.vy -= myA * aikb * 0.4 * proj;
+        entB.vx -= mxA * aikb * 0.4 * proj * contactStep;
+        entB.vy -= myA * aikb * 0.4 * proj * contactStep;
       } else {
-        entB.vx -= nx * aikb * 0.3;
-        entB.vy -= ny * aikb * 0.3;
+        entB.vx -= nx * aikb * 0.3 * contactStep;
+        entB.vy -= ny * aikb * 0.3 * contactStep;
       }
       if(spdB > MOVE_THRESH){
         const mxB = entB.vx/spdB, myB = entB.vy/spdB;
         const proj = Math.max(0, mxB*nx + myB*ny);
-        entA.vx -= mxB * aikb * 0.4 * proj;
-        entA.vy -= myB * aikb * 0.4 * proj;
+        entA.vx -= mxB * aikb * 0.4 * proj * contactStep;
+        entA.vy -= myB * aikb * 0.4 * proj * contactStep;
       } else {
-        entA.vx -= nx * aikb * 0.3;
-        entA.vy -= ny * aikb * 0.3;
+        entA.vx -= nx * aikb * 0.3 * contactStep;
+        entA.vy -= ny * aikb * 0.3 * contactStep;
       }
     }
     
@@ -6615,8 +6778,8 @@ const bodySwB = weaponReach(entB) * sv('swlen') * (isBot(entB)?sv('botswordscale
 function checkBladeVsBody(attacker, defender, pivX, pivY, tipX2, tipY2) {
   // Нет урона во время экрана победы/поражения
   if (DEATH.pDead || DEATH.dDead) return;
-  // Оружие уставшего персонажа не имеет активного коллайдера.
-  if (isExhausted(attacker)) return;
+  // Усталость и дисбаланс деактивируют оружие через общий статусный gate.
+  if (isWeaponDisabled(attacker)) return;
   // В сетевом ПВП D — локальная интерполированная кукла противника
   if (defender === P && attacker === D && typeof NET_SYNC !== 'undefined' && NET_SYNC.active) return;
   // Iframes во время доджа
@@ -7118,7 +7281,7 @@ function checkBladeVsBody(attacker, defender, pivX, pivY, tipX2, tipY2) {
         const _kkL = Math.hypot(_kkX, _kkY) || 1;
         defender.vx += (_kkX / _kkL) * 18;
         defender.vy += (_kkY / _kkL) * 18;
-        if(!isUnbalanced(defender)) applyDisbalance(defender, 0.8);
+        if(!isUnbalanced(defender)) applyDisbalance(defender);
       }
       if (weaponHasFlag(attacker, 'knockback_staff')) {
         const _kkX = bC.x - entityBodyCenter(attacker).x;
@@ -7126,7 +7289,7 @@ function checkBladeVsBody(attacker, defender, pivX, pivY, tipX2, tipY2) {
         const _kkL = Math.hypot(_kkX, _kkY) || 1;
         defender.vx += (_kkX / _kkL) * 10;
         defender.vy += (_kkY / _kkL) * 10;
-        if(!isUnbalanced(defender)) applyDisbalance(defender, 0.4);
+        if(!isUnbalanced(defender)) applyDisbalance(defender);
       }
       
       // Применяем урон
@@ -7138,7 +7301,7 @@ function checkBladeVsBody(attacker, defender, pivX, pivY, tipX2, tipY2) {
         hitstopFrames: 4,
         shakePower: dmg > 15 ? 6 : 3,
         textColor: isPoke ? '#ffdd44' : '#ff4040',
-        textSuffix: isPoke ? 'вљ”' : '',
+        textSuffix: isPoke ? '⚔' : '',
         bloodCount: isPoke ? 4 : 8,
         playSound: false
       });
@@ -7315,7 +7478,7 @@ function getDebuffSwordMult(ent) {
 
 // ── ПОЛУЧИТЬ ПРОЗРАЧНОСТЬ МЕЧА ОТ ДЕБАФФА ──────────────────────────────
 function getDebuffAlpha(ent) {
-    if (ent && isExhausted(ent)) return 0.3;
+    if (isWeaponDisabled(ent)) return 0.3;
     if (!ent || !ent._debuffActive || (ent._debuffUntil || 0) < GameTime) {
         if (ent._debuffActive) {
             ent._debuffActive = false;
@@ -7396,7 +7559,6 @@ function triggerBladeBind(attacker, defender){
   }
   
   // Blade Bind has no separate floating text; disbalance owns the status label.
-  hitFX.push({x:defC.x, y:defC.y-35, t:(attacker.vel>0?'CW→CCW':'CCW→CW'), life:60, big:false, col:'#aaffaa'});
   FX_EFFECTS.push({type:'shieldwave', x:defC.x, y:defC.y, t:0, duration:30, angle:strikeAng, followEntity:defender});
   playSound('bladeblind');
 }
@@ -8167,6 +8329,11 @@ function freshAIState(){
   _posTimer: 0, _posIdx: 0,
   _breatherBackEnd: -1,
   _breatherArrived: false, _breatherEndAfterArrival: -1,
+  _probingActive: false, _probingPhase: 'approach', _probingEnd: -1,
+  _probingStrikes: 0, _probingSwingSide: 1, _probingRollDone: false,
+  _probingRetreatStep: 0, _probingModeEnd: -1, _probingLastEnd: -999,
+  _probingDistanceScale: 1, _probingWeaponContact: false,
+  _probingAngleJitter: 0, _probingPauseBlockedUntil: -1, _probingMirrorBlock: false,
   };
 }
 
@@ -8385,6 +8552,11 @@ let AI = {
   _posTimer: 0, _posIdx: 0,
   _breatherBackEnd: -1,
   _breatherArrived: false, _breatherEndAfterArrival: -1,
+  _probingActive: false, _probingPhase: 'approach', _probingEnd: -1,
+  _probingStrikes: 0, _probingSwingSide: 1, _probingRollDone: false,
+  _probingRetreatStep: 0, _probingModeEnd: -1, _probingLastEnd: -999,
+  _probingDistanceScale: 1, _probingWeaponContact: false,
+  _probingAngleJitter: 0, _probingPauseBlockedUntil: -1, _probingMirrorBlock: false,
 };
 
 // D — бот №1 по умолчанию. Изначально он же и "умный" (владелец AI).
@@ -8481,6 +8653,153 @@ function aiMoveAway(k, fromC, target, maxDist, cscl){
   k.w = ay < -0.3; k.s = ay > 0.3;
 }
 
+const PROBING_WEAPON_KEYS = [
+  'dagger', 'rapier', 'sword', 'longsword', 'greatsword',
+  'staff', 'halberd', 'spear', 'wand'
+];
+
+// Deliberately short attack made outside body-hit range.
+function aiUpdateProbing(ai, bot, k, bBodyC, pBodyC, distToPlayer, cscl){
+  const reach = weaponReach(bot) * sv('swlen') * (isBot(bot) ? sv('botswordscale') : 1);
+  const baseSafeDist = reach + 65 * cscl;
+  // Each missed exchange closes the next attempt by 22%, but never removes
+  // the minimum body-safe gap beyond the weapon tip.
+  const safeDist = Math.max(reach + 20 * cscl,
+    baseSafeDist * (ai._probingDistanceScale || 1));
+  const retreatDist = safeDist + (ai._probingRetreatStep || 125 * cscl * sv('probingretreat'));
+  const playerWeaponPivot = entityPivot(P);
+  const playerWeaponTip = weaponTipPos(P);
+  const playerWeaponCenter = {
+    x: (playerWeaponPivot.x + playerWeaponTip.x) * 0.5,
+    y: (playerWeaponPivot.y + playerWeaponTip.y) * 0.5,
+  };
+  const ang = Math.atan2(playerWeaponCenter.y - bBodyC.y, playerWeaponCenter.x - bBodyC.x);
+
+  if(ai._probingPhase === 'approach'){
+    ai._fakeMDown = false;
+    if(distToPlayer < safeDist - 8 * cscl) aiMoveAway(k, bBodyC, pBodyC, safeDist, cscl);
+    else if(distToPlayer > safeDist + 12 * cscl) aiMoveToward(k, bBodyC, pBodyC, safeDist, cscl);
+    else {
+      k.w=k.a=k.s=k.d=false;
+      ai._probingPhase = 'strike';
+      // Alternate between a 1-3 and a 2-3 hit series.
+      ai._probingStrikes = Math.random() < 0.5
+        ? 1 + Math.floor(Math.random() * 3)
+        : 2 + Math.floor(Math.random() * 2);
+      ai._probingSwingSide = Math.random() < 0.5 ? -1 : 1;
+      ai._probingAngleJitter = (Math.random() * 2 - 1) * 10 * Math.PI / 180;
+      ai._probingMirrorBlock = Math.random() < 0.3;
+      ai._probingEnd = GameTime + 0.32;
+    }
+    // Fencing motion is only used while approaching.
+    const approachAim = ang + Math.sin(GameTime * 7) * 0.36 + ai._probingAngleJitter;
+    aiPointMouse(bBodyC,
+      bBodyC.x + Math.cos(approachAim) * 150 * cscl,
+      bBodyC.y + Math.sin(approachAim) * 150 * cscl);
+    return true;
+  }
+
+  if(ai._probingPhase === 'strike'){
+    if(distToPlayer < safeDist) aiMoveAway(k, bBodyC, pBodyC, safeDist, cscl);
+    else k.w=k.a=k.s=k.d=false;
+    const botWeaponPivot = entityPivot(bot);
+    if(ai._probingMirrorBlock){
+      // 30%: mirror into a block, limited to the forward +/-60 degree arc.
+      const mirroredBlockAng = P.angle + Math.PI / 2 + (P.vel > 0 ? -0.3 : 0.3);
+      const frontAng = Math.atan2(pBodyC.y - bBodyC.y, pBodyC.x - bBodyC.x);
+      const maxFrontMirror = Math.PI / 3;
+      const blockAng = frontAng + clamp(
+        angDiff(mirroredBlockAng, frontAng), -maxFrontMirror, maxFrontMirror);
+      aiPointMouse(bBodyC,
+        botWeaponPivot.x + Math.cos(blockAng) * 150 * cscl,
+        botWeaponPivot.y + Math.sin(blockAng) * 150 * cscl);
+      ai._fakeMDown = false;
+    } else {
+      // 70%: hold the weapon pointed directly at the player. No side swing
+      // and no attack input during this probing test.
+      const pointAng = Math.atan2(pBodyC.y - botWeaponPivot.y, pBodyC.x - botWeaponPivot.x);
+      aiPointMouse(bBodyC,
+        botWeaponPivot.x + Math.cos(pointAng) * 150 * cscl,
+        botWeaponPivot.y + Math.sin(pointAng) * 150 * cscl);
+      ai._fakeMDown = false;
+    }
+    if(GameTime >= ai._probingEnd){
+      ai._probingStrikes--;
+      ai._probingSwingSide *= -1;
+      if(ai._probingStrikes > 0){
+        ai._probingAngleJitter = (Math.random() * 2 - 1) * 10 * Math.PI / 180;
+        ai._probingEnd = GameTime + 0.32;
+      }
+      else {
+        ai._fakeMDown = false;
+        if(!ai._probingWeaponContact){
+          ai._probingDistanceScale = Math.max(0.35, (ai._probingDistanceScale || 1) * 0.78);
+        }
+        ai._probingPhase = 'retreat';
+        const normalRetreatDistance = (125 + Math.random() * 50) * cscl;
+        ai._probingRetreatStep = normalRetreatDistance * Math.min(0.7, sv('probingretreat'));
+        ai._probingEnd = GameTime + 1.1;
+      }
+    }
+    return true;
+  }
+
+  ai._fakeMDown = false;
+  if(ai._probingPhase === 'retreat'){
+    // Keep the weapon still while stepping back: no tracking or fencing.
+    const botWeaponPivot = entityPivot(bot);
+    aiPointMouse(bBodyC,
+      botWeaponPivot.x + Math.cos(bot.angle) * 150 * cscl,
+      botWeaponPivot.y + Math.sin(bot.angle) * 150 * cscl,
+      true);
+    aiMoveAway(k, bBodyC, pBodyC, retreatDist, cscl);
+    if(distToPlayer >= retreatDist || GameTime >= ai._probingEnd){
+      k.w=k.a=k.s=k.d=false;
+      if(GameTime < ai._probingModeEnd &&
+         (GameTime < ai._probingPauseBlockedUntil || Math.random() < 0.85)){
+        if(GameTime >= ai._probingPauseBlockedUntil){
+          ai._probingPauseBlockedUntil = GameTime + rf(7, 5);
+        }
+        ai._probingPhase = 'approach';
+        ai._probingRetreatStep = 0;
+        ai._probingWeaponContact = false;
+        ai._probingEnd = -1;
+      } else {
+        ai._probingPhase = 'pause';
+        const shortPause = Math.random() < 0.5;
+        ai._probingEnd = GameTime < ai._probingModeEnd
+          ? GameTime + (shortPause ? rf(0.2, 0.2) : rf(1, 0.5))
+          : GameTime;
+      }
+      ai._retreatMode = false;
+    }
+    return true;
+  }
+
+  // Rare breather: half are 0.2-0.4s, the rest are 1-1.5s.
+  k.w=k.a=k.s=k.d=false;
+  aiPointMouse(bBodyC, playerWeaponCenter.x, playerWeaponCenter.y);
+  if(GameTime >= ai._probingEnd){
+    if(GameTime < ai._probingModeEnd){
+      // The mode is locked for 7-15 seconds: start another probing exchange.
+      ai._probingPhase = 'approach';
+      ai._probingRetreatStep = 0;
+      ai._probingWeaponContact = false;
+      ai._probingEnd = -1;
+      ai._retreatMode = false;
+    } else {
+      ai._probingActive = false;
+      ai._probingPhase = 'approach';
+      ai._probingLastEnd = GameTime;
+      ai.phase = 'retreat';
+      ai._retreatMode = true;
+      ai._phaseEnd = GameTime + rf(1.5, 0.8);
+      ai._retreatMoveCD = -1;
+    }
+  }
+  return true;
+}
+
 function aiPointMouse(dBodyC, targetX, targetY, instant, _dt){
   if(!AI._smoothInited || instant){
     AI._smoothMX = targetX;
@@ -8549,6 +8868,10 @@ function duelUpdate(dt){
 
 // Уведомление о контакте мечами (вызывается из checkSwordCollision)
 function aiNotifyContact(){
+  if(AI._probingActive){
+    AI._probingWeaponContact = true;
+    AI._probingDistanceScale = 1;
+  }
   if(AI._contactCD > GameTime) return;
   const delay = 1 + Math.floor(Math.random()*4);
   AI._contactCD = GameTime + delay;
@@ -8566,7 +8889,7 @@ function aiNotifyContact(){
   // 20% шанс на обычном оружии, 55% у рапиры (она заточена под уколы) —
   // шаг назад + выпад ЛКМ (цепом не колют и не делают выпад)
   const _lungeChance = weaponKeyOf(D) === 'rapier' ? 0.55 : 0.2;
-  if(Math.random() < _lungeChance && !AI._lungeActive && weaponKeyOf(D) !== 'flail'){
+  if(!AI._probingActive && Math.random() < _lungeChance && !AI._lungeActive && weaponKeyOf(D) !== 'flail'){
     AI._lungeActive = true;
     AI._lungePhase = 'back';
     AI._lungeEnd = GameTime + 0.35;
@@ -9204,6 +9527,51 @@ if(ai._contactCD > 0 && ai.phase === 'attack' && ai._contactCD <= GameTime){
     }
   }
 
+  // Roll exactly once when entering an attack phase. At 100% probing fully
+  // replaces the attack, including approach, lunges and other attack tactics.
+  if(ai.phase !== 'attack') ai._probingRollDone = false;
+  const probingChance = sv('probingchance');
+  const probingCooldownReady = probingChance >= 100 || GameTime - ai._probingLastEnd >= 20;
+  if(ai.phase === 'attack' && !ai._probingActive && !ai._probingRollDone &&
+     probingCooldownReady && bot.hasWeapon !== false &&
+     PROBING_WEAPON_KEYS.includes(weaponKeyOf(bot))){
+    ai._probingRollDone = true;
+    if(Math.random() * 100 < probingChance){
+      ai._probingActive = true;
+      ai._probingPhase = 'approach';
+      ai._probingEnd = -1;
+      ai._probingRetreatStep = 0;
+      ai._probingModeEnd = GameTime + rf(7, 8);
+      ai._probingWeaponContact = false;
+      ai._probingPauseBlockedUntil = -1;
+      ai._spinActive = false;
+      ai._lungeActive = false;
+      ai._pokeDodgeActive = false;
+      ai._feintActive = false;
+      ai._fakeMDown = false;
+    }
+  }
+  if(ai._probingActive){
+    // Rage overrides probing unless the debug chance explicitly forces it.
+    if(bot.rageBuffEnd > GameTime && sv('probingchance') < 100){
+      ai._probingActive = false;
+      ai._probingPhase = 'approach';
+      ai._probingLastEnd = GameTime;
+      ai._probingModeEnd = -1;
+      ai._probingRetreatStep = 0;
+      ai._probingWeaponContact = false;
+      ai._retreatMode = false;
+      ai._fakeMDown = false;
+      ai.phase = 'attack';
+      ai._phaseEnd = -1;
+    }
+  }
+  if(ai._probingActive){
+    ai._retreatMode = ai._probingPhase === 'retreat';
+    aiUpdateProbing(ai, bot, k, bBodyC, pBodyC, distToPlayer, cscl);
+    return;
+  }
+
   // ── ЦЕП: доп. кручения вдвое чаще обычного ────────────
   // У остальных видов оружия "прокрут" запускается только при входе в фазу
   // атаки издалека / после контакта и т.п. — для цепа это редко и нерегулярно.
@@ -9638,6 +10006,16 @@ function updateAIDispatch(dt, bot){
   }
 
   const key = weaponKeyOf(bot);
+
+  // A weapon switch must not leave the probing controller holding stale
+  // mouse targets. Magic staff is intentionally not probing-compatible.
+  if(bot._aiState._probingActive && !PROBING_WEAPON_KEYS.includes(key)){
+    bot._aiState._probingActive = false;
+    bot._aiState._probingPhase = 'approach';
+    bot._aiState._fakeMDown = false;
+    bot._aiState._probingLastEnd = GameTime;
+    bot._aiState._smoothInited = false;
+  }
   
   if(key === 'crossbow' || key === 'bow'){ 
     bot._rangedMovementHandled = true;
@@ -9773,8 +10151,8 @@ function updateLightweightBot(bot, dt){
   const angToPlayer = Math.atan2(dy,dx);
   const cscl = sv('cscl');
 
-botUpdateExhaustion(bot, rawDt);
-  botRegenStamina(bot, rawDt);
+botUpdateExhaustion(bot, dt);
+  botRegenStamina(bot, dt);
 
   // Аггро-слот: сколько других ботов ближе к игроку, чем этот
   const others = ALL_BOTS.filter(b=>b!==bot && b.hp>0 && b!==D);
@@ -9808,19 +10186,20 @@ botUpdateExhaustion(bot, rawDt);
     bot.vy = decayDT(bot.vy, sv('inertia'), dt);
   }
   bot.vx = clamp(bot.vx,-15,15); bot.vy = clamp(bot.vy,-15,15);
-  bot.x = clamp(bot.x+bot.vx, 40, W-80);
-  bot.y = clamp(bot.y+bot.vy, 40, H-40);
+  const step = simStep(dt);
+  bot.x = clamp(bot.x+bot.vx*step, 40, W-80);
+  bot.y = clamp(bot.y+bot.vy*step, 40, H-40);
   resolveBoxCollision(bot);
 
   bot.prevAngle = bot.angle;
   bot.angle = angToPlayer;
 
-  bot._atkCD = (bot._atkCD||0) - rawDt;
+  bot._atkCD = (bot._atkCD||0) - dt;
   if(canEngage && dist < engageDist*1.3 && bot._atkCD<=0 && bot.stamina>20 && bot.exhausted<=0){
     bot._atkCD = rf(0.6,0.8);
     const swingTarget = (Math.random()<0.5?1:-1) * (sv('swthresh')*1.6);
     if(weaponKeyOf(bot) === 'flail'){
-      updateFlailSwing(bot, angToPlayer, rawDt);
+      updateFlailSwing(bot, angToPlayer, dt);
     } else {
       bot.vel = swingTarget;
     }
@@ -9831,7 +10210,7 @@ botUpdateExhaustion(bot, rawDt);
     bot.vel = decayDT(bot.vel, 0.85, dt);
   }
 
-  bot._dodgeCD = (bot._dodgeCD||0) - rawDt;
+  bot._dodgeCD = (bot._dodgeCD||0) - dt;
   if(bot._dodgeCD<=0 && dist < 70*cscl && Math.random() < (sv('botdodgechance')/100)*dt*2){
     bot._dodgeCD = 1.5;
     bot._dvx = -Math.cos(angToPlayer)*8;
@@ -9862,6 +10241,9 @@ function updateDummy(dt, bot){
   
   const ai = bot._aiState;
   if(!ai) return;
+  // Баффы и реген должны обновляться до любых ранних веток ИИ.
+  botUpdateExhaustion(bot, dt);
+  botRegenStamina(bot, dt);
   
   // 🔥 ЕСЛИ БОТ ЗАРЯЖАЕТ МАГИЮ - НЕ ДВИГАЕМ ЕГО
   if(bot._magicCharging === true){
@@ -9872,8 +10254,9 @@ function updateDummy(dt, bot){
     // Стоим на месте
     bot.vx = lerpDT(bot.vx, 0, 0.9, dt);
     bot.vy = lerpDT(bot.vy, 0, 0.9, dt);
-    bot.x = clamp(bot.x + bot.vx, 40, W-80);
-    bot.y = clamp(bot.y + bot.vy, 40, H-40);
+    const step = simStep(dt);
+    bot.x = clamp(bot.x + bot.vx * step, 40, W-80);
+    bot.y = clamp(bot.y + bot.vy * step, 40, H-40);
     return;
   }
   
@@ -9892,11 +10275,12 @@ function updateDummy(dt, bot){
     const dx = targetX - bot.x;
     const dy = targetY - bot.y;
     const d = Math.hypot(dx, dy) || 1;
-    const maxV = 7 * sv('botspd') * sv('globalspd');
+    const maxV = 7 * sv('botspd') * sv('globalspd') * getMod(bot, 'moveSlow', 1);
     bot.vx = lerpDT(bot.vx, (dx/d) * maxV, 0.22, dt);
     bot.vy = lerpDT(bot.vy, (dy/d) * maxV, 0.22, dt);
-    bot.x = clamp(bot.x + bot.vx, 40, W-80);
-    bot.y = clamp(bot.y + bot.vy, 40, H-40);
+    const step = simStep(dt);
+    bot.x = clamp(bot.x + bot.vx*step, 40, W-80);
+    bot.y = clamp(bot.y + bot.vy*step, 40, H-40);
     return;
   }
   
@@ -9917,8 +10301,7 @@ function updateDummy(dt, bot){
   const fmX = ai._fakeMX, fmY = ai._fakeMY;
   const fDown = ai._fakeMDown;
 
-  // Состояния: усталость и дисбаланс
-botUpdateExhaustion(bot, rawDt);
+  // Состояния усталости и дисбаланса уже обновлены в начале функции.
   const speedMult = getMod(bot, 'moveSlow', 1);
 
   // Щит бота — замедление и трата стамины
@@ -9927,8 +10310,6 @@ botUpdateExhaustion(bot, rawDt);
   const _dShWrong = _dShDef && shieldSameSideAsSword(bot);
   const _dShBaseMult = _dShDef ? (1 - 0.15 - _dShWeight*0.1) : 1.0;
   const _dShWrongMult = _dShWrong ? 0.8 : 1.0;
-
-botRegenStamina(bot, rawDt);
 
   // Движение — пропускаем полностью, если этот бот в этом же кадре уже был
   // передвинут специализированным ranged-контроллером (лук/арбалет/жезл в
@@ -9963,18 +10344,19 @@ botRegenStamina(bot, rawDt);
       bot.vy = decayDT(bot.vy, sv('inertia'), dt);
     }
     bot.vx = clamp(bot.vx, -15, 15); bot.vy = clamp(bot.vy, -15, 15);
-    bot.x = clamp(bot.x + bot.vx, 40, W-80);
-    bot.y = clamp(bot.y + bot.vy, 40, H-40);
+    const step = simStep(dt);
+    bot.x = clamp(bot.x + bot.vx*step, 40, W-80);
+    bot.y = clamp(bot.y + bot.vy*step, 40, H-40);
     resolveBoxCollision(bot);
   }
 
-botSpawnDust(bot, rawDt);
+botSpawnDust(bot, dt);
 
   // В PVP или при ожидании старта — позиция управляется сетью
   if(typeof NET_SYNC!=='undefined' && (NET_SYNC.active || NET_CORE.isOpen())) return;
   // Тик кулдауна бот-доджа
-if(ai._botDodgeCooldown>0) ai._botDodgeCooldown-=rawDt;
-  botUpdateDodge(bot, rawDt);
+if(ai._botDodgeCooldown>0) ai._botDodgeCooldown-=dt;
+  botUpdateDodge(bot, dt);
 
   // Рут бота (без компенсации — у бота её нет)
   const drc = { x: bot.x + 5, y: bot.y - 8 };
@@ -10063,7 +10445,7 @@ if(ai._botDodgeCooldown>0) ai._botDodgeCooldown-=rawDt;
         bot._flailTimer = 0;
     }
     
-    bot._flailTimer -= rawDt;
+    bot._flailTimer -= dt;
     
     // ── МЕНЯЕМ СОСТОЯНИЕ КАЖДЫЕ 1-3 СЕКУНДЫ ──
     if(bot._flailTimer <= 0){
@@ -10091,7 +10473,7 @@ if(ai._botDodgeCooldown>0) ai._botDodgeCooldown-=rawDt;
     let fakeAng;
     if(bot._flailSpinState === 'spinning'){
         // Вращаем прицел по кругу
-        bot._flailSpinAngle += bot._flailSpinDir * bot._flailSpinSpeed * rawDt;
+        bot._flailSpinAngle += bot._flailSpinDir * bot._flailSpinSpeed * dt;
         const spinRadius = 80;
         const fakeX = drc.x + Math.cos(bot._flailSpinAngle) * spinRadius;
         const fakeY = drc.y + Math.sin(bot._flailSpinAngle) * spinRadius;
@@ -10102,11 +10484,11 @@ if(ai._botDodgeCooldown>0) ai._botDodgeCooldown-=rawDt;
     }
     
     // Раскручиваем цепь с правильным углом
-    updateFlailSwing(bot, fakeAng, rawDt);
+    updateFlailSwing(bot, fakeAng, dt);
     
     // Если в режиме idle — принудительно ускоряем складывание
     if(bot._flailSpinState === 'idle'){
-        bot._flailExt = Math.max(0, (bot._flailExt || 0) - 2.0 * rawDt);
+        bot._flailExt = Math.max(0, (bot._flailExt || 0) - 2.0 * dt);
     }
     
     bot.prevAngle = bot.angle;
@@ -10834,10 +11216,14 @@ function drawDummy(){
 
 function _drawDummySword(){
   const weaponKey = weaponDefFor(D).key;
+  const dAlpha = getDebuffAlpha(D);
   
   // 🔥 ДЛЯ ЛУКА — ИСПОЛЬЗУЕМ СПЕЦИАЛЬНУЮ ФУНКЦИЮ
   if(weaponKey === 'bow'){
+    ctx.save();
+    ctx.globalAlpha = dAlpha;
     drawWeaponWithShake(D, dpivX, dpivY);
+    ctx.restore();
     return;
   }
   
@@ -10851,6 +11237,7 @@ function _drawDummySword(){
   }
   
   ctx.save();
+  ctx.globalAlpha = dAlpha;
   ctx.translate(dpivX + shakeX, dpivY + shakeY);
   ctx.rotate(D.angle + Math.PI/2 + shakeAngle);
   const dSw = effSwordScale(D) * sv('swlen') * sv('botswordscale');
@@ -10908,12 +11295,15 @@ function drawCursor(){
 function drawFX(){
   for(let i=hitFX.length-1;i>=0;i--){
     const f=hitFX[i];
-    ctx.globalAlpha=Math.max(0,f.life/40);
-    ctx.font=f.big?'bold 22px Oswald':'bold 12px Share Tech Mono';
-    ctx.fillStyle=f.col||(f.big?'#ffcc44':'#ff7744');
-    ctx.shadowColor=f.big?'#ff8800':'#ff4400'; ctx.shadowBlur=8;
-    ctx.textAlign='center'; ctx.fillText(f.t, f.x, f.y-(40-f.life)*0.4);
-    ctx.globalAlpha=1; ctx.shadowBlur=0; f.life--;
+    // Legacy callers may still push a plain object, but every label is drawn
+    // through the same visual preset so its size cannot vary by call site.
+    const maxLife = f.maxLife || f.life || FLOATING_TEXT_LIFE;
+    ctx.globalAlpha=Math.max(0,f.life/maxLife);
+    ctx.font=FLOATING_TEXT_FONT;
+    ctx.fillStyle=f.col||'#ffcc44';
+    ctx.shadowColor='#ff8800'; ctx.shadowBlur=8;
+    ctx.textAlign='center'; ctx.fillText(f.t, f.x, f.y-(maxLife-f.life)*0.4);
+    ctx.globalAlpha=1; ctx.shadowBlur=0; f.life -= f.fadeRate || 1;
     if(f.life<=0) hitFX.splice(i,1);
   }
   ctx.textAlign='left';
@@ -11008,11 +11398,31 @@ function updateHUD(){
     hudBPh.textContent = (NET_SYNC.peerName||'') + ' · ' + pingMs+'ms';
     hudBPh.style.color = pingMs<80?'#4acc80':pingMs<150?'#ccaa30':'#cc5050';
   } else {
-    const phase = AI.phase;
-    const tacticStr = AI.tactic==='COMBAT_HARASS'?' [ИЗМ]':'';
-    const phaseTxt = phase==='attack'?'⚔ АТАКА'+tacticStr:phase==='retreat'?'🏃 ОТСТУП':'😮‍💨 ПЕРЕДЫШКА';
-    const phaseCol = phase==='attack'?'#cc5030':phase==='retreat'?'#3090cc':'#aaaa30';
-    const tLeft = AI._phaseEnd>0?' '+Math.max(0,AI._phaseEnd-GameTime).toFixed(1)+'s':'';
+    let phaseTxt, phaseCol, timerEnd = -1;
+    if(AI._probingActive){
+      const probingNames = {approach:'ПОДХОД · ФЕХТОВАНИЕ', strike:'НАВЕДЕНИЕ', retreat:'ОТХОД', pause:'ПЕРЕДЫШКА'};
+      const probingState = AI._probingPhase === 'strike' && AI._probingMirrorBlock
+        ? 'ЗЕРКАЛЬНЫЙ БЛОК' : (probingNames[AI._probingPhase] || 'ПОДХОД');
+      phaseTxt = '⚔ PROBING · ' + probingState;
+      phaseCol = AI._probingPhase === 'retreat' ? '#3090cc' : '#4aaa70';
+      timerEnd = Math.max(AI._probingModeEnd || -1, AI._probingEnd || -1);
+    } else if(AI._pokeDodgeActive){
+      phaseTxt = '➜ УКОЛ С РЫВКОМ'; phaseCol = '#cc7040'; timerEnd = AI._pokeDodgeEnd;
+    } else if(AI._lungeActive){
+      phaseTxt = AI._lungePhase === 'back' ? '↩ ПОДГОТОВКА ВЫПАДА' : '➜ ВЫПАД';
+      phaseCol = AI._lungePhase === 'back' ? '#ccaa30' : '#cc5030'; timerEnd = AI._lungeEnd;
+    } else if(AI.tactic === 'COMBAT_HARASS' && AI.phase === 'attack'){
+      const harassNames = {approach:'ПОДХОД', strike:'УДАР', orbit:'ОБХОД'};
+      phaseTxt = '⚔ ИЗМАТЫВАНИЕ · ' + (harassNames[AI._harassPhase] || 'ПОДХОД');
+      phaseCol = AI._harassPhase === 'orbit' ? '#3090cc' : '#cc5030';
+      timerEnd = AI._harassTimer;
+    } else {
+      const phase = AI.phase;
+      phaseTxt = phase==='attack'?'⚔ АТАКА':phase==='retreat'?'🏃 ОТСТУП':'😮‍💨 ПЕРЕДЫШКА';
+      phaseCol = phase==='attack'?'#cc5030':phase==='retreat'?'#3090cc':'#aaaa30';
+      timerEnd = AI._phaseEnd;
+    }
+    const tLeft = timerEnd>GameTime?' '+Math.max(0,timerEnd-GameTime).toFixed(1)+'s':'';
     const styleStr = AI.swordStyle==='SWORD_STYLE_DUELIST'?' 🛡DUE':AI.swordStyle==='SWORD_STYLE_MIRROR'?' 🪞MIR':' ⚔SWD';
     hudBPh.textContent = phaseTxt + tLeft + styleStr;
     hudBPh.style.color = phaseCol;
@@ -11038,6 +11448,7 @@ else if(isExhausted(D)) bStat = '😫 УСТАЛОСТЬ';
 
 function update(dt){
   if(DEATH.pDead) return; // мертв — нет обновления
+  const step = simStep(dt);
   updateBuffs(P, dt);
     // ⏱ ОБНОВЛЕНИЕ ДЕБАФФОВ
   if (P._debuffActive && (P._debuffUntil || 0) < GameTime) {
@@ -11108,6 +11519,8 @@ regenStamina(P, dt, mDown);
         }
         if(!inRageBuff){
           P.stamina = Math.max(0, P.stamina - lmbStaminaCost);
+          // Зафиксированного остатка должно хватить ровно на секунду удержания.
+          P._lmbHoldDrainRate = P.stamina;
           if(P.rage >= 30){
             P.rage = Math.max(0, P.rage - 30);
             P.rageBuffEnd = GameTime + 1.0;
@@ -11120,9 +11533,14 @@ regenStamina(P, dt, mDown);
         P._rageTextShown = true;
         hitFX.push({x:W/2,y:H/2-50,t:'🔥 ЯРОСТЬ!',life:40,big:true,col:'#ff2020'});
       }
+      // Обычная ЛКМ-стойка без активной ярости постоянно расходует стамину.
+      if(P.rageBuffEnd <= GameTime){
+        P.stamina = Math.max(0, P.stamina - (P._lmbHoldDrainRate || 0) * dt);
+      }
     } else {
       P.lmbWasDown = false;
       P.lmbHoldStart = -1;
+      P._lmbHoldDrainRate = 0;
     }
   }
 
@@ -11148,7 +11566,7 @@ const exhMult = getMod(P, 'moveSlow', 1);
   const actuallyMoving = realMove > 0.08;
 
   if(actuallyMoving){
-    P._dustCD = (P._dustCD||0) - rawDt;
+    P._dustCD = (P._dustCD||0) - dt;
     if(P._dustCD <= 0){
       P._dustCD = rf(0.08,0.06);
       const feetY = P.y + P.by + 7;
@@ -11172,14 +11590,14 @@ const exhMult = getMod(P, 'moveSlow', 1);
   const _pMoveLocked = GameTime < (P._moveLockUntil||0);
   
   if(_pMoveLocked){
-    P.vx = decayDT(P.vx, sv('inertia'), rawDt);
-    P.vy = decayDT(P.vy, sv('inertia'), rawDt);
+    P.vx = decayDT(P.vx, sv('inertia'), dt);
+    P.vy = decayDT(P.vy, sv('inertia'), dt);
   } else if(hasInput){
-    P.vx = lerpDT(P.vx, mx*maxV*swordBackMult, 0.28, rawDt);
-    P.vy = lerpDT(P.vy, my*maxV*swordBackMult, 0.28, rawDt);
+    P.vx = lerpDT(P.vx, mx*maxV*swordBackMult, 0.28, dt);
+    P.vy = lerpDT(P.vy, my*maxV*swordBackMult, 0.28, dt);
   } else {
-    P.vx = decayDT(P.vx, sv('inertia'), rawDt);
-    P.vy = decayDT(P.vy, sv('inertia'), rawDt);
+    P.vx = decayDT(P.vx, sv('inertia'), dt);
+    P.vy = decayDT(P.vy, sv('inertia'), dt);
   }
   
   (() => {
@@ -11192,6 +11610,7 @@ const exhMult = getMod(P, 'moveSlow', 1);
   P.vx = clamp(P.vx, -15, 15); P.vy = clamp(P.vy, -15, 15);
   
   if(P._dvx||P._dvy){
+    const impulseStep = decayingImpulseStep(dt);
     if(P.shield>0 && typeof shieldDef==='function' && shieldDef(P)
        && typeof D!=='undefined' && dummyOn){
       const _dodgeDist = Math.hypot(D.x-P.x, D.y-P.y);
@@ -11205,8 +11624,7 @@ const exhMult = getMod(P, 'moveSlow', 1);
         P._shieldBodyHitCD = GameTime + 0.5;
         if(typeof triggerBladeBind==='function') triggerBladeBind(P, D);
         D.vx += _toD_x*5; D.vy += _toD_y*5;
-        // replace with:
-if(!isUnbalanced(D)) applyDisbalance(D, 1.5);
+        if(!isUnbalanced(D)) applyDisbalance(D);
         P.rage = Math.max(0, (P.rage||0) - 20);
         
         const _shDefBash = shieldDef(P);
@@ -11234,7 +11652,7 @@ if(!isUnbalanced(D)) applyDisbalance(D, 1.5);
         if(typeof triggerHitstop==='function') triggerHitstop(3,3);
       }
     }
-    const _preX=P.x+P.vx+(P._dvx||0);
+    const _preX=P.x+P.vx*step+(P._dvx||0)*impulseStep;
     P.x=clamp(_preX, 40, W-80);
     if(Math.abs(_preX-P.x)>2 && Math.abs(P._dvx||0)>1){
       const _rc=rootCenter();
@@ -11242,7 +11660,7 @@ if(!isUnbalanced(D)) applyDisbalance(D, 1.5);
       P._dvx=(mX-_rc.x)/_td*Math.abs(P._dvx)*0.5;
       P._dvy=(mY-_rc.y)/_td*Math.abs(P._dvy||0)*0.5;
     }
-    const _preY=P.y+P.vy+(P._dvy||0);
+    const _preY=P.y+P.vy*step+(P._dvy||0)*impulseStep;
     P.y=clamp(_preY, 40, H-40);
     if(Math.abs(_preY-P.y)>2 && Math.abs(P._dvy||0)>1 && Math.abs(P._dvx||0)<2){
       const _rc2=rootCenter();
@@ -11254,8 +11672,8 @@ if(!isUnbalanced(D)) applyDisbalance(D, 1.5);
     P._dvx*=decay; P._dvy*=decay;
     if(Math.hypot(P._dvx,P._dvy)<0.1){ P._dvx=0; P._dvy=0; }
   } else {
-    P.x=clamp(P.x+P.vx, 40, W-80);
-    P.y=clamp(P.y+P.vy, 40, H-40);
+    P.x=clamp(P.x+P.vx*step, 40, W-80);
+    P.y=clamp(P.y+P.vy*step, 40, H-40);
   }
   resolveBoxCollision(P);
 
@@ -11397,7 +11815,7 @@ const exhBodyMult = isExhausted(P) ? 0.3 : 1.0;
   P.pvY += (P.tpY - P.pvY) * exhPivotMult;
 
   // --- УГОЛ МЕЧА ---
-  const _orbitDetected1 = updateOrbitDetect(P.angle, rawDt);
+  const _orbitDetected1 = updateOrbitDetect(P.angle, dt);
   if(_orbitDetected1 && !isExhausted(P) && weaponKeyOf(P) !== 'flail'){
     P.stamina = Math.max(0, P.stamina - sv('stamorbit'));
     if(P.stamina <= 0 && !isExhausted(P)) applyExhaust(P);
@@ -11462,7 +11880,7 @@ const exhBodyMult = isExhausted(P) ? 0.3 : 1.0;
     
     if (isFlail) {
       const targetAng = Math.atan2(effectiveMY - pivY, effectiveMX - pivX);
-      updateFlailSwing(P, targetAng, rawDt);
+      updateFlailSwing(P, targetAng, dt);
     } else {
       ta = Math.atan2(effectiveMY - pivY, effectiveMX - pivX);
       
@@ -11483,7 +11901,7 @@ const exhBodyMult = isExhausted(P) ? 0.3 : 1.0;
       if (P._recovering) {
         // Увеличиваем время восстановления до 2.5 секунд
         P._recoverDuration = 0.3;
-        P._recoverProgress += rawDt / P._recoverDuration;
+        P._recoverProgress += dt / P._recoverDuration;
         const progress = Math.min(1, P._recoverProgress);
         
         // Медленное начало, потом ускорение
@@ -11655,7 +12073,7 @@ const TARGET_FPS = 120;
 // MODULE: GAME LOOP  (фиксированный таймстеп, requestAnimationFrame)
 // ════════════════════════════════════════════════════════════════════════════
 const FRAME_MIN_MS = 1000 / TARGET_FPS;
-const FIXED_DT = 1 / 120; // фиксированный шаг физики — всегда 1/60 сек
+const FIXED_DT = 1 / SIM_TICK_RATE;
 let lastRenderT = 0;
 let accumulator = 0; // накопитель реального времени
 
@@ -11709,12 +12127,12 @@ function loop(ts){
     updateProjectileDodgeAI();
 
     // 🔥 ЭФФЕКТЫ МАГИЧЕСКОГО ПОСОХА
-    updateMagicStaffLightning(rawDt);
-    updateMagicStaffGlow(rawDt);
-    updateMagicStaffChargeFX(rawDt);
-	updateLightningHitFX(rawDt);
+    updateMagicStaffLightning(dt);
+    updateMagicStaffGlow(dt);
+    updateMagicStaffChargeFX(dt);
+	updateLightningHitFX(dt);
 // 🔥 ЕДИНАЯ ТРЯСКА ДЛЯ ВСЕХ
-updateChargeShake(P, rawDt);
+updateChargeShake(P, dt);
     if(dummyOn){
       for(const bot of ALL_BOTS){
         if(!revealBotIfReady(bot)) continue;
@@ -11729,7 +12147,7 @@ updateChargeShake(P, rawDt);
     if(dummyOn){ for(const bot of ALL_BOTS){ if(bot.hp > 0) updateFlailExtension(bot, dt); } }
 if(dummyOn) {
   for(const bot of ALL_BOTS) {
-    if(bot.hp > 0) updateChargeShake(bot, rawDt);
+    if(bot.hp > 0) updateChargeShake(bot, dt);
   }
 }
 	
@@ -11749,6 +12167,7 @@ if(dummyOn) {
     updateBalls(dt);
     updateBlood(dt);
     updateFX(dt);
+    if(typeof window._dodgeTick==='function') window._dodgeTick(dt);
     steps++;
   }
 
@@ -11856,7 +12275,6 @@ if(dummyOn&&isUnbalanced(D)) drawUnbalancedStars(D);
   if(typeof updateBloodPools==='function') updateBloodPools(rawDt);
   if(typeof updateZone==='function') updateZone(rawDt);
   if(typeof NET_SYNC !== 'undefined') NET_SYNC.tick(rawDt);
-  if(typeof window._dodgeTick==='function') window._dodgeTick(rawDt);
 
   requestAnimationFrame(loop);
 }
@@ -11944,6 +12362,10 @@ if(k==='v'||k==='м'){ // смена оружия бота
   if(e.key==='U' || k==='u' || k==='Г'|| k==='г'){
     // Тестовый вызов того же дисбаланса, что применяется при блоке.
     if(!isUnbalanced(P)) applyDisbalance(P);
+  }
+  if(e.key==='I' || k==='i' || k==='Ш'|| k==='ш'){
+    // Отладка: ровно тот же общий эффект и длительность, но на боте.
+    if(dummyOn && D && !isUnbalanced(D)) applyDisbalance(D);
   }
   e.preventDefault();
 });
@@ -14632,11 +15054,13 @@ function onPvpReset(msg){
 // ════════════════════════════════════════════════════════════════════════════
 (function(){
   var _wP=0, _wD=0;
+  var _seriesResetTimer=0;
+  const WINS_TO_SERIES = 5;
   function updateWins(){
     const ep=document.getElementById('hud-p-wins');
     const eb=document.getElementById('hud-b-wins');
-    if(ep) ep.textContent=_wP?'★'.repeat(Math.min(_wP,6)):'';
-    if(eb) eb.textContent=_wD?'★'.repeat(Math.min(_wD,6)):'';
+    if(ep) ep.textContent=`СЧЁТ ${_wP}/${WINS_TO_SERIES}`;
+    if(eb) eb.textContent=`СЧЁТ ${_wD}/${WINS_TO_SERIES}`;
   }
   function getWinnerName(isBot){
     if(!isBot) return (typeof PROFILE!=='undefined'&&PROFILE.name) ? PROFILE.name : 'Игрок';
@@ -14645,34 +15069,26 @@ function onPvpReset(msg){
     return (botEl&&botEl.textContent) ? botEl.textContent.trim() : 'Бот';
   }
   window.addWin = function(isBot){
-  if(isBot) _wD++; else _wP++;
-  
-  // 1. Проверяем, не достиг ли кто-то 6 побед
-  if(_wP>=6 || _wD>=6){
-    const winnerName = getWinnerName(_wD>=6);
+    if(isBot) _wD++; else _wP++;
+    updateWins();
+
+    if(_wP < WINS_TO_SERIES && _wD < WINS_TO_SERIES) return;
+
+    const winnerIsBot = _wD >= WINS_TO_SERIES;
+    const winnerName = getWinnerName(winnerIsBot);
     if(typeof hitFX!=='undefined'){
       hitFX.push({x:typeof W!=='undefined'?W/2:400, y:typeof H!=='undefined'?H/2-60:240,
-        t:'🏆 ПОБЕДИЛ ' + winnerName.toUpperCase() + '!',
-        life:300, big:true, col:'#ffd700'});
+        t:'🏆 СЕРИЮ ВЫИГРАЛ ' + winnerName.toUpperCase() + '!',
+        life:180, big:true, col:'#ffd700'});
     }
     if(typeof NET_CORE!=='undefined'&&NET_CORE.isOpen()){
       NET_CORE.send({type:'champion', name:winnerName});
     }
-    // 2. Сбрасываем счётчики ПОСЛЕ 6-й победы (как было)
-    setTimeout(()=>{ _wP=0; _wD=0; updateWins(); }, 3000);
-    return; // <-- Важно: выходим, чтобы не обновить HUD раньше времени
-  }
-  
-  // 3. Это ключевое изменение: после добавления очка (но до 6 побед)
-  // мы просто сбрасываем счётчики для следующего раунда.
-  // Сброс через 3 секунды, чтобы игроки видели результат раунда.
-  setTimeout(() => {
-    _wP = 0;
-    _wD = 0;
-    updateWins();
-  }, 3000);
-};
+    clearTimeout(_seriesResetTimer);
+    _seriesResetTimer=setTimeout(()=>{ _wP=0; _wD=0; updateWins(); }, 3000);
+  };
   window.resetWins=function(){
+    clearTimeout(_seriesResetTimer);
     _wP=0; _wD=0; updateWins();
   };
   // Получаем сообщение о чемпионе по сети
@@ -14681,8 +15097,10 @@ function onPvpReset(msg){
       hitFX.push({x:typeof W!=='undefined'?W/2:400, y:typeof H!=='undefined'?H/2-60:240,
         t:'🏆 ПОБЕДИЛ ' + name.toUpperCase() + '!',
         life:300, big:true, col:'#ffd700'});
+    clearTimeout(_seriesResetTimer);
     _wP=0; _wD=0; updateWins();
   };
+  updateWins();
 })();
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -14856,7 +15274,6 @@ function onPvpReset(msg){
   // Не подключаемся автоматически — ждём явного выбора сервера пользователем
   // (см. кнопки "Основной"/"Запасной" в меню сети)
 })();
-
 
 </script>
 <script>

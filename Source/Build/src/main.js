@@ -6,6 +6,7 @@
 
 function update(dt){
   if(DEATH.pDead) return; // мертв — нет обновления
+  const step = simStep(dt);
   updateBuffs(P, dt);
     // ⏱ ОБНОВЛЕНИЕ ДЕБАФФОВ
   if (P._debuffActive && (P._debuffUntil || 0) < GameTime) {
@@ -76,6 +77,8 @@ regenStamina(P, dt, mDown);
         }
         if(!inRageBuff){
           P.stamina = Math.max(0, P.stamina - lmbStaminaCost);
+          // Зафиксированного остатка должно хватить ровно на секунду удержания.
+          P._lmbHoldDrainRate = P.stamina;
           if(P.rage >= 30){
             P.rage = Math.max(0, P.rage - 30);
             P.rageBuffEnd = GameTime + 1.0;
@@ -88,9 +91,14 @@ regenStamina(P, dt, mDown);
         P._rageTextShown = true;
         hitFX.push({x:W/2,y:H/2-50,t:'🔥 ЯРОСТЬ!',life:40,big:true,col:'#ff2020'});
       }
+      // Обычная ЛКМ-стойка без активной ярости постоянно расходует стамину.
+      if(P.rageBuffEnd <= GameTime){
+        P.stamina = Math.max(0, P.stamina - (P._lmbHoldDrainRate || 0) * dt);
+      }
     } else {
       P.lmbWasDown = false;
       P.lmbHoldStart = -1;
+      P._lmbHoldDrainRate = 0;
     }
   }
 
@@ -116,7 +124,7 @@ const exhMult = getMod(P, 'moveSlow', 1);
   const actuallyMoving = realMove > 0.08;
 
   if(actuallyMoving){
-    P._dustCD = (P._dustCD||0) - rawDt;
+    P._dustCD = (P._dustCD||0) - dt;
     if(P._dustCD <= 0){
       P._dustCD = rf(0.08,0.06);
       const feetY = P.y + P.by + 7;
@@ -140,14 +148,14 @@ const exhMult = getMod(P, 'moveSlow', 1);
   const _pMoveLocked = GameTime < (P._moveLockUntil||0);
   
   if(_pMoveLocked){
-    P.vx = decayDT(P.vx, sv('inertia'), rawDt);
-    P.vy = decayDT(P.vy, sv('inertia'), rawDt);
+    P.vx = decayDT(P.vx, sv('inertia'), dt);
+    P.vy = decayDT(P.vy, sv('inertia'), dt);
   } else if(hasInput){
-    P.vx = lerpDT(P.vx, mx*maxV*swordBackMult, 0.28, rawDt);
-    P.vy = lerpDT(P.vy, my*maxV*swordBackMult, 0.28, rawDt);
+    P.vx = lerpDT(P.vx, mx*maxV*swordBackMult, 0.28, dt);
+    P.vy = lerpDT(P.vy, my*maxV*swordBackMult, 0.28, dt);
   } else {
-    P.vx = decayDT(P.vx, sv('inertia'), rawDt);
-    P.vy = decayDT(P.vy, sv('inertia'), rawDt);
+    P.vx = decayDT(P.vx, sv('inertia'), dt);
+    P.vy = decayDT(P.vy, sv('inertia'), dt);
   }
   
   (() => {
@@ -160,6 +168,7 @@ const exhMult = getMod(P, 'moveSlow', 1);
   P.vx = clamp(P.vx, -15, 15); P.vy = clamp(P.vy, -15, 15);
   
   if(P._dvx||P._dvy){
+    const impulseStep = decayingImpulseStep(dt);
     if(P.shield>0 && typeof shieldDef==='function' && shieldDef(P)
        && typeof D!=='undefined' && dummyOn){
       const _dodgeDist = Math.hypot(D.x-P.x, D.y-P.y);
@@ -173,8 +182,7 @@ const exhMult = getMod(P, 'moveSlow', 1);
         P._shieldBodyHitCD = GameTime + 0.5;
         if(typeof triggerBladeBind==='function') triggerBladeBind(P, D);
         D.vx += _toD_x*5; D.vy += _toD_y*5;
-        // replace with:
-if(!isUnbalanced(D)) applyDisbalance(D, 1.5);
+        if(!isUnbalanced(D)) applyDisbalance(D);
         P.rage = Math.max(0, (P.rage||0) - 20);
         
         const _shDefBash = shieldDef(P);
@@ -202,7 +210,7 @@ if(!isUnbalanced(D)) applyDisbalance(D, 1.5);
         if(typeof triggerHitstop==='function') triggerHitstop(3,3);
       }
     }
-    const _preX=P.x+P.vx+(P._dvx||0);
+    const _preX=P.x+P.vx*step+(P._dvx||0)*impulseStep;
     P.x=clamp(_preX, 40, W-80);
     if(Math.abs(_preX-P.x)>2 && Math.abs(P._dvx||0)>1){
       const _rc=rootCenter();
@@ -210,7 +218,7 @@ if(!isUnbalanced(D)) applyDisbalance(D, 1.5);
       P._dvx=(mX-_rc.x)/_td*Math.abs(P._dvx)*0.5;
       P._dvy=(mY-_rc.y)/_td*Math.abs(P._dvy||0)*0.5;
     }
-    const _preY=P.y+P.vy+(P._dvy||0);
+    const _preY=P.y+P.vy*step+(P._dvy||0)*impulseStep;
     P.y=clamp(_preY, 40, H-40);
     if(Math.abs(_preY-P.y)>2 && Math.abs(P._dvy||0)>1 && Math.abs(P._dvx||0)<2){
       const _rc2=rootCenter();
@@ -222,8 +230,8 @@ if(!isUnbalanced(D)) applyDisbalance(D, 1.5);
     P._dvx*=decay; P._dvy*=decay;
     if(Math.hypot(P._dvx,P._dvy)<0.1){ P._dvx=0; P._dvy=0; }
   } else {
-    P.x=clamp(P.x+P.vx, 40, W-80);
-    P.y=clamp(P.y+P.vy, 40, H-40);
+    P.x=clamp(P.x+P.vx*step, 40, W-80);
+    P.y=clamp(P.y+P.vy*step, 40, H-40);
   }
   resolveBoxCollision(P);
 
@@ -365,7 +373,7 @@ const exhBodyMult = isExhausted(P) ? 0.3 : 1.0;
   P.pvY += (P.tpY - P.pvY) * exhPivotMult;
 
   // --- УГОЛ МЕЧА ---
-  const _orbitDetected1 = updateOrbitDetect(P.angle, rawDt);
+  const _orbitDetected1 = updateOrbitDetect(P.angle, dt);
   if(_orbitDetected1 && !isExhausted(P) && weaponKeyOf(P) !== 'flail'){
     P.stamina = Math.max(0, P.stamina - sv('stamorbit'));
     if(P.stamina <= 0 && !isExhausted(P)) applyExhaust(P);
@@ -430,7 +438,7 @@ const exhBodyMult = isExhausted(P) ? 0.3 : 1.0;
     
     if (isFlail) {
       const targetAng = Math.atan2(effectiveMY - pivY, effectiveMX - pivX);
-      updateFlailSwing(P, targetAng, rawDt);
+      updateFlailSwing(P, targetAng, dt);
     } else {
       ta = Math.atan2(effectiveMY - pivY, effectiveMX - pivX);
       
@@ -451,7 +459,7 @@ const exhBodyMult = isExhausted(P) ? 0.3 : 1.0;
       if (P._recovering) {
         // Увеличиваем время восстановления до 2.5 секунд
         P._recoverDuration = 0.3;
-        P._recoverProgress += rawDt / P._recoverDuration;
+        P._recoverProgress += dt / P._recoverDuration;
         const progress = Math.min(1, P._recoverProgress);
         
         // Медленное начало, потом ускорение
@@ -623,7 +631,7 @@ const TARGET_FPS = 120;
 // MODULE: GAME LOOP  (фиксированный таймстеп, requestAnimationFrame)
 // ════════════════════════════════════════════════════════════════════════════
 const FRAME_MIN_MS = 1000 / TARGET_FPS;
-const FIXED_DT = 1 / 120; // фиксированный шаг физики — всегда 1/60 сек
+const FIXED_DT = 1 / SIM_TICK_RATE;
 let lastRenderT = 0;
 let accumulator = 0; // накопитель реального времени
 
@@ -677,12 +685,12 @@ function loop(ts){
     updateProjectileDodgeAI();
 
     // 🔥 ЭФФЕКТЫ МАГИЧЕСКОГО ПОСОХА
-    updateMagicStaffLightning(rawDt);
-    updateMagicStaffGlow(rawDt);
-    updateMagicStaffChargeFX(rawDt);
-	updateLightningHitFX(rawDt);
+    updateMagicStaffLightning(dt);
+    updateMagicStaffGlow(dt);
+    updateMagicStaffChargeFX(dt);
+	updateLightningHitFX(dt);
 // 🔥 ЕДИНАЯ ТРЯСКА ДЛЯ ВСЕХ
-updateChargeShake(P, rawDt);
+updateChargeShake(P, dt);
     if(dummyOn){
       for(const bot of ALL_BOTS){
         if(!revealBotIfReady(bot)) continue;
@@ -697,7 +705,7 @@ updateChargeShake(P, rawDt);
     if(dummyOn){ for(const bot of ALL_BOTS){ if(bot.hp > 0) updateFlailExtension(bot, dt); } }
 if(dummyOn) {
   for(const bot of ALL_BOTS) {
-    if(bot.hp > 0) updateChargeShake(bot, rawDt);
+    if(bot.hp > 0) updateChargeShake(bot, dt);
   }
 }
 	
@@ -717,6 +725,7 @@ if(dummyOn) {
     updateBalls(dt);
     updateBlood(dt);
     updateFX(dt);
+    if(typeof window._dodgeTick==='function') window._dodgeTick(dt);
     steps++;
   }
 
@@ -824,7 +833,6 @@ if(dummyOn&&isUnbalanced(D)) drawUnbalancedStars(D);
   if(typeof updateBloodPools==='function') updateBloodPools(rawDt);
   if(typeof updateZone==='function') updateZone(rawDt);
   if(typeof NET_SYNC !== 'undefined') NET_SYNC.tick(rawDt);
-  if(typeof window._dodgeTick==='function') window._dodgeTick(rawDt);
 
   requestAnimationFrame(loop);
 }
@@ -912,6 +920,10 @@ if(k==='v'||k==='м'){ // смена оружия бота
   if(e.key==='U' || k==='u' || k==='Г'|| k==='г'){
     // Тестовый вызов того же дисбаланса, что применяется при блоке.
     if(!isUnbalanced(P)) applyDisbalance(P);
+  }
+  if(e.key==='I' || k==='i' || k==='Ш'|| k==='ш'){
+    // Отладка: ровно тот же общий эффект и длительность, но на боте.
+    if(dummyOn && D && !isUnbalanced(D)) applyDisbalance(D);
   }
   e.preventDefault();
 });

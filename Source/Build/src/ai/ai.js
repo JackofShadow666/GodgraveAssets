@@ -101,6 +101,11 @@ function freshAIState(){
   _posTimer: 0, _posIdx: 0,
   _breatherBackEnd: -1,
   _breatherArrived: false, _breatherEndAfterArrival: -1,
+  _probingActive: false, _probingPhase: 'approach', _probingEnd: -1,
+  _probingStrikes: 0, _probingSwingSide: 1, _probingRollDone: false,
+  _probingRetreatStep: 0, _probingModeEnd: -1, _probingLastEnd: -999,
+  _probingDistanceScale: 1, _probingWeaponContact: false,
+  _probingAngleJitter: 0, _probingPauseBlockedUntil: -1, _probingMirrorBlock: false,
   };
 }
 
@@ -319,6 +324,11 @@ let AI = {
   _posTimer: 0, _posIdx: 0,
   _breatherBackEnd: -1,
   _breatherArrived: false, _breatherEndAfterArrival: -1,
+  _probingActive: false, _probingPhase: 'approach', _probingEnd: -1,
+  _probingStrikes: 0, _probingSwingSide: 1, _probingRollDone: false,
+  _probingRetreatStep: 0, _probingModeEnd: -1, _probingLastEnd: -999,
+  _probingDistanceScale: 1, _probingWeaponContact: false,
+  _probingAngleJitter: 0, _probingPauseBlockedUntil: -1, _probingMirrorBlock: false,
 };
 
 // D — бот №1 по умолчанию. Изначально он же и "умный" (владелец AI).
@@ -415,6 +425,153 @@ function aiMoveAway(k, fromC, target, maxDist, cscl){
   k.w = ay < -0.3; k.s = ay > 0.3;
 }
 
+const PROBING_WEAPON_KEYS = [
+  'dagger', 'rapier', 'sword', 'longsword', 'greatsword',
+  'staff', 'halberd', 'spear', 'wand'
+];
+
+// Deliberately short attack made outside body-hit range.
+function aiUpdateProbing(ai, bot, k, bBodyC, pBodyC, distToPlayer, cscl){
+  const reach = weaponReach(bot) * sv('swlen') * (isBot(bot) ? sv('botswordscale') : 1);
+  const baseSafeDist = reach + 65 * cscl;
+  // Each missed exchange closes the next attempt by 22%, but never removes
+  // the minimum body-safe gap beyond the weapon tip.
+  const safeDist = Math.max(reach + 20 * cscl,
+    baseSafeDist * (ai._probingDistanceScale || 1));
+  const retreatDist = safeDist + (ai._probingRetreatStep || 125 * cscl * sv('probingretreat'));
+  const playerWeaponPivot = entityPivot(P);
+  const playerWeaponTip = weaponTipPos(P);
+  const playerWeaponCenter = {
+    x: (playerWeaponPivot.x + playerWeaponTip.x) * 0.5,
+    y: (playerWeaponPivot.y + playerWeaponTip.y) * 0.5,
+  };
+  const ang = Math.atan2(playerWeaponCenter.y - bBodyC.y, playerWeaponCenter.x - bBodyC.x);
+
+  if(ai._probingPhase === 'approach'){
+    ai._fakeMDown = false;
+    if(distToPlayer < safeDist - 8 * cscl) aiMoveAway(k, bBodyC, pBodyC, safeDist, cscl);
+    else if(distToPlayer > safeDist + 12 * cscl) aiMoveToward(k, bBodyC, pBodyC, safeDist, cscl);
+    else {
+      k.w=k.a=k.s=k.d=false;
+      ai._probingPhase = 'strike';
+      // Alternate between a 1-3 and a 2-3 hit series.
+      ai._probingStrikes = Math.random() < 0.5
+        ? 1 + Math.floor(Math.random() * 3)
+        : 2 + Math.floor(Math.random() * 2);
+      ai._probingSwingSide = Math.random() < 0.5 ? -1 : 1;
+      ai._probingAngleJitter = (Math.random() * 2 - 1) * 10 * Math.PI / 180;
+      ai._probingMirrorBlock = Math.random() < 0.3;
+      ai._probingEnd = GameTime + 0.32;
+    }
+    // Fencing motion is only used while approaching.
+    const approachAim = ang + Math.sin(GameTime * 7) * 0.36 + ai._probingAngleJitter;
+    aiPointMouse(bBodyC,
+      bBodyC.x + Math.cos(approachAim) * 150 * cscl,
+      bBodyC.y + Math.sin(approachAim) * 150 * cscl);
+    return true;
+  }
+
+  if(ai._probingPhase === 'strike'){
+    if(distToPlayer < safeDist) aiMoveAway(k, bBodyC, pBodyC, safeDist, cscl);
+    else k.w=k.a=k.s=k.d=false;
+    const botWeaponPivot = entityPivot(bot);
+    if(ai._probingMirrorBlock){
+      // 30%: mirror into a block, limited to the forward +/-60 degree arc.
+      const mirroredBlockAng = P.angle + Math.PI / 2 + (P.vel > 0 ? -0.3 : 0.3);
+      const frontAng = Math.atan2(pBodyC.y - bBodyC.y, pBodyC.x - bBodyC.x);
+      const maxFrontMirror = Math.PI / 3;
+      const blockAng = frontAng + clamp(
+        angDiff(mirroredBlockAng, frontAng), -maxFrontMirror, maxFrontMirror);
+      aiPointMouse(bBodyC,
+        botWeaponPivot.x + Math.cos(blockAng) * 150 * cscl,
+        botWeaponPivot.y + Math.sin(blockAng) * 150 * cscl);
+      ai._fakeMDown = false;
+    } else {
+      // 70%: hold the weapon pointed directly at the player. No side swing
+      // and no attack input during this probing test.
+      const pointAng = Math.atan2(pBodyC.y - botWeaponPivot.y, pBodyC.x - botWeaponPivot.x);
+      aiPointMouse(bBodyC,
+        botWeaponPivot.x + Math.cos(pointAng) * 150 * cscl,
+        botWeaponPivot.y + Math.sin(pointAng) * 150 * cscl);
+      ai._fakeMDown = false;
+    }
+    if(GameTime >= ai._probingEnd){
+      ai._probingStrikes--;
+      ai._probingSwingSide *= -1;
+      if(ai._probingStrikes > 0){
+        ai._probingAngleJitter = (Math.random() * 2 - 1) * 10 * Math.PI / 180;
+        ai._probingEnd = GameTime + 0.32;
+      }
+      else {
+        ai._fakeMDown = false;
+        if(!ai._probingWeaponContact){
+          ai._probingDistanceScale = Math.max(0.35, (ai._probingDistanceScale || 1) * 0.78);
+        }
+        ai._probingPhase = 'retreat';
+        const normalRetreatDistance = (125 + Math.random() * 50) * cscl;
+        ai._probingRetreatStep = normalRetreatDistance * Math.min(0.7, sv('probingretreat'));
+        ai._probingEnd = GameTime + 1.1;
+      }
+    }
+    return true;
+  }
+
+  ai._fakeMDown = false;
+  if(ai._probingPhase === 'retreat'){
+    // Keep the weapon still while stepping back: no tracking or fencing.
+    const botWeaponPivot = entityPivot(bot);
+    aiPointMouse(bBodyC,
+      botWeaponPivot.x + Math.cos(bot.angle) * 150 * cscl,
+      botWeaponPivot.y + Math.sin(bot.angle) * 150 * cscl,
+      true);
+    aiMoveAway(k, bBodyC, pBodyC, retreatDist, cscl);
+    if(distToPlayer >= retreatDist || GameTime >= ai._probingEnd){
+      k.w=k.a=k.s=k.d=false;
+      if(GameTime < ai._probingModeEnd &&
+         (GameTime < ai._probingPauseBlockedUntil || Math.random() < 0.85)){
+        if(GameTime >= ai._probingPauseBlockedUntil){
+          ai._probingPauseBlockedUntil = GameTime + rf(7, 5);
+        }
+        ai._probingPhase = 'approach';
+        ai._probingRetreatStep = 0;
+        ai._probingWeaponContact = false;
+        ai._probingEnd = -1;
+      } else {
+        ai._probingPhase = 'pause';
+        const shortPause = Math.random() < 0.5;
+        ai._probingEnd = GameTime < ai._probingModeEnd
+          ? GameTime + (shortPause ? rf(0.2, 0.2) : rf(1, 0.5))
+          : GameTime;
+      }
+      ai._retreatMode = false;
+    }
+    return true;
+  }
+
+  // Rare breather: half are 0.2-0.4s, the rest are 1-1.5s.
+  k.w=k.a=k.s=k.d=false;
+  aiPointMouse(bBodyC, playerWeaponCenter.x, playerWeaponCenter.y);
+  if(GameTime >= ai._probingEnd){
+    if(GameTime < ai._probingModeEnd){
+      // The mode is locked for 7-15 seconds: start another probing exchange.
+      ai._probingPhase = 'approach';
+      ai._probingRetreatStep = 0;
+      ai._probingWeaponContact = false;
+      ai._probingEnd = -1;
+      ai._retreatMode = false;
+    } else {
+      ai._probingActive = false;
+      ai._probingPhase = 'approach';
+      ai._probingLastEnd = GameTime;
+      ai.phase = 'retreat';
+      ai._retreatMode = true;
+      ai._phaseEnd = GameTime + rf(1.5, 0.8);
+      ai._retreatMoveCD = -1;
+    }
+  }
+  return true;
+}
+
 function aiPointMouse(dBodyC, targetX, targetY, instant, _dt){
   if(!AI._smoothInited || instant){
     AI._smoothMX = targetX;
@@ -483,6 +640,10 @@ function duelUpdate(dt){
 
 // Уведомление о контакте мечами (вызывается из checkSwordCollision)
 function aiNotifyContact(){
+  if(AI._probingActive){
+    AI._probingWeaponContact = true;
+    AI._probingDistanceScale = 1;
+  }
   if(AI._contactCD > GameTime) return;
   const delay = 1 + Math.floor(Math.random()*4);
   AI._contactCD = GameTime + delay;
@@ -500,7 +661,7 @@ function aiNotifyContact(){
   // 20% шанс на обычном оружии, 55% у рапиры (она заточена под уколы) —
   // шаг назад + выпад ЛКМ (цепом не колют и не делают выпад)
   const _lungeChance = weaponKeyOf(D) === 'rapier' ? 0.55 : 0.2;
-  if(Math.random() < _lungeChance && !AI._lungeActive && weaponKeyOf(D) !== 'flail'){
+  if(!AI._probingActive && Math.random() < _lungeChance && !AI._lungeActive && weaponKeyOf(D) !== 'flail'){
     AI._lungeActive = true;
     AI._lungePhase = 'back';
     AI._lungeEnd = GameTime + 0.35;
@@ -1138,6 +1299,51 @@ if(ai._contactCD > 0 && ai.phase === 'attack' && ai._contactCD <= GameTime){
     }
   }
 
+  // Roll exactly once when entering an attack phase. At 100% probing fully
+  // replaces the attack, including approach, lunges and other attack tactics.
+  if(ai.phase !== 'attack') ai._probingRollDone = false;
+  const probingChance = sv('probingchance');
+  const probingCooldownReady = probingChance >= 100 || GameTime - ai._probingLastEnd >= 20;
+  if(ai.phase === 'attack' && !ai._probingActive && !ai._probingRollDone &&
+     probingCooldownReady && bot.hasWeapon !== false &&
+     PROBING_WEAPON_KEYS.includes(weaponKeyOf(bot))){
+    ai._probingRollDone = true;
+    if(Math.random() * 100 < probingChance){
+      ai._probingActive = true;
+      ai._probingPhase = 'approach';
+      ai._probingEnd = -1;
+      ai._probingRetreatStep = 0;
+      ai._probingModeEnd = GameTime + rf(7, 8);
+      ai._probingWeaponContact = false;
+      ai._probingPauseBlockedUntil = -1;
+      ai._spinActive = false;
+      ai._lungeActive = false;
+      ai._pokeDodgeActive = false;
+      ai._feintActive = false;
+      ai._fakeMDown = false;
+    }
+  }
+  if(ai._probingActive){
+    // Rage overrides probing unless the debug chance explicitly forces it.
+    if(bot.rageBuffEnd > GameTime && sv('probingchance') < 100){
+      ai._probingActive = false;
+      ai._probingPhase = 'approach';
+      ai._probingLastEnd = GameTime;
+      ai._probingModeEnd = -1;
+      ai._probingRetreatStep = 0;
+      ai._probingWeaponContact = false;
+      ai._retreatMode = false;
+      ai._fakeMDown = false;
+      ai.phase = 'attack';
+      ai._phaseEnd = -1;
+    }
+  }
+  if(ai._probingActive){
+    ai._retreatMode = ai._probingPhase === 'retreat';
+    aiUpdateProbing(ai, bot, k, bBodyC, pBodyC, distToPlayer, cscl);
+    return;
+  }
+
   // ── ЦЕП: доп. кручения вдвое чаще обычного ────────────
   // У остальных видов оружия "прокрут" запускается только при входе в фазу
   // атаки издалека / после контакта и т.п. — для цепа это редко и нерегулярно.
@@ -1572,6 +1778,16 @@ function updateAIDispatch(dt, bot){
   }
 
   const key = weaponKeyOf(bot);
+
+  // A weapon switch must not leave the probing controller holding stale
+  // mouse targets. Magic staff is intentionally not probing-compatible.
+  if(bot._aiState._probingActive && !PROBING_WEAPON_KEYS.includes(key)){
+    bot._aiState._probingActive = false;
+    bot._aiState._probingPhase = 'approach';
+    bot._aiState._fakeMDown = false;
+    bot._aiState._probingLastEnd = GameTime;
+    bot._aiState._smoothInited = false;
+  }
   
   if(key === 'crossbow' || key === 'bow'){ 
     bot._rangedMovementHandled = true;

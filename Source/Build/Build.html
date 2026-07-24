@@ -427,6 +427,14 @@ body.menu-open #mob-zone-btn{ visibility:hidden !important; }
         <div class="row-head"><label style="color:#3a7a50;">Шанс обхода % (отступ)</label><span class="val" id="vl-circchance" style="color:#3acc70;">35</span></div>
         <input type="range" id="sl-circchance" min="0" max="100" step="5" value="35" style="accent-color:#2a9a50;">
       </div>
+      <div class="row">
+        <div class="row-head"><label style="color:#3a7a50;">Шанс probing вместо атаки %</label><span class="val" id="vl-probingchance" style="color:#3acc70;">30</span></div>
+        <input type="range" id="sl-probingchance" min="0" max="100" step="1" value="30" style="accent-color:#2a9a50;">
+      </div>
+      <div class="row">
+        <div class="row-head"><label style="color:#3a7a50;">Дальность отхода probing (x обычной)</label><span class="val" id="vl-probingretreat" style="color:#3acc70;">0.1</span></div>
+        <input type="range" id="sl-probingretreat" min="0.1" max="0.1" step="0.05" value="0.1" style="accent-color:#2a9a50;">
+      </div>
       <div class="row" style="flex-direction:row;align-items:center;gap:7px;">
         <input type="checkbox" id="cb-duel" style="accent-color:#3acc70;cursor:pointer;" checked>
         <label for="cb-duel" style="font-size:8px;color:#3a8a50;cursor:pointer;letter-spacing:0.5px;">Duel Position System</label>
@@ -518,6 +526,14 @@ body.menu-open #mob-zone-btn{ visibility:hidden !important; }
         <input type="range" id="sl-unbdur" min="0.5" max="6" step="0.5" value="3">
       </div>
       <div class="row">
+        <div class="row-head"><label>Дисбаланс: окно комбо (сек)</label><span class="val" id="vl-unbcombo">2</span></div>
+        <input type="range" id="sl-unbcombo" min="0.5" max="5" step="0.1" value="2">
+      </div>
+      <div class="row" style="display:flex;align-items:center;gap:7px;">
+        <input type="checkbox" id="cb-unbcombodbg" style="accent-color:#ccaa30;cursor:pointer;">
+        <label for="cb-unbcombodbg" style="font-size:8px;color:#8a7020;cursor:pointer;letter-spacing:0.5px;">Дебаг: этапы комбо дисбаланса</label>
+      </div>
+      <div class="row">
         <div class="row-head"><label>Восст. стамины / сек</label><span class="val" id="vl-stamreg">28</span></div>
         <input type="range" id="sl-stamreg" min="1" max="60" step="1" value="28">
       </div>
@@ -548,8 +564,8 @@ body.menu-open #mob-zone-btn{ visibility:hidden !important; }
     <div class="sec" style="border:1px solid #3a1010;padding:8px;border-radius:3px;">
       <div class="sec-title" style="color:#cc3030;">█ УСТАЛОСТЬ</div>
       <div class="row">
-        <div class="row-head"><label style="color:#8a3030;">Длительность (сек)</label><span class="val" id="vl-exhdur2">1.8</span></div>
-        <input type="range" id="sl-exhdur2" min="0.5" max="8" step="0.5" value="1.8" style="accent-color:#cc2020;">
+        <div class="row-head"><label style="color:#8a3030;">Длительность (сек)</label><span class="val" id="vl-exhdur2">1</span></div>
+        <input type="range" id="sl-exhdur2" min="0.5" max="8" step="0.1" value="1" style="accent-color:#cc2020;">
       </div>
       <div class="row">
         <div class="row-head"><label style="color:#8a3030;">Замедл. движения</label><span class="val" id="vl-exhspd2">0.4</span></div>
