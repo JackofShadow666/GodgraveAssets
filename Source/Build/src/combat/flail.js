@@ -27,7 +27,7 @@ function drawFlailSprite(ctx2, ent, length, glowColor, glowBlur){
 
     // Провисание
     const lagFactor = ent._flailLagVel != null ? ent._flailLagVel : (ent.vel || 0);
-    const normalizedLag = clamp(lagFactor / (sv('swthresh') || 1), -1, 1);
+    const normalizedLag = $.M.clamp(lagFactor / (sv('swthresh') || 1), -1, 1);
     const lagAmount = normalizedLag * 3;
 
     const hiltShift = length * SWORD_HILT_OFFSET * 0.4;
@@ -98,7 +98,7 @@ const FLAIL_INERTIA_DECAY = 0.93;     // затухание _flailExt во вр�
 // Сколько звеньев цепи соответствует данному значению ext — используется,
 // чтобы синхронно с drawFlailSprite решить, "раскручена ли цепь больше 3 звеньев".
 function flailRingCountForExt(ext){
-  const scale = FLAIL_MIN_SCALE + (FLAIL_MAX_SCALE - FLAIL_MIN_SCALE) * clamp(ext || 0, 0, 1);
+  const scale = FLAIL_MIN_SCALE + (FLAIL_MAX_SCALE - FLAIL_MIN_SCALE) * $.M.clamp(ext || 0, 0, 1);
   const length = SWORD_LEN * scale;
   const chainLen = Math.max(0, length - FLAIL_HEAD_LEN);
   return Math.max(2, chainLen > 0 ? Math.round(chainLen / FLAIL_RING_LEN) : 2);
@@ -135,11 +135,11 @@ function updateFlailSwing(ent, targetAng, rawDt){
         ent._flailWasAtMax = false;
     }
 
-    const cursorDelta = angDiff(targetAng, ent._flailPrevCursorAngle || targetAng);
+    const cursorDelta = $.M.angDiff(targetAng, ent._flailPrevCursorAngle || targetAng);
     ent._flailPrevCursorAngle = targetAng;
 
     const MAX_CURSOR_DELTA = 0.5;
-    const clampedDelta = clamp(cursorDelta, -MAX_CURSOR_DELTA, MAX_CURSOR_DELTA);
+    const clampedDelta = $.M.clamp(cursorDelta, -MAX_CURSOR_DELTA, MAX_CURSOR_DELTA);
 
     const isMouseMoving = Math.abs(clampedDelta) > 0.005;
     const mouseSpeed = Math.abs(clampedDelta) / Math.max(rawDt, 0.001);
@@ -176,7 +176,7 @@ function updateFlailSwing(ent, targetAng, rawDt){
        if (ent._flailState === 'FOLLOW') {
         // Если мы в процессе плавного поворота - не вмешиваемся
         if (!ent._flailIsLerping) {
-            ent.angle = angLerpDT(ent.angle, targetAng, 0.25, rawDt);
+            ent.angle = $.M.angLerpDT(ent.angle, targetAng, 0.25, rawDt);
         }
         if (isRealSpin && isLong) {
             ent._flailState = 'SPIN';
@@ -275,7 +275,7 @@ function updateFlailSwing(ent, targetAng, rawDt){
             : 1 - Math.pow(-2 * progress + 2, 2) / 2;
         
         // Интерполируем угол
-        let diff = angDiff(ent._flailLerpTargetAngle, ent._flailLerpStartAngle);
+        let diff = $.M.angDiff(ent._flailLerpTargetAngle, ent._flailLerpStartAngle);
         ent.angle = ent._flailLerpStartAngle + diff * eased;
         
         // Завершили lerp
@@ -288,12 +288,12 @@ function updateFlailSwing(ent, targetAng, rawDt){
     // ── Угловая скорость ──
     if (ent._flailPrevAngle !== undefined && ent._flailPrevAngle !== null) {
         const MAX_ANGLE_STEP = 8 * rawDt;
-        const rawStep = angDiff(ent.angle, ent._flailPrevAngle);
+        const rawStep = $.M.angDiff(ent.angle, ent._flailPrevAngle);
         const clampedStep = Math.max(-MAX_ANGLE_STEP, Math.min(MAX_ANGLE_STEP, rawStep));
         ent.angle = ent._flailPrevAngle + clampedStep;
     }
     const realAngVel = (ent._flailPrevAngle !== undefined && ent._flailPrevAngle !== null)
-        ? angDiff(ent.angle, ent._flailPrevAngle) / Math.max(rawDt, 0.004)
+        ? $.M.angDiff(ent.angle, ent._flailPrevAngle) / Math.max(rawDt, 0.004)
         : 0;
     ent._flailPrevAngle = ent.angle;
     ent.vel = realAngVel;
@@ -304,8 +304,8 @@ function updateFlailSwing(ent, targetAng, rawDt){
     if (atMax && !ent._flailWasAtMax && GameTime >= (ent._flailStamCD||0)) {
         ent.stamina = Math.min(ent.stamMax||100, (ent.stamina||0) + FLAIL_STAM_BONUS);
         ent._flailStamCD = GameTime + FLAIL_STAM_BONUS_CD;
-        const c = entityBodyCenter(ent);
-        hitFX.push({x:c.x, y:c.y-40, t:'⚡ РАЗГОН!', life:35, big:false, col:'#ffdd44'});
+        const c = $.POS.body(ent);
+        $.FX.hit({x:c.x, y:c.y-40, t:'⚡ РАЗГОН!', life:35, big:false, col:'#ffdd44'});
     }
     ent._flailWasAtMax = atMax;
 }
@@ -339,7 +339,7 @@ function updateFlailExtension(ent, dt){
 
 // Текущий эффективный "scale" цепа — заменяет статичное def.scale из таблицы.
 function flailScaleFor(ent){
-  const ext = clamp(ent._flailExt || 0, 0, 1);
+  const ext = $.M.clamp(ent._flailExt || 0, 0, 1);
   return FLAIL_MIN_SCALE + (FLAIL_MAX_SCALE - FLAIL_MIN_SCALE) * ext;
 }
 

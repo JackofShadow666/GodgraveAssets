@@ -1,30 +1,30 @@
-﻿// === src/main.js ===
+// === src/main.js ===
 // Extracted from Build.html; loaded as a classic script to preserve shared runtime state.
-// LAYER: UPDATE TICK — главная функция обновления кадра (использует всё выше)
+// LAYER: UPDATE TICK � main frame update function (uses everything above)
 // Module section: update tick.
-// ════════════════════════════════════════════════════════════════════════════
+// =======================================================================================
 
 function update(dt){
-  if(DEATH.pDead) return; // мертв — нет обновления
-  const step = simStep(dt);
+  if(DEATH.pDead) return; // dead � no update
+  const step = $.M.step(dt);
   updateBuffs(P, dt);
-    // ⏱ ОБНОВЛЕНИЕ ДЕБАФФОВ
+    // ? DEBUFF UPDATE
   if (P._debuffActive && (P._debuffUntil || 0) < GameTime) {
     P._debuffActive = false;
     P._debuffType = null;
     P._debuffIntensity = 0;
     P.exhausted = 0;
   }
-  // --- движение рута ---
+  // --- character movement ---
   let mx=0, my=0;
-  if(keys['a']||keys['ф']) mx=-1; if(keys['d']||keys['в']) mx=1;
-  if(keys['w']||keys['ц']) my=-1; if(keys['s']||keys['ы']) my=1;
+  if(keys['a']||keys['�']) mx=-1; if(keys['d']||keys['�']) mx=1;
+  if(keys['w']||keys['�']) my=-1; if(keys['s']||keys['�']) my=1;
   if(mx||my){ const l=Math.hypot(mx,my); mx/=l; my/=l; }
   
-// Восстановление стамины
+// Stamina regeneration
 regenStamina(P, dt, mDown);
   
-  // ── ОБНОВЛЕНИЕ ЗАЩИТЫ ОТ МУЛЬТИУРОНА ────────────
+  // -- MULTIHIT PROTECTION UPDATE ------------------------------
   if(P._multiHitProtection){
     P._multiHitProtectionTimer -= dt;
     if(P._multiHitProtectionTimer <= 0){
@@ -39,61 +39,64 @@ regenStamina(P, dt, mDown);
   const lmbStaminaCost = P.stamMax * (sv('lmbcost') / 100) * weaponLmbStaminaMult(P);
 
   if(isRangedWeapon(P)){
-    // ── Жезл/Арбалет: ЛКМ полностью заменяет бафф ярости — вместо него стрельба ──
+    // -- Staff/Crossbow: LMB fully replaces rage buff � shooting instead --
     P.lmbWasDown = mDown;
     P.lmbHoldStart = -1;
-    if(isExhausted(P)) mDown = false; // усталость гасит ЛКМ так же, как и раньше
+    if(isExhausted(P)) mDown = false; // exhaustion cancels LMB just like before
     updateRangedWeaponFire(P, mDown);
     updateCrossbowReloadSound(P);
   } else {
     P._wandCharging = false;
-    // ── БАФФ ЯРОСТИ: пока ЛКМ зажата тратит 30/сек, продлевает бафф ──────
+    // -- RAGE BUFF: while LMB held spends 30/sec, extends buff --------------
     if(inRageBuff && mDown){
       P.rage = Math.max(0, P.rage - 30 * dt);
       if(P.rage > 0) P.rageBuffEnd = Math.max(P.rageBuffEnd, GameTime + 0.1);
     }
 
-    // ── ЛКМ: активация баффа СРАЗУ при нажатии, текст через 0.5 сек ──────
+    // -- LMB: activates buff IMMEDIATELY on press, text after 0.5 sec --------------
     if(isExhausted(P) && mDown){
-      // Усталость: ЛКМ принудительно отжимается
+      // Exhaustion: LMB forcibly released
       mDown = false;
     }
-    // Не начинаем ЛКМ, если нельзя оплатить его полностью.
-    if(!inRageBuff && P.rage < 30 && mDown && !P.lmbWasDown && weaponKeyOf(P) !== 'flail' && P.stamina < lmbStaminaCost){
+    // Do not start LMB if cannot afford its full cost.
+    if(!inRageBuff && P.rage < 30 && mDown && !P.lmbWasDown && $.NOT(P, 'flail') && P.stamina < lmbStaminaCost){
       mDown = false;
       if((P._lmbNoStaminaTextUntil || 0) <= GameTime){
-        const rc = rootCenter();
-        hitFX.push({x:rc.x, y:rc.y-55, t:'⚠ НЕТ СТАМИНЫ', life:35, big:false, col:'#ff8844'});
+        const rc = $.POS.root();
+        $.FX.hit({x:rc.x, y:rc.y-55, t:(window.I18N ? window.I18N.t('main.staminaWarningShort') : 'NO STAMINA'), life:35, big:false, col:'#ff8844'});
         P._lmbNoStaminaTextUntil = GameTime + 0.5;
       }
     }
-    if(mDown && weaponKeyOf(P) !== 'flail'){
+    if(mDown && $.NOT(P, 'flail')){
       if(!P.lmbWasDown){
         P.lmbWasDown = true;
         P.lmbHoldStart = GameTime;
         
         if (!isRangedWeapon(P)) {
-          playSound('hammerSwing');
+          $.S.play('hammerSwing');
         }
         if(!inRageBuff){
-          P.stamina = Math.max(0, P.stamina - lmbStaminaCost);
-          // Зафиксированного остатка должно хватить ровно на секунду удержания.
-          P._lmbHoldDrainRate = P.stamina;
           if(P.rage >= 30){
             P.rage = Math.max(0, P.rage - 30);
             P.rageBuffEnd = GameTime + 1.0;
             P._rageTextShown = false;
-            playSound('rage');
+            $.S.play('rage');
+            // During rage activation LMB does not drain stamina.
+            P._lmbHoldDrainRate = P.stamina;
+          } else {
+            drainStamina(P, lmbStaminaCost);
+            // Fixed remainder should be exactly enough for one second of hold.
+            P._lmbHoldDrainRate = P.stamina;
           }
         }
       }
       if(P.rageBuffEnd > GameTime && !P._rageTextShown && (GameTime - (P.lmbHoldStart||0)) >= 0.5){
         P._rageTextShown = true;
-        hitFX.push({x:W/2,y:H/2-50,t:'🔥 ЯРОСТЬ!',life:40,big:true,col:'#ff2020'});
+        $.FX.hit({x:W/2,y:H/2-50,t:(window.I18N ? window.I18N.t('main.rageActivatedShort') : 'RAGE!'),life:40,big:true,col:'#ff2020'});
       }
-      // Обычная ЛКМ-стойка без активной ярости постоянно расходует стамину.
+      // Normal LMB hold without active rage constantly drains stamina.
       if(P.rageBuffEnd <= GameTime){
-        P.stamina = Math.max(0, P.stamina - (P._lmbHoldDrainRate || 0) * dt);
+        drainStamina(P, (P._lmbHoldDrainRate || 0) * dt);
       }
     } else {
       P.lmbWasDown = false;
@@ -102,12 +105,12 @@ regenStamina(P, dt, mDown);
     }
   }
 
-  // Усталость при стамина=0 (только если нет баффа)
+  // Exhaustion when stamina=0 (only if no buff)
 if(P.stamina <= 0 && !isExhausted(P) && !(P.rageBuffEnd > GameTime) && (P._exhaustedEndTime||0) <= GameTime){
   P.stamina = 0;
   applyExhaust(P);
   P._exhaustedEndTime = GameTime + (P.exhaustDur||sv('exhdur2')) + P.exhaustRegenDelay;
-  playSound('exhaust');
+  $.S.play('exhaust');
 }
 const exhMult = getMod(P, 'moveSlow', 1);
   const blockSlowMult = (P._blockSlow||0) > GameTime ? sv('blockSlowMult') : 1;
@@ -137,7 +140,7 @@ const exhMult = getMod(P, 'moveSlow', 1);
   let swordIsBehind = false;
   if(actuallyMoving){
     const moveAng = Math.atan2(P.vy, P.vx);
-    const swordRelAng = Math.abs(angDiff(P.angle, moveAng));
+    const swordRelAng = Math.abs($.M.angDiff(P.angle, moveAng));
     swordIsBehind = swordRelAng > Math.PI * 0.917;
     const backBoost = sv('swordback') + (1.0 - sv('swordback')) / 3.0;
     swordBackMult = swordRelAng > Math.PI * 0.6 ? backBoost : sv('swordback');
@@ -148,14 +151,14 @@ const exhMult = getMod(P, 'moveSlow', 1);
   const _pMoveLocked = GameTime < (P._moveLockUntil||0);
   
   if(_pMoveLocked){
-    P.vx = decayDT(P.vx, sv('inertia'), dt);
-    P.vy = decayDT(P.vy, sv('inertia'), dt);
+    P.vx = $.M.decay(P.vx, sv('inertia'), dt);
+    P.vy = $.M.decay(P.vy, sv('inertia'), dt);
   } else if(hasInput){
-    P.vx = lerpDT(P.vx, mx*maxV*swordBackMult, 0.28, dt);
-    P.vy = lerpDT(P.vy, my*maxV*swordBackMult, 0.28, dt);
+    P.vx = $.M.lerpDT(P.vx, mx*maxV*swordBackMult, 0.28, dt);
+    P.vy = $.M.lerpDT(P.vy, my*maxV*swordBackMult, 0.28, dt);
   } else {
-    P.vx = decayDT(P.vx, sv('inertia'), dt);
-    P.vy = decayDT(P.vy, sv('inertia'), dt);
+    P.vx = $.M.decay(P.vx, sv('inertia'), dt);
+    P.vy = $.M.decay(P.vy, sv('inertia'), dt);
   }
   
   (() => {
@@ -165,7 +168,7 @@ const exhMult = getMod(P, 'moveSlow', 1);
     if((P.x<mLR&&P.vx<0)||(P.x>W-mLR-80&&P.vx>0)) P.vx*=0.5;
     if((P.y<mT &&P.vy<0)||(P.y>H-mB -40&&P.vy>0))  P.vy*=0.5;
   })();
-  P.vx = clamp(P.vx, -15, 15); P.vy = clamp(P.vy, -15, 15);
+  P.vx = $.M.clamp(P.vx, -15, 15); P.vy = $.M.clamp(P.vy, -15, 15);
   
   if(P._dvx||P._dvy){
     const impulseStep = decayingImpulseStep(dt);
@@ -180,9 +183,8 @@ const exhMult = getMod(P, 'moveSlow', 1);
       const _toward = _movDir_x*_toD_x + _movDir_y*_toD_y;
       if(_dodgeDist < 70 && _toward > 0.3 && !(P._shieldBodyHitCD > GameTime)){
         P._shieldBodyHitCD = GameTime + 0.5;
-        if(typeof triggerBladeBind==='function') triggerBladeBind(P, D);
         D.vx += _toD_x*5; D.vy += _toD_y*5;
-        if(!isUnbalanced(D)) applyDisbalance(D);
+        if(!isUnbalanced(D)) applyDisbalance(D, P);
         P.rage = Math.max(0, (P.rage||0) - 20);
         
         const _shDefBash = shieldDef(P);
@@ -196,32 +198,32 @@ const exhMult = getMod(P, 'moveSlow', 1);
             hitstopFrames: 3,
             shakePower: 4,
             textColor: '#ff6644',
-            textSuffix: '🛡',
+            textSuffix: '??',
             bloodCount: 6,
             playSound: false
           });
-          hitFX.push({x:D.x, y:D.y-52, t:'-'+spikeDmg, life:40, big:false});
+          $.FX.hit({x:D.x, y:D.y-52, t:'-'+spikeDmg, life:40, big:false});
           if(typeof spawnBlood==='function') spawnBlood(D.x, D.y, _toD_x, _toD_y);
-          playSound('damageHammer');
+          $.S.play('damageHammer');
           if(D.hp<=0 && typeof handleCombatDeath==='function') handleCombatDeath(D);
         }
-        hitFX.push({x:D.x,y:D.y-30,t: _spiked?'🗡🛡 ШИП-БАШ!':'🛡 BASH!',life:45,big:true,col:'#60ccff'});
+        $.FX.hit({x:D.x,y:D.y-30,t: _spiked?(window.I18N?window.I18N.t('main.spikedBash'):'???? SPIKE BASH!'):(window.I18N?window.I18N.t('main.bash'):'?? BASH!'),life:45,big:true,col:'#60ccff'});
         playSound?.('shieldblock');
         if(typeof triggerHitstop==='function') triggerHitstop(3,3);
       }
     }
     const _preX=P.x+P.vx*step+(P._dvx||0)*impulseStep;
-    P.x=clamp(_preX, 40, W-80);
+    P.x=$.M.clamp(_preX, 40, W-80);
     if(Math.abs(_preX-P.x)>2 && Math.abs(P._dvx||0)>1){
-      const _rc=rootCenter();
+      const _rc=$.POS.root();
       const _td=Math.hypot(mX-_rc.x,mY-_rc.y)||1;
       P._dvx=(mX-_rc.x)/_td*Math.abs(P._dvx)*0.5;
       P._dvy=(mY-_rc.y)/_td*Math.abs(P._dvy||0)*0.5;
     }
     const _preY=P.y+P.vy*step+(P._dvy||0)*impulseStep;
-    P.y=clamp(_preY, 40, H-40);
+    P.y=$.M.clamp(_preY, 40, H-40);
     if(Math.abs(_preY-P.y)>2 && Math.abs(P._dvy||0)>1 && Math.abs(P._dvx||0)<2){
-      const _rc2=rootCenter();
+      const _rc2=$.POS.root();
       const _td2=Math.hypot(mX-_rc2.x,mY-_rc2.y)||1;
       P._dvx=(mX-_rc2.x)/_td2*Math.abs(P._dvx||0)*0.5;
       P._dvy=(mY-_rc2.y)/_td2*Math.abs(P._dvy)*0.5;
@@ -230,12 +232,12 @@ const exhMult = getMod(P, 'moveSlow', 1);
     P._dvx*=decay; P._dvy*=decay;
     if(Math.hypot(P._dvx,P._dvy)<0.1){ P._dvx=0; P._dvy=0; }
   } else {
-    P.x=clamp(P.x+P.vx*step, 40, W-80);
-    P.y=clamp(P.y+P.vy*step, 40, H-40);
+    P.x=$.M.clamp(P.x+P.vx*step, 40, W-80);
+    P.y=$.M.clamp(P.y+P.vy*step, 40, H-40);
   }
   resolveBoxCollision(P);
 
-  // 🔥 АНИМАЦИЯ ОТДАЧИ
+  // ?? RECOIL ANIMATION
   if(P._recoilAnimTime > 0){
     P._recoilAnimTime -= dt;
     const progress = 1 - (P._recoilAnimTime / 0.15);
@@ -254,7 +256,7 @@ const exhMult = getMod(P, 'moveSlow', 1);
     P.y += Math.sin(ang) * P._recoilOffset * 0.3;
   }
 
-  // 🔥 ПОЛУЧАЕМ СТИЛЬ
+  // ?? GET STYLE
   const isRanged = isRangedWeapon(P);
   const style = isRanged ? getRangedStyle() : {
     dist: csv('dist'),
@@ -268,8 +270,8 @@ const exhMult = getMod(P, 'moveSlow', 1);
     ada12: cb('ada12')
   };
 
-  // --- оффсет тела ---
-  const rc = rootCenter();
+  // --- body offset ---
+  const rc = $.POS.root();
   const dzone = csv('dzone');
   const rawMouseDist = Math.hypot(mX - rc.x, mY - rc.y);
 
@@ -302,22 +304,22 @@ const exhMult = getMod(P, 'moveSlow', 1);
   let dist = style.dist;
   if(shieldDef(P) && shieldSameSideAsSword(P)) dist = Math.min(dist, 14);
   const mouseDist = Math.hypot(effectiveMX - rc.x, effectiveMY - rc.y);
-  const scaledDist = dist * clamp(mouseDist / 120, 0, 1);
+  const scaledDist = dist * $.M.clamp(mouseDist / 120, 0, 1);
   P.tbx = Math.cos(oppAng) * scaledDist;
   P.tby = Math.sin(oppAng) * scaledDist;
 
-  // 🔥 ТЕЛО — замедляем при усталости
+  // ?? BODY � slow down when exhausted
 const exhBodyMult = isExhausted(P) ? 0.3 : 1.0;
   const bspd = sv('spd') * exhBodyMult;
-  P.bx = lerpDT(P.bx, P.tbx, bspd, dt);
-  P.by = lerpDT(P.by, P.tby, bspd, dt);
+  P.bx = $.M.lerpDT(P.bx, P.tbx, bspd, dt);
+  P.by = $.M.lerpDT(P.by, P.tby, bspd, dt);
 
-  // --- скейл меча ---
-  const meleePoseActive = mDown && !isRangedWeapon(P) && weaponKeyOf(P) !== 'flail';
+  // --- sword scale ---
+  const meleePoseActive = $.A.meleeHold(P, mDown);
   const targetScale = meleePoseActive ? sv('sc1') : sv('sc0');
   P.swordScale += (targetScale - P.swordScale) * sv('scs');
 
-  // --- КОМБО пивот ---
+  // --- COMBO PIVOT ---
   if(meleePoseActive){
     const aex = csv('aex'), aey = csv('aey');
     let aspd = sv('as') * 3.5;
@@ -329,8 +331,8 @@ const exhBodyMult = isExhausted(P) ? 0.3 : 1.0;
     const cosD = Math.cos(toD), sinD = Math.sin(toD);
     const tx = lx*cosD - ly*sinD;
     const ty = lx*sinD + ly*cosD;
-    P.tpX = lerpDT(P.tpX, tx, aspd, dt);
-    P.tpY = lerpDT(P.tpY, ty, aspd, dt);
+    P.tpX = $.M.lerpDT(P.tpX, tx, aspd, dt);
+    P.tpY = $.M.lerpDT(P.tpY, ty, aspd, dt);
   } else {
     const ang = Math.atan2(effectiveMY - rc.y, effectiveMX - rc.x);
     const inv = ang + Math.PI;
@@ -345,42 +347,34 @@ const exhBodyMult = isExhausted(P) ? 0.3 : 1.0;
 
     let eyOffset = 0;
     if(style.adaY){
-      const t = clamp(-Math.sin(ang), 0, 1);
+      const t = $.M.clamp(-Math.sin(ang), 0, 1);
       eyOffset -= t * (isRanged ? 60 : csv('adaY'));
     }
     if(style.adaD){
       const ang6 = ang - Math.PI/2;
       const tc = Math.cos(ang6);
-      const tDown = clamp(tc * tc * (tc > 0 ? 1 : 0), 0, 1);
+      const tDown = $.M.clamp(tc * tc * (tc > 0 ? 1 : 0), 0, 1);
       eyOffset += tDown * (isRanged ? 45 : csv('adaD'));
     }
     let pivDownOffset = 0;
     if(style.ada12){
       const ang12 = ang + Math.PI/2;
-      const t12 = clamp(Math.cos(ang12 * 2), 0, 1);
+      const t12 = $.M.clamp(Math.cos(ang12 * 2), 0, 1);
       pivDownOffset = t12 * (isRanged ? 25 : csv('ada12'));
     }
 
     const tx = Math.cos(inv) * ex;
     const ty = Math.sin(inv) * style.ey + eyOffset + pivDownOffset;
-    P.tpX = lerpDT(P.tpX, tx, style.blk, dt);
-    P.tpY = lerpDT(P.tpY, ty, style.blk, dt);
+    P.tpX = $.M.lerpDT(P.tpX, tx, style.blk, dt);
+    P.tpY = $.M.lerpDT(P.tpY, ty, style.blk, dt);
   }
 
-  // 🔥 ПИВОТ МЕЧА (рука) — при усталости едва двигается
+  // ?? SWORD PIVOT (hand) � barely moves when exhausted
   const exhPivotMult = isExhausted(P) ? 0.05 : 0.35;
   P.pvX += (P.tpX - P.pvX) * exhPivotMult;
   P.pvY += (P.tpY - P.pvY) * exhPivotMult;
 
-  // --- УГОЛ МЕЧА ---
-  const _orbitDetected1 = updateOrbitDetect(P.angle, dt);
-  if(_orbitDetected1 && !isExhausted(P) && weaponKeyOf(P) !== 'flail'){
-    P.stamina = Math.max(0, P.stamina - sv('stamorbit'));
-    if(P.stamina <= 0 && !isExhausted(P)) applyExhaust(P);
-    hitFX.push({x: rc.x + P.pvX, y: rc.y + P.pvY - 30, t:'🌀 ОРБИТА', life:35, big:false, col:'#ff8840'});
-    playSound('whoosh');
-  }
-
+  // --- SWORD ANGLE ---
   const pivX = rc.x + P.pvX;
   const pivY = rc.y + P.pvY;
   const arad = 0;
@@ -390,7 +384,7 @@ const exhBodyMult = isExhausted(P) ? 0.3 : 1.0;
 
   let ta;
   
-  // ---- ВНУТРИ КРУГА ----
+  // ---- INSIDE CIRCLE ----
   if(inAutoBlock){
     const aex = 26, aey = 40;
     const abOxo = 0, abOyo = 0;
@@ -403,8 +397,8 @@ const exhBodyMult = isExhausted(P) ? 0.3 : 1.0;
     const cosD = Math.cos(toD), sinD = Math.sin(toD);
     const tx = lx*cosD - ly*sinD + abOxo;
     const ty = lx*sinD + ly*cosD + abOyo;
-    P.tpX = lerpDT(P.tpX, tx, aspd, dt);
-    P.tpY = lerpDT(P.tpY, ty, aspd, dt);
+    P.tpX = $.M.lerpDT(P.tpX, tx, aspd, dt);
+    P.tpY = $.M.lerpDT(P.tpY, ty, aspd, dt);
     P.pvX = P.tpX;
     P.pvY = P.tpY;
 
@@ -417,24 +411,24 @@ const exhBodyMult = isExhausted(P) ? 0.3 : 1.0;
     P.by += (P.tby - P.by) * sv('spd');
 
     ta = Math.atan2(mY - (rc.y + P.pvY), mX - (rc.x + P.pvX));
-    P.vel = P.vel*0.6 + angDiff(ta, P.angle)*0.4*weaponSwingSpeedMult(P);
+    P.vel = P.vel*0.6 + $.M.angDiff(ta, P.angle)*0.4*weaponSwingSpeedMult(P);
     const mobileBoost = window.IS_MOBILE ? 1.35 : 1.0;
-    P.angle = angLerpDT(P.angle, ta, aspd * mobileBoost * getMod(P, 'swordSlow', 1), dt);
+    P.angle = $.M.angLerpDT(P.angle, ta, aspd * mobileBoost * getMod(P, 'swordSlow', 1), dt);
     P._inABang = angToCursor;
     
-  // ---- ВИРТУАЛЬНЫЙ ПРИЦЕЛ ----
+  // ---- VIRTUAL AIM ----
   } else if(arad > 1){
     const dmx = mX - P._pmX, dmy = mY - P._pmY;
     P._vcX += dmx; P._vcY += dmy;
     const vd = Math.hypot(P._vcX, P._vcY) || 0.001;
     if(vd > arad){ P._vcX = P._vcX/vd*arad; P._vcY = P._vcY/vd*arad; }
     ta = Math.atan2(P._vcY, P._vcX);
-    P.vel = P.vel*0.6 + angDiff(ta, P.angle)*0.4*weaponSwingSpeedMult(P);
-    P.angle += angDiff(ta, P.angle) * 0.28 * getMod(P, 'swordSlow', 1);
+    P.vel = P.vel*0.6 + $.M.angDiff(ta, P.angle)*0.4*weaponSwingSpeedMult(P);
+    P.angle += $.M.angDiff(ta, P.angle) * 0.28 * getMod(P, 'swordSlow', 1);
     
-    // ---- ОБЫЧНЫЙ РЕЖИМ (включая цеп) ----
+    // ---- NORMAL MODE (including flail) ----
   } else {
-    const isFlail = weaponKeyOf(P) === 'flail';
+    const isFlail = $.IS(P, 'flail');
     
     if (isFlail) {
       const targetAng = Math.atan2(effectiveMY - pivY, effectiveMX - pivX);
@@ -442,40 +436,40 @@ const exhBodyMult = isExhausted(P) ? 0.3 : 1.0;
     } else {
       ta = Math.atan2(effectiveMY - pivY, effectiveMX - pivX);
       
-      // 🔥 УСТАЛОСТЬ: запоминаем, что меч был заморожен
+      // ?? EXHAUSTION: remember that sword was frozen
       const wasExhausted = isExhausted(P);
       
-      // Если усталость только что закончилась — запускаем плавный возврат
+      // If exhaustion just ended � start smooth recovery
       if (P._wasExhausted && !wasExhausted) {
         P._recoverStartAngle = P.angle;
         P._recoverTargetAngle = ta;
         P._recoverProgress = 0;
-        P._recoverDuration = 1.0; // 1 секунда на восстановление
+        P._recoverDuration = 1.0; // 1 second to recover
         P._recovering = true;
       }
       P._wasExhausted = wasExhausted;
       
-           // 🌀 ПЛАВНЫЙ ВОЗВРАТ ПОСЛЕ УСТАЛОСТИ
+           // ?? SMOOTH RECOVERY AFTER EXHAUSTION
       if (P._recovering) {
-        // Увеличиваем время восстановления до 2.5 секунд
+        // Increase recovery time to 2.5 seconds
         P._recoverDuration = 0.3;
         P._recoverProgress += dt / P._recoverDuration;
         const progress = Math.min(1, P._recoverProgress);
         
-        // Медленное начало, потом ускорение
+        // Slow start, then acceleration
         const eased = progress * progress * (3 - 2 * progress);
         
-        // Интерполируем угол от замороженного к целевому
-        let diff = angDiff(P._recoverTargetAngle, P._recoverStartAngle);
+        // Interpolate angle from frozen to target
+        let diff = $.M.angDiff(P._recoverTargetAngle, P._recoverStartAngle);
         let targetAngle = P._recoverStartAngle + diff * eased;
         
-        // 🔥 ОГРАНИЧИВАЕМ МАКСИМАЛЬНЫЙ ПОВОРОТ ЗА КАДР
-        const MAX_TURN_PER_FRAME = 0.04; // ~2.3° за кадр (очень медленно)
-        let angleDiff = angDiff(targetAngle, P.angle);
+        // ?? LIMIT MAXIMUM TURN PER FRAME
+        const MAX_TURN_PER_FRAME = 0.04; // ~2.3� per frame (very slow)
+        let angleDiff = $.M.angDiff(targetAngle, P.angle);
         let clampedDiff = Math.max(-MAX_TURN_PER_FRAME, Math.min(MAX_TURN_PER_FRAME, angleDiff));
         P.angle += clampedDiff;
         
-        // Скорость плавно нарастает
+        // Speed gradually increases
         P.vel = P.vel * (1 - eased * 0.3) + diff * eased * 0.5;
         
         if (progress >= 1) {
@@ -484,10 +478,10 @@ const exhBodyMult = isExhausted(P) ? 0.3 : 1.0;
           P.vel = 0;
         }
       } else {
-        // 🔥 Усталость через exhswd2 (слайдер)
+        // ?? Exhaustion via exhswd2 (slider)
        const exhSwordMult = getMod(P, 'swordSlow', 1);
         
-        // 🏋️‍♂️ ВЕС ОРУЖИЯ — замедляет поворот
+        // ????>? WEAPON WEIGHT � slows turning
         const baseW = weaponWeight(P);
         const isRageActive = (P.rageBuffEnd || 0) > GameTime;
         let effectiveW = baseW;
@@ -514,7 +508,7 @@ const exhBodyMult = isExhausted(P) ? 0.3 : 1.0;
         const currentMaxSpeed = MAX_SPEED - speedRange * shapedProgress;
         const weightSpeed = currentMaxSpeed * weaponSwingSpeedMult(P);
         
-        const isLMBHeld = mDown && !isRangedWeapon(P) && weaponKeyOf(P) !== 'flail';
+        const isLMBHeld = $.A.meleeHold(P, mDown);
         const lmbMult = isLMBHeld ? 1 : 1.0;
         const finalSpeed = weightSpeed * exhSwordMult * lmbMult;
         
@@ -525,42 +519,52 @@ if (hasMod(P, 'weaponRecoil')) {
   P.angle += P._disbalanceAngularVelocity * dt;
   P.vel = P._disbalanceAngularVelocity;
 } else {
-          P.vel = P.vel * 0.6 + angDiff(ta, P.angle) * 0.4 * weaponSwingSpeedMult(P) * exhSwordMult;
-          P.angle = angLerpDT(P.angle, ta, finalSpeed, dt);
+          P.vel = P.vel * 0.6 + $.M.angDiff(ta, P.angle) * 0.4 * weaponSwingSpeedMult(P) * exhSwordMult;
+          P.angle = $.M.angLerpDT(P.angle, ta, finalSpeed, dt);
         }
       }
     }
   }
 
-  // --- Детект флика и замаха ---
+  // --- Flick and swing detection ---
+  const _flickAimAngle = Number.isFinite(ta) ? ta : P.angle;
+  const _flickPrevAngle = P._flickPrevAngle;
+  P._realAngVel = _flickPrevAngle === undefined ? 0 : $.M.angDiff(_flickAimAngle, _flickPrevAngle) / Math.max(dt, 0.001);
+  P._flickPrevAngle = _flickAimAngle;
+  const _orbitDetected1 = updateOrbitDetect(P.angle, dt);
+  if(_orbitDetected1 && !isExhausted(P) && $.NOT(P, 'flail')){
+    drainStamina(P, sv('stamorbit'));
+    if(P.stamina <= 0 && !isExhausted(P)) applyExhaust(P);
+    $.FX.hit({x: rc.x + P.pvX, y: rc.y + P.pvY - 30, t:(window.I18N ? window.I18N.t('main.orbit') : 'ORBIT'), life:35,big:false,col:'#ff8840'});
+    $.S.play('whoosh');
+  }
   if(!P._swingCD) P._swingCD = -1;
   if(P.hasWeapon === false || isRangedWeapon(P)){
     P._swingFX = false;
   } else {
     if(!isExhausted(P) && updateFlickDetect(P._realAngVel ?? P.vel, dt) && (P._swingBlockCD||0) < GameTime){
-      if (weaponKeyOf(P) === 'flail' && P._flailExt < 0.97) {
-        // Игнорируем
+      if($.IS(P, 'flail') && P._flailExt < 0.97){
+        // Ignore
       } else if (!(GameTime < (P._dodgeActiveUntil||0))) {
-        P.stamina = Math.max(0, P.stamina - sv('stamflick') * weaponStaminaMult(P));
+        drainStamina(P, sv('stamflick') * weaponStaminaMult(P));
         if(P.stamina <= 0 && !isExhausted(P)) applyExhaust(P);
         P._swingBlockCD = GameTime + 0.15;
-        hitFX.push({x: rc.x + P.pvX, y: rc.y + P.pvY - 25, t:'⚡ ФЛИК', life:30, big:false, col:'#ffaa20'});
-        playSound(isHeavySwingWeapon(P) ? 'hammerSwing' : 'whoosh');
+        $.FX.hit({x: rc.x + P.pvX, y: rc.y + P.pvY - 25, t:(window.I18N ? window.I18N.t('main.flick') : 'FLICK'), life:30, big:false, col:'#ffaa20'});
+        $.S.play(isHeavySwingWeapon(P) ? 'hammerSwing' : 'whoosh');
       }
     }
 
-    const swingThreshold = weaponKeyOf(P) === 'flail' ? sv('swthresh') * 5 : sv('swthresh');
+    const swingThreshold = $.IS(P, 'flail') ? sv('swthresh') * 5 : sv('swthresh');
     if(!isExhausted(P) && Math.abs(P.vel) > swingThreshold && (P._swingBlockCD||0) < GameTime){
-      if (weaponKeyOf(P) === 'flail' && P._flailExt < 0.97) {
+      if($.IS(P, 'flail') && P._flailExt < 0.97){
         P._swingFX = false;
       } else {
         if(!P._swingFX){
           P._swingFX = true;
-          const rc0 = rootCenter();
-          hitFX.push({x: rc0.x + P.pvX, y: rc0.y + P.pvY - 30, t:'⚔ ЗАМАХ', life:35, big:false, col:'#ffcc44'});
-          if(isHeavySwingWeapon(P)) playSound('hammerSwing');
-          else if(P.rageBuffEnd>GameTime) playSound('whooshRage'); else playSound('whoosh');
-          if(cb('bbind') && mDown) bladeBind_checkSwing(P);
+          const rc0 = $.POS.root();
+          $.FX.hit({x: rc0.x + P.pvX, y: rc0.y + P.pvY - 30, t:(window.I18N ? window.I18N.t('main.swing') : 'SWING'), life:35, big:false, col:'#ffcc44'});
+          if(isHeavySwingWeapon(P)) $.S.play('hammerSwing');
+          else if(P.rageBuffEnd>GameTime) $.S.play('whooshRage'); else $.S.play('whoosh');
         }
         if(P._swingCD <= GameTime){
           if(!(GameTime < (P._dodgeActiveUntil||0))){
@@ -570,7 +574,7 @@ if (hasMod(P, 'weaponRecoil')) {
               const costMult = Math.max(0.3, 1 / (1 + (botCount - 1) * 0.25));
               staminaCost = staminaCost * costMult;
             }
-            P.stamina = Math.max(0, P.stamina - staminaCost*0.8);
+            drainStamina(P, staminaCost*0.8);
             if(P.stamina <= 0 && !isExhausted(P)) applyExhaust(P);
           }
           P._swingCD = GameTime + 1.0;
@@ -581,9 +585,9 @@ if (hasMod(P, 'weaponRecoil')) {
     }
   }
 
-  // --- детект попадания шарика ---
+  // --- ball hit detection ---
   {
-    const rc0 = rootCenter();
+    const rc0 = $.POS.root();
     const bodyCX = rc0.x + P.bx;
     const bodyCY = rc0.y + P.by;
     const BODY_HIT_R = 18 * sv('cscl');
@@ -596,7 +600,7 @@ if (hasMod(P, 'weaponRecoil')) {
         const dmg = Math.round(Math.hypot(b.vx, b.vy) * 4);
         P.hp = Math.max(0, P.hp - dmg);
         P.hitFlash = GameTime + 0.25;
-        hitFX.push({x: bodyCX, y: bodyCY - 20, t: '-'+dmg+'HP', life:45, big:true});
+        $.FX.hit({x: bodyCX, y: bodyCY - 20, t:(window.I18N ? window.I18N.t('main.hitDamage',{damage:dmg}) : ('-'+dmg+'HP')), life:45, big:true});
         const nx = (bodyCX - b.x)/(d||1), ny = (bodyCY - b.y)/(d||1);
         const kbf = sv('bodyKB') * 0.5;
         P.vx += nx * kbf; P.vy += ny * kbf;
@@ -604,7 +608,10 @@ if (hasMod(P, 'weaponRecoil')) {
         b.vx = nx * 3; b.vy = ny * 3 - 1;
         b.hit = 30;
         BALLS.splice(i, 1);
-        if(P.hp <= 0){ triggerDeath(P, false); }
+        if(P.hp <= 0){
+          if(typeof handleCombatDeath === 'function') handleCombatDeath(P);
+          else triggerDeath(P, false);
+        }
       }
     }
   }
@@ -617,31 +624,29 @@ if (hasMod(P, 'weaponRecoil')) {
 }
 
 
-// ──────────────── END LAYER: UPDATE_TICK ────────────────
-
-// ════════════════════════════════════════════════════════════════════════════
-// LAYER: GAME LOOP — фиксированный таймстеп, requestAnimationFrame, вкл/выкл ИИ
+// ---------------------------------------------------------------------------------
+// LAYER: GAME LOOP � fixed timestep, requestAnimationFrame, II toggle
 // Module section: game loop.
-// ════════════════════════════════════════════════════════════════════════════
-// ════════════════════════════════════════════════════════════════════════════
+// =======================================================================================
+// =======================================================================================
 const TARGET_FPS = 120;
-// ════════════════ END MODULE: COMBAT ═══════════════════════════════════════
+// ============================ END MODULE: COMBAT =====================================
 
-// ════════════════════════════════════════════════════════════════════════════
-// MODULE: GAME LOOP  (фиксированный таймстеп, requestAnimationFrame)
-// ════════════════════════════════════════════════════════════════════════════
+// =======================================================================================
+// MODULE: GAME LOOP  (fixed timestep, requestAnimationFrame)
+// =======================================================================================
 const FRAME_MIN_MS = 1000 / TARGET_FPS;
 const FIXED_DT = 1 / SIM_TICK_RATE;
 let lastRenderT = 0;
-let accumulator = 0; // накопитель реального времени
+let accumulator = 0; // accumulated real time
 
-// ════════════════════════════════════════════════════════════════════════════
-// MODULE: VISIBILITY  (пауза игры и музыки при сворачивании/уходе со страницы)
-// ════════════════════════════════════════════════════════════════════════════
+// =======================================================================================
+// MODULE: VISIBILITY  (pause game and music on tab/page switch)
+// =======================================================================================
 let gamePaused = false;
-// Пауза, вызванная ОТКРЫТЫМ МЕНЮ (не сворачиванием вкладки). Пока этот флаг
-// true, возврат на вкладку НЕ должен снимать паузу — иначе меню виснет на
-// экране, а бой (и боты) продолжает идти под ним.
+// Pause caused by OPEN MENU (not tab switch). While this flag
+// is true, returning to the tab MUST NOT unpause � otherwise the menu
+// stays on screen but combat (and bots) continues underneath it.
 let uiMenuPaused = false;
 window._setUiMenuPaused = function(v){ uiMenuPaused = v; };
 document.addEventListener('visibilitychange', () => {
@@ -649,15 +654,15 @@ document.addEventListener('visibilitychange', () => {
     gamePaused = true;
     if (typeof currentMusicObj !== 'undefined' && currentMusicObj) currentMusicObj.pause();
   } else {
-    if (!uiMenuPaused) gamePaused = false; // не снимаем паузу, если открыто меню
-    lastT = performance.now(); // сброс таймера чтобы не было гигантского dt
+    if (!uiMenuPaused) gamePaused = false; // don't unpause if menu is open
+    lastT = performance.now(); // reset timer to avoid giant dt
     lastRenderT = lastT;
     if (typeof currentMusicObj !== 'undefined' && currentMusicObj && musicEnabled && audioEnabledFlag) {
       currentMusicObj.play().catch(()=>{});
     }
   }
 });
-// ════════════════ END MODULE: VISIBILITY ════════════════════════════════════
+// ================================ END MODULE: VISIBILITY ===============================
 
 function loop(ts){
   if (gamePaused) { requestAnimationFrame(loop); return; }
@@ -684,19 +689,21 @@ function loop(ts){
     updateArrowShatterFX(dt);
     updateProjectileDodgeAI();
 
-    // 🔥 ЭФФЕКТЫ МАГИЧЕСКОГО ПОСОХА
+    // ?? MAGIC STAFF EFFECTS
     updateMagicStaffLightning(dt);
     updateMagicStaffGlow(dt);
     updateMagicStaffChargeFX(dt);
-	updateLightningHitFX(dt);
-// 🔥 ЕДИНАЯ ТРЯСКА ДЛЯ ВСЕХ
+    updateLightningHitFX(dt);
+// ?? SINGLE SHAKE FOR ALL
 updateChargeShake(P, dt);
+    if(typeof LocalPlayerControls!=='undefined') LocalPlayerControls.update(dt);
     if(dummyOn){
       for(const bot of ALL_BOTS){
         if(!revealBotIfReady(bot)) continue;
         if(bot.hp <= 0) continue;
-        updateAIDispatch(dt, bot);
+        if(!bot._manualControl) updateAIDispatch(dt, bot);
         updateDummy(dt, bot);
+        if(typeof LocalPlayerControls!=='undefined') LocalPlayerControls.afterEntityUpdate(bot,dt);
       }
       updateMainBotRotation(dt);
     }
@@ -711,14 +718,16 @@ if(dummyOn) {
 	
 	
     if(dummyOn){
-      for(const bot of ALL_BOTS){
-        if(bot._awaitingReveal) continue;
-        if(bot.hp <= 0) continue;
-        updateAtkPoints(P, bot, dt);
-        updateAtkPoints(bot, P, dt);
-        P.isAttacker = P.atkPts >= bot.atkPts;
-        bot.isAttacker = bot.atkPts > P.atkPts;
-        checkSwordCollision(P, bot, dt);
+      const combatants=[P,...ALL_BOTS].filter(ent=>ent && ent.hp>0 && !ent._awaitingReveal && !ent._defeated);
+      for(let i=0;i<combatants.length;i++){
+        for(let j=i+1;j<combatants.length;j++){
+          const a=combatants[i], b=combatants[j];
+          resolveEntityCollision(a,b);
+          if(typeof FactionRules!=='undefined' && !FactionRules.canFight(a,b)) continue;
+          updateAtkPoints(a,b,dt); updateAtkPoints(b,a,dt);
+          a.isAttacker=a.atkPts>=b.atkPts; b.isAttacker=b.atkPts>a.atkPts;
+          checkSwordCollision(a,b,dt);
+        }
       }
     }
     
@@ -739,14 +748,7 @@ if(dummyOn) {
 if(dummyOn&&isExhausted(D)) drawSweat(D);          
 if(dummyOn&&isUnbalanced(D)) drawUnbalancedStars(D); 
 
-  const rc = rootCenter();
-  const _orbitDetected2 = updateOrbitDetect(P.angle, rawDt);
-  if(_orbitDetected2 && !isExhausted(P) && weaponKeyOf(P) !== 'flail'){
-    P.stamina = Math.max(0, P.stamina - sv('stamorbit')*0.8);
-    if(P.stamina <= 0 && !isExhausted(P)) applyExhaust(P);
-    hitFX.push({x: rc.x + P.pvX, y: rc.y + P.pvY - 30, t:'🌀 ОРБИТА', life:35, big:false, col:'#ff8840'});
-    playSound('whoosh');
-  }
+  const rc = $.POS.root();
 
   const doRender = (ts - lastRenderT) >= FRAME_MIN_MS - 1;
   if(doRender) lastRenderT = ts;
@@ -784,26 +786,26 @@ if(dummyOn&&isUnbalanced(D)) drawUnbalancedStars(D);
     updateBowTensionFX(rawDt);
     drawBowTensionFX();
     
-    // 🔥 РИСУЕМ ЭФФЕКТЫ МАГИЧЕСКОГО ПОСОХА
+    // ?? DRAW MAGIC STAFF EFFECTS
     drawMagicStaffLightning();
     drawMagicStaffGlow();
     drawMagicStaffChargeFX();
     drawLightningHitFX();
-    // Радиус для игрока
-    if (P._magicCharging && weaponKeyOf(P) === 'magicstaff') {
+    // Player radius
+    if(P._magicCharging && $.IS(P, 'magicstaff')){
       drawMagicStaffRadius(P);
     }
     
-    // Радиус для ботов
+    // Bot radius
     if(dummyOn){
       for(const _b of ALL_BOTS){
-        if(_b.hp > 0 && _b._magicCharging && weaponKeyOf(_b) === 'magicstaff'){
+        if(_b.hp > 0 && _b._magicCharging && $.IS(_b, 'magicstaff')){
           drawMagicStaffRadius(_b);
         }
       }
     }
     
-    { // Рисуем ВСЕХ ботов
+    { // Draw ALL bots
       const _realD = D;
       for(const _b of ALL_BOTS){ D = _b; drawDummy(); }
       D = _realD;
@@ -837,97 +839,182 @@ if(dummyOn&&isUnbalanced(D)) drawUnbalancedStars(D);
   requestAnimationFrame(loop);
 }
 
-// ── ВВОД ────────────────────────────────────────────────────────────────────
+// -- INPUT --------------------------------------------------------------------------
 canvas.addEventListener('mousemove', e=>{ const r=canvas.getBoundingClientRect(); mX=e.clientX-r.left; mY=e.clientY-r.top; });
 canvas.addEventListener('mousedown', e=>{ if(e.button!==0)return; mDown=true; });
 canvas.addEventListener('mouseup',   e=>{ if(e.button!==0)return; mDown=false; });
-// Глобальные обработчики: если ЛКМ отжата за пределами canvas/окна, или окно
-// теряет фокус (alt-tab, переключение вкладки) — сбрасываем mDown, чтобы
-// игра не "застревала" в режиме зажатой кнопки.
+function browserInputLocked(){
+  const cfgUnlock = !!(window.GG_DEBUG_CONFIG && window.GG_DEBUG_CONFIG.unlockBrowserInput);
+  const queryUnlock = typeof URLSearchParams !== 'undefined' &&
+    new URLSearchParams(window.location.search).get('debugbrowser') === '1';
+  let storageUnlock = false;
+  try{
+    storageUnlock = localStorage.getItem('gg_unlock_browser_input') === '1';
+  }catch(_err){}
+  if(cfgUnlock || queryUnlock || storageUnlock) return false;
+  return !(typeof cb === 'function' && cb('debugbrowser'));
+}
+// RMB is intentionally unused: block browser context menus and any future
+// accidental right-button gameplay bindings.
+window.addEventListener('contextmenu', e=>{ if(browserInputLocked()) e.preventDefault(); });
+window.addEventListener('mousedown', e=>{ if(e.button===2 && browserInputLocked()){ e.preventDefault(); e.stopImmediatePropagation(); } }, true);
+// Global handlers: if LMB released outside canvas/window, or window loses focus (alt-tab, tab switch) � reset mDown so
+// the game doesn't "stick" in held-button mode.
 window.addEventListener('mouseup', e=>{ if(e.button===0) mDown=false; });
 window.addEventListener('blur', ()=>{ mDown=false; });
 document.addEventListener('mouseleave', ()=>{ mDown=false; });
+const FALLBACK_KEYBOARD_CODE_ALIASES = {
+  KeyW: ['w', '�'],
+  KeyA: ['a', '�'],
+  KeyS: ['s', '�'],
+  KeyD: ['d', '�'],
+  KeyT: ['t', '�'],
+  KeyE: ['e', '�'],
+  KeyR: ['r', '�'],
+  KeyQ: ['q', '�'],
+  KeyY: ['y', '�'],
+  KeyZ: ['z', '�'],
+  KeyX: ['x', '�'],
+  KeyC: ['c', '�'],
+  KeyV: ['v', '�'],
+  KeyG: ['g', '�'],
+  KeyH: ['h', '�'],
+  KeyU: ['u', '�'],
+  KeyI: ['i', '�'],
+  KeyJ: ['j', '�'],
+  KeyO: ['o', '�'],
+  Digit1: ['1'],
+  Enter: ['enter'],
+  Escape: ['escape']
+};
+function getKeyAliases(event){
+  if(window.GG_KEYBOARD_LAYOUT?.getAliases){
+    return window.GG_KEYBOARD_LAYOUT.getAliases(event);
+  }
+  const aliases = new Set();
+  const key = String(event?.key || '').toLowerCase();
+  if(key) aliases.add(key);
+  const byCode = FALLBACK_KEYBOARD_CODE_ALIASES[event?.code];
+  if(Array.isArray(byCode)){
+    for(const alias of byCode) aliases.add(alias);
+  }
+  return aliases;
+}
+function setKeyState(event, pressed){
+  for(const alias of getKeyAliases(event)) keys[alias] = pressed;
+}
+function isVisibleElement(el){
+  if(!el) return false;
+  if(el === document.body) return true;
+  if(el.offsetParent !== null) return true;
+  const style = window.getComputedStyle ? window.getComputedStyle(el) : null;
+  return !!style && style.display !== 'none' && style.visibility !== 'hidden';
+}
+function shouldIgnoreGameplayKeydown(){
+  const active = document.activeElement;
+  if(!active || active === document.body) return false;
+  if(active.isContentEditable) return true;
+  const tag = active.tagName;
+  if(tag === 'TEXTAREA') return true;
+  if(tag === 'SELECT') return true;
+  if(tag !== 'INPUT') return false;
+  const type = String(active.type || '').toLowerCase();
+  const textTypes = new Set(['', 'text', 'search', 'email', 'url', 'tel', 'password', 'number']);
+  if(textTypes.has(type)) return isVisibleElement(active);
+  return false;
+}
 window.addEventListener('keydown', e=>{
-  // Пропускаем если фокус в любом input/textarea (чтобы не блокировать ввод в overlay)
-  const tag = document.activeElement?.tagName;
-  if(tag === 'INPUT' || tag === 'TEXTAREA') return;
-  // Пропускаем если открыто любое game-overlay (Enter/Escape обрабатываются отдельно)
+  const lockBrowserKeys = browserInputLocked();
+  if((e.code==='Equal' || e.code==='NumpadAdd') && !e.repeat){
+    window._keyboardCrosshairVisible = window._keyboardCrosshairVisible === false;
+    e.preventDefault();
+    return;
+  }
+  // Text-entry UI keeps keyboard focus; range/checkbox controls must not
+  // disable gameplay hotkeys after a click.
+  if(shouldIgnoreGameplayKeydown()) return;
+  // Skip if any game-overlay is open (Enter/Escape are handled separately)
   if(document.querySelector('.game-overlay.open')) return;
   const k = e.key.toLowerCase();
-  // Открыть/скрыть панель настроек (~, ` или Ё)
-  if(e.code === 'Backquote' || e.key === 'ё' || e.key === 'Ё'){
+  if(typeof LocalPlayerControls!=='undefined' && LocalPlayerControls.isLocalPvP() &&
+     ['x','�','v','�','j','�','i','�'].includes(k)){
+    // Bot-only debug hotkeys must not mutate an entity owned by player 2.
+    return;
+  }
+  // Open/close settings panel (~, ` or �)
+  if(e.code === 'Backquote' || e.key === '�' || e.key === '�'){
     if(!window.IS_MOBILE){
       const panel = document.getElementById('panel');
       panel.classList.toggle('open');
-      // Панель — оверлей поверх игры (z-index), канвас/HUD никогда не сдвигаются и не сужаются
+      // Panel � overlay on top of the game (z-index), canvas/HUD never shift or shrink
     }
     return;
   }
-  keys[k]=true;
-  if(k==='t'||k==='т'||k==='е') toggleDummy();  // T/т/е (рус. "е" — та же физич. клавиша, что T) = ПАУЗА
-  if(k==='e'||k==='у'){ if(typeof tryManualPickup==='function') tryManualPickup(P); } // E/у = ПОДБОР ОРУЖИЯ
-  // Дебаг щитов
-  if(k==='r'||k==='к'){ window.toggleSwordStyle(); }
-  if(k==='q'||k==='й'){
+  setKeyState(e, true);
+  if(k==='t'||k==='�'||k==='�') toggleDummy();  // T/�/� (rus. "�" is same physical key as T) = PAUSE
+  if(k==='e'||k==='�'){ if(typeof tryManualPickup==='function') tryManualPickup(P); } // E/� = PICK UP WEAPON
+  // Debug shields
+  if(k==='r'||k==='�'){ window.toggleSwordStyle(); }
+  if(k==='q'||k==='�'){
     P._shieldFlipped = !P._shieldFlipped;
   }
-  if(k==='y'||k==='н'){ toggleAI(); } // Y/н (та же физич. клавиша, что Y) = СПАВН БОТОВ
-  if(k==='z'||k==='я'){
+  if(k==='y'||k==='�'){ toggleAI(); } // Y/� (same physical key as Y) = SPAWN BOT
+  if(k==='z'||k==='�'){
     P.shield=(P.shield+1)%SHIELD_TYPES.length; setShield(P,P.shield);
-    const n=SHIELD_TYPES[P.shield]; hitFX.push({x:P.x,y:P.y-40,t:'ЩИТ P: '+(n?n.name:'нет'),life:60,big:false,col:'#88ccff'});
+    const n=SHIELD_TYPES[P.shield]; $.FX.hit({x:P.x,y:P.y-40,t:(window.I18N?window.I18N.t('main.shieldPlayer',{name:n?n.name:window.I18N.t('main.shieldNone')}):('SHIELD P: '+(n?n.name:'none'))),life:60,big:false,col:'#88ccff'});
   }
-  if(k==='x'||k==='ч'){
+  if(k==='x'||k==='�'){
     D.shield=(D.shield+1)%SHIELD_TYPES.length; setShield(D,D.shield);
-    const n=SHIELD_TYPES[D.shield]; hitFX.push({x:D.x,y:D.y-40,t:'ЩИТ D: '+(n?n.name:'нет'),life:60,big:false,col:'#ffaa44'});
+    const n=SHIELD_TYPES[D.shield]; $.FX.hit({x:D.x,y:D.y-40,t:(window.I18N?window.I18N.t('main.shieldBot',{name:n?n.name:window.I18N.t('main.shieldNone')}):('SHIELD D: '+(n?n.name:'none'))),life:60,big:false,col:'#ffaa44'});
   }
-if(k==='c'||k==='с'){ // смена оружия игрока
+if(k==='c'||k==='�'){ // player weapon switch
   if(P.hasWeapon !== false){
     const next=(P.weaponType+1)%WEAPON_TYPES.length; 
     setWeapon(P,next);
     clearBowTensionFX();
-    // 🔥 ЗАЩИТА ОТ ОШИБКИ
-    const weaponName = WEAPON_TYPES[next] ? WEAPON_TYPES[next].name : 'НЕИЗВЕСТНО';
-    hitFX.push({x:P.x,y:P.y-40,t:'ОРУЖИЕ: '+weaponName,life:60,big:false,col:'#88ccff'});
+    // ?? ERROR PROTECTION
+    const weaponName = WEAPON_TYPES[next] ? WEAPON_TYPES[next].name : (window.I18N?window.I18N.t('main.unknownWeapon'):'UNKNOWN');
+    $.FX.hit({x:P.x,y:P.y-40,t:(window.I18N?window.I18N.t('main.weaponPlayer',{name:weaponName}):('WEAPON: '+weaponName)),life:60,big:false,col:'#88ccff'});
   }
 }
 
-if(k==='v'||k==='м'){ // смена оружия бота
+if(k==='v'||k==='�'){ // bot weapon switch
   if(D.hasWeapon !== false){
     const next=(D.weaponType+1)%WEAPON_TYPES.length; 
     setWeapon(D,next);
-    // 🔥 ЗАЩИТА ОТ ОШИБКИ
-    const weaponName = WEAPON_TYPES[next] ? WEAPON_TYPES[next].name : 'НЕИЗВЕСТНО';
-    hitFX.push({x:D.x,y:D.y-40,t:'ОРУЖИЕ: '+weaponName,life:60,big:false,col:'#ffaa44'});
+    // ?? ERROR PROTECTION
+    const weaponName = WEAPON_TYPES[next] ? WEAPON_TYPES[next].name : (window.I18N?window.I18N.t('main.unknownWeapon'):'UNKNOWN');
+    $.FX.hit({x:D.x,y:D.y-40,t:(window.I18N?window.I18N.t('main.weaponBot',{name:weaponName}):('WEAPON: '+weaponName)),life:60,big:false,col:'#ffaa44'});
   }
 }
-  if(k==='1'){ throwWeapon(P); } // бросок оружия игроком
-  if(e.key==='g' || k==='g' || k==='п'){
-    // Тот же путь, что и при естественном истощении стамины.
+  if(k==='1'){ throwWeapon(P); } // player throws weapon
+  if(e.key==='g' || k==='g' || k==='�'){
+    // Same path as natural stamina exhaustion.
     applyExhaust(P);
     P.stamina = 0;
   }
-  if(e.key==='h' || k==='h' || k==='р'){
+  if(e.key==='h' || k==='h' || k==='�'){
     addRage(P, 100);
-    hitFX.push({x:W/3,y:H/2-40,t:'🔥+100 ЯРОСТЬ',life:45,big:true,col:'#ff4020'});
+    $.FX.hit({x:W/3,y:H/2-40,t:(window.I18N?window.I18N.t('main.rageAdd'):'??+100 RAGE'),life:45,big:true,col:'#ff4020'});
   }
-  if(e.key==='j' || k==='j' || k==='о'){
+  if(e.key==='j' || k==='j' || k==='�'){
     if(dummyOn){
       D.rageBuffEnd = GameTime + 4.0;
       D.rage = 100;
-      hitFX.push({x:W*0.6,y:H/2-40,t:'🔥 БОТ ЯРОСТЬ',life:45,big:true,col:'#ff6030'});
+      $.FX.hit({x:W*0.6,y:H/2-40,t:(window.I18N?window.I18N.t('main.botRage'):'?? BOT RAGE'),life:45,big:true,col:'#ff6030'});
     }
   }
-  if(e.key==='U' || k==='u' || k==='Г'|| k==='г'){
-    // Тестовый вызов того же дисбаланса, что применяется при блоке.
+  if(e.key==='U' || k==='u' || k==='�'|| k==='�'){
+    // Test call of the same disbalance applied on block.
     if(!isUnbalanced(P)) applyDisbalance(P);
   }
-  if(e.key==='I' || k==='i' || k==='Ш'|| k==='ш'){
-    // Отладка: ровно тот же общий эффект и длительность, но на боте.
+  if(e.key==='I' || k==='i' || k==='�'|| k==='�'){
+    // Debug: exactly the same effect and duration, but on the bot.
     if(dummyOn && D && !isUnbalanced(D)) applyDisbalance(D);
   }
-  e.preventDefault();
+  if(lockBrowserKeys) e.preventDefault();
 });
-window.addEventListener('keyup',   e=>{ keys[e.key.toLowerCase()]=false; });
+window.addEventListener('keyup',   e=>{ setKeyState(e, false); });
 window.addEventListener('resize',  ()=>{
   W=canvas.width = window.innerWidth;
   H=canvas.height = window.innerHeight;
@@ -936,27 +1023,42 @@ window.addEventListener('resize',  ()=>{
 });
 
 function toggleDummy(){
-  // T/Е = пауза AI у ВСЕХ ботов разом, манекены остаются видимыми
+  // T/� = pause AI for ALL bots at once, mannequins remain visible
   AI.enabled = !AI.enabled;
-  // Синхронизируем флаг паузы со всеми ботами, а не только с "главным" (D)
+  // Sync pause flag with all bots, not just the "main" one (D)
   for(const _b of ALL_BOTS){
     if(_b._aiState) _b._aiState.enabled = AI.enabled;
   }
   const b=document.getElementById('dtoggle');
-  b.textContent=AI.enabled?'🤖 МАНЕКЕН: ВКЛ':'⏸ МАНЕКЕН: ПАУЗА';
+  b.textContent=window.I18N?window.I18N.buttonText('dtoggle', AI.enabled?'on':'pause'):(AI.enabled?'ON':'PAUSE');
   b.classList.toggle('on', AI.enabled);
-  hitFX.push({x:W/2, y:H/2-60, t: AI.enabled?'▶ AI ВКЛ':'⏸ AI ПАУЗА', life:55, big:true, col: AI.enabled?'#44ffaa':'#ffaa44'});
+  $.FX.hit({x:W/2, y:H/2-60, t: AI.enabled?(window.I18N?window.I18N.t('main.aiOn'):'? AI ON'):(window.I18N?window.I18N.t('main.aiPause'):'? AI PAUSE'), life:55, big:true, col: AI.enabled?'#44ffaa':'#ffaa44'});
 }
 function toggleAI(){
+  if(typeof LocalPlayerControls!=='undefined' && LocalPlayerControls.isLocalPvP()){
+    dummyOn=true;
+    const input=document.getElementById('sl-botcount');
+    if(input){
+      const current=Math.max(0,Number(input.value)||0);
+      if(current>0){
+        window._localBotSpawnPreset=current;
+        input.value='0';
+      } else {
+        input.value=String(Math.min(Number(input.max)||10,window._localBotSpawnPreset||1));
+      }
+      input.dispatchEvent(new Event('input',{bubbles:true}));
+    }
+    return;
+  }
   dummyOn=!dummyOn;
   const b=document.getElementById('dtoggle');
-  b.textContent=dummyOn?'🤖 МАНЕКЕН: ВКЛ':'🤖 МАНЕКЕН: ВЫКЛ';
+  b.textContent=window.I18N?window.I18N.buttonText('dtoggle', dummyOn?'on':'off'):(dummyOn?'ON':'OFF');
   b.classList.toggle('on',dummyOn);
   if(dummyOn){
-    // 🔥 ЕДИНЫЙ СБРОС ИГРОКА
+    // ?? SINGLE PLAYER RESET
     resetPlayerState();
     
-    // Полный сброс Entity D
+    // Full Entity D reset
     D.hp=100; D.stamina=100; D.exhausted=0; D.unbalanced=0;
     D.x=W/2+110; D.y=H/2; D.vx=0; D.vy=0;
     D.bx=0; D.by=0; D.pvX=0; D.pvY=-8; D.tpX=0; D.tpY=-8;
@@ -972,7 +1074,7 @@ function toggleAI(){
     if(D._bowCharging) { D._bowCharging = false; if(D._bowTensionSound) { try{D._bowTensionSound.pause();}catch(e){} D._bowTensionSound = null; } }
     if(D.hasWeapon===false && typeof setWeapon==='function') setWeapon(D, D.weaponType);
     
-    // Полный сброс AI состояния
+    // Full AI state reset
     AI.enabled=true;
     AI.phase='attack';
     AI._tacticTimer = -1;
@@ -984,10 +1086,10 @@ function toggleAI(){
     AI._lungeActive = false;
     AI._duelPull = false;
     
-    // Создаём ботов
+    // Spawn bots
     if(typeof applyBotCount==='function') applyBotCount();
     
-    // 👇 СБРАСЫВАЕМ СТАТУСЫ У ВСЕХ БОТОВ (кроме первого)
+    // ?? RESET STATUSES FOR ALL BOTS (except the first one)
     for(let i = 1; i < ALL_BOTS.length; i++){
       const _b = ALL_BOTS[i];
       if(_b._aiState){
@@ -1008,7 +1110,7 @@ function toggleAI(){
       if(_b.hasWeapon===false && typeof setWeapon==='function') setWeapon(_b, _b.weaponType);
     }
     
-    // 👇 ПЕРВЫЙ БОТ — ГЛАВНЫЙ
+    // ?? FIRST BOT � MAIN
     if(ALL_BOTS.length > 0){
       D = ALL_BOTS[0];
       D._aiState._isMain = true;
@@ -1018,22 +1120,20 @@ function toggleAI(){
       AI = D._aiState;
     }
     
-    // 👇 ТАЙМЕР СМЕНЫ (9999 СЕКУНД)
+    // ?? SWAP TIMER (9999 SECONDS)
     _lastCrownSwitchTime = GameTime;
     _mainBotSwapTime = GameTime + 9999;
   }
 }
 
-// ──────────────── END LAYER: GAME_LOOP ────────────────
-
-// ════════════════════════════════════════════════════════════════════════════
-// LAYER: BOOTSTRAP — финальный запуск: загрузка звуков, инициализация боксов, старт цикла
+// ---------------------------------------------------------------------------------
+// LAYER: BOOTSTRAP � final launch: load sounds, init boxes, start loop
 // Module section: game startup.
-// ════════════════════════════════════════════════════════════════════════════
+// =======================================================================================
 
-loadAudioDB(); // запускаем загрузку в фоне
+loadAudioDB(); // start loading in background
 initBoxes();
 
-// ──────────────── END LAYER: BOOTSTRAP ────────────────
+// ---------------------------------------------------------------------------------
 
 requestAnimationFrame(loop);

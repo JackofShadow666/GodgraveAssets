@@ -139,7 +139,7 @@ function weaponStaminaMult(ent){
   const d = weaponDefFor(ent);
   let m = (d && d.staminaMult != null) ? d.staminaMult : 1.0;
   // Скрытый бафф: боты с копьём/посохом тратят стамину медленнее.
-  if(isBot(ent) && (weaponKeyOf(ent)==='spear' || weaponKeyOf(ent)==='staff')) m *= 0.8;
+  if(isBot(ent) && $.IS(ent, 'spear', 'staff')) m *= 0.8;
   return m;
 }
 function weaponCutMult(ent){
@@ -182,7 +182,7 @@ function weaponHasFlag(ent, flag){
 // Множитель скорости замаха/поворота оружия — тяжёлое оружие крутится медленнее
 function weaponSwingSpeedMult(ent){
   if(ent.hasWeapon === false) return 1.0;
-  return clamp(1 / weaponWeight(ent), 0.55, 1.35);
+  return $.M.clamp(1 / weaponWeight(ent), 0.55, 1.35);
 }
 // Множитель скорости передвижения персонажа — тяжёлое оружие замедляет
 function weaponMoveSpeedMult(ent){
@@ -192,14 +192,14 @@ function weaponMoveSpeedMult(ent){
  
   // 🔥 ЖЕЗЛ И МАГИЧЕСКИЙ ПОСОХ — ПОЛНАЯ СКОРОСТЬ (не должны замедлять, в
   // отличие от лука/арбалета — это ближе к обычному оружию по механике)
-  if ( weaponKeyOf(ent) === 'magicstaff' || weaponKeyOf(ent) === 'wand' ) {
+  if($.IS(ent, 'magicstaff', 'wand')){
     return 1.0;
-  }else if (isRangedWeapon(ent)) {
+  }else if(isRangedWeapon(ent)){
     return 0.4;  // 40% скорости (сильное замедление) — только лук/арбалет
   }
   
   const w = weaponWeight(ent);
-  return clamp(1 - (w - 1) * 0.15, 0.7, 1.15);
+  return $.M.clamp(1 - (w - 1) * 0.15, 0.7, 1.15);
 }
 
 function weaponLenFor(ent){
@@ -387,7 +387,7 @@ function droppedWeaponPixelLen(ent){
 // Разоружает entity: оружие падает на карту как подбираемый предмет
 function disarmEntity(ent, kickVx, kickVy){
   if(ent.hasWeapon === false) return;
-  const c = entityBodyCenter(ent);
+  const c = $.POS.body(ent);
   const defW = WEAPON_TYPES[ent.weaponType] || WEAPON_TYPES[0];
   
   // ✅ Увеличиваем силу выбивания
@@ -429,17 +429,20 @@ function disarmEntity(ent, kickVx, kickVy){
 
 function throwWeapon(ent){
   if(ent.hasWeapon === false) return;
-  const c = entityBodyCenter(ent);
+  const c = $.POS.body(ent);
   const def = WEAPON_TYPES[ent.weaponType] || WEAPON_TYPES[0];
   const spd = (def.throwSpeed || 10)/2;
   
   let aimAngle;
   if(ent === P){
-    const rc = rootCenter();
+    const rc = $.POS.root();
     aimAngle = Math.atan2(mY - rc.y, mX - rc.x);
+  } else if(ent._manualControl){
+    // A local player throws where their weapon is aimed, not at P like an AI.
+    aimAngle = ent.angle;
   } else {
-    const pC = entityBodyCenter(P);
-    const bC = entityBodyCenter(ent);
+    const pC = $.POS.body(P);
+    const bC = $.POS.body(ent);
     aimAngle = Math.atan2(pC.y - bC.y, pC.x - bC.x);
   }
   
@@ -466,8 +469,8 @@ function throwWeapon(ent){
   ent.hasWeapon = false;
   ent._weaponImg = null;
   ent._weaponUrl = null;
-  hitFX.push({x:c.x, y:c.y-40, t:'🗡 БРОШЕН!', life:45, big:true, col:'#ffaa66'});
-  playSound('throwSound');
+  $.FX.hit({x:c.x, y:c.y-40, t:'🗡 БРОШЕН!', life:45, big:true, col:'#ffaa66'});
+  $.S.play('throwSound');
 }
 
 
@@ -478,7 +481,7 @@ function throwWeapon(ent){
 // если оно уже есть (старое падает на землю на месте подбирающего)
 function tryManualPickup(ent){
   if(!ent || ent.hp <= 0) return;
-  const c = entityBodyCenter(ent);
+  const c = $.POS.body(ent);
   const PICKUP_R = 100;
   let nearest = null, nearestD = Infinity, nearestIdx = -1;
   for(let i = 0; i < DROPPED_WEAPONS.length; i++){
@@ -493,8 +496,8 @@ function tryManualPickup(ent){
   if(nearest.url){ ent._weaponUrl = nearest.url; ent._weaponImg = nearest.img || loadSpriteImage(nearest.url); }
   DROPPED_WEAPONS.splice(nearestIdx, 1);
   if(ent._aiState) ent._aiState._weaponSeekTimer = undefined;
-  hitFX.push({x:c.x, y:c.y-40, t:'🗡 ПОДОБРАНО', life:45, big:false, col:'#88ffaa'});
-  playSound('pickupSound');
+  $.FX.hit({x:c.x, y:c.y-40, t:'🗡 ПОДОБРАНО', life:45, big:false, col:'#88ffaa'});
+  $.S.play('pickupSound');
 }
 
 // Случайная угловая скорость вращения, взятая из параметров вида оружия
@@ -528,7 +531,7 @@ function bounceWeapon(w, nx, ny, restitution){
 
 // Обновление физики брошенного/лежащего оружия + подбор безоружными
 function updateDroppedWeapons(dt){
-  const step = simStep(dt);
+  const step = $.M.step(dt);
   const PICKUP_R = 45;
   const BOUND_L = 40, BOUND_R = W - 80, BOUND_T = 40, BOUND_B = H - 40;
 
@@ -554,8 +557,8 @@ if(bounced){
   // 🔥 ДЕБАГ ПОСЛЕ BOUNCE
   console.log('🔴 ПОСЛЕ ОТСКОКА ОТ СТЕНЫ: angVel =', w.angVel, 'isThrow =', w.isThrow);
   
-  hitFX.push({x:w.x, y:w.y-8, t:'✦', life:18, big:false, col:'#ccccff'});
-  playSound('clash');
+  $.FX.hit({x:w.x, y:w.y-8, t:'✦', life:18, big:false, col:'#ccccff'});
+  $.S.play('clash');
 }
     }
 
@@ -571,13 +574,13 @@ if(bounced){
 
         // Клинок соперника
         if(ent.hasWeapon !== false){
-          const piv = entityPivot(ent);
+          const piv = $.POS.pivot(ent);
           const reach = weaponReach(ent) * sv('swlen') * (isBot(ent)?sv('botswordscale'):1);
           const tipX = piv.x + Math.cos(ent.angle)*reach;
           const tipY = piv.y + Math.sin(ent.angle)*reach;
           const segDX = tipX-piv.x, segDY = tipY-piv.y;
           const segL2 = segDX*segDX+segDY*segDY || 1;
-          const t = clamp(((w.x-piv.x)*segDX+(w.y-piv.y)*segDY)/segL2, 0, 1);
+          const t = $.M.clamp(((w.x-piv.x)*segDX+(w.y-piv.y)*segDY)/segL2, 0, 1);
           const nearX = piv.x + t*segDX, nearY = piv.y + t*segDY;
           const dd = Math.hypot(w.x-nearX, w.y-nearY);
           if(dd < 14){
@@ -592,7 +595,7 @@ if(bounced){
 
         // Щит
         if(!deflected && shieldDef(ent) && !isShieldSuppressed(ent) && ent._shieldSide !== undefined){
-          const shc = entityBodyCenter(ent);
+          const shc = $.POS.body(ent);
           const shVertOff = Math.sin(ent.angle) * 14;
           const scx = shc.x + ent._shieldSide * 20 * 0.9;
           const scy = shc.y + shVertOff;
@@ -620,8 +623,8 @@ if(bounced){
             applyShieldBlockFX(w.x, w.y, null, null, {waveAngle: Math.atan2(w.vy, w.vx)});
           } else {
             const strongHit = flySpdPre > 6;
-            hitFX.push({x:w.x, y:w.y-8, t:'✦', life:18, big:strongHit, col:'#ffdd88'});
-            playSound(strongHit ? 'clashHard' : 'clash');
+            $.FX.hit({x:w.x, y:w.y-8, t:'✦', life:18, big:strongHit, col:'#ffdd88'});
+            $.S.play(strongHit ? 'clashHard' : 'clash');
             if(typeof triggerHitstop === 'function') triggerHitstop(strongHit?3:2, strongHit?3:1.5);
             addRage(ent, clashRageGain());
           }
@@ -651,7 +654,7 @@ if (w.weaponType === 'spear' && Math.abs(w.angVel) > 0.1) {
       for(const ent of candidates){
         if(!ent || ent.hp <= 0 || ent._awaitingReveal) continue;
         if(ent === w.owner && GameTime < (w.ownerImmuneUntil||0)) continue;
-        const c = entityBodyCenter(ent);
+        const c = $.POS.body(ent);
         const hitR = 22 * (isBot(ent) ? sv('cscl')*sv('botscale') : sv('cscl'));
         const d = Math.hypot(c.x - w.x, c.y - w.y);
         if(d < hitR){
@@ -681,7 +684,7 @@ if (w.weaponType === 'spear' && Math.abs(w.angVel) > 0.1) {
           const nx = d > 0.1 ? (c.x - w.x)/d : 0, ny = d > 0.1 ? (c.y - w.y)/d : -1;
           ent.vx += nx * 6; ent.vy += ny * 6;
           
-          playSound(isHeavySwingWeaponType(w.weaponType) ? 'damageHammer' : 'damage');
+          $.S.play(isHeavySwingWeaponType(w.weaponType) ? 'damageHammer' : 'damage');
           
           w.x = c.x - nx*hitR; w.y = c.y - ny*hitR;
           bounceWeapon(w, -nx, -ny, 0.6);
@@ -701,12 +704,12 @@ if (w.weaponType === 'spear' && Math.abs(w.angVel) > 0.1) {
     for(const ent of candidates){
       if(!ent || ent.hp <= 0 || ent.hasWeapon !== false || ent._awaitingReveal) continue;
       if(ent === w.owner && GameTime < (w.ownerPickupBlockUntil||0)) continue;
-      const c = entityBodyCenter(ent);
+      const c = $.POS.body(ent);
       if(Math.hypot(c.x - w.x, c.y - w.y) < PICKUP_R){
         setWeapon(ent, w.weaponType);
         if(w.url){ ent._weaponUrl = w.url; ent._weaponImg = w.img || loadSpriteImage(w.url); }
-        hitFX.push({x:c.x, y:c.y-40, t:'🗡 ПОДОБРАНО', life:45, big:false, col:'#88ffaa'});
-        playSound('pickupSound');
+        $.FX.hit({x:c.x, y:c.y-40, t:'🗡 ПОДОБРАНО', life:45, big:false, col:'#88ffaa'});
+        $.S.play('pickupSound');
         if(ent._aiState){ ent._aiState._weaponSeekTimer = undefined; }
         DROPPED_WEAPONS.splice(i,1);
         picked = true;
@@ -739,11 +742,11 @@ function drawDroppedFlail(w, rot){
     const originAngle = Math.atan2(-(w.vy||0), -(w.vx||0));
     const lagDirLocalX = Math.cos(originAngle - rot);
     // Нормализуем lagFactor от -1 до 1
-    lagFactor = clamp(lagDirLocalX * Math.min(1, spd/5), -1, 1);
+    lagFactor = $.M.clamp(lagDirLocalX * Math.min(1, spd/5), -1, 1);
   }
   
   // Провисание цепи (как в drawFlailSprite)
-  const normalizedLag = clamp(lagFactor, -1, 1);
+  const normalizedLag = $.M.clamp(lagFactor, -1, 1);
   const lagAmount = normalizedLag * 3; // макс 3px смещения
 
   ctx.save();
@@ -847,23 +850,21 @@ function weaponKeyOf(ent){
 // ✅ Цеп добавлен в список: раньше звучал как меч (whoosh/damage), теперь
 // звук кручения/удара цепа — как у молота (более тяжёлый, гулкий).
 function isHeavySwingWeapon(ent){
-  const k = weaponKeyOf(ent);
-   return k === 'hammer' || k === 'staff' || k === 'wand' || k === 'spear' || k === 'flail' || k === 'halberd' 
+  return $.IS(ent, 'hammer', 'staff', 'wand', 'spear', 'flail', 'halberd');
 }
 function isHeavySwingWeaponType(weaponTypeIdx){
   const d = WEAPON_TYPES[weaponTypeIdx];
   const k = d ? d.key : null;
-   return k === 'hammer' || k === 'staff' || k === 'wand' || k === 'spear' || k === 'flail' || k === 'halberd' || k === 'magicstaff';
+  return $.ISK(k, 'hammer', 'staff', 'wand', 'spear', 'flail', 'halberd', 'magicstaff');
 }
 function isRangedWeapon(ent){
-  const k = weaponKeyOf(ent);
-   return k === 'wand' || k === 'crossbow' || k === 'bow'|| k === 'magicstaff';
+  return $.IS(ent, 'wand', 'crossbow', 'bow', 'magicstaff');
 }
 
 // Мировые координаты кончика оружия в руке entity (используется, чтобы
 // магический снаряд жезла вылетал из наконечника, а не из центра тела).
 function weaponTipPos(ent){
-  const piv = entityPivot(ent);
+  const piv = $.POS.pivot(ent);
   const reach = weaponReach(ent) * sv('swlen') * (isBot(ent) ? sv('botswordscale') : 1);
   return { x: piv.x + Math.cos(ent.angle) * reach, y: piv.y + Math.sin(ent.angle) * reach };
 }

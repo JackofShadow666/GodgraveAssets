@@ -1,120 +1,128 @@
 // === src/ui/hud.js ===
-// Extracted from Build.html; loaded as a classic script to preserve shared runtime state.
-// LAYER: HUD — обновление полосок ХП/стамины/статусов
-// Module file: hud.js
-// ════════════════════════════════════════════════════════════════════════════
+(function(){
+  'use strict';
 
-// Кэш HUD элементов
-// HUD lazy refs — инициализируем при первом вызове
-let hudPHP=null,hudPSt=null,hudPStat=null,hudBot=null,hudBHP=null,hudBSt=null,hudBPh=null,hudBStat=null;
-function getHUD(){
-  if(!hudPHP){
-    hudPHP  = document.getElementById('hud-p-hp');
-    hudPSt  = document.getElementById('hud-p-stam');
-    hudPStat= document.getElementById('hud-p-status');
-    hudBot  = document.getElementById('hud-bot');
-    hudBHP  = document.getElementById('hud-b-hp');
-    hudBSt  = document.getElementById('hud-b-stam');
-    hudBPh  = document.getElementById('hud-b-phase');
-    hudBStat= document.getElementById('hud-b-status');
+  function t(key, fallback, vars){
+    return window.I18N ? window.I18N.t(key, vars) : fallback;
   }
-}
-// HUD vars declared above in lazy block
 
-function updateHUD(){
-  getHUD();
-  if(!hudPHP) return;
-  // Игрок
-  hudPHP.style.width  = P.hp + '%';
-  hudPHP.style.background = P.hp>50?'#2acc50':P.hp>25?'#ccaa20':'#cc2020';
-  hudPSt.style.width  = Math.max(0, Math.min(100, P.stamina)) + '%';
-  hudPSt.style.background = '#ccaa20';
-    let pStat = '';
-  const debuffText = getDebuffText(P);
-  if (debuffText) {
-    pStat = debuffText;
-} else if(isUnbalanced(P)) {
-  pStat = '💫 ДИСБАЛАНС';
-} else if((P._hitCD||0)>GameTime) {
-    pStat = '🛡 ' + Math.max(0,P._hitCD-GameTime).toFixed(1)+'s';
-  } else if(weaponKeyOf(P) === 'magicstaff' && (P.rage||0) < 50 && !P._magicCharging){
-    pStat = '🔥 ' + Math.round(P.rage||0) + '/50 ярости';
+  function clampPercent(value, max){
+    const limit = Number(max) > 0 ? Number(max) : 100;
+    const safeValue = Number(value) || 0;
+    return Math.max(0, Math.min(100, (safeValue / limit) * 100));
   }
-  
-  hudPStat.textContent = pStat;
-  // Rage бар игрока
-  const pRageEl = document.getElementById('hud-p-rage');
-  if(pRageEl){
-    const prevRage = pRageEl._lastRage || 0;
-    const curRage = Math.max(0, Math.min(100, P.rage||0));
-    if(prevRage < 50 && curRage >= 50){
-      // Накопили ярость — синее кольцо у ног с fade+expand
-      const rc9 = rootCenter();
-      FX_EFFECTS.push({type:'ragering', x:rc9.x+P.pvX, y:rc9.y+P.pvY,
-        t:0, duration:35, angle:0, followEntity:P});
+
+  function setBarWidth(selector, value, max){
+    const el = document.querySelector(selector);
+    if(el) el.style.width = clampPercent(value, max).toFixed(1) + '%';
+  }
+
+  function setTextIfPresent(selector, text){
+    const el = document.querySelector(selector);
+    if(el) el.textContent = text || '';
+  }
+
+  function entityStatusText(entity){
+    if(!entity) return '';
+    if(typeof isUnbalanced === 'function' && isUnbalanced(entity)){
+      return t('hud.unbalanced', 'UNBALANCED');
     }
-    pRageEl._lastRage = curRage;
-    pRageEl.style.width = curRage + '%';
-    pRageEl.style.background = curRage >= 50 ? '#2060cc' : '#5a5a5a';
-  }
-  // Buff display
-  const pBuffEl = document.getElementById('hud-p-buff');
-  if(pBuffEl) pBuffEl.textContent = P.rageBuffEnd>GameTime ? '⚔ ЯРОСТЬ 2x' : '';
-
-  // Бот: показываем только когда dummyOn
-  if(!dummyOn){ hudBot.style.opacity='0'; return; }
-  // Показываем бота всегда пока он активен (можно добавить условие "в таргете")
-  hudBot.style.opacity='1';
-  hudBHP.style.width  = Math.max(0,Math.min(100,D.hp)) + '%';
-  hudBHP.style.background = D.hp>50?'#cc4040':D.hp>25?'#cc7020':'#882020';
-  hudBSt.style.width  = Math.max(0, Math.min(100, D.stamina)) + '%';
-  hudBSt.style.background = '#ccaa20';
-  const bRageEl = document.getElementById('hud-b-rage');
-  if(bRageEl){
-    bRageEl.style.width = Math.max(0, Math.min(100, D.rage||0)) + '%';
-    bRageEl.style.background = (D.rage||0) >= 50 ? '#2060cc' : '#5a5a5a';
-  }
-  if(typeof NET_SYNC!=='undefined'&&NET_SYNC.active){
-    // В PVP — показываем имя и пинг вместо AI-фазы
-    const pingMs=typeof NET_CORE!=='undefined'?NET_CORE.getPing():0;
-    hudBPh.textContent = (NET_SYNC.peerName||'') + ' · ' + pingMs+'ms';
-    hudBPh.style.color = pingMs<80?'#4acc80':pingMs<150?'#ccaa30':'#cc5050';
-  } else {
-    let phaseTxt, phaseCol, timerEnd = -1;
-    if(AI._probingActive){
-      const probingNames = {approach:'ПОДХОД · ФЕХТОВАНИЕ', strike:'НАВЕДЕНИЕ', retreat:'ОТХОД', pause:'ПЕРЕДЫШКА'};
-      const probingState = AI._probingPhase === 'strike' && AI._probingMirrorBlock
-        ? 'ЗЕРКАЛЬНЫЙ БЛОК' : (probingNames[AI._probingPhase] || 'ПОДХОД');
-      phaseTxt = '⚔ PROBING · ' + probingState;
-      phaseCol = AI._probingPhase === 'retreat' ? '#3090cc' : '#4aaa70';
-      timerEnd = Math.max(AI._probingModeEnd || -1, AI._probingEnd || -1);
-    } else if(AI._pokeDodgeActive){
-      phaseTxt = '➜ УКОЛ С РЫВКОМ'; phaseCol = '#cc7040'; timerEnd = AI._pokeDodgeEnd;
-    } else if(AI._lungeActive){
-      phaseTxt = AI._lungePhase === 'back' ? '↩ ПОДГОТОВКА ВЫПАДА' : '➜ ВЫПАД';
-      phaseCol = AI._lungePhase === 'back' ? '#ccaa30' : '#cc5030'; timerEnd = AI._lungeEnd;
-    } else if(AI.tactic === 'COMBAT_HARASS' && AI.phase === 'attack'){
-      const harassNames = {approach:'ПОДХОД', strike:'УДАР', orbit:'ОБХОД'};
-      phaseTxt = '⚔ ИЗМАТЫВАНИЕ · ' + (harassNames[AI._harassPhase] || 'ПОДХОД');
-      phaseCol = AI._harassPhase === 'orbit' ? '#3090cc' : '#cc5030';
-      timerEnd = AI._harassTimer;
-    } else {
-      const phase = AI.phase;
-      phaseTxt = phase==='attack'?'⚔ АТАКА':phase==='retreat'?'🏃 ОТСТУП':'😮‍💨 ПЕРЕДЫШКА';
-      phaseCol = phase==='attack'?'#cc5030':phase==='retreat'?'#3090cc':'#aaaa30';
-      timerEnd = AI._phaseEnd;
+    if(typeof isExhausted === 'function' && isExhausted(entity)){
+      return t('hud.botExhausted', 'EXHAUSTED');
     }
-    const tLeft = timerEnd>GameTime?' '+Math.max(0,timerEnd-GameTime).toFixed(1)+'s':'';
-    const styleStr = AI.swordStyle==='SWORD_STYLE_DUELIST'?' 🛡DUE':AI.swordStyle==='SWORD_STYLE_MIRROR'?' 🪞MIR':' ⚔SWD';
-    hudBPh.textContent = phaseTxt + tLeft + styleStr;
-    hudBPh.style.color = phaseCol;
+    if(entity._debuffActive){
+      return t('hud.debuff', 'DEBUFF');
+    }
+    return '';
   }
-  let bStat = '';
-if(isUnbalanced(D)) bStat = '💫 ДИСБАЛАНС';
-else if(isExhausted(D)) bStat = '😫 УСТАЛОСТЬ';
-  hudBStat.textContent = bStat;
-}
 
-// ──────────────── END LAYER: HUD ────────────────
+  function botPhaseText(bot){
+    if(!bot) return '';
+    const ai = bot._aiState || {};
+    const style = ai.style || ai.profile || '';
+    const phase = ai.phase || ai.state || '';
+    if(style === 'probing'){
+      const probingMap = {
+        approach: 'hud.probingApproach',
+        strike: 'hud.probingStrike',
+        retreat: 'hud.probingRetreat',
+        pause: 'hud.probingPause',
+        mirrorBlock: 'hud.probingMirrorBlock'
+      };
+      return t('hud.probingPhase', 'PROBING', {
+        state: t(probingMap[phase] || 'hud.probingPause', 'PAUSE')
+      });
+    }
+    if(style === 'harass'){
+      const harassMap = {
+        approach: 'hud.harassApproach',
+        strike: 'hud.harassStrike',
+        orbit: 'hud.harassOrbit'
+      };
+      return t('hud.harassPhase', 'HARASS', {
+        phase: t(harassMap[phase] || 'hud.harassApproach', 'APPROACH')
+      });
+    }
+    const genericMap = {
+      attack: 'hud.phaseAttack',
+      retreat: 'hud.phaseRetreat',
+      rest: 'hud.phaseRest'
+    };
+    return genericMap[phase] ? t(genericMap[phase], '') : '';
+  }
 
-// ════════════════════════════════════════════════════════════════════════════
+  function updateMainHudEntity(prefix, entity, options){
+    if(!entity) return;
+    const maxHp = entity.maxHp || 100;
+    const maxStam = entity.stamMax || 100;
+    setBarWidth('#' + prefix + '-hp', entity.hp, maxHp);
+    setBarWidth('#' + prefix + '-stam', entity.stamina, maxStam);
+    setBarWidth('#' + prefix + '-rage', entity.rage, 100);
+    if(options && options.statusSelector){
+      setTextIfPresent(options.statusSelector, entityStatusText(entity));
+    }
+    if(options && options.buffSelector){
+      const rageActive = (entity.rageBuffEnd || 0) > (typeof GameTime !== 'undefined' ? GameTime : 0);
+      setTextIfPresent(options.buffSelector, rageActive ? t('hud.rageBuff', 'RAGE 2x') : '');
+    }
+  }
+
+  function updateLocalSlotHud(slotEl, entity){
+    if(!slotEl) return;
+    slotEl.style.display = entity ? 'block' : 'none';
+    if(!entity) return;
+    const hpBar = slotEl.querySelector('[data-hp]');
+    const stamBar = slotEl.querySelector('[data-stam]');
+    const rageBar = slotEl.querySelector('[data-rage]');
+    if(hpBar) hpBar.style.width = clampPercent(entity.hp, entity.maxHp || 100).toFixed(1) + '%';
+    if(stamBar) stamBar.style.width = clampPercent(entity.stamina, entity.stamMax || 100).toFixed(1) + '%';
+    if(rageBar) rageBar.style.width = clampPercent(entity.rage, 100).toFixed(1) + '%';
+  }
+
+  function updateHUD(){
+    if(typeof P !== 'undefined'){
+      updateMainHudEntity('hud-p', P, {
+        statusSelector: '#hud-p-status',
+        buffSelector: '#hud-p-buff'
+      });
+    }
+
+    const botHud = document.getElementById('hud-bot');
+    const hasDummy = typeof dummyOn !== 'undefined' && dummyOn && typeof D !== 'undefined' && !!D;
+    if(botHud){
+      botHud.style.opacity = hasDummy ? '1' : '0';
+    }
+    if(hasDummy){
+      updateMainHudEntity('hud-b', D, {
+        statusSelector: '#hud-b-status'
+      });
+      setTextIfPresent('#hud-b-phase', botPhaseText(D));
+    }
+
+    const slots = Array.isArray(window.PLAYER_SLOTS) ? window.PLAYER_SLOTS : [];
+    updateLocalSlotHud(document.getElementById('hud-player-3'), slots[2] && slots[2].entity ? slots[2].entity : null);
+    updateLocalSlotHud(document.getElementById('hud-player-4'), slots[3] && slots[3].entity ? slots[3].entity : null);
+  }
+
+  window.updateHUD = updateHUD;
+})();

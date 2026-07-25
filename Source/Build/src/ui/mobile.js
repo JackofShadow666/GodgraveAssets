@@ -5,19 +5,19 @@
 // Mobile controls are already isolated in this module.
 // ════════════════════════════════════════════════════════════════════════════
 (function(){
-  // ── ИСПОЛЬЗУЕМ РАННИЙ ДЕТЕКТ (см. начало основного скрипта) ──────────────
-  // Стики и зоны только для мобиля (guard внутри каждого блока)
-  // Меню оверлей работает на всех устройствах
+  // ── USE EARLY DETECT (see start of main script) ──────────────
+  // Sticks and zones are mobile-only (guard inside each block)
+  // Menu overlay works on all devices
 
   function applyOrientation(){
     const portrait = window.innerHeight > window.innerWidth;
     document.body.classList.toggle('is-portrait', portrait);
     if(!portrait){
-      // Камера "отдалена": целимся в ~14 клеток (55px) по вертикали, как на ПК.
-      // Увеличиваем ВНУТРЕННЕЕ разрешение canvas (логический мир) сверх
-      // физического размера экрана — браузер сжимает картинку через CSS,
-      // визуально получаем "зум аут" без искажения пропорций объектов.
-      const targetRows = sv('camrows'); // настраиваемое кол-во клеток (55px) по вертикали
+      // Camera "zoomed out": aim for ~14 cells (55px) vertically, like on PC.
+      // Increase the INTERNAL canvas resolution (logical world) beyond
+      // the physical screen size — browser scales it down via CSS,
+      // visually achieving "zoom out" without distorting object proportions.
+      const targetRows = sv('camrows'); // adjustable cell count (55px) vertically
       const targetWorldH = targetRows * 55;
       const camScale = Math.max(1, targetWorldH / window.innerHeight);
       window.CAM_SCALE = camScale;
@@ -31,7 +31,7 @@
       initBoxes();
     }
   }
-  // Дефолт камеры на мобиле — 12 клеток (компактнее чем на ПК)
+  // Default camera on mobile — 12 cells (more compact than PC)
   const camSlider0 = document.getElementById('sl-camrows');
   if(camSlider0){
     camSlider0.value = 12;
@@ -39,7 +39,7 @@
     if(camLabel0) camLabel0.textContent = '12';
   }
 
-  // ── АВТОФУЛЛСКРИН ──────────────────────────────────────────────────────
+  // ── AUTO FULLSCREEN ──────────────────────────────────────────────────────
   function requestFS(){
     const el = document.documentElement;
     try {
@@ -56,10 +56,10 @@
     } catch(e){}
   }
 
-  // Видимая кнопка "На весь экран" — надёжнее чем авто-триггер на первый тап
-  // Старт-оверлей только на мобиле
+  // Visible "Fullscreen" button — more reliable than auto-trigger on first tap
+  // Start overlay is mobile-only
   if(window.IS_MOBILE){
-    // Полноэкранный оверлей "СТАРТ" — скрывает всё (canvas/UI/стики) до запуска
+    // Fullscreen "START" overlay — hides everything (canvas/UI/sticks) until launch
     const startOverlay = document.createElement('div');
     startOverlay.id = 'mob-start-overlay';
     startOverlay.style.cssText = 'position:fixed;inset:0;z-index:3000;'
@@ -69,21 +69,21 @@
 
     const fsBtn = document.createElement('button');
     fsBtn.id = 'mob-fullscreen-btn';
-    fsBtn.textContent = '▶ СТАРТ';
+    fsBtn.textContent = '▶ START';
     fsBtn.style.cssText = 'background:#ff4757;color:#fff;border:none;padding:18px 50px;'
       + 'font-size:18px;font-weight:bold;border-radius:30px;font-family:monospace;'
       + 'box-shadow:0 5px 15px rgba(255,71,87,0.4);letter-spacing:2px;';
     startOverlay.appendChild(fsBtn);
 
-    // Скрываем игровые элементы пока не нажат СТАРТ
+    // Hide game elements until START is pressed
     document.body.classList.add('mob-pregame');
 
     function hideFsBtn(){
       startOverlay.style.display = 'none';
       document.body.classList.remove('mob-pregame');
-      // Пересчёт размеров после смены fullscreen/баров браузера
+      // Recalculate sizes after fullscreen/browser bar change
       setTimeout(applyOrientation, 100);
-      setTimeout(applyOrientation, 400); // повторно — на случай задержки скрытия баров
+      setTimeout(applyOrientation, 400); // repeat — in case of delayed bar hiding
     }
 
     fsBtn.addEventListener('touchend', e => {
@@ -93,7 +93,7 @@
     }, {passive:false});
     fsBtn.addEventListener('click', () => { requestFS(); hideFsBtn(); });
 
-    // Если fullscreen уже активен (или сработал) — скрываем кнопку
+    // If fullscreen is already active (or triggered) — hide the button
     document.addEventListener('fullscreenchange', () => {
       if(document.fullscreenElement) hideFsBtn();
       setTimeout(applyOrientation, 100);
@@ -107,11 +107,11 @@
   applyOrientation();
   window.addEventListener('resize', () => setTimeout(applyOrientation, 150));
   window.addEventListener('orientationchange', () => setTimeout(applyOrientation, 150));
-  // Перестроить камеру при изменении ползунка "Дальность камеры"
+  // Rebuild camera when "Camera Range" slider changes
   const camSlider = document.getElementById('sl-camrows');
   if(camSlider) camSlider.addEventListener('input', applyOrientation);
 
-  // ── СПАВН БОТА ────────────────────────────────────────────────────────────
+  // ── SPAWN BOT ────────────────────────────────────────────────────────────
   const spawnBtn = document.getElementById('mob-spawn-btn');
   spawnBtn.addEventListener('touchstart', e => {
     e.preventDefault();
@@ -120,7 +120,7 @@
     spawnBtn.style.borderColor = dummyOn ? '#4acc70' : '#1a4060';
   }, {passive: false});
 
-  // ── ЩИТ БОТА (переключение типа щита у бота) ───────────────────────────────
+  // ── BOT SHIELD (cycle shield type for bot) ───────────────────────────────
   const botShieldBtn = document.getElementById('mob-bot-shield-btn');
   botShieldBtn?.addEventListener('touchstart', e => {
     e.preventDefault();
@@ -128,7 +128,7 @@
     D.shield = (D.shield+1)%SHIELD_TYPES.length; setShield(D, D.shield);
   }, {passive: false});
 
-  // ── ОРУЖИЕ БОТА (переключение вида оружия у бота) ───────────────────────
+  // ── BOT WEAPON (cycle weapon type for bot) ──────────────────────────────
   const botWeaponBtn = document.getElementById('mob-bot-weapon-btn');
   botWeaponBtn?.addEventListener('touchstart', e => {
     e.preventDefault();
@@ -137,7 +137,7 @@
     D.weaponType = (D.weaponType+1)%WEAPON_TYPES.length; setWeapon(D, D.weaponType);
   }, {passive: false});
 
-  // ── МЕНЮ (пауза/рестарт/настройки) ──────────────────────────────────────
+  // ── MENU (pause/restart/settings) ──────────────────────────────────────
   const menuBtn = document.getElementById('mob-menu-btn');
   const menuOverlay = document.getElementById('mob-menu-overlay');
   const settingsEmbed = document.getElementById('mob-settings-embed');
@@ -160,16 +160,25 @@
     uiMenuPaused = false;
     gamePaused = false;
     document.body.classList.remove('menu-open');
-    if(!(typeof NET_SYNC!=='undefined'&&NET_SYNC.active)) AI.enabled = true;
+    if(!(typeof NET_SYNC!=='undefined'&&$.NET.active())) AI.enabled = true;
   }
   document.getElementById('mob-resume').addEventListener('touchstart', e=>{e.preventDefault();window.doResume();},{passive:false});
   document.getElementById('mob-resume').addEventListener('click', window.doResume);
 
 window.doRestart=function(){
-  // Полный ресет состояния
+  if(typeof window.restartCombatRound === 'function'){
+    window.restartCombatRound({ resetScore:true, enableAI:true });
+    menuOverlay.classList.remove('open');
+    pausedByMenu = false;
+    uiMenuPaused = false;
+    gamePaused = false;
+    document.body.classList.remove('menu-open');
+    return;
+  }
+  // Full state reset
   if(typeof resetWins==='function') resetWins();
   
-  // 🗑️ ЕДИНЫЙ СБРОС ИГРОКА
+  // 🗑️ SINGLE PLAYER RESET
   resetPlayerState();
   
   if(dummyOn){
@@ -215,8 +224,11 @@ window.doRestart=function(){
   window.doOpenSettings=function(){
     const settOv = document.getElementById('mob-settings-overlay');
     if(!settOv) return;
+    const playerSec = document.getElementById('sec-local-players');
     const camSec = document.getElementById('sec-mobile-cam');
+    if(playerSec && playerSec.parentElement !== settingsEmbed) settingsEmbed.appendChild(playerSec);
     if(camSec && camSec.parentElement !== settingsEmbed) settingsEmbed.appendChild(camSec);
+    if(playerSec) playerSec.style.display = 'block';
     if(camSec) camSec.style.display = 'block';
     settingsEmbed.style.display = 'block';
     settOv.style.display = 'flex';
@@ -233,7 +245,7 @@ window.doRestart=function(){
   });
 
 
-  // fireDodge — работает на всех устройствах (ПК + мобиль)
+  // fireDodge — works on all devices (PC + mobile)
   window.fireDodge=function(dx, dy, bypassCooldown){
     if(typeof P==='undefined') return;
     if(!bypassCooldown&&window._dodgeCooldownMob>0) return;
@@ -241,39 +253,38 @@ window.doRestart=function(){
     const force=8;
     P._dvx=(dx/len)*force;
     P._dvy=(dy/len)*force;
-    // Окно "активного доджа" — во время него взмахи не тратят стамину
+    // "Active dodge" window — during it, swings don't cost stamina
     P._dodgeActiveUntil = GameTime + 0.3;
-    // Кулдаун доджа: если щит в той же руке что меч — перезарядка в 3 раза дольше
+    // Dodge cooldown: if shield is on the same side as sword — cooldown is 3x longer
     const _dodgeSameSide = typeof shieldDef==='function' && shieldDef(P) && shieldSameSideAsSword(P);
     window._dodgeCooldownMob = _dodgeSameSide ? 0.8*3 : 0.8;
-    if(P.stamina!==undefined) P.stamina=Math.max(0,P.stamina-30);
+    if(P.stamina!==undefined) drainStamina(P, 30);
     if(typeof spawnDust==='function')
       for(let i=0;i<8;i++) spawnDust(P.x+Math.random()*24-12,P.y+Math.random()*12,-dx/len*8,-dy/len*8);
-    playSound('dodgeSound');
+    $.S.play('dodgeSound');
     if(typeof DODGE_TRAIL==='undefined') window.DODGE_TRAIL=[];
     window._dodgeTrailFrames=12;
-    if(typeof hitFX!=='undefined') hitFX.push({x:P.x,y:P.y-30,t:'DODGE',life:35,big:false,col:'rgba(200,200,200,0.6)'});
-    // Додж со щитом в правильной руке → bladeblind + отброс
-    // Только если двигаемся К цели (не убегаем)
+    if(typeof hitFX!=='undefined') $.FX.hit({x:P.x,y:P.y-30,t:(window.I18N ? window.I18N.t('common.dodge') : 'DODGE'),life:35,big:false,col:'rgba(200,200,200,0.6)'});
+    // Dodge with shield in the correct hand → bladeblind + knockback
+    // Only if moving TOWARD the target (not running away)
     if(typeof shieldDef==='function' && shieldDef(P) && !shieldSameSideAsSword(P)){
       const _dt2=(typeof D!=='undefined'&&dummyOn)?D:null;
       if(_dt2){
         const _ax=_dt2.x-P.x, _ay=_dt2.y-P.y;
         const _dist=Math.hypot(_ax,_ay);
         const _al=_dist||1;
-        // Проверяем что движемся К цели: dot(dodge_dir, to_target) > 0
+        // Check that we're moving TOWARD target: dot(dodge_dir, to_target) > 0
         const _movingToward = (dx/_al)*(_ax/_al) + (dy/_al)*(_ay/_al);
         if(_dist<180 && _movingToward>0.3){
-          if(typeof triggerBladeBind==='function') triggerBladeBind(P,_dt2);
           _dt2.vx+=_ax/_al*4; _dt2.vy+=_ay/_al*4;
-// Шипастый щит — тот же доп. урон телом, что и в основном баше (update())
+// Spiked shield — same bonus body damage as in the main bash (update())
 const _shDefBash2 = shieldDef(P);
 const _spiked2 = _shDefBash2 && _shDefBash2.spiked;
 if(_spiked2 && typeof GameTime!=='undefined'){
   const spikeDmg2 = _shDefBash2.spikeDmg || 12;
   
   // ════════════════════════════════════════════════════════════════════
-  // 🔥 ЕДИНЫЙ ВЫЗОВ applyDamage
+  // 🔥 UNIFIED applyDamage CALL
   // ════════════════════════════════════════════════════════════════════
   applyDamage(_dt2, spikeDmg2, P, {
     isMagic: false,
@@ -284,57 +295,62 @@ if(_spiked2 && typeof GameTime!=='undefined'){
     textColor: '#ff6644',
     textSuffix: '🛡',
     bloodCount: 6,
-    playSound: false // звук воспроизводим отдельно
+    playSound: false // sound played separately
   });
   
-  // ── ДОПОЛНИТЕЛЬНЫЕ ЭФФЕКТЫ (специфичные для доджа) ──
-  hitFX.push({x:_dt2.x, y:_dt2.y-52, t:'-'+spikeDmg2, life:40, big:false});
+  // ── ADDITIONAL EFFECTS (dodge-specific) ──
+  $.FX.hit({x:_dt2.x, y:_dt2.y-52, t:'-'+spikeDmg2, life:40, big:false});
   if(typeof spawnBlood==='function') spawnBlood(_dt2.x, _dt2.y, _ax/_al, _ay/_al);
-  playSound('damageHammer');
+  $.S.play('damageHammer');
   
   if(_dt2.hp<=0 && typeof handleCombatDeath==='function') handleCombatDeath(_dt2);
 }
-          hitFX.push({x:_dt2.x,y:_dt2.y-30,t: _spiked2?'🗡🛡 ШИП-БАШ!':'🛡 BIND!',life:45,big:false,col:'#60ccff'});
+          $.FX.hit({x:_dt2.x,y:_dt2.y-30,t: _spiked2?(window.I18N?window.I18N.t('main.spikedBash'):'???? SPIKE BASH!'):(window.I18N?window.I18N.t('main.bash'):'?? BASH!'),life:45,big:false,col:'#60ccff'});
         }
       }
     }
   };
   window._dodgeCooldownMob=0;
 
-  // Кнопка управления — на ПК показывает справку по клавишам
+  // Control button — on PC shows keybind help
   document.getElementById('mob-control-mode-btn')?.addEventListener('click', ()=>{
-    if(window.IS_MOBILE) return; // мобиль обрабатывается ниже
+    if(window.IS_MOBILE) return; // mobile handled below
     const settOv=document.getElementById('mob-settings-overlay');
     if(!settOv) return;
     const embed=document.getElementById('mob-settings-embed');
     if(embed){
-      // Настоящие слайдеры (sec-mobile-cam) могли быть перемещены сюда через
-      // doOpenSettings — паркуем их снаружи, чтобы innerHTML= их не удалил насовсем
+      // Real sliders (sec-mobile-cam) may have been moved here via
+      // doOpenSettings — park them outside so innerHTML= doesn't delete them permanently
       const camSec = document.getElementById('sec-mobile-cam');
+      const playerSec = document.getElementById('sec-local-players');
+      if(playerSec && playerSec.parentElement === embed){
+        playerSec.style.display = 'none';
+        document.body.appendChild(playerSec);
+      }
       if(camSec && camSec.parentElement === embed){
         camSec.style.display = 'none';
         document.body.appendChild(camSec);
       }
       embed.innerHTML=`<div style="font-family:monospace;font-size:13px;color:#8ab8c8;line-height:2.2;padding:8px 0;">
-      <b style="color:#4acc80;letter-spacing:2px;">УПРАВЛЕНИЕ (ПК)</b><br>
-      <span style="color:#6ab0d0;">WASD</span> — движение<br>
-      <span style="color:#6ab0d0;">Мышь</span> — меч / прицел<br>
-      <span style="color:#6ab0d0;">ЛКМ</span> — удержать меч в позиции<br>
-      <span style="color:#6ab0d0;">Shift</span> — ДОДЖ<br>
-      <span style="color:#6ab0d0;">T</span> — спавн бота<br>
-      <span style="color:#6ab0d0;">E</span> — AI вкл / выкл<br>
-      <span style="color:#6ab0d0;">O / Щ</span> — зона арены<br>
-      <span style="color:#6ab0d0;">Enter</span> — меню паузы<br>
-      <span style="color:#6ab0d0;">Esc</span> — закрыть меню
+      <b style="color:#4acc80;letter-spacing:2px;">CONTROLS (PC)</b><br>
+      <span style="color:#6ab0d0;">WASD</span> — movement<br>
+      <span style="color:#6ab0d0;">Mouse</span> — sword / aim<br>
+      <span style="color:#6ab0d0;">LMB</span> — hold sword in position<br>
+      <span style="color:#6ab0d0;">Shift</span> — DODGE<br>
+      <span style="color:#6ab0d0;">T</span> — spawn bot<br>
+      <span style="color:#6ab0d0;">E</span> — AI on/off<br>
+      <span style="color:#6ab0d0;">O / Щ</span> — arena zone<br>
+      <span style="color:#6ab0d0;">Enter</span> — pause menu<br>
+      <span style="color:#6ab0d0;">Esc</span> — close menu
     </div>`;
     }
     settOv.style.display='flex';
   });
 
-  // На ПК — стики, старт-экран и ориентация не нужны
+  // On PC — sticks, start screen and orientation are not needed
   if(!window.IS_MOBILE) return;
 
-  // ── ПЛАВАЮЩИЕ ДЖОЙСТИКИ ──────────────────────────────────────────────────
+  // ── FLOATING JOYSTICKS ──────────────────────────────────────────────────
   const zoneMove  = document.getElementById('zone-move');
   const zoneSword = document.getElementById('zone-sword');
   const moveBase  = document.getElementById('move-base');
@@ -349,18 +365,18 @@ if(_spiked2 && typeof GameTime!=='undefined'){
   let swordId = null, swordOrigin = {x:0,y:0};
   let lastSwordTap = 0;
   let doubleTapLMB = false;
-  let _crossbowTapPending = false; // тап по арбалету — выстрел произойдёт на touchend
+  let _crossbowTapPending = false; // crossbow tap — shot happens on touchend
 
-  // ── ЛЕВЫЙ — движение ──────────────────────────────────────────────────────
-  // Получаем смещение зоны относительно экрана (один раз)
+  // ── LEFT — movement ──────────────────────────────────────────────────────
+  // Get zone offset relative to screen (once)
   function getZoneOffset(zone){
     const r=zone.getBoundingClientRect();
     return {x:r.left, y:r.top};
   }
 
   zoneMove.addEventListener('touchstart', e => {
-    // Не перехватываем касание, если оно попало по кнопке поверх зоны
-    // (щит/оружие/бросок и т.п. лежат в верхней части левой зоны движения)
+    // Don't intercept touch if it hits a button on top of the zone
+    // (shield/weapon/throw etc. sit in the upper part of the left movement zone)
     if(e.target.closest('button')) return;
     e.preventDefault();
     const t = e.changedTouches[0];
@@ -388,8 +404,6 @@ if(_spiked2 && typeof GameTime!=='undefined'){
       const dead = 8;
       keys['w']=ny<-dead; keys['s']=ny>dead;
       keys['a']=nx<-dead; keys['d']=nx>dead;
-
-
     }
   }, {passive:false});
 
@@ -412,7 +426,7 @@ if(_spiked2 && typeof GameTime!=='undefined'){
     moveKnob.style.visibility = show?'visible':'hidden';
   }
 
-  // ── РЕЖИМ УПРАВЛЕНИЯ МЕЧОМ: floating (по умолчанию) / fixed (видимый стик) ──
+  // ── SWORD CONTROL MODE: floating (default) / fixed (visible stick) ──
   const fixedStickBase = document.getElementById('fixed-stick-base');
   const fixedStickKnob = document.getElementById('fixed-stick-knob');
   const fixedStickReticle = document.getElementById('fixed-stick-reticle');
@@ -420,13 +434,13 @@ if(_spiked2 && typeof GameTime!=='undefined'){
 
   function applyControlMode(){
     document.body.classList.toggle('fixed-stick-mode', controlMode==='fixed');
-    // кнопка управления — текст не меняем
+    // control button text doesn't change
     if(controlMode==='fixed') positionFixedStick();
   }
 
   function positionFixedStick(){
-    // Правый нижний угол экрана, с отступом
-    const r = 65; // половина width фиксированного стика (130px/2)
+    // Bottom-right corner of the screen, with padding
+    const r = 65; // half of fixed stick width (130px/2)
     const x = window.innerWidth - r - 40;
     const y = window.innerHeight - r - 40;
     fixedStickBase.style.left = x+'px';
@@ -444,28 +458,33 @@ if(_spiked2 && typeof GameTime!=='undefined'){
       localStorage.setItem('gg_control_mode', controlMode);
       applyControlMode();
     } else {
-      // На ПК — показываем справку по клавишам
+      // On PC — show keybind help
       const settOv=document.getElementById('mob-settings-overlay');
       if(!settOv) return;
       const embed=document.getElementById('mob-settings-embed');
       if(embed){
-        // Не удаляем настоящие слайдеры (sec-mobile-cam), если они сейчас внутри embed
+        // Don't delete real sliders (sec-mobile-cam) if they're currently inside embed
         const camSec = document.getElementById('sec-mobile-cam');
+        const playerSec = document.getElementById('sec-local-players');
+        if(playerSec && playerSec.parentElement === embed){
+          playerSec.style.display = 'none';
+          document.body.appendChild(playerSec);
+        }
         if(camSec && camSec.parentElement === embed){
           camSec.style.display = 'none';
           document.body.appendChild(camSec);
         }
         embed.innerHTML=`<div style="font-family:monospace;font-size:12px;color:#8ab8c8;line-height:2;padding:8px;">
-        <b style="color:#6ab0d0;">УПРАВЛЕНИЕ (ПК)</b><br>
-        WASD — движение<br>
-        Мышь — меч/прицел<br>
-        ЛКМ — удержать меч<br>
-        Shift — ДОДЖ<br>
-        T — спавн бота<br>
-        E — AI вкл/выкл<br>
-        O/Щ — зона арены<br>
-        Enter — меню<br>
-        Esc — закрыть
+        <b style="color:#6ab0d0;">CONTROLS (PC)</b><br>
+        WASD — movement<br>
+        Mouse — sword/aim<br>
+        LMB — hold sword<br>
+        Shift — DODGE<br>
+        T — spawn bot<br>
+        E — AI on/off<br>
+        O/Щ — arena zone<br>
+        Enter — menu<br>
+        Esc — close
       </div>`;
       }
       settOv.style.display='flex';
@@ -474,52 +493,52 @@ if(_spiked2 && typeof GameTime!=='undefined'){
 
   applyControlMode();
 
-  // updateSwordFixed — направление от ЦЕНТРА фиксированного стика к пальцу,
-  // прицел вращается на постоянном расстоянии от персонажа в этом направлении.
-  // В отличие от floating-режима, здесь стик не двигается с пальцем — он
-  // всегда на месте, и обрабатывается именно УГОЛ (направление), а не offset.
-  const FIXED_RETICLE_R = 50; // расстояние прицела от центра стика (px, визуально)
+  // updateSwordFixed — direction from CENTER of the fixed stick to the finger,
+  // the aim rotates at a constant distance from the character in that direction.
+  // Unlike floating mode, the stick doesn't move with the finger — it's
+  // always in place, and it processes the ANGLE (direction), not offset.
+  const FIXED_RETICLE_R = 50; // aim distance from stick center (px, visual)
   function updateSwordFixed(cx, cy){
     const dx = cx - fixedStickOrigin.x;
     const dy = cy - fixedStickOrigin.y;
     const dist = Math.hypot(dx,dy);
     const angle = Math.atan2(dy,dx);
 
-    // Knob двигается чуть в направлении пальца (визуальная отдача), но ограничен малым радиусом
+    // Knob moves slightly in the finger direction (visual feedback), but limited to small radius
     const knobR = Math.min(dist, 30);
     fixedStickKnob.style.left = (65+Math.cos(angle)*knobR)+'px';
     fixedStickKnob.style.top  = (65+Math.sin(angle)*knobR)+'px';
 
-    // Прицел всегда на фиксированном расстоянии FIXED_RETICLE_R, вращается по углу
+    // Reticle is always at fixed distance FIXED_RETICLE_R, rotates by angle
     fixedStickReticle.style.left = (65+Math.cos(angle)*FIXED_RETICLE_R)+'px';
     fixedStickReticle.style.top  = (65+Math.sin(angle)*FIXED_RETICLE_R)+'px';
 
-    // Применяем направление к прицеливанию игрока (mX/mY) — целик далеко от персонажа
-    // по тому же углу, дистанция не зависит от силы отклонения пальца (только направление)
-    if(dist > 8){ // мёртвая зона чтобы не дёргалось от микро-касаний
-      const rc = rootCenter();
+    // Apply direction to player aiming (mX/mY) — crosshair far from the character
+    // at the same angle, distance doesn't depend on finger offset strength (only direction)
+    if(dist > 8){ // dead zone to prevent micro-touch jitter
+      const rc = $.POS.root();
       const aimRadius = Math.min(W,H)*0.35;
       mX = rc.x + Math.cos(angle)*aimRadius;
       mY = rc.y + Math.sin(angle)*aimRadius;
     }
   }
 
-  // ── ПРАВЫЙ — меч / прицел ────────────────────────────────────────────────
+  // ── RIGHT — sword / aim ────────────────────────────────────────────────
   zoneSword.addEventListener('touchstart', e => {
-    // Не перехватываем касание, если оно попало по кнопке поверх зоны
-    // (стиль боя/додж/зона арены и т.п. лежат в верхней части правой зоны)
+    // Don't intercept touch if it hits a button on top of the zone
+    // (combat style/dodge/arena zone etc. sit in the upper part of the right zone)
     if(e.target.closest('button')) return;
     e.preventDefault();
     enableAudioSystem();
     if(swordId !== null) return;
     const t = e.changedTouches[0];
 
-    // ── Лук: одиночный тап сразу натягивает (mDown=true, отпускание — выстрел).
-    // Арбалет: выстрел должен происходить именно в момент ОТПУСКАНИЯ тапа
-    // (как спуск курка), поэтому здесь mDown НЕ включаем — только
-    // отмечаем, что тап был по арбалету, и стреляем в touchend.
-    // Маг. посох и жезл требуют удержания и остаются на двойном тапе, как
-    // ближний бой — иначе они срабатывали бы от случайного тапа.
+    // ── Bow: single tap immediately draws (mDown=true, release — shot).
+    // Crossbow: shot should happen exactly on TOUCH RELEASE
+    // (like trigger pull), so here mDown is NOT set — only
+    // mark that a crossbow tap happened, and shoot on touchend.
+    // Magic staff and wand require holding and stay on double tap, same as
+    // melee — otherwise they'd trigger on accidental taps.
     const _wk = typeof weaponKeyOf==='function' ? weaponKeyOf(P) : null;
     const _rangedTap = (_wk === 'bow' || _wk === 'crossbow');
     if(_wk === 'bow'){
@@ -531,7 +550,7 @@ if(_spiked2 && typeof GameTime!=='undefined'){
     } else {
       const now = Date.now();
       if(now - lastSwordTap < 300){
-        // Двойной тап: LMB зажат ПОКА держишь палец, отпустил — отжалось
+        // Double tap: LMB held WHILE finger is down, release — released
         doubleTapLMB = true;
         mDown = true;
         swordKnob.classList.add('lmb-active');
@@ -543,10 +562,10 @@ if(_spiked2 && typeof GameTime!=='undefined'){
     swordId = t.identifier;
 
     if(controlMode==='fixed'){
-      // Фиксированный режим: стик уже на месте, не двигаем базу
+      // Fixed mode: stick is already in place, don't move the base
       updateSwordFixed(t.clientX, t.clientY);
     } else {
-      // Плавающий режим: появляется в точке касания
+      // Floating mode: appears at touch point
       swordOrigin = {x: t.clientX, y: t.clientY};
       swordBase.style.left = swordOrigin.x+'px';
       swordBase.style.top  = swordOrigin.y+'px';
@@ -554,10 +573,10 @@ if(_spiked2 && typeof GameTime!=='undefined'){
       updateSword(t.clientX, t.clientY);
     }
 
-    // Одиночный тап НЕ активирует LMB для ближнего боя — только управляет мечом
-    // Двойной тап переключает режим LMB (залипание). Для лука —
-    // одиночный тап уже натягивает (см. выше). Для арбалета — стреляет
-    // при отпускании (см. touchend).
+    // Single tap does NOT activate LMB for melee — only controls the sword
+    // Double tap toggles LMB mode (latch). For bow —
+    // single tap already draws (see above). For crossbow — shoots
+    // on release (see touchend).
   }, {passive:false});
 
   zoneSword.addEventListener('touchmove', e => {
@@ -580,15 +599,15 @@ if(_spiked2 && typeof GameTime!=='undefined'){
         swordBase.classList.remove('active');
         updateSwordKnob(0,0);
       }
-      // Арбалет: выстрел происходит именно сейчас, при отпускании тапа —
-      // на один кадр включаем mDown, чтобы updateRangedWeaponFire увидел
-      // fireHeld=true и сделал выстрел, затем сразу гасим.
+      // Crossbow: shot happens right now, on touch release —
+      // enable mDown for one frame so updateRangedWeaponFire sees
+      // fireHeld=true and fires, then immediately disable.
       if(_crossbowTapPending){
         _crossbowTapPending = false;
         mDown = true;
         requestAnimationFrame(() => { mDown = false; });
       }
-      // Отпустили палец — LMB всегда отжимается (лук/ближний бой с двойным тапом)
+      // Finger released — LMB always released (bow/melee with double tap)
       const _wk2 = typeof weaponKeyOf==='function' && typeof P!=='undefined' ? weaponKeyOf(P) : null;
       if(doubleTapLMB || _wk2 === 'bow'){
         doubleTapLMB = false;
@@ -607,7 +626,7 @@ if(_spiked2 && typeof GameTime!=='undefined'){
     const ny = dist>SWORD_R ? dy/dist*SWORD_R : dy;
     updateSwordKnob(nx,ny);
 
-    const rc = rootCenter();
+    const rc = $.POS.root();
     const aimRadius = Math.min(W,H)*0.35;
     const normX = nx/SWORD_R, normY = ny/SWORD_R;
     if(Math.hypot(normX,normY) > 0.05){
@@ -623,7 +642,7 @@ if(_spiked2 && typeof GameTime!=='undefined'){
     swordBase.style.top  = swordOrigin.y+'px';
   }
 
-  // Запрет скролла/зума
+  // Prevent scroll/zoom
   document.addEventListener('touchmove', e => { if(e.cancelable) e.preventDefault(); }, {passive:false});
   document.addEventListener('gesturestart', e => e.preventDefault());
 })();

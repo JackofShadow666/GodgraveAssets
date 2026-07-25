@@ -1,4 +1,4 @@
-// === src/core/settings.js ===
+﻿// === src/core/settings.js ===
 // Extracted from Build.html; loaded as a classic script to preserve shared runtime state.
 // LAYER: SETTINGS — панель настроек (sv/cb/bindSlider), слайдеры
 // Module file: settings.js
@@ -67,6 +67,7 @@ document.addEventListener('change', e=>{
 function bindSlider(id, fmt){
   const el = document.getElementById('sl-'+id);
   const vl = document.getElementById('vl-'+id);
+  if (!el || !vl) return;
   const update = ()=>{ vl.textContent = fmt ? fmt(+el.value) : '['+el.value+']'; };
   el.addEventListener('input', update);
   update();
@@ -109,6 +110,8 @@ bindSlider('dzone');
 document.getElementById('sl-camrows')?.addEventListener('input', () => { applyCamScale(); arenaDirty = true; });
 document.getElementById('sl-botcount')?.addEventListener('input', function(){
   document.getElementById('vl-botcount').textContent = this.value;
+  const count=Math.max(0,Number(this.value)||0);
+  if(count>0) window._localBotSpawnPreset=count;
   if(typeof applyBotCount==='function') applyBotCount();
 });
 
@@ -132,14 +135,14 @@ document.getElementById('dtoggle').addEventListener('click', () => toggleAI());
 document.getElementById('btn-blockkb').addEventListener('click', () => {
   blockKnockOn = !blockKnockOn;
   const b = document.getElementById('btn-blockkb');
-  b.textContent = blockKnockOn ? '🛡 БЛОК-ОТКАТ: ВКЛ' : '🛡 БЛОК-ОТКАТ: ВЫКЛ';
+  b.textContent = window.I18N ? window.I18N.buttonText('blockKb', blockKnockOn ? 'on' : 'off') : (blockKnockOn ? 'ON' : 'OFF');
   b.style.borderColor = blockKnockOn ? '#aa6020' : '#6a4010';
   b.style.color = blockKnockOn ? '#ffaa40' : '#cc8020';
 });
 document.getElementById('btn-boxes').addEventListener('click', () => {
   boxesOn = !boxesOn;
   const b = document.getElementById('btn-boxes');
-  b.textContent = boxesOn ? '📦 ЯЩИКИ: ВКЛ' : '📦 ЯЩИКИ: ВЫКЛ';
+  b.textContent = window.I18N ? window.I18N.buttonText('boxes', boxesOn ? 'on' : 'off') : (boxesOn ? 'ON' : 'OFF');
   b.style.borderColor = boxesOn ? '#7a3aaa' : '#3a1a5a';
 });
 
@@ -153,7 +156,7 @@ document.getElementById('btn-export').addEventListener('click', () => {
   navigator.clipboard.writeText(text).then(() => {
     const btn = document.getElementById('btn-export');
     const orig = btn.textContent;
-    btn.textContent = '✓ СКОПИРОВАНО!';
+    btn.textContent = window.I18N ? window.I18N.t('buttons.exportCopied') : 'COPIED';
     btn.style.color = '#80ff80';
     setTimeout(() => { btn.textContent = orig; btn.style.color = '#3acc70'; }, 1500);
   });
@@ -188,6 +191,7 @@ bindSlider('botdodgechance');
 bindSlider('botdodgetoward');
 bindSlider('botscale');
 bindSlider('botswordscale');
+bindSlider('playerrespawn');
 bindSlider('lmbcost');
 bindSlider('lmbdmg');
 bindSlider('rageper');
@@ -211,6 +215,12 @@ bindSlider('flickminamp');
 bindSlider('flickcount');
 bindSlider('flickmaxmult');
 bindSlider('stamflick');
+bindSlider('gamepadflickwindow');
+bindSlider('gamepadflickminvel');
+bindSlider('gamepadflickminamp');
+bindSlider('gamepadflickcount');
+bindSlider('gamepadflickmaxmult');
+bindSlider('gamepadstamflick');
 bindSlider('orbitwindow');
 bindSlider('orbitturns');
 bindSlider('bbwindow');
@@ -220,3 +230,17 @@ bindSlider('stamorbit');
 // ──────────────── END LAYER: SETTINGS ────────────────
 
 // ════════════════════════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  [
+    'sl-playerrespawn-legacy',
+    'cb-gamepadflickdet-legacy',
+    'sl-gamepadflickwindow-legacy',
+    'sl-gamepadflickminvel-legacy',
+    'sl-gamepadflickminamp-legacy',
+    'sl-gamepadflickcount-legacy',
+    'sl-gamepadflickmaxmult-legacy',
+    'sl-gamepadstamflick-legacy'
+  ].forEach(id => {
+    document.getElementById(id)?.closest('.row')?.style.setProperty('display', 'none');
+  });
+});

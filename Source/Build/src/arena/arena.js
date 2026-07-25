@@ -35,7 +35,7 @@ function buildArena(){
   // bgbright: 0..5. На 0 — тёмный (как раньше #080b10), на 5 — светлый "бумажный".
   // Интерполяция между тёмным и бумажным цветом по t=bgbright/5.
   const bgbright = sv('bgbright');
-  const t = clamp(bgbright / 5, 0, 1);
+  const t = $.M.clamp(bgbright / 5, 0, 1);
   const darkR=8,  darkG=11, darkB=16;   // #080b10
   const paperR=240, paperG=232, paperB=216; // тёплый "бумажный" оттенок
   const bgR = Math.round(darkR + (paperR-darkR)*t);
@@ -97,8 +97,8 @@ function drawArena(){
 function updateLightweightBot(bot, dt){
   if(!dummyOn || bot.hp<=0) return;
   if(DEATH.pDead || DEATH.dDead) return;
-  const pC = entityBodyCenter(P);
-  const bC = entityBodyCenter(bot);
+  const pC = $.POS.body(P);
+  const bC = $.POS.body(bot);
   const dx = pC.x-bC.x, dy = pC.y-bC.y;
   const dist = Math.hypot(dx,dy)||1;
   const angToPlayer = Math.atan2(dy,dx);
@@ -110,7 +110,7 @@ botUpdateExhaustion(bot, dt);
   // Аггро-слот: сколько других ботов ближе к игроку, чем этот
   const others = ALL_BOTS.filter(b=>b!==bot && b.hp>0 && b!==D);
   const rank = others.filter(b=>{
-    const oc = entityBodyCenter(b);
+    const oc = $.POS.body(b);
     return Math.hypot(oc.x-pC.x, oc.y-pC.y) < dist;
   }).length;
   const canEngage = rank < engageSlots;
@@ -132,16 +132,16 @@ botUpdateExhaustion(bot, dt);
   const maxV = getBotMaxSpeed(bot);
 
   if(mx||my){
-    bot.vx = lerpDT(bot.vx, mx*maxV, 0.2, dt);
-    bot.vy = lerpDT(bot.vy, my*maxV, 0.2, dt);
+    bot.vx = $.M.lerpDT(bot.vx, mx*maxV, 0.2, dt);
+    bot.vy = $.M.lerpDT(bot.vy, my*maxV, 0.2, dt);
   } else {
-    bot.vx = decayDT(bot.vx, sv('inertia'), dt);
-    bot.vy = decayDT(bot.vy, sv('inertia'), dt);
+    bot.vx = $.M.decay(bot.vx, sv('inertia'), dt);
+    bot.vy = $.M.decay(bot.vy, sv('inertia'), dt);
   }
-  bot.vx = clamp(bot.vx,-15,15); bot.vy = clamp(bot.vy,-15,15);
-  const step = simStep(dt);
-  bot.x = clamp(bot.x+bot.vx*step, 40, W-80);
-  bot.y = clamp(bot.y+bot.vy*step, 40, H-40);
+  bot.vx = $.M.clamp(bot.vx,-15,15); bot.vy = $.M.clamp(bot.vy,-15,15);
+  const step = $.M.step(dt);
+  bot.x = $.M.clamp(bot.x+bot.vx*step, 40, W-80);
+  bot.y = $.M.clamp(bot.y+bot.vy*step, 40, H-40);
   resolveBoxCollision(bot);
 
   bot.prevAngle = bot.angle;
@@ -151,29 +151,30 @@ botUpdateExhaustion(bot, dt);
   if(canEngage && dist < engageDist*1.3 && bot._atkCD<=0 && bot.stamina>20 && bot.exhausted<=0){
     bot._atkCD = rf(0.6,0.8);
     const swingTarget = (Math.random()<0.5?1:-1) * (sv('swthresh')*1.6);
-    if(weaponKeyOf(bot) === 'flail'){
+    if($.IS(bot, 'flail')){
       updateFlailSwing(bot, angToPlayer, dt);
     } else {
       bot.vel = swingTarget;
     }
-  } else if(weaponKeyOf(bot) === 'flail' && bot._flailSwingTarget){
-    bot.vel = lerpDT(bot.vel, bot._flailSwingTarget, 0.18, dt);
+  } else if($.IS(bot, 'flail') && bot._flailSwingTarget){
+    bot.vel = $.M.lerpDT(bot.vel, bot._flailSwingTarget, 0.18, dt);
     if(Math.abs(bot.vel - bot._flailSwingTarget) < 0.05) bot._flailSwingTarget = 0;
   } else {
-    bot.vel = decayDT(bot.vel, 0.85, dt);
+    bot.vel = $.M.decay(bot.vel, 0.85, dt);
   }
 
   bot._dodgeCD = (bot._dodgeCD||0) - dt;
-  if(bot._dodgeCD<=0 && dist < 70*cscl && Math.random() < (sv('botdodgechance')/100)*dt*2){
+  const playerRageDodgeMult = (P.rageBuffEnd || 0) - GameTime > 1 ? 0.5 : 1;
+  if(bot._dodgeCD<=0 && dist < 70*cscl && Math.random() < (sv('botdodgechance')/100)*dt*2*playerRageDodgeMult){
     bot._dodgeCD = 1.5;
     bot._dvx = -Math.cos(angToPlayer)*8;
     bot._dvy = -Math.sin(angToPlayer)*8;
   }
   //if(bot._dvx||bot._dvy){
-  //  bot.x = clamp(bot.x+bot._dvx, 40, W-80);
-  //  bot.y = clamp(bot.y+bot._dvy, 40, H-40);
-  //  bot._dvx = decayDT(bot._dvx, 0.85, dt);
-  //  bot._dvy = decayDT(bot._dvy, 0.85, dt);
+  //  bot.x = $.M.clamp(bot.x+bot._dvx, 40, W-80);
+  //  bot.y = $.M.clamp(bot.y+bot._dvy, 40, H-40);
+  //  bot._dvx = $.M.decay(bot._dvx, 0.85, dt);
+  //  bot._dvy = $.M.decay(bot._dvy, 0.85, dt);
   //  if(Math.hypot(bot._dvx,bot._dvy)<0.3){ bot._dvx=0; bot._dvy=0; }
   //}
   botUpdateDodge(bot, dt);
@@ -199,24 +200,24 @@ function updateDummy(dt, bot){
   botRegenStamina(bot, dt);
   
   // 🔥 ЕСЛИ БОТ ЗАРЯЖАЕТ МАГИЮ - НЕ ДВИГАЕМ ЕГО
-  if(bot._magicCharging === true){
-    const pBodyC = entityBodyCenter(P);
-    const bBodyC = entityBodyCenter(bot);
+  if(!bot._manualControl && bot._magicCharging === true){
+    const pBodyC = $.POS.body(P);
+    const bBodyC = $.POS.body(bot);
     const aimAngle = Math.atan2(pBodyC.y - bBodyC.y, pBodyC.x - bBodyC.x);
     bot.angle = aimAngle;
     // Стоим на месте
-    bot.vx = lerpDT(bot.vx, 0, 0.9, dt);
-    bot.vy = lerpDT(bot.vy, 0, 0.9, dt);
-    const step = simStep(dt);
-    bot.x = clamp(bot.x + bot.vx * step, 40, W-80);
-    bot.y = clamp(bot.y + bot.vy * step, 40, H-40);
+    bot.vx = $.M.lerpDT(bot.vx, 0, 0.9, dt);
+    bot.vy = $.M.lerpDT(bot.vy, 0, 0.9, dt);
+    const step = $.M.step(dt);
+    bot.x = $.M.clamp(bot.x + bot.vx * step, 40, W-80);
+    bot.y = $.M.clamp(bot.y + bot.vy * step, 40, H-40);
     return;
   }
   
   // 🔥 ЕСЛИ БОТ В КУЛДАУНЕ - ОТХОДИМ
-  if(bot._magicStaffAI && bot._magicStaffAI.state === 'cooldown'){
-    const pBodyC = entityBodyCenter(P);
-    const bBodyC = entityBodyCenter(bot);
+  if(!bot._manualControl && bot._magicStaffAI && bot._magicStaffAI.state === 'cooldown'){
+    const pBodyC = $.POS.body(P);
+    const bBodyC = $.POS.body(bot);
     const aimAngle = Math.atan2(pBodyC.y - bBodyC.y, pBodyC.x - bBodyC.x);
     bot.angle = aimAngle;
     
@@ -229,11 +230,11 @@ function updateDummy(dt, bot){
     const dy = targetY - bot.y;
     const d = Math.hypot(dx, dy) || 1;
     const maxV = 7 * sv('botspd') * sv('globalspd') * getMod(bot, 'moveSlow', 1);
-    bot.vx = lerpDT(bot.vx, (dx/d) * maxV, 0.22, dt);
-    bot.vy = lerpDT(bot.vy, (dy/d) * maxV, 0.22, dt);
-    const step = simStep(dt);
-    bot.x = clamp(bot.x + bot.vx*step, 40, W-80);
-    bot.y = clamp(bot.y + bot.vy*step, 40, H-40);
+    bot.vx = $.M.lerpDT(bot.vx, (dx/d) * maxV, 0.22, dt);
+    bot.vy = $.M.lerpDT(bot.vy, (dy/d) * maxV, 0.22, dt);
+    const step = $.M.step(dt);
+    bot.x = $.M.clamp(bot.x + bot.vx*step, 40, W-80);
+    bot.y = $.M.clamp(bot.y + bot.vy*step, 40, H-40);
     return;
   }
   
@@ -241,12 +242,12 @@ function updateDummy(dt, bot){
 
   
   // Бот меняет стиль меча каждые 5-25 сек
-  if(ai._styleTimer===undefined || GameTime>=ai._styleTimer){
+  if(!bot._manualControl && (ai._styleTimer===undefined || GameTime>=ai._styleTimer)){
     ai._styleTimer = GameTime + rf(5,20);
     ai._styleVals = pick(SWORD_STYLES);
   }
   // Бот меняет сторону щита каждые 5-30 сек
-  if(ai._shieldFlipTimer===undefined || GameTime>=ai._shieldFlipTimer){
+  if(!bot._manualControl && (ai._shieldFlipTimer===undefined || GameTime>=ai._shieldFlipTimer)){
     ai._shieldFlipTimer = GameTime + rf(5,25);
     bot._shieldFlipped = !bot._shieldFlipped;
   }
@@ -287,26 +288,26 @@ function updateDummy(dt, bot){
 
     const maxV = 7 * sv('botspd') * speedMult * retreatScale * dbBlockSlow * sv('globalspd') * botSpeedMult * _dShBaseMult * _dShWrongMult * weaponMoveSpeedMult(bot);
     if(_dodgeLocked){
-      bot.vx = decayDT(bot.vx, sv('inertia'), dt);
-      bot.vy = decayDT(bot.vy, sv('inertia'), dt);
+      bot.vx = $.M.decay(bot.vx, sv('inertia'), dt);
+      bot.vy = $.M.decay(bot.vy, sv('inertia'), dt);
     } else if(mx || my){
-      bot.vx = lerpDT(bot.vx, mx*maxV, 0.22, dt);
-      bot.vy = lerpDT(bot.vy, my*maxV, 0.22, dt);
+      bot.vx = $.M.lerpDT(bot.vx, mx*maxV, 0.22, dt);
+      bot.vy = $.M.lerpDT(bot.vy, my*maxV, 0.22, dt);
     } else {
-      bot.vx = decayDT(bot.vx, sv('inertia'), dt);
-      bot.vy = decayDT(bot.vy, sv('inertia'), dt);
+      bot.vx = $.M.decay(bot.vx, sv('inertia'), dt);
+      bot.vy = $.M.decay(bot.vy, sv('inertia'), dt);
     }
-    bot.vx = clamp(bot.vx, -15, 15); bot.vy = clamp(bot.vy, -15, 15);
-    const step = simStep(dt);
-    bot.x = clamp(bot.x + bot.vx*step, 40, W-80);
-    bot.y = clamp(bot.y + bot.vy*step, 40, H-40);
+    bot.vx = $.M.clamp(bot.vx, -15, 15); bot.vy = $.M.clamp(bot.vy, -15, 15);
+    const step = $.M.step(dt);
+    bot.x = $.M.clamp(bot.x + bot.vx*step, 40, W-80);
+    bot.y = $.M.clamp(bot.y + bot.vy*step, 40, H-40);
     resolveBoxCollision(bot);
   }
 
 botSpawnDust(bot, dt);
 
   // В PVP или при ожидании старта — позиция управляется сетью
-  if(typeof NET_SYNC!=='undefined' && (NET_SYNC.active || NET_CORE.isOpen())) return;
+  if(typeof NET_SYNC!=='undefined' && ($.NET.active() || NET_CORE.isOpen())) return;
   // Тик кулдауна бот-доджа
 if(ai._botDodgeCooldown>0) ai._botDodgeCooldown-=dt;
   botUpdateDodge(bot, dt);
@@ -317,10 +318,10 @@ if(ai._botDodgeCooldown>0) ai._botDodgeCooldown-=dt;
   const opp = angToFM + Math.PI;
   const distV = dstyle('dist');
   const fdist = Math.hypot(fmX-drc.x, fmY-drc.y);
-  const scaledDist = distV * clamp(fdist/120,0,1);
+  const scaledDist = distV * $.M.clamp(fdist/120,0,1);
   bot.tbx = Math.cos(opp)*scaledDist; bot.tby = Math.sin(opp)*scaledDist;
-  bot.bx = lerpDT(bot.bx, bot.tbx, sv('spd'), dt);
-  bot.by = lerpDT(bot.by, bot.tby, sv('spd'), dt);
+  bot.bx = $.M.lerpDT(bot.bx, bot.tbx, sv('spd'), dt);
+  bot.by = $.M.lerpDT(bot.by, bot.tby, sv('spd'), dt);
 
   // Пивот бота
   bot.pvX += (bot.tpX - bot.pvX)*0.35;
@@ -331,7 +332,7 @@ if(ai._botDodgeCooldown>0) ai._botDodgeCooldown-=dt;
   const inv = ang + Math.PI;
 
   // Проверяем, дальнобойное ли оружие у бота
-  const isRangedBot = weaponKeyOf(bot) === 'bow' || weaponKeyOf(bot) === 'crossbow' || weaponKeyOf(bot) === 'wand';
+  const isRangedBot = $.IS(bot, 'bow', 'crossbow', 'wand');
 
   if(!fDown || isRangedBot){
     let dex, dey, dblkVal;
@@ -360,13 +361,13 @@ if(ai._botDodgeCooldown>0) ai._botDodgeCooldown-=dt;
       const adaYon = dstyleCb('adaY');
       const adaDon = dstyleCb('adaD');
       const ada12on = dstyleCb('ada12');
-      if(adaYon){ eyOffset -= clamp(-Math.sin(ang),0,1)*csv('adaY'); }
+      if(adaYon){ eyOffset -= $.M.clamp(-Math.sin(ang),0,1)*csv('adaY'); }
       if(adaDon){
         const tc = Math.cos(ang - Math.PI/2);
-        eyOffset += clamp(tc*tc*(tc>0?1:0),0,1)*csv('adaD');
+        eyOffset += $.M.clamp(tc*tc*(tc>0?1:0),0,1)*csv('adaD');
       }
       if(ada12on){
-        eyOffset += clamp(Math.cos((ang+Math.PI/2)*2),0,1)*csv('ada12');
+        eyOffset += $.M.clamp(Math.cos((ang+Math.PI/2)*2),0,1)*csv('ada12');
       }
     }
     
@@ -388,7 +389,12 @@ if(ai._botDodgeCooldown>0) ai._botDodgeCooldown-=dt;
   const botDebuffMult = getDebuffSwordMult(bot);
   const spdMult2 = botDebuffMult;
   // 🔥 ОБРАБОТКА ЦЕПА — ОТДЕЛЬНО, С ВОЗВРАТОМ
-  if(weaponKeyOf(bot) === 'flail'){
+  if($.IS(bot, 'flail')){
+    if(bot._manualControl){
+      updateFlailSwing(bot, ta, dt);
+      bot.prevAngle = bot.angle;
+      return;
+    }
     // ── ЦЕП: РЕАЛИСТИЧНОЕ ПОВЕДЕНИЕ ДЛЯ БОТА ──
     if(!bot._flailSpinState) {
         bot._flailSpinState = 'idle'; // idle | spinning | retracting
@@ -454,8 +460,8 @@ if(ai._botDodgeCooldown>0) ai._botDodgeCooldown-=dt;
   bot.angle += bot._disbalanceAngularVelocity * dt;
   bot.vel = bot._disbalanceAngularVelocity;
 } else {
-    bot.vel = decayDT(bot.vel, 0.6, dt) + angDiff(ta, bot.angle)*0.4*weaponSwingSpeedMult(bot);
-    bot.angle = angLerpDT(bot.angle, ta, 0.28*spdMult2, dt);
+    bot.vel = $.M.decay(bot.vel, 0.6, dt) + $.M.angDiff(ta, bot.angle)*0.4*weaponSwingSpeedMult(bot);
+    bot.angle = $.M.angLerpDT(bot.angle, ta, 0.28*spdMult2, dt);
   }
   bot.prevAngle = bot.angle;
 }
@@ -559,10 +565,10 @@ function drawBoxes(){
 }
 
 function drawBowArrow(ent){
-  if(!ent || weaponKeyOf(ent) !== 'bow') return;
+  if(!ent || $.NOT(ent, 'bow')) return;
   if(!ent._bowCharging) return;
   
-  const tip = weaponTipPos(ent);
+  const tip = $.POS.tip(ent);
   const progress = Math.min(1, (GameTime - ent._bowChargeStart) / BOW_RELOAD);
   
   // Дрожание
@@ -644,14 +650,14 @@ function drawSweat(ent){
   // Используем новую систему баффов вместо прямого обращения к полю
   if(!isExhausted(ent)) return;
   
-  const bc = entityBodyCenter(ent);
+  const bc = $.POS.body(ent);
   const cscl = sv('cscl');
   
   // Капли появляются с небольшой вероятностью каждый кадр
   if(Math.random() < 0.05){
     const angle = Math.random() * Math.PI * 2;
     const dist = 10 + Math.random() * 16 * cscl;
-    hitFX.push({
+    $.FX.hit({
       x: bc.x + Math.cos(angle) * dist,
       y: bc.y - 18 * cscl + (Math.random() - 0.5) * 8,
       t: '💧', 
@@ -668,10 +674,10 @@ function drawUnbalancedStars(ent){
   // Используем новую систему баффов
   if(!isUnbalanced(ent)) return;
   
-  const bc = entityBodyCenter(ent);
+  const bc = $.POS.body(ent);
   const cscl = sv('cscl');
   if(false && Math.random() < 0.08){
-    hitFX.push({
+    $.FX.hit({
       x: bc.x + (Math.random()-0.5)*14*cscl,
       y: bc.y - 26*cscl,
       t: '⭐', 
@@ -687,7 +693,7 @@ function drawRootDebug(){ return; }
 
 
 function drawPivotDebug(pivX, pivY){
-  const rc = rootCenter();
+  const rc = $.POS.root();
 
   // линия рут → пивот
   ctx.strokeStyle='rgba(60,120,180,0.4)'; ctx.lineWidth=1;
@@ -716,7 +722,7 @@ function drawPivotDebug(pivX, pivY){
   // круг автоблока + визуализация наклона лезвия
   const abrad = 0;
   if(abrad > 1){
-    const rc2 = rootCenter();
+    const rc2 = $.POS.root();
     const inAB = P._inAutoBlock;
 
     // внешнее кольцо зоны
@@ -765,7 +771,7 @@ function drawPivotDebug(pivX, pivY){
   // мёртвая зона курсора (красный круг)
   const dzone = csv('dzone');
   if(dzone > 1){
-    const rc3 = rootCenter();
+    const rc3 = $.POS.root();
     ctx.strokeStyle='rgba(200,50,50,0.5)';
     ctx.lineWidth=1.5; ctx.setLineDash([4,4]);
     ctx.beginPath(); ctx.arc(rc3.x, rc3.y, dzone, 0, Math.PI*2); ctx.stroke();
@@ -951,12 +957,12 @@ function drawSword(pivX, pivY, angle){
   const centerGrip = CENTER_GRIP_CATEGORIES.includes(weaponDefFor(P).category);
   const weaponKey = weaponDefFor(P).key;
   const spd = Math.abs(P.vel);
-  const meleePoseActive = mDown && !isRangedWeapon(P) && weaponKeyOf(P) !== 'flail';
+  const meleePoseActive = $.A.meleeHold(P, mDown);
   let shapeRot = 0;
   if(!meleePoseActive){
     const dx = mX - W/2, dy = mY - H/2;
     const halfDiag = Math.hypot(W, H) / 2;
-    const t = clamp((dx - dy) / halfDiag, -1, 1);
+    const t = $.M.clamp((dx - dy) / halfDiag, -1, 1);
     const amplitude = sv('srot') * Math.PI / 180;
     shapeRot = -t * amplitude;
   }
@@ -976,8 +982,7 @@ function drawSword(pivX, pivY, angle){
   
   // 🔥 ЕДИНАЯ ТРЯСКА ДЛЯ ЖЕЗЛА И МАГИЧЕСКОГО ПОСОХА
   let shakeX = 0, shakeY = 0, shakeAngle = 0;
-  if((weaponKey === 'wand' || weaponKey === 'magicstaff') && 
-     (P._wandCharging || P._magicCharging)){
+  if($.E.chargeShake(P)){
     shakeX = P._chargeShakeX || 0;
     shakeY = P._chargeShakeY || 0;
     shakeAngle = P._chargeShakeAngle || 0;
@@ -1033,11 +1038,11 @@ function drawShield(ent, cursorX){
 
   const _rawTilt = Math.sin(ent.angle) * (15*Math.PI/180);
   const _maxTilt = 15*Math.PI/180;
-  const shieldAngle = clamp(_rawTilt, -_maxTilt, _maxTilt);
+  const shieldAngle = $.M.clamp(_rawTilt, -_maxTilt, _maxTilt);
 
-  const lmbActive = (ent===P) ? (mDown && !isRangedWeapon(ent) && weaponKeyOf(ent) !== 'flail')
-    : (typeof AI!=='undefined' && AI._fakeMDown && !isRangedWeapon(ent) && weaponKeyOf(ent) !== 'flail');
-  const _shDisabled = isExhausted(ent) || isUnbalanced(ent);
+  const lmbActive = (ent===P) ? $.A.meleeHold(ent, mDown)
+    : (typeof AI!=='undefined' && $.A.meleeHold(ent, AI._fakeMDown));
+  const _shDisabled = $.E.shieldOff(ent);
   ent._shieldAlpha = lmbActive ? 0.25 : (_shDisabled ? 0.3 : 1.0);
 
   const _shWf = shW * _shExhMult;
@@ -1062,20 +1067,21 @@ function drawShield(ent, cursorX){
 // Persistent status indicators are drawn with the character, rather than as
 // one-frame hitFX particles. This makes them visible at every frame rate.
 function drawStatusEffects(ent, cscl){
-  const c = entityBodyCenter(ent);
+  const c = $.POS.body(ent);
   const headY = c.y - 30 * cscl;
   const t = GameTime;
   ctx.save();
 
   if(isUnbalanced(ent)){
+    const effectScale = 0.6;
     // Wide horizontal ellipse around the head. Scale and alpha pulse by the
     // star's orbit phase, giving depth without allocating transient FX.
     for(let i = 0; i < 4; i++){
       const phase = t * 3.2 + i * Math.PI / 2;
       const depth = (Math.sin(phase) + 1) * 0.5;
-      const x = c.x + Math.cos(phase) * 22 * cscl;
-      const y = headY + Math.sin(phase) * 8 * cscl;
-      const size = (3.2 + depth * 3.8) * cscl;
+      const x = c.x + Math.cos(phase) * 22 * effectScale * cscl;
+      const y = headY + Math.sin(phase) * 8 * effectScale * cscl;
+      const size = (3.2 + depth * 3.8) * effectScale * cscl;
       ctx.globalAlpha = 0.35 + depth * 0.65;
       ctx.fillStyle = '#ffe066';
       ctx.shadowColor = '#c88000';
@@ -1125,16 +1131,19 @@ function drawChar(ent, cscl, torsoCol, headCol){
 
   // Мягкое белое свечение позади игрока (у бота — нет) — радиальный градиент,
   // без видимого сплошного круга, только затухающее гало.
-  if(ent === P){
+  const localSlot = ent === P ? 0 : (Number.isInteger(ent._playerSlot) ? ent._playerSlot : -1);
+  if(localSlot >= 0){
     const glowIntensity = sv('playerglow');
     if(glowIntensity > 0.01){
+      const glowRGB = [[255,255,255],[45,125,255],[35,220,105],[0,0,0]][localSlot] || [255,255,255];
       const glowCX = 0, glowCY = CHAR_SPRITE_OFFSET_Y + CHAR_SPRITE_H/2;
       const glowR = Math.max(spriteW, CHAR_SPRITE_H) * 0.7 * glowIntensity;
       const grad = ctx.createRadialGradient(glowCX, glowCY, 0, glowCX, glowCY, glowR);
       const centerAlpha = Math.min(0.55, 0.25 * glowIntensity);
-      grad.addColorStop(0,    `rgba(255,255,255,${centerAlpha})`);
-      grad.addColorStop(0.5,  `rgba(255,255,255,${centerAlpha*0.35})`);
-      grad.addColorStop(1,    'rgba(255,255,255,0)');
+      const rgb=glowRGB.join(',');
+      grad.addColorStop(0,    `rgba(${rgb},${centerAlpha})`);
+      grad.addColorStop(0.5,  `rgba(${rgb},${centerAlpha*0.35})`);
+      grad.addColorStop(1,    `rgba(${rgb},0)`);
       ctx.save();
       ctx.fillStyle = grad;
       ctx.beginPath(); ctx.arc(glowCX, glowCY, glowR, 0, Math.PI*2); ctx.fill();
@@ -1159,10 +1168,27 @@ function drawChar(ent, cscl, torsoCol, headCol){
     ctx.fillRect(-spriteW/2, CHAR_SPRITE_OFFSET_Y, spriteW, CHAR_SPRITE_H);
   }
   ctx.restore();
+  drawOverheadHealthBar(ent, cscl);
   drawStatusEffects(ent, cscl);
+}
+
+function drawOverheadHealthBar(ent, cscl){
+  if(!ent || ent===P || ent._manualControl || !cb('overheadbars')) return;
+  if((ent._healthBarUntil||0)<=GameTime) return;
+  const center=$.POS.body(ent);
+  const width=30, height=3;
+  const x=center.x-width/2;
+  const y=center.y-38*cscl;
+  ctx.save();
+  ctx.fillStyle='rgba(0,0,0,.72)';
+  ctx.fillRect(x-1,y-1,width+2,height+2);
+  ctx.fillStyle=ent.hp>50?'#2acc50':ent.hp>25?'#ccaa20':'#cc2020';
+  ctx.fillRect(x,y,width*Math.max(0,Math.min(100,ent.hp))/100,height);
+  ctx.restore();
 }
 function drawDummy(){
   if(!dummyOn) return;
+  if(!D || D._defeated || D.hp <= 0 || D._awaitingReveal) return;
   const drc = {x: D.x+5, y: D.y-8};
   const dpivX = drc.x + D.pvX, dpivY = drc.y + D.pvY;
  
@@ -1182,8 +1208,7 @@ function _drawDummySword(){
   
   // 🔥 ЕДИНАЯ ТРЯСКА ДЛЯ ЖЕЗЛА И МАГИЧЕСКОГО ПОСОХА БОТА
   let shakeX = 0, shakeY = 0, shakeAngle = 0;
-  if((weaponKey === 'wand' || weaponKey === 'magicstaff') && 
-     (D._wandCharging || D._magicCharging)){
+  if($.E.chargeShake(D)){
     shakeX = D._chargeShakeX || 0;
     shakeY = D._chargeShakeY || 0;
     shakeAngle = D._chargeShakeAngle || 0;
@@ -1235,6 +1260,7 @@ function _drawDummySword(){
 
 
 function drawCursor(){
+  if(window._keyboardCrosshairVisible === false) return;
   ctx.strokeStyle=mDown?'rgba(220,160,60,0.85)':'rgba(100,190,255,0.65)'; ctx.lineWidth=1.5;
   ctx.beginPath(); ctx.moveTo(mX-9,mY); ctx.lineTo(mX+9,mY); ctx.stroke();
   ctx.beginPath(); ctx.moveTo(mX,mY-9); ctx.lineTo(mX,mY+9); ctx.stroke();

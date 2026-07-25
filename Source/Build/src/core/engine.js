@@ -106,6 +106,161 @@ function getDynamicDeflectMax(){
 
 function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
 
+// Shared micro-macros for repetitive gameplay checks across classic scripts.
+const $ = window.$ || (window.$ = {});
+
+$.K = $.K || {
+  of(ent){
+    if(!ent) return null;
+    if(typeof weaponKeyOf === 'function') return weaponKeyOf(ent);
+    if(typeof weaponDefFor === 'function'){
+      const def = weaponDefFor(ent);
+      return def ? def.key : null;
+    }
+    return null;
+  },
+  is(ent, ...keys){
+    const key = $.K.of(ent);
+    return key != null && keys.includes(key);
+  },
+  isKey(key, ...keys){
+    return key != null && keys.includes(key);
+  },
+  not(ent, ...keys){
+    return !$.K.is(ent, ...keys);
+  }
+};
+
+$.E = $.E || {
+  charging(ent){
+    return !!(ent && (ent._bowCharging || ent._magicCharging || ent._wandCharging));
+  },
+  chargeShake(ent){
+    return !!(ent && $.K.is(ent, 'wand', 'magicstaff') && (ent._wandCharging || ent._magicCharging));
+  },
+  shieldOff(ent){
+    return !!ent && (isExhausted(ent) || isUnbalanced(ent));
+  }
+};
+
+$.A = $.A || {
+  meleeHold(ent, held){
+    return !!held && !isRangedWeapon(ent) && $.K.not(ent, 'flail');
+  },
+  isAttacking(ent, held){
+    if(held !== undefined) return $.A.meleeHold(ent, held);
+    if(ent === P) return $.A.meleeHold(ent, mDown);
+    const aiHeld = ent?._aiState?._fakeMDown ?? (typeof AI!=='undefined' ? AI?._fakeMDown : false);
+    return $.A.meleeHold(ent, aiHeld);
+  }
+};
+
+$.M = $.M || {
+  clamp(v, a, b){ return Math.max(a, Math.min(b, v)); },
+  lerpDT(current, target, speed, dt){
+    if(!isFinite(current)||!isFinite(target)||!isFinite(dt)) return current;
+    const alpha = 1 - Math.pow(1 - Math.min(Math.max(speed,0), 0.9999), dt * 60);
+    return current + (target - current) * alpha;
+  },
+  decayDT(val, decay, dt){
+    if(!isFinite(val)||!isFinite(dt)) return 0;
+    return val * Math.pow(Math.min(Math.max(decay,0), 0.9999), dt * 60);
+  },
+  decay(val, decay, dt){
+    if(!isFinite(val)||!isFinite(dt)) return 0;
+    return val * Math.pow(Math.min(Math.max(decay,0), 0.9999), dt * 60);
+  },
+  angDiff(a, b){
+    let d = a - b;
+    while(d > Math.PI) d -= Math.PI * 2;
+    while(d < -Math.PI) d += Math.PI * 2;
+    return d;
+  },
+  angLerpDT(current, target, speed, dt){
+    if(!isFinite(current)||!isFinite(target)||!isFinite(dt)) return current;
+    const alpha = 1 - Math.pow(1 - Math.min(Math.max(speed,0), 0.9999), dt * 60);
+    return current + $.M.angDiff(target, current) * alpha;
+  },
+  dist(ax, ay, bx, by){ return Math.hypot(bx - ax, by - ay); },
+  angleTo(ax, ay, bx, by){ return Math.atan2(by - ay, bx - ax); },
+  step(dt){ return Math.max(0, Number.isFinite(dt) ? dt * SIM_TICK_RATE : 0); }
+};
+
+$.POS = $.POS || {
+  center(ent){
+    return ent ? { x: ent.x + 5, y: ent.y - 8 } : { x: 0, y: 0 };
+  },
+  body(ent){
+    return ent ? { x: ent.x + 5 + ent.bx, y: ent.y - 8 + ent.by } : { x: 0, y: 0 };
+  },
+  pivot(ent){
+    if(!ent) return { x: 0, y: 0 };
+    const c = $.POS.center(ent);
+    return { x: c.x + ent.pvX, y: c.y + ent.pvY };
+  },
+  tip(ent){
+    if(!ent) return { x: 0, y: 0 };
+    const piv = $.POS.pivot(ent);
+    const reach = typeof weaponReach === 'function'
+      ? weaponReach(ent) * sv('swlen') * (typeof isBot === 'function' && isBot(ent) ? sv('botswordscale') : 1)
+      : 0;
+    return { x: piv.x + Math.cos(ent.angle) * reach, y: piv.y + Math.sin(ent.angle) * reach };
+  },
+  root(){
+    return typeof P !== 'undefined' && P ? { x: P.x + 5, y: P.y - 8 } : { x: 0, y: 0 };
+  }
+};
+
+$.PHY = $.PHY || {
+  move(ent, dt, minX = 40, maxX = W - 80, minY = 40, maxY = H - 40){
+    const step = $.M.step(dt);
+    ent.x = $.M.clamp(ent.x + ent.vx * step, minX, maxX);
+    ent.y = $.M.clamp(ent.y + ent.vy * step, minY, maxY);
+    return ent;
+  },
+  moveSimple(ent, step, minX = 40, maxX = W - 80, minY = 40, maxY = H - 40){
+    ent.x = $.M.clamp(ent.x + ent.vx * step, minX, maxX);
+    ent.y = $.M.clamp(ent.y + ent.vy * step, minY, maxY);
+    return ent;
+  },
+  dodge(ent, vx, vy){
+    ent._dvx = vx;
+    ent._dvy = vy;
+    return ent;
+  },
+  updateDodge(ent, dt, minX = 40, maxX = W - 80, minY = 40, maxY = H - 40){
+    if(!ent || (!ent._dvx && !ent._dvy)) return ent;
+    const step = decayingImpulseStep(dt);
+    ent.x = $.M.clamp(ent.x + ent._dvx * step, minX, maxX);
+    ent.y = $.M.clamp(ent.y + ent._dvy * step, minY, maxY);
+    const decay = Math.pow(0.01, dt);
+    ent._dvx *= decay;
+    ent._dvy *= decay;
+    if(Math.hypot(ent._dvx, ent._dvy) < 0.1){ ent._dvx = 0; ent._dvy = 0; }
+    return ent;
+  }
+};
+
+$.NET = $.NET || {
+  active(){
+    const sync = typeof globalThis !== 'undefined' ? globalThis.NET_SYNC : undefined;
+    return !!(sync && sync.active);
+  },
+  send(msg){
+    const core = typeof globalThis !== 'undefined' ? globalThis.NET_CORE : undefined;
+    if(core && typeof core.send === 'function') core.send(msg);
+  },
+  sendFast(msg){
+    const core = typeof globalThis !== 'undefined' ? globalThis.NET_CORE : undefined;
+    if(core && typeof core.sendFast === 'function') core.sendFast(msg);
+  }
+};
+
+// Short aliases for the hottest paths.
+$.IS = $.K.is;
+$.ISK = $.K.isKey;
+$.NOT = $.K.not;
+
 
 
 
@@ -129,7 +284,7 @@ function entityCenter(e){
 }
 function entityBodyCenter(e){ return { x: e.x+5+e.bx, y: e.y-8+e.by }; }
 function entityPivot(e){
-  const c = entityCenter(e);
+  const c = $.POS.center(e);
   return { x: c.x + e.pvX, y: c.y + e.pvY };
 }
 
@@ -164,21 +319,21 @@ function simStep(dt){
 }
 function decayingImpulseStep(dt, decayPerSecond = 0.01){
   if(!Number.isFinite(dt) || dt <= 0) return 0;
-  const decay = clamp(decayPerSecond, 0, 0.999999);
+  const decay = $.M.clamp(decayPerSecond, 0, 0.999999);
   return (1 - Math.pow(decay, dt)) / (1 - Math.pow(decay, 1 / SIM_TICK_RATE));
 }
 // Integral of a legacy per-tick value while that value decays every tick.
 // Useful for spinning/flying objects whose velocity constants predate dt.
 function decayingTickStep(dt, perTickDecay){
   if(!Number.isFinite(dt) || dt <= 0) return 0;
-  const decay = clamp(perTickDecay, 0, 0.999999);
-  const ticks = simStep(dt);
+  const decay = $.M.clamp(perTickDecay, 0, 0.999999);
+  const ticks = $.M.step(dt);
   return (1 - Math.pow(decay, ticks)) / (1 - decay);
 }
 function angLerpDT(current, target, speed, dt){
   if(!isFinite(current)||!isFinite(target)||!isFinite(dt)) return current;
   const alpha = 1 - Math.pow(1 - Math.min(Math.max(speed,0), 0.9999), dt * 60);
-  return current + angDiff(target, current) * alpha;
+  return current + $.M.angDiff(target, current) * alpha;
 }
 
 // ════════════════════════════════════════════════════════════════════════════

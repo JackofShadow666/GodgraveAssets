@@ -55,7 +55,7 @@ function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
 function distPointToSegment(px, py, ax, ay, bx, by){
   const dx = bx-ax, dy = by-ay, len2 = dx*dx+dy*dy;
   if(len2 < 0.001) return { d: Math.hypot(px-ax, py-ay), nx: 0, ny: -1, t: 0 };
-  const t = clamp(((px-ax)*dx+(py-ay)*dy)/len2, 0, 1);
+  const t = $.M.clamp(((px-ax)*dx+(py-ay)*dy)/len2, 0, 1);
   const cx = ax+t*dx, cy = ay+t*dy;
   const ddx = px-cx, ddy = py-cy;
   const d = Math.hypot(ddx, ddy);

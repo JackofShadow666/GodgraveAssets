@@ -1,207 +1,15 @@
 // === src/combat/combat.js ===
-// Extracted from Build.html; loaded as a classic script to preserve shared runtime state.
-// LAYER: COMBAT — коллизии, блоки, стамина, статусы и отладочные шарики.
-// First module section: debug balls.
-// ════════════════════════════════════════════════════════════════════════════
-// ════════════════════════════════════════════════════════════════════════════
-// MODULE: DEBUG BALLS  (тестовый режим "спавн шариков" — НЕ боевые снаряды)
-// Debug balls are already isolated as the first section of this module.
-// Это отдельная песочница для проверки коллизии оружия/тела с летящими
-// объектами; не путать с PROJECTILES (реальные снаряды жезла/арбалета,
-// см. MODULE: RANGED WEAPONS дальше в файле).
-// ════════════════════════════════════════════════════════════════════════════
-
-// ── ШАРИКИ ──────────────────────────────────────────────────────────────────
-const BALLS = [];
-let ballsActive = false;
-let ballSpawnTimer = 0;
-
-function spawnBall(){
-  const side = Math.floor(Math.random() * 4);
-  let x, y;
-  const rc0 = rootCenter();
-  if(side === 0){ x = Math.random()*W; y = -16; }
-  else if(side === 1){ x = W+16; y = Math.random()*H; }
-  else if(side === 2){ x = Math.random()*W; y = H+16; }
-  else { x = -16; y = Math.random()*H; }
-  // целимся прямо в тело игрока (не рут), небольшой разброс
-  const targetX = rc0.x + P.bx + (Math.random()-0.5)*30;
-  const targetY = rc0.y + P.by + (Math.random()-0.5)*30;
-  const ang = Math.atan2(targetY - y, targetX - x);
-  const spd = rf(4.5,3.0);
-  const vx = Math.cos(ang) * spd;
-  const vy = Math.sin(ang) * spd;
-  BALLS.push({ x, y, vx, vy, r: rf(10,5), life: 500, hit: 0,
-               initVx: vx, initVy: vy }); // запоминаем начальную скорость
-}
-
-document.getElementById('btn-balls').addEventListener('click', () => {
-  ballsActive = !ballsActive;
-  const btn = document.getElementById('btn-balls');
-  if(ballsActive){
-    btn.textContent = '⏹ СТОП ШАРИКИ';
-    btn.style.borderColor = '#aa3030';
-    btn.style.background = '#2a0e0e';
-  } else {
-    BALLS.length = 0;
-    btn.textContent = '⚽ СПАВН ШАРИКОВ';
-    btn.style.borderColor = '#5a1a1a';
-    btn.style.background = '#1a0e0e';
-  }
-});
-
-function updateBalls(dt){
-  if(!ballsActive) return;
-  const step = simStep(dt);
-  ballSpawnTimer += dt;
-  if(ballSpawnTimer > 0.9){ ballSpawnTimer = 0; spawnBall(); }
-
-  const pivX = rootCenter().x + P.pvX;
-  const pivY = rootCenter().y + P.pvY;
-  const swLen = weaponReach(P) * sv('swlen');
-
-  // позиция наконечника и ПРЕДЫДУЩЕГО наконечника (для sweep-коллизии)
-  const tipX = pivX + Math.cos(P.angle) * swLen;
-  const tipY = pivY + Math.sin(P.angle) * swLen;
-  const prevTipX = pivX + Math.cos(P.angle - P.vel*0.8) * swLen;
-  const prevTipY = pivY + Math.sin(P.angle - P.vel*0.8) * swLen;
-
-  for(let i = BALLS.length-1; i >= 0; i--){
-    const b = BALLS[i];
-
-    // мягкое наведение на тело игрока (homing)
-    if(b.hit === 0){
-      const rc1 = rootCenter();
-      const targetX = rc1.x + P.bx, targetY = rc1.y + P.by;
-      const angToPlayer = Math.atan2(targetY - b.y, targetX - b.x);
-      const homingStr = 0.012;
-      b.vx += Math.cos(angToPlayer) * homingStr * step;
-      b.vy += Math.sin(angToPlayer) * homingStr * step;
-      const spd2 = Math.hypot(b.vx, b.vy);
-      const maxSpd = Math.hypot(b.initVx, b.initVy) * 1.15;
-      if(spd2 > maxSpd){ b.vx = b.vx/spd2*maxSpd; b.vy = b.vy/spd2*maxSpd; }
-    }
-
-    b.x += b.vx*step; b.y += b.vy*step;
-    b.life-=step;
-    if(b.hit > 0) b.hit-=step;
-
-    // ── Коллизия с мечом ─────────────────────────────────────────────────
-    let hit = false;
-    if(b.hit === 0){
-      const BLADE_W = 6;
-      for(const [ax,ay,bx2,by2] of [
-        [pivX, pivY, tipX, tipY],
-        [pivX, pivY, prevTipX, prevTipY],
-      ]){
-        if(hit) break;
-        const {d, nx, ny, t} = distPointToSegment(b.x, b.y, ax, ay, bx2, by2);
-        if(d < b.r + BLADE_W){
-          const bladeX = Math.cos(P.angle), bladeY = Math.sin(P.angle);
-          const alongBlade = Math.abs(nx*bladeX + ny*bladeY);
-          if(alongBlade > 0.8) continue;
-
-          const swordSpd = Math.abs(P.vel) * 200;
-          b.vx = nx*(5 + swordSpd*0.06) + bladeX*swordSpd*0.035;
-          b.vy = ny*(5 + swordSpd*0.06) + bladeY*swordSpd*0.035;
-          b.hit = 22;
-          hitFX.push({x: b.x, y: b.y-14, t:'вњ¦', life:28, big:false});
-          
-          const aikb = sv('bodyKB') * 0.5;
-          if(aikb > 0){
-            const rc1 = rootCenter();
-            const bodyCX1 = rc1.x + P.bx, bodyCY1 = rc1.y + P.by;
-            const kbAng = Math.atan2(bodyCY1 - b.y, bodyCX1 - b.x);
-            P.vx += Math.cos(kbAng) * aikb;
-            P.vy += Math.sin(kbAng) * aikb;
-          }
-          hit = true;
-        }
-      }
-    }
-
-    // ── ПОПАДАНИЕ ШАРИКА В ТЕЛО ИГРОКА ──────────────────────────────────
-    {
-      const rc0 = rootCenter();
-      const bodyCX = rc0.x + P.bx;
-      const bodyCY = rc0.y + P.by;
-      const BODY_HIT_R = 18 * sv('cscl');
-      
-      if(b.hit === 0){
-        const d = Math.hypot(b.x - bodyCX, b.y - bodyCY);
-        if(d < BODY_HIT_R + b.r && (P._ballHitCD||0) <= GameTime){
-          P._ballHitCD = GameTime + 0.5;
-          const dmg = Math.round(Math.hypot(b.vx, b.vy) * 4);
-          
-          // ════════════════════════════════════════════════════════════════
-          // 🔥 ЕДИНЫЙ ВЫЗОВ applyDamage
-          // ════════════════════════════════════════════════════════════════
-          applyDamage(P, dmg, null, {
-            isMagic: false,
-            isExplosion: false,
-            knockbackMult: 0.5,
-            hitstopFrames: 4,
-            shakePower: 4,
-            textColor: '#ff4040',
-            textSuffix: 'вљЅ',
-            bloodCount: 8,
-            playSound: true
-          });
-          
-          // ── ДОПОЛНИТЕЛЬНЫЕ ЭФФЕКТЫ (специфичные для шариков) ──
-          const nx = (bodyCX - b.x)/(d||1), ny = (bodyCY - b.y)/(d||1);
-          const kbf = sv('bodyKB') * 0.5;
-          P.vx += nx * kbf; P.vy += ny * kbf;
-          b.vx = nx * 3; b.vy = ny * 3 - 1;
-          b.hit = 30;
-          BALLS.splice(i, 1);
-        }
-      }
-    }
-
-    if(b.life <= 0 || b.x < -120 || b.x > W+120 || b.y < -120 || b.y > H+120){
-      BALLS.splice(i, 1);
-    }
-  }
-}
-
-function drawBalls(){
-  for(const b of BALLS){
-    const alpha = Math.min(1, b.life / 60);
-    ctx.save();
-    ctx.globalAlpha = alpha;
-    // тень
-    ctx.fillStyle = 'rgba(0,0,0,0.3)';
-    ctx.beginPath(); ctx.ellipse(b.x+3, b.y+5, b.r*0.8, b.r*0.4, 0, 0, Math.PI*2); ctx.fill();
-    // шар
-    const g = ctx.createRadialGradient(b.x - b.r*0.3, b.y - b.r*0.3, b.r*0.1, b.x, b.y, b.r);
-    if(b.hit > 0){
-      g.addColorStop(0, '#fff8c0'); g.addColorStop(0.4, '#ffcc40'); g.addColorStop(1, '#cc6010');
-    } else {
-      g.addColorStop(0, '#e0f0ff'); g.addColorStop(0.4, '#4090d0'); g.addColorStop(1, '#0a2850');
-    }
-    ctx.fillStyle = g;
-    ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI*2); ctx.fill();
-    // блик
-    ctx.fillStyle = 'rgba(255,255,255,0.4)';
-    ctx.beginPath(); ctx.arc(b.x - b.r*0.3, b.y - b.r*0.3, b.r*0.25, 0, Math.PI*2); ctx.fill();
-    ctx.restore();
-  }
-}
-
-// ──────────────── END LAYER: DEBUG_BALLS ────────────────
-
-// ════════════════════════════════════════════════════════════════════════════
-// LAYER: COMBAT — коллизии мечей, блок/клинч, ярость, смерть/респавн
+// LAYER: COMBAT — sword collisions, block/clash, stamina, recovery, death/respawn
 // Module file: combat.js
-// ════════════════════════════════════════════════════════════════════════════
-// ── СОСТОЯНИЕ ИГРОКА ────────────────────────────────────────────────────────
+// ••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+// ─── ENTITY CREATION ──────────────────────────────────────────────────────
+// ─── ENTITY CREATION ──────────────────────────────────────────────────────
 function makeEntity(x, y, swordScale, color, charParams){
   const defaults = {
-    stamRegen: 28,       // восст. стамины в сек
-    stamMax: 100,        // макс стамина
-    exhaustRegenDelay: 0.1, // короткая пауза перед регенерацией после усталости
-	_bowSeed: Math.random() * 100, // 🔥 ДЛЯ ДРОЖАНИЯ ЛУКА
+    stamRegen: 28,       // stamina restored per second
+    stamMax: 100,        // maximum stamina
+    exhaustRegenDelay: 0.1, // pause before stamina regeneration begins after exhaustion
+	_bowSeed: Math.random() * 100, // random seed for bow effects
 	   _recoilOffset: 0,
     _recoilAnimTime: 0,
 	   _magicShakeX: 0,
@@ -209,7 +17,7 @@ function makeEntity(x, y, swordScale, color, charParams){
     _magicShakeAngle: 0,
 	_rageWarningCD: 0,
     _wandSeed: Math.random() * 100,
-    // 🔥 ЕДИНАЯ СИСТЕМА ТРЯСКИ
+    // ─── CHARGE SHAKE ──────────────────────────────────────────────
     _chargeShakeX: 0,
     _chargeShakeY: 0,
     _chargeShakeAngle: 0,
@@ -228,14 +36,14 @@ function makeEntity(x, y, swordScale, color, charParams){
     angle:0, vel:0, prevAngle:0,
     swordScale,
     color,
-    // ── Параметры персонажа ──
+    // ─── PARAMETERS OVERRIDES ────────────────────────────────────
     stamRegen: p.stamRegen,
     stamMax: p.stamMax,
     exhaustDur: p.exhaustDur,
     exhaustSpd: p.exhaustSpd,
     exhaustSwd: p.exhaustSwd,
     exhaustRegenDelay: p.exhaustRegenDelay,
-    // ──────────────────────────
+    // ─────────────────────────────────────────────────────────────
     _vcX:50, _vcY:0, _pmX:0, _pmY:0,
     hp:100, hitFlash:0,
     stamina:100,
@@ -243,32 +51,31 @@ function makeEntity(x, y, swordScale, color, charParams){
     atkPts:0, isAttacker:false,
     trailPts:[],
     rage:0, rageBuffEnd:-1, lmbWasDown:false,
-    _bbWait:-1, _bbDefender:null,
     _blockSlow:-1, _hitCD:-1,
-    // ── Щит ──────────────────────────────────
-    shield: 0,          // 0=нет, 1=малый, 2=большой, 3=башенный
-    _shieldImg: null,   // Image объект
+    // ─── SHIELD ──────────────────────────────────────────────────
+    shield: 0,          // 0=none, 1=small, 2=large, 3=tower
+    _shieldImg: null,   // Image object
     _shieldUrl: null,
-    _shieldAlpha: 1,    // прозрачность (снижается при LMB атаке)
-    _shieldW: 0,        // ширина хитбокса в пикселях (из пропорций картинки)
-    _shieldH: 0,        // высота хитбокса
-	
-    // ── Цеп ──────────────────────────────────
-	    _flailAngle: 0,        // отдельный накопитель угла для цепа
-    _flailDirection: 1,    // направление вращения
+    _shieldAlpha: 1,    // transparency (fades during LMB attack)
+    _shieldW: 0,        // width in pixels (from shield definition)
+    _shieldH: 0,        // height in pixels
+    
+    // ─── FLAIL ──────────────────────────────────────────────────
+	    _flailAngle: 0,        // current chain angle relative to handle
+    _flailDirection: 1,    // rotation direction
     _flailIsRotating: false,
-    _lastCursorAng: 0,     // предыдущий угол курсора для детекта направления
-	    _flailInertiaVel: 0,   // скорость инерции цепа
-    _prevFlailAngle: 0,    // предыдущий угол для вычисления скорости
-	  _flailInertia: 0,        // инерция вращения цепа
-    _flailExt: 0,            // текущая длина цепи (0-1)
-    _flailMode: 'follow',     // 'follow' или 'free'
+    _lastCursorAng: 0,     // previous cursor angle for direction detection
+	    _flailInertiaVel: 0,   // angular velocity inertia
+    _prevFlailAngle: 0,    // previous angle for velocity calculation
+	  _flailInertia: 0,        // angular inertia
+    _flailExt: 0,            // extension (0-1)
+    _flailMode: 'follow',     // 'follow' or 'free'
     _flailFreeAngle: 0,
 
     _recoilOffset: 0,
     _recoilAnimTime: 0,
 	
-// ── Защита от мультиурона ──────────────────────
+// ─── MULTIHIT PROTECTION ──────────────────────────────────────────────
 _multiHitProtection: false,
 _multiHitProtectionTimer: 0,
 _multiHitProtectionMult: 1.0,
@@ -286,8 +93,8 @@ let D = makeEntity(W/2 + 110, H/2, 0.8, '#4a1a10', {
 const trailPts = [];
 const SWORD_LEN = 85;
 
-// ── ЯЩИКИ ─────────────────────────────────────────────────────────────────
-// Инициализируются после W/H (см. initBoxes внизу)
+// ─── BOXES ────────────────────────────────────────────────────────────────
+// Initialized after W/H are set (see initBoxes in main).
 const BOXES = [];
 function initBoxes(){
   BOXES.length = 0;
@@ -299,16 +106,16 @@ function initBoxes(){
   );
 }
 
-// Разрешить коллизию тела (bx/by) с ящиками
-// Тело = визуальный центр: (P.x+5+P.bx, P.y-8+P.by), радиус ~14
+// ─── BOX COLLISION ──────────────────────────────────────────────────────
+// Push entities out of boxes and reflect velocity (partial).
 function resolveBoxCollision(ent){
   if(!boxesOn) return;
   const BODY_R = 14 * sv('cscl');
   const bCX = ent.x + 5 + ent.bx;
   const bCY = ent.y - 8 + ent.by;
   for(const b of BOXES){
-    const nearX = clamp(bCX, b.x, b.x + b.w);
-    const nearY = clamp(bCY, b.y, b.y + b.h);
+    const nearX = $.M.clamp(bCX, b.x, b.x + b.w);
+    const nearY = $.M.clamp(bCY, b.y, b.y + b.h);
     const dx = bCX - nearX, dy = bCY - nearY;
     const dist = Math.hypot(dx, dy);
     if(dist < BODY_R && dist > 0){
@@ -322,32 +129,55 @@ function resolveBoxCollision(ent){
   }
 }
 
-// ════════════════════ END MODULE: FX ══════════════════════════════════════
+// ─── ENTITY COLLISION ──────────────────────────────────────────────────
+// Keep living characters from occupying the same body space. This is separate
+// from faction damage rules: allies collide too, but still cannot hurt each other.
+function resolveEntityCollision(a, b){
+  if(!a || !b || a===b || a.hp<=0 || b.hp<=0) return;
+  const ca=$.POS.body(a), cb=$.POS.body(b);
+  let dx=cb.x-ca.x, dy=cb.y-ca.y;
+  let dist=Math.hypot(dx,dy);
+  const minDist=28*sv('cscl');
+  if(dist>=minDist) return;
+  if(dist<0.001){ dx=1; dy=0; dist=1; }
+  const nx=dx/dist, ny=dy/dist;
+  const correction=Math.min((minDist-dist)*0.5,6);
+  a.x-=nx*correction; a.y-=ny*correction;
+  b.x+=nx*correction; b.y+=ny*correction;
+  const relative=(b.vx-a.vx)*nx+(b.vy-a.vy)*ny;
+  if(relative<0){
+    const impulse=-relative*0.5;
+    a.vx-=nx*impulse; a.vy-=ny*impulse;
+    b.vx+=nx*impulse; b.vy+=ny*impulse;
+  }
+}
+
+// ••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••• END MODULE: FX ••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
 
 function updateAtkPoints(ent, opponent, dt){
-  const exC = entityCenter(ent);
-  const opC = entityBodyCenter(opponent);
+  const exC = $.POS.center(ent);
+  const opC = $.POS.body(opponent);
   const toOp = Math.atan2(opC.y - exC.y, opC.x - exC.x);
   const movAng = Math.atan2(ent.vy, ent.vx);
   const movSpd = Math.hypot(ent.vx, ent.vy);
 
-  // +1 если движется к противнику
-  if(movSpd > 0.5 && Math.abs(angDiff(movAng, toOp)) < Math.PI/2)
+  // +1 if moving toward opponent
+  if(movSpd > 0.5 && Math.abs($.M.angDiff(movAng, toOp)) < Math.PI/2)
     ent.atkPts += dt * 1;
 
-  // +1 если кончик меча касается (tip близко к телу противника)
-  const piv = entityPivot(ent);
+  // +1 if weapon tip is close to opponent's body
+  const piv = $.POS.pivot(ent);
   const tipX = piv.x + Math.cos(ent.angle) * weaponReach(ent);
   const tipY = piv.y + Math.sin(ent.angle) * weaponReach(ent);
   if(Math.hypot(tipX - opC.x, tipY - opC.y) < 30) ent.atkPts += dt * 1;
 
-  // +1 за замах (высокая угловая скорость)
+  // +1 for fast swing
   if(Math.abs(ent.vel) > sv('swthresh')) ent.atkPts += dt * 1;
 
-  // +2 если ЛКМ-атака (только для игрока)
+  // +2 for LMB click (only for player)
   if(ent === P && mDown) ent.atkPts += dt * 2;
 
-  // затухание
+  // Decay
   ent.atkPts *= Math.pow(0.92, dt*60);
 }
 
@@ -356,15 +186,29 @@ function determineAttacker(){
   D.isAttacker   = D.atkPts > P.atkPts;
 }
 
-// Обработка столкновения мечей
-function blockStaminaCost(attacker){
-  // Зажатая ЛКМ отменяет расход, когда удар игрока блокирует противник.
-  if(attacker === P && mDown) return 0;
-  return sv('stamblock') * (isBot(attacker) ? 2 : 1);
+// ─── BLOCK/COUNTER LOGIC ──────────────────────────────────────────────
+// Safe counter window: after a successful block, the defender gets 1.5s
+// to counterattack without stamina cost.
+const SAFE_COUNTER_WINDOW = 1.5;
+function openSafeCounterWindow(defender){
+  if(defender && cb('safecounter')){
+    defender._safeCounterUntil = GameTime + SAFE_COUNTER_WINDOW;
+  }
+}
+function blockStaminaCost(attacker, ignoreLmbExemption = false){
+  // A successful block gives its defender 1.5 seconds to make a counterattack.
+  // If that counterattack is blocked too, it costs no stamina.
+  if(attacker && cb('safecounter') && (attacker._safeCounterUntil || 0) >= GameTime){
+    attacker._safeCounterUntil = 0;
+    return 0;
+  }
+  // Default cost: 2/3 of stamblock, scaled for bots.
+  if(!ignoreLmbExemption && attacker === P && mDown) return 0;
+  return sv('stamblock') * (2 / 3) * (isBot(attacker) ? 1.2 : 1);
 }
 function disbalanceComboDebug(ent, text, col = '#ffcc44'){
   if(!cb('unbcombodbg') || ent !== P) return;
-  const c = entityBodyCenter(ent);
+  const c = $.POS.body(ent);
   spawnFloatingText(ent, text, { x:c.x, y:c.y-58, col });
 }
 
@@ -390,13 +234,13 @@ function updateDisbalanceCombo(attacker, defender){
      combo.target === defender &&
      (isStrongSwing || isLmbLunge)){
     delete attacker._disbalanceCombo;
-    const chance = Math.min(100, combo.blocks * 30);
+    const chance = Math.min(100, combo.blocks * 40);
     const triggered = Math.random() * 100 < chance;
-    if(triggered && !isUnbalanced(defender)) applyDisbalance(defender);
+    if(triggered && !isUnbalanced(defender)) applyDisbalance(defender, attacker);
     disbalanceComboDebug(attacker,
       triggered
-        ? (isLmbLunge ? `ВЫПАД — ДИСБАЛАНС! (${chance}%)` : `УДАР — ДИСБАЛАНС! (${chance}%)`)
-        : `ДИСБАЛАНС НЕ СРАБОТАЛ (${chance}%)`,
+        ? (isLmbLunge ? `LUNGE — DISBALANCE! (${chance}%)` : `SWING — DISBALANCE! (${chance}%)`)
+        : `DISBALANCE FAIL (${chance}%)`,
       triggered ? '#ff8830' : '#ff4040');
     return triggered;
   }
@@ -409,7 +253,7 @@ function updateDisbalanceCombo(attacker, defender){
   const blocks = state && state.target === attacker && !expired ? state.blocks + 1 : 1;
   defender._disbalanceCombo = { target: attacker, blocks, startedAt: GameTime };
   disbalanceComboDebug(defender,
-    `БЛОКИ: ${blocks} · ШАНС ${Math.min(100, blocks * 30)}%`,
+    `Block: ${blocks}x → ${Math.min(100, blocks * 30)}%`,
     '#409cff');
   return false;
 }
@@ -417,45 +261,48 @@ function updateDisbalanceCombo(attacker, defender){
 function swordHit(entA, entB){
   const attacker = entA.isAttacker ? entA : entB;
   const defender = entA.isAttacker ? entB : entA;
+  openSafeCounterWindow(defender);
   const disbalanceTriggered = updateDisbalanceCombo(attacker, defender);
   if(disbalanceTriggered) return;
   const cost = blockStaminaCost(attacker);
-  attacker.stamina = Math.max(0, attacker.stamina - cost);
+  drainStamina(attacker, cost);
   if(attacker.stamina <= 0 && !isExhausted(attacker)){
     applyExhaust(attacker);
     return;
   }
 }
 
-// Ближайшее расстояние между двумя отрезками
+// ─── SEGMENT DISTANCE ──────────────────────────────────────────────────
 function segSegDist(ax,ay,bx,by,cx,cy,dx,dy){
   const d1x=bx-ax,d1y=by-ay,d2x=dx-cx,d2y=dy-cy,d12x=ax-cx,d12y=ay-cy;
   const a=d1x*d1x+d1y*d1y, e=d2x*d2x+d2y*d2y;
   if(a<0.001&&e<0.001) return {d:Math.hypot(ax-cx,ay-cy),mx:(ax+cx)/2,my:(ay+cy)/2};
   let s,t;
-  if(a<0.001){t=clamp((d2x*d12x+d2y*d12y)/e,0,1);s=0;}
+  if(a<0.001){t=$.M.clamp((d2x*d12x+d2y*d12y)/e,0,1);s=0;}
   else{const c2=d1x*d12x+d1y*d12y;
-    if(e<0.001){s=clamp(-c2/a,0,1);t=0;}
+    if(e<0.001){s=$.M.clamp(-c2/a,0,1);t=0;}
     else{const b2=d1x*d2x+d1y*d2y,den=a*e-b2*b2;
-      s=den>0.001?clamp((b2*(d2x*d12x+d2y*d12y)-e*c2)/den,0,1):0;
-      t=clamp((b2*s+(d2x*d12x+d2y*d12y))/e,0,1);
-      s=clamp((-c2+b2*t)/a,0,1);t=clamp((b2*s+(d2x*d12x+d2y*d12y))/e,0,1);}}
+      s=den>0.001?$.M.clamp((b2*(d2x*d12x+d2y*d12y)-e*c2)/den,0,1):0;
+      t=$.M.clamp((b2*s+(d2x*d12x+d2y*d12y))/e,0,1);
+      s=$.M.clamp((-c2+b2*t)/a,0,1);t=$.M.clamp((b2*s+(d2x*d12x+d2y*d12y))/e,0,1);}}
   const px=ax+s*d1x,py=ay+s*d1y,qx=cx+t*d2x,qy=cy+t*d2y;
   return {d:Math.hypot(px-qx,py-qy),mx:(px+qx)/2,my:(py+qy)/2,px,py,qx,qy,s,t};
 }
 
-// Коллизия меч→меч: физический блок + стамина + искры
-// Коллизия меч→тело: урон + отбрасывание, кулдаун 0.5с
-
+// ─── SWORD COLLISION DETECTION ──────────────────────────────────────
+// Detects weapon clashes: blade + stamina + knockback + hitstop.
 function checkSwordCollision(entA, entB, dt){
 
-  // Если оба — боты, то ничего не делаем
-  if(isBot(entA) && isBot(entB)) return;
+  // A local player may reuse a bot entity. Skip only two actual AI actors,
+  // never an AI actor fighting a locally controlled player slot.
+  const aIsPlayer=typeof FactionRules!=='undefined' && FactionRules.isPlayer(entA);
+  const bIsPlayer=typeof FactionRules!=='undefined' && FactionRules.isPlayer(entB);
+  if(isBot(entA) && isBot(entB) && !aIsPlayer && !bIsPlayer) return;
   
-  // Если у кого-то нет оружия — пропускаем碰撞 мечей
+  // ─── IF EITHER HAS NO WEAPON ──────────────────────────────────────
   if(entA.hasWeapon === false || entB.hasWeapon === false) {
-    const pivA = entityPivot(entA);
-    const pivB = entityPivot(entB);
+    const pivA = $.POS.pivot(entA);
+    const pivB = $.POS.pivot(entB);
     const swA = weaponReach(entA) * sv('swlen');
     const swB = weaponReach(entB) * sv('swlen') * (isBot(entB)?sv('botswordscale'):1);
     const tipAx = pivA.x + Math.cos(entA.angle)*swA;
@@ -468,13 +315,13 @@ function checkSwordCollision(entA, entB, dt){
     return;
   }
   
-  const pivA = entityPivot(entA);
-  const pivB = entityPivot(entB);
+  const pivA = $.POS.pivot(entA);
+  const pivB = $.POS.pivot(entB);
 
-  // ── Концы полного сегмента оружия (перёд + зад для center-grip) ──
-  // spanA/spanB уже включают BLADEFIXSCALE (см. weaponColliderSpan) — так
-  // BLADEFIXSCALE реально меняет РАЗМЕР коллайдера оружия, а не просто
-  // толщину линии, как было раньше (там эффект был почти незаметен).
+  // ─── BLADE SEGMENTS ──────────────────────────────────────────────
+  // spanA/spanB already include BLADEFIXSCALE (see weaponColliderSpan) — that's
+  // the real blade length, not just the physical model. This avoids the old
+  // problem where only the tip collided, making clashes feel inconsistent.
   const dirAx = Math.cos(entA.angle), dirAy = Math.sin(entA.angle);
   const dirBx = Math.cos(entB.angle), dirBy = Math.sin(entB.angle);
   const spanA = weaponColliderSpan(entA);
@@ -496,9 +343,8 @@ function checkSwordCollision(entA, entB, dt){
   const backBx = pivB.x - dirBx*backLenB;
   const backBy = pivB.y - dirBy*backLenB;
 
-  // ── HANDRANGE — «мёртвая зона» у рукояти для клинок-клинок/клинок-щит ──
-  // Отступаем HANDRANGE от pivot в сторону клинка (перёд/зад), не дальше
-  // фактической длины этой половины оружия.
+  // ─── HANDRANGE ────────────────────────────────────────────────────
+  // Hand-to-hand/weapon clash range: how far from pivot the hand/blade tip is.
   const handFrontLenA = Math.min(HANDRANGE, frontLenA);
   const handFrontLenB = Math.min(HANDRANGE, frontLenB);
   const handBackLenA  = Math.min(HANDRANGE, backLenA);
@@ -513,11 +359,10 @@ function checkSwordCollision(entA, entB, dt){
   const backHandBx = pivB.x - dirBx*handBackLenB;
   const backHandBy = pivB.y - dirBy*handBackLenB;
 
-  // ── ЧИСТЫЕ (без BLADEFIXSCALE) координаты — ТОЛЬКО для попадания по ТЕЛУ ──
-  // checkBladeVsBody не должен зависеть от BLADEFIXSCALE (тот только для
-  // клинок-клинок/клинок-щит выше), поэтому передаём туда оригинальную,
-  // немасштабированную длину/pivot оружия отдельно.
-const BODY_HIT_RATIO = 0.82; // 82% от полной длины
+  // ─── BODY HIT RANGE ──────────────────────────────────────────────
+  // checkBladeVsBody uses BLADEFIXSCALE already (same as for sword-vs-sword),
+  // so it's consistent with the blade collision logic.
+const BODY_HIT_RATIO = 0.82; // 82% of total weapon length for body hits
 const bodySwA = weaponReach(entA) * sv('swlen') * BODY_HIT_RATIO;
 const bodySwB = weaponReach(entB) * sv('swlen') * (isBot(entB)?sv('botswordscale'):1) * BODY_HIT_RATIO;
   const bodyTipAx = pivA.x + dirAx*bodySwA;
@@ -527,10 +372,8 @@ const bodySwB = weaponReach(entB) * sv('swlen') * (isBot(entB)?sv('botswordscale
 
   if(entA._bladeCD === undefined) entA._bladeCD = -1;
 
-  // ── МЕЧ A vs МЕЧ B ──────────────────────────────────────────────────────
-  // Проверяем ОБЕ части каждого клинка (передняя за мёртвой зоной, и задняя
-  // за мёртвой зоной, если она есть у center-grip оружия) против обеих
-  // частей клинка соперника — иначе задняя половина посоха не коллизирует.
+  // ─── BLADE VS BLADE (weapon clash) ──────────────────────────────
+  // We test two segments: front (blade) and back (if any) for each weapon.
   const segsA = [[bladeAx,bladeAy, tipAx,tipAy]];
   if(spanA.back > 0) segsA.push([backHandAx,backHandAy, backAx,backAy]);
   const segsB = [[bladeBx,bladeBy, tipBx,tipBy]];
@@ -554,7 +397,7 @@ const bodySwB = weaponReach(entB) * sv('swlen') * (isBot(entB)?sv('botswordscale
     // This contact is evaluated every simulation tick. Without time scaling,
     // slow motion applies the same full positional shove many more times and
     // a held blade can tow the opponent at near-normal (or higher) speed.
-    const contactStep = Math.min(1, simStep(dt));
+    const contactStep = Math.min(1, $.M.step(dt));
     entA.x += nx*sepClamped*0.5*contactStep;
     entA.y += ny*sepClamped*0.5*contactStep;
     entB.x -= nx*sepClamped*0.5*contactStep;
@@ -591,32 +434,29 @@ const bodySwB = weaponReach(entB) * sv('swlen') * (isBot(entB)?sv('botswordscale
     }
     
     if(entA._bladeCD <= GameTime){
-      entA._bladeCD = GameTime + 0.4;
+      entA._bladeCD = GameTime + 0.1;
       const strongSwing = Math.abs(entA.vel) > sv('swthresh')*2.5 || Math.abs(entB.vel) > sv('swthresh')*2.5;
       doClash(entA, entB, res, strongSwing);
       swordHit(entA, entB);
-      if(strongSwing) playSound('clashHard'); else playSound('clash');
+      if(strongSwing) $.S.play('clashHard'); else $.S.play('clash');
       if(typeof triggerHitstop==='function') triggerHitstop(strongSwing?3:2, strongSwing?3:1.5);
       entA._clashFrame = GameTime;
       entB._clashFrame = GameTime;
       const rageGain = 100/sv('rageper') * 0.5;
       addRage(entA, rageGain);
       addRage(entB, rageGain);
-      if(cb('bbind')){
-        bladeBind_onContact(entA, entB, nx, ny);
-      }
       const _otherBot = entA===P ? entB : (entB===P ? entA : null);
       if(_otherBot && isBot(_otherBot)) switchSmartBot(_otherBot);
       aiNotifyContact();
     }
-    } // столкновение активных клинков
+    } // End of blade clash handling
   }
 
-  // ── ПРОВЕРКА УРОНА ПО ТЕЛУ ────────────────────────────────────────────
+  // ─── BLADE VS BODY ──────────────────────────────────────────────
   checkBladeVsBody(entA, entB, pivA.x, pivA.y, bodyTipAx, bodyTipAy);
   checkBladeVsBody(entB, entA, pivB.x, pivB.y, bodyTipBx, bodyTipBy);
   
-  // ── СМЕНА ГЛАВНОГО ПРИ КАСАНИИ ─────────────────
+  // ─── CROWN SWITCH ──────────────────────────────────────────────────
   const _crownReady = (GameTime - _lastCrownSwitchTime) >= CROWN_SWITCH_COOLDOWN;
   if(_crownReady && isBot(entA) && entA._aiState?._isMain && entB === P){
     if(Math.random() < 0.25){
@@ -628,40 +468,42 @@ const bodySwB = weaponReach(entB) * sv('swlen') * (isBot(entB)?sv('botswordscale
   }
   if(_crownReady && isBot(entB) && entB._aiState?._isMain && entA === P){
   }
-} // ← ЗАКРЫВАЕМ ВСЮ ФУНКЦИЮ
+} // End of checkSwordCollision
 
+// ─── BLADE VS BODY ──────────────────────────────────────────────────────
+// Checks if the attacker's weapon tip hits the defender's body.
 function checkBladeVsBody(attacker, defender, pivX, pivY, tipX2, tipY2) {
-  // Нет урона во время экрана победы/поражения
+  // Skip if opponent is already dead
   if (DEATH.pDead || DEATH.dDead) return;
-  // Усталость и дисбаланс деактивируют оружие через общий статусный gate.
+  // Skip if weapon is disabled (e.g., during disarm)
   if (isWeaponDisabled(attacker)) return;
-  // В сетевом ПВП D — локальная интерполированная кукла противника
-  if (defender === P && attacker === D && typeof NET_SYNC !== 'undefined' && NET_SYNC.active) return;
-  // Iframes во время доджа
+  // In PvP, the player (P) is controlled locally; the opponent (D) is the remote player.
+  if (defender === P && attacker === D && typeof NET_SYNC !== 'undefined' && $.NET.active()) return;
+  // Iframes: dodge impulse overrides hit
   if (defender === P && Math.hypot(P._dvx || 0, P._dvy || 0) > 200) return;
   
-  const bC = entityBodyCenter(defender);
+  const bC = $.POS.body(defender);
   const key = weaponKeyOf(attacker);
   
   // ============================================================
-  // 🔥 БЛОК ДЛЯ КОПЬЯ (отдельная логика)
+  // ─── SPEAR SPECIFIC HANDLING ──────────────────────────────────
   // ============================================================
   if (key === 'spear') {
     const _dirX = Math.cos(attacker.angle);
     const _dirY = Math.sin(attacker.angle);
     
-    // Полная длина оружия с учётом ВСЕХ скейлов
+    // Full reach of the spear (including blade)
     const fullReach = weaponLenFor(attacker) * effSwordScale(attacker) * sv('swlen') * (isBot(attacker) ? sv('botswordscale') : 1);
     
-    // 🔥 КОЭФФИЦИЕНТ, КОТОРЫЙ ПОДГОНЯЕТ ДЛИНУ ПОД СПРАЙТ
-    // Подбери его так, чтобы 🎯 был точно на кончике копья
-    const SPEAR_RATIO = 0.68; // ← меняй это число (0.7–0.85)
+    // Spear damage zone is only the tip, not the whole shaft
+    // This keeps it consistent with the regular blade collision
+    const SPEAR_RATIO = 0.68; // ~70% of the shaft is the tip (0.7–0.85)
     
-    // Кончик копья (от руки до точки удара)
+    // Tip position (only the pointed end)
     const tipX_adj = pivX + _dirX * fullReach * SPEAR_RATIO;
     const tipY_adj = pivY + _dirY * fullReach * SPEAR_RATIO;
     
-    // Проверка попадания (расстояние от кончика до центра тела)
+    // Distance to body center (for damage)
     const distToBody = Math.hypot(bC.x - tipX_adj, bC.y - tipY_adj);
     const BODY_HIT_R = 14;
     const hitR = BODY_HIT_R * sv('cscl');
@@ -673,15 +515,16 @@ function checkBladeVsBody(attacker, defender, pivX, pivY, tipX2, tipY2) {
     }
 
     // ------------------------------------------------------------
-    // Проверка на додж бота (оригинальный код)
+    // BOT DODGE (only for AI-controlled bots)
     // ------------------------------------------------------------
     if (defender === D && attacker === P && typeof AI !== 'undefined' && AI.enabled !== false &&
-        !(typeof NET_SYNC !== 'undefined' && NET_SYNC.active) &&
+        !(typeof NET_SYNC !== 'undefined' && $.NET.active()) &&
         !(AI._botDodgeCooldown > 0) && D.stamina >= D.stamMax * 0.5) {
 
       const botCount = ALL_BOTS.filter(b => b.hp > 0).length;
       const scaledChancePct = Math.max(20, 100 - botCount * 10);
-      const finalChance = Math.min(sv('botdodgechance'), scaledChancePct) / 100;
+      const playerRageDodgeMult = (P.rageBuffEnd || 0) - GameTime > 1 ? 0.5 : 1;
+      const finalChance = Math.min(sv('botdodgechance'), scaledChancePct) / 100 * playerRageDodgeMult;
 
       if (Math.random() < finalChance) {
         AI._botDodgeCooldown = 1.5;
@@ -698,14 +541,14 @@ function checkBladeVsBody(attacker, defender, pivX, pivY, tipX2, tipY2) {
         D._hitCD = GameTime + 0.35;
         if (typeof spawnDust === 'function')
           for (let i = 0; i < 8; i++) spawnDust(D.x, D.y, -awayX / awayLen * 8, -awayY / awayLen * 8);
-        hitFX.push({ x: D.x, y: D.y - 30, t: 'DODGE', life: 35, big: false, col: 'rgba(200,200,200,0.6)' });
-        playSound('dodgeSound');
+        $.FX.hit({ x: D.x, y: D.y - 30, t: (window.I18N ? window.I18N.t('common.dodge') : 'DODGE'), life: 35, big: false, col: 'rgba(200,200,200,0.6)' });
+        $.S.play('dodgeSound');
         return;
       }
     }
     
     // ------------------------------------------------------------
-    // Проверка на щит (оригинальный код, адаптированный для копья)
+    // SHIELD BLOCK
     // ------------------------------------------------------------
     if (shieldDef(defender) && !isShieldSuppressed(defender)) {
       const _shSc = shieldCenter(defender, attacker === P ? mX : (typeof P !== 'undefined' ? P.x : W / 2));
@@ -738,8 +581,6 @@ function checkBladeVsBody(attacker, defender, pivX, pivY, tipX2, tipY2) {
               defender.vy -= _bvy / _bl * 8;
               defender.unbalanced = Math.max(defender.unbalanced, 0.4);
             }
-            if (Math.random() < 0.10 && typeof triggerBladeBind === 'function')
-              triggerBladeBind(defender, attacker);
             defender._hitCD = GameTime + 0.3;
             return;
           }
@@ -748,7 +589,7 @@ function checkBladeVsBody(attacker, defender, pivX, pivY, tipX2, tipY2) {
     }
     
     // ------------------------------------------------------------
-    // Кулдаун удара
+    // DAMAGE APPLICATION
     // ------------------------------------------------------------
     if (defender._hitCD === undefined) defender._hitCD = -1;
     if (defender._hitCD >= GameTime) return;
@@ -757,18 +598,18 @@ function checkBladeVsBody(attacker, defender, pivX, pivY, tipX2, tipY2) {
     if (attacker.hasWeapon === false) return;
     
     // ------------------------------------------------------------
-    // Расчёт урона для копья
+    // DAMAGE CALCULATION
     // ------------------------------------------------------------
     let dmg = Math.round(6 + Math.abs(attacker.vel) * 20);
     
-    // Выпад (укол)
+    // ─── POKE ──────────────────────────────────────────────────────
     const _isPoke = (attacker === P && mDown && P.lmbWasDown && (GameTime - (P.lmbHoldStart || -99)) <= 0.18) ||
                     (attacker === D && typeof AI !== 'undefined' && AI._pokeDodgeActive && (GameTime - (D._pokeStartTime || -99)) <= 0.3) ||
                     (attacker === D && typeof AI !== 'undefined' && AI._lungeActive && AI._lungePhase === 'lunge');
     if (_isPoke) dmg = Math.round(dmg * 1.5);
     dmg = Math.max(20, dmg);
     
-    // Модификаторы
+    // ─── MODIFIERS ────────────────────────────────────────────────
     if (defender === P && mDown) dmg = Math.round(dmg * sv('lmbdmg'));
     if (defender === D && typeof AI !== 'undefined' && AI._fakeMDown) dmg = Math.round(dmg * 1.5);
     if (attacker.rageBuffEnd > GameTime) dmg *= 2;
@@ -778,7 +619,7 @@ function checkBladeVsBody(attacker, defender, pivX, pivY, tipX2, tipY2) {
     dmg = Math.round(dmg / _defScale);
     dmg = applyCutSwingPenalty(attacker, dmg);
     
-    // Защита от мультиурона (игрок)
+    // ─── MULTIHIT PROTECTION ──────────────────────────────────────
     if (defender === P) {
       const botCount = ALL_BOTS.filter(b => b.hp > 0).length;
       if (botCount > 1) {
@@ -794,32 +635,33 @@ function checkBladeVsBody(attacker, defender, pivX, pivY, tipX2, tipY2) {
       if (P._multiHitProtection) dmg = Math.round(dmg * P._multiHitProtectionMult);
     }
     
-    // Эффекты удара (тряска)
+    // ─── HIT EFFECTS ──────────────────────────────────────────────
     defender._hitTiltAmp = (Math.random() < 0.5 ? -1 : 1) * 15 * Math.PI / 180;
     defender._hitTiltT0 = GameTime;
     
-    // Нокбэк
+    // ─── KNOCKBACK ────────────────────────────────────────────────
     const kbf = sv('bodyKB') * 0.5;
     const _noDoubleKB = (attacker._clashFrame || 0) > GameTime - 0.05;
     if (kbf > 0 && !_noDoubleKB) {
-      const _bkX = bC.x - entityBodyCenter(attacker).x;
-      const _bkY = bC.y - entityBodyCenter(attacker).y;
+      const _bkX = bC.x - $.POS.body(attacker).x;
+      const _bkY = bC.y - $.POS.body(attacker).y;
       const _bkL = Math.hypot(_bkX, _bkY) || 1;
       defender.vx += (_bkX / _bkL) * kbf;
       defender.vy += (_bkY / _bkL) * kbf;
     }
     
-    // Шанс выбить оружие
+    // ─── DISARM ────────────────────────────────────────────────────
     if (!_isPoke && defender.hasWeapon !== false && attacker.hasWeapon !== false) {
       const swingPower = Math.abs(attacker.vel) / sv('swthresh');
       let disarmChance = 0.03 + swingPower * 0.07;
       if (weaponHasFlag(attacker, 'disarm')) disarmChance += 0.15;
       if (attacker.rageBuffEnd > GameTime) disarmChance += 0.10;
-      disarmChance = Math.min(disarmChance, 0.50);
+      // Disarm chance caps at 30% for unbalanced targets, otherwise 50%
+      disarmChance = isUnbalanced(defender) ? 0.30 : Math.min(disarmChance, 0.50) * 0.5;
       
       if (Math.random() < disarmChance) {
-        const _dkX = bC.x - entityBodyCenter(attacker).x;
-        const _dkY = bC.y - entityBodyCenter(attacker).y;
+        const _dkX = bC.x - $.POS.body(attacker).x;
+        const _dkY = bC.y - $.POS.body(attacker).y;
         const _dkL = Math.hypot(_dkX, _dkY) || 1;
         const dirX = _dkX / _dkL;
         const dirY = _dkY / _dkL;
@@ -830,14 +672,15 @@ function checkBladeVsBody(attacker, defender, pivX, pivY, tipX2, tipY2) {
         const weaponDirY = dirY * cosA + dirX * sinA;
         const baseSpeed = 3 + Math.random() * 4;
         disarmEntity(defender, weaponDirX * baseSpeed, weaponDirY * baseSpeed - 1.5);
-        hitFX.push({ x: bC.x, y: bC.y - 52, t: '💥 ОРУЖИЕ ВЫБИТО!', life: 40, big: true, col: '#ffaa44' });
+        $.FX.hit({ x: bC.x, y: bC.y - 52, t: (window.I18N ? window.I18N.t('combat.weaponDropped') : 'WEAPON DROPPED!'), life: 40, big: true, col: '#ffaa44' });
       }
     }
     
-    // Разоружение (флаг 'disarm') — не гарантировано, шанс 30%
+    // ─── EXTRA DISARM (for 'disarm' flag) ────────────────────────
+    // This is a separate check for disarm flag, same as above but with 30% chance
     if (!_isPoke && weaponHasFlag(attacker, 'disarm') && defender.hasWeapon !== false && Math.random() < 0.30) {
-      const _dkX = bC.x - entityBodyCenter(attacker).x;
-      const _dkY = bC.y - entityBodyCenter(attacker).y;
+      const _dkX = bC.x - $.POS.body(attacker).x;
+      const _dkY = bC.y - $.POS.body(attacker).y;
       const _dkL = Math.hypot(_dkX, _dkY) || 1;
       const dirX = _dkX / _dkL;
       const dirY = _dkY / _dkL;
@@ -848,13 +691,13 @@ function checkBladeVsBody(attacker, defender, pivX, pivY, tipX2, tipY2) {
       const weaponDirY = dirY * cosA + dirX * sinA;
       const baseSpeed = 7 + Math.random() * 5;
       disarmEntity(defender, weaponDirX * baseSpeed, weaponDirY * baseSpeed - 1.5);
-      hitFX.push({ x: bC.x, y: bC.y - 52, t: '💥 ОРУЖИЕ ВЫБИТО!', life: 40, big: true, col: '#ffaa44' });
+      $.FX.hit({ x: bC.x, y: bC.y - 52, t: (window.I18N ? window.I18N.t('combat.weaponDropped') : 'WEAPON DROPPED!'), life: 40, big: true, col: '#ffaa44' });
     }
     
     // ------------------------------------------------------------
-    // Применяем урон
+    // APPLY DAMAGE
     // ------------------------------------------------------------
-    hitFX.push({
+    $.FX.hit({
       x: bC.x,
       y: bC.y - 60,
       t: '💥 ' + dmg + ' DMG',
@@ -870,31 +713,30 @@ function checkBladeVsBody(attacker, defender, pivX, pivY, tipX2, tipY2) {
       hitstopFrames: 4,
       shakePower: dmg > 15 ? 6 : 3,
       textColor: _isPoke ? '#ffdd44' : '#ff8844',
-      textSuffix: _isPoke ? '⚔' : '🗡',
+      textSuffix: _isPoke ? '💫' : '⚔',
       bloodCount: _isPoke ? 4 : 6,
       playSound: false
     });
     
-    playSound('damage');
+    $.S.play('damage');
     
     if (defender.hp <= 0) {
-      if (defender === P) triggerDeath(defender, false);
-      else handleCombatDeath(defender);
+      handleCombatDeath(defender);
     }
     
-    if (typeof NET_SYNC !== 'undefined' && NET_SYNC.active && attacker === P && defender === D) {
-      NET_CORE.send({ type: 'hit', dmg, newHp: defender.hp });
+    if (typeof NET_SYNC !== 'undefined' && $.NET.active() && attacker === P && defender === D) {
+      $.NET.send({ type: 'hit', dmg, newHp: defender.hp });
     }
     
     const _otherBot2 = attacker === P ? defender : (defender === P ? attacker : null);
     if (_otherBot2 && isBot(_otherBot2)) switchSmartBot(_otherBot2);
     aiNotifyContact();
     
-    return; // Выход, чтобы не дублировать урон
+    return; // Exit, don't double-apply damage
   }
   
   // ============================================================
-  // 🔥 ОСТАЛЬНОЕ ОРУЖИЕ (меч, алебарда, посох, цеп и т.д.)
+  // ─── GENERIC BLADE VS BODY (swords, flails, staves, etc.) ───
   // ============================================================
   
   let pivX_adj = pivX;
@@ -917,25 +759,27 @@ function checkBladeVsBody(attacker, defender, pivX, pivY, tipX2, tipY2) {
   const segDY = tipY_adj - pivY_adj;
   const segL2 = segDX * segDX + segDY * segDY || 1;
   
-  const t2 = clamp(((bC.x - pivX_adj) * segDX + (bC.y - pivY_adj) * segDY) / segL2, 0, 1);
+  const t2 = $.M.clamp(((bC.x - pivX_adj) * segDX + (bC.y - pivY_adj) * segDY) / segL2, 0, 1);
   const nearX = pivX_adj + t2 * segDX;
   const nearY = pivY_adj + t2 * segDY;
   const dist = Math.hypot(bC.x - nearX, bC.y - nearY);
-  const hand = entityPivot(attacker);
+  const hand = $.POS.pivot(attacker);
   if(Math.hypot(nearX - hand.x, nearY - hand.y) < HANDRANGE) return;
   
   const BODY_HIT_R = 14;
   const hitR = BODY_HIT_R * sv('cscl');
   if (dist >= hitR) return;
   
-  // Додж бота
-  if (defender === D && attacker === P && typeof AI !== 'undefined' && AI.enabled !== false &&
-      !(typeof NET_SYNC !== 'undefined' && NET_SYNC.active) &&
-      !(AI._botDodgeCooldown > 0) && D.stamina >= D.stamMax * 0.5) {
+  // ─── BOT DODGE ──────────────────────────────────────────────────
+if (defender === D && attacker === P && typeof AI !== 'undefined' && AI.enabled !== false &&
+    !(typeof NET_SYNC !== 'undefined' && $.NET.active()) &&
+    !(AI._botDodgeCooldown > 0) && D.stamina >= D.stamMax * 0.5 &&
+    !isUnbalanced(defender)) { 
 
     const botCount = ALL_BOTS.filter(b => b.hp > 0).length;
     const scaledChancePct = Math.max(20, 100 - botCount * 10);
-    const finalChance = Math.min(sv('botdodgechance'), scaledChancePct) / 100;
+    const playerRageDodgeMult = (P.rageBuffEnd || 0) - GameTime > 1 ? 0.5 : 1;
+    const finalChance = Math.min(sv('botdodgechance'), scaledChancePct) / 100 * playerRageDodgeMult;
 
     if (Math.random() < finalChance) {
       AI._botDodgeCooldown = 1.5;
@@ -952,13 +796,13 @@ function checkBladeVsBody(attacker, defender, pivX, pivY, tipX2, tipY2) {
       D._hitCD = GameTime + 0.35;
       if (typeof spawnDust === 'function')
         for (let i = 0; i < 8; i++) spawnDust(D.x, D.y, -awayX / awayLen * 8, -awayY / awayLen * 8);
-      hitFX.push({ x: D.x, y: D.y - 30, t: 'DODGE', life: 35, big: false, col: 'rgba(200,200,200,0.6)' });
-      playSound('dodgeSound');
+      $.FX.hit({ x: D.x, y: D.y - 30, t: (window.I18N ? window.I18N.t('common.dodge') : 'DODGE'), life: 35, big: false, col: 'rgba(200,200,200,0.6)' });
+      $.S.play('dodgeSound');
       return;
     }
   }
   
-  // Блок щитом
+  // ─── SHIELD BLOCK ──────────────────────────────────────────────
   if (defender._hitCD === undefined) defender._hitCD = -1;
   if (defender._hitCD < GameTime) {
     if (shieldDef(defender) && !isShieldSuppressed(defender)) {
@@ -982,7 +826,7 @@ function checkBladeVsBody(attacker, defender, pivX, pivY, tipX2, tipY2) {
             attacker.vx -= _bvx / _bl * 3;
             attacker.vy -= _bvy / _bl * 3;
             const blockCost = blockStaminaCost(attacker);
-            attacker.stamina = Math.max(0, attacker.stamina - blockCost);
+            drainStamina(attacker, blockCost);
             if(attacker.stamina <= 0 && !isExhausted(attacker)){
               applyExhaust(attacker);
             }
@@ -997,8 +841,6 @@ function checkBladeVsBody(attacker, defender, pivX, pivY, tipX2, tipY2) {
               defender.vy -= _bvy / _bl * 8;
               defender.unbalanced = Math.max(defender.unbalanced, 0.4);
             }
-            if (Math.random() < 0.10 && typeof triggerBladeBind === 'function')
-              triggerBladeBind(defender, attacker);
             defender._hitCD = GameTime + 0.3;
             return;
           }
@@ -1006,7 +848,7 @@ function checkBladeVsBody(attacker, defender, pivX, pivY, tipX2, tipY2) {
       }
     }
     
-    // Определяем нормаль и alongBlade
+    // ─── ALONG BLADE CHECK ──────────────────────────────────────
     let nx2, ny2;
     if (dist > 0.1) {
       nx2 = (bC.x - nearX) / dist;
@@ -1020,14 +862,14 @@ function checkBladeVsBody(attacker, defender, pivX, pivY, tipX2, tipY2) {
     let alongBlade = Math.abs(nx2 * bladeX + ny2 * bladeY);
     if (CENTER_GRIP_CATEGORIES.includes(weaponDefFor(attacker).category)) alongBlade = 0;
     
-    // Проверка на выпад
+    // ─── POKE DETECTION ──────────────────────────────────────────
     const _isPoke = key !== 'flail' && (
       (attacker === P && mDown && P.lmbWasDown && (GameTime - (P.lmbHoldStart || -99)) <= 0.18) ||
       (attacker === D && typeof AI !== 'undefined' && AI._pokeDodgeActive && (GameTime - (D._pokeStartTime || -99)) <= 0.3) ||
       (attacker === D && typeof AI !== 'undefined' && AI._lungeActive && AI._lungePhase === 'lunge')
     ) && Math.abs(attacker.vel) < sv('swthresh') * 0.3;
     
-    // Для остальных оружий (не копьё) — стандартная проверка
+    // ─── TIP-ONLY WEAPONS ────────────────────────────────────────
     const _tipOnly = weaponCollisionType(attacker) === 'tip';
     const TIP_MIN_T = 0.7;
     let shouldHit = (!_tipOnly || t2 >= TIP_MIN_T);
@@ -1047,7 +889,7 @@ function checkBladeVsBody(attacker, defender, pivX, pivY, tipX2, tipY2) {
       dmg = Math.round(dmg * (_isPoke ? weaponPierceMult(attacker) * _pierceTierMult : weaponCutMult(attacker)));
       dmg = Math.max(20, dmg);
       
-      // Модификаторы
+      // ─── MODIFIERS ──────────────────────────────────────────────
       if (defender === P && mDown) dmg = Math.round(dmg * sv('lmbdmg'));
       if (defender === D && typeof AI !== 'undefined' && AI._fakeMDown) dmg = Math.round(dmg * 1.5);
       if (attacker.rageBuffEnd > GameTime) dmg *= 2;
@@ -1057,7 +899,7 @@ function checkBladeVsBody(attacker, defender, pivX, pivY, tipX2, tipY2) {
       dmg = Math.round(dmg / _defScale);
       dmg = applyCutSwingPenalty(attacker, dmg);
       
-      // Мультиурон
+      // ─── MULTIHIT PROTECTION ──────────────────────────────────
       if (defender === P) {
         const botCount = ALL_BOTS.filter(b => b.hp > 0).length;
         if (botCount > 1) {
@@ -1076,28 +918,29 @@ function checkBladeVsBody(attacker, defender, pivX, pivY, tipX2, tipY2) {
       defender._hitTiltAmp = (nx2 < 0 ? -1 : 1) * 15 * Math.PI / 180;
       defender._hitTiltT0 = GameTime;
       
-      // Нокбэк
+      // ─── KNOCKBACK ──────────────────────────────────────────────
       const kbf = sv('bodyKB') * 0.5;
       const _noDoubleKB = (attacker._clashFrame || 0) > GameTime - 0.05;
       if (kbf > 0 && !_noDoubleKB) {
-        const _bkX = bC.x - entityBodyCenter(attacker).x;
-        const _bkY = bC.y - entityBodyCenter(attacker).y;
+        const _bkX = bC.x - $.POS.body(attacker).x;
+        const _bkY = bC.y - $.POS.body(attacker).y;
         const _bkL = Math.hypot(_bkX, _bkY) || 1;
         defender.vx += (_bkX / _bkL) * kbf;
         defender.vy += (_bkY / _bkL) * kbf;
       }
       
-      // Выбивание оружия
+      // ─── DISARM ──────────────────────────────────────────────────
       if (!_isPoke && defender.hasWeapon !== false && attacker.hasWeapon !== false) {
         const swingPower = Math.abs(attacker.vel) / sv('swthresh');
         let disarmChance = 0.03 + swingPower * 0.07;
         if (weaponHasFlag(attacker, 'disarm')) disarmChance += 0.15;
         if (attacker.rageBuffEnd > GameTime) disarmChance += 0.10;
-        disarmChance = Math.min(disarmChance, 0.50);
+        // Disarm chance caps at 30% for unbalanced targets, otherwise 50%
+        disarmChance = isUnbalanced(defender) ? 0.30 : Math.min(disarmChance, 0.50) * 0.5;
         
         if (Math.random() < disarmChance) {
-          const _dkX = bC.x - entityBodyCenter(attacker).x;
-          const _dkY = bC.y - entityBodyCenter(attacker).y;
+          const _dkX = bC.x - $.POS.body(attacker).x;
+          const _dkY = bC.y - $.POS.body(attacker).y;
           const _dkL = Math.hypot(_dkX, _dkY) || 1;
           const dirX = _dkX / _dkL;
           const dirY = _dkY / _dkL;
@@ -1108,14 +951,14 @@ function checkBladeVsBody(attacker, defender, pivX, pivY, tipX2, tipY2) {
           const weaponDirY = dirY * cosA + dirX * sinA;
           const baseSpeed = 3 + Math.random() * 4;
           disarmEntity(defender, weaponDirX * baseSpeed, weaponDirY * baseSpeed - 1.5);
-          hitFX.push({ x: bC.x, y: bC.y - 52, t: '💥 ОРУЖИЕ ВЫБИТО!', life: 40, big: true, col: '#ffaa44' });
+          $.FX.hit({ x: bC.x, y: bC.y - 52, t: (window.I18N ? window.I18N.t('combat.weaponDropped') : 'WEAPON DROPPED!'), life: 40, big: true, col: '#ffaa44' });
         }
       }
       
-      // Разоружение (флаг 'disarm') — не гарантировано, шанс 30%
+      // ─── EXTRA DISARM (for 'disarm' flag) ──────────────────────
       if (!_isPoke && weaponHasFlag(attacker, 'disarm') && defender.hasWeapon !== false && Math.random() < 0.30) {
-        const _dkX = bC.x - entityBodyCenter(attacker).x;
-        const _dkY = bC.y - entityBodyCenter(attacker).y;
+        const _dkX = bC.x - $.POS.body(attacker).x;
+        const _dkY = bC.y - $.POS.body(attacker).y;
         const _dkL = Math.hypot(_dkX, _dkY) || 1;
         const dirX = _dkX / _dkL;
         const dirY = _dkY / _dkL;
@@ -1126,28 +969,28 @@ function checkBladeVsBody(attacker, defender, pivX, pivY, tipX2, tipY2) {
         const weaponDirY = dirY * cosA + dirX * sinA;
         const baseSpeed = 7 + Math.random() * 5;
         disarmEntity(defender, weaponDirX * baseSpeed, weaponDirY * baseSpeed - 1.5);
-        hitFX.push({ x: bC.x, y: bC.y - 52, t: '💥 ОРУЖИЕ ВЫБИТО!', life: 40, big: true, col: '#ffaa44' });
+        $.FX.hit({ x: bC.x, y: bC.y - 52, t: (window.I18N ? window.I18N.t('combat.weaponDropped') : 'WEAPON DROPPED!'), life: 40, big: true, col: '#ffaa44' });
       }
       
-      // Доп. нокбэк для молота/посоха
+      // ─── SPECIAL KNOCKBACK ──────────────────────────────────────
       if (weaponHasFlag(attacker, 'knockback_hammer')) {
-        const _kkX = bC.x - entityBodyCenter(attacker).x;
-        const _kkY = bC.y - entityBodyCenter(attacker).y;
+        const _kkX = bC.x - $.POS.body(attacker).x;
+        const _kkY = bC.y - $.POS.body(attacker).y;
         const _kkL = Math.hypot(_kkX, _kkY) || 1;
         defender.vx += (_kkX / _kkL) * 18;
         defender.vy += (_kkY / _kkL) * 18;
-        if(!isUnbalanced(defender)) applyDisbalance(defender);
+        if(!isUnbalanced(defender)) applyDisbalance(defender, attacker);
       }
       if (weaponHasFlag(attacker, 'knockback_staff')) {
-        const _kkX = bC.x - entityBodyCenter(attacker).x;
-        const _kkY = bC.y - entityBodyCenter(attacker).y;
+        const _kkX = bC.x - $.POS.body(attacker).x;
+        const _kkY = bC.y - $.POS.body(attacker).y;
         const _kkL = Math.hypot(_kkX, _kkY) || 1;
         defender.vx += (_kkX / _kkL) * 10;
         defender.vy += (_kkY / _kkL) * 10;
-        if(!isUnbalanced(defender)) applyDisbalance(defender);
+        if(!isUnbalanced(defender)) applyDisbalance(defender, attacker);
       }
       
-      // Применяем урон
+      // ─── APPLY DAMAGE ────────────────────────────────────────────
       const isPoke = _isPoke;
       applyDamage(defender, dmg, attacker, {
         isMagic: false,
@@ -1156,19 +999,19 @@ function checkBladeVsBody(attacker, defender, pivX, pivY, tipX2, tipY2) {
         hitstopFrames: 4,
         shakePower: dmg > 15 ? 6 : 3,
         textColor: isPoke ? '#ffdd44' : '#ff4040',
-        textSuffix: isPoke ? '⚔' : '',
+        textSuffix: isPoke ? '💫' : '',
         bloodCount: isPoke ? 4 : 8,
         playSound: false
       });
       
       if (_isPoke) {
-        hitFX.push({ x: bC.x, y: bC.y - 36, t: 'ВЫПАД!', life: 40, big: true, col: '#ffdd44' });
+        $.FX.hit({ x: bC.x, y: bC.y - 36, t: (window.I18N ? window.I18N.t('combat.poke') : 'POKE!'), life: 40, big: true, col: '#ffdd44' });
       }
       
-      playSound(isHeavySwingWeapon(attacker) ? 'damageHammer' : 'damage');
+      $.S.play(isHeavySwingWeapon(attacker) ? 'damageHammer' : 'damage');
       
-      if (typeof NET_SYNC !== 'undefined' && NET_SYNC.active && attacker === P && defender === D) {
-        NET_CORE.send({ type: 'hit', dmg, newHp: defender.hp });
+      if (typeof NET_SYNC !== 'undefined' && $.NET.active() && attacker === P && defender === D) {
+        $.NET.send({ type: 'hit', dmg, newHp: defender.hp });
       }
       
       const _otherBot2 = attacker === P ? defender : (defender === P ? attacker : null);
@@ -1183,87 +1026,53 @@ function checkBladeVsBody(attacker, defender, pivX, pivY, tipX2, tipY2) {
 
 
 
-// ════════════════ END MODULE: MATH HELPERS ══════════════════════════════════
+// ••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••• END MODULE: MATH HELPERS ••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
 
-// ─────────────────────────────────────────────────────────────────────────────
-
-
-// ════════════════════════════════════════════════════════════════════════════
-// MODULE: COMBAT  (blade bind, clash, deflection, death/respawn)
-// Combat logic is already isolated in this module.
-// ════════════════════════════════════════════════════════════════════════════
-
-// ── Общая реакция на "блок щитом" ───────────────────────────────────────────
-// Раньше этот паттерн (иконка щита + текст "БЛОК!" + звук + hitstop +
-// волна от щита + дисбаланс атакующего) был скопирован почти дословно в
-// 4 местах: checkBladeVsBody, checkShieldVsBlade, отбрасывание оружия щитом
-// и блок снарядов жезла/арбалета. Теперь один вызов вместо ~10-15 строк.
+// ─────────────────────────────────────────────────────────────────────────────────
+// ─── SHIELD BLOCK EFFECT ──────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────────
+// Called for "shield block" events: visual + sound + hitstop + counter window.
+// Previously this was scattered across 4 places: checkBladeVsBody, checkShieldVsBlade, projectile deflection,
+// and shield bash. Now unified in one function.
 function applyShieldBlockFX(x, y, attacker, defender, opts){
   opts = opts || {};
   const hitstopMag = opts.hitstopMag != null ? opts.hitstopMag : 2;
   const waveDuration = opts.waveDuration != null ? opts.waveDuration : 18;
-  hitFX.push({x, y: y-4, t:'🛡', life:16, big:true, col:'#aaddff'});
-  hitFX.push({x, y: y+14, t:'БЛОК!', life:opts.textLife||30, big:false, col:'#88bbcc'});
-  playSound('shieldblock');
+  $.FX.hit({x, y: y-4, t:'🛡', life:16, big:true, col:'#aaddff'});
+  $.FX.hit({x, y: y+14, t:(window.I18N ? window.I18N.t('combat.block') : 'BLOCK!'), life:opts.textLife||30, big:false, col:'#88bbcc'});
+  $.S.play('shieldblock');
   if(typeof triggerHitstop === 'function') triggerHitstop(hitstopMag, hitstopMag);
+  openSafeCounterWindow(defender);
+  if(typeof FactionRules!=='undefined') FactionRules.contact(attacker,defender);
+  if(attacker) attacker._healthBarUntil = GameTime + 3;
+  if(defender) defender._healthBarUntil = GameTime + 3;
   
   const ang = opts.waveAngle != null ? opts.waveAngle
     : (attacker && defender) ? Math.atan2(attacker.y - defender.y, attacker.x - defender.x)
     : 0;
   FX_EFFECTS.push({type:'shieldwave', x, y, t:0, duration:waveDuration, angle:ang, followEntity:null});
   
-  // 🔥 БЛОК ЩИТОМ — ТОЛЬКО ВИЗУАЛ И ЗВУК, БЕЗ ДЕБАФФА
-  // (атакующий может продолжать двигать мечом)
+  // ─── EXTRA EFFECTS ──────────────────────────────────────────────
+  // (could add more visual effects here later)
 }
 
-// ── Общий прирост ярости при клэше/блоке ────────────────────────────────────
-// Формула 100/sv('rageper')*0.5 была продублирована в 3 местах.
+// ─── CLASH RAGE GAIN ──────────────────────────────────────────────────
+// 100/sv('rageper')*0.5 per clash, capped at 3 hits.
 function clashRageGain(){ return 100/sv('rageper') * 0.5; }
 function addRage(ent, amount){ if(ent) ent.rage = Math.min(100, (ent.rage||0) + amount); }
 
-// ── BLADE BIND ───────────────────────────────────────────────────────────────
-const BB = {
-  active: false,
-  contactSide: 0,   // +1 или -1 — с какой стороны был контакт (относительно лезвия attacker)
-  contactTime: -1,
-  attacker: null,   // кто атаковал (чтобы засечь его следующий удар)
-  defender: null,
-};
-
-// ── BladeBind: блок БЕЗ ярости открывает окно. Если В ТЕЧЕНИЕ окна
-// (sv('bbwindow') сек) у того же entity появляется ярость И происходит
-// замах/удар (LMB или замах с ускорением) — срабатывает BladeBind.
-// Не срабатывает мгновенно в момент блока даже если ярость уже активна —
-// нужен отдельный последующий удар.
-function bladeBind_onContact(entA, entB, nx, ny){
-  const hasSwing = Math.abs(entA.vel) > sv('swthresh') || Math.abs(entB.vel) > sv('swthresh');
-  if(!hasSwing) return;
-
-  [entA, entB].forEach((ent, idx) => {
-    const other = idx===0 ? entB : entA;
-    // Блок без ярости — открываем окно для последующего удара
-    if(ent.rageBuffEnd <= GameTime){
-      ent._bbWait = GameTime + sv('bbwindow');
-      ent._bbDefender = other;
-    }
-    // Если ярость уже активна — НЕ триггерим здесь.
-    // Срабатывание только через bladeBind_checkSwing при следующем ударе.
-  });
-}
-
-
-
-// ── ЕДИНАЯ СИСТЕМА ДЕБАФФОВ ─────────────────────────────────────────────
+// ─── DEBUFF SYSTEM ─────────────────────────────────────────────────────
+// Unified debuff application (exhaust, stun, etc.)
 function applyDebuff(ent, type, duration, intensity) {
-    // type: 'exhaust' | 'bladebind' | 'stun'
-    // duration: длительность в секундах
-    // intensity: 0-1 (сила эффекта)
+    // type: 'exhaust' | 'stun'
+    // duration: duration in seconds
+    // intensity: 0-1 (effect strength)
     
     if (!ent) return;
     
-    // Сбрасываем старый дебафф того же типа
+    // Clear existing debuffs of the same type
     if (ent._debuffType === type) {
-        // Продлеваем
+        // Extend
     }
     
     ent._debuffType = type;
@@ -1271,41 +1080,36 @@ function applyDebuff(ent, type, duration, intensity) {
     ent._debuffIntensity = intensity || 1.0;
     ent._debuffActive = true;
     
-    // Устанавливаем exhausted для совместимости со старым кодом
+    // Also set exhausted flag for compatibility
     if (type === 'exhaust') {
         ent.exhausted = duration;
         applyExhaust(ent, duration);
-    } else if (type === 'bladebind') {
-        applyBladeBind(ent, 2);
     }
     
-    // Визуальный эффект
+    // Visual feedback
     const labels = {
-        'exhaust': '😫 УСТАЛОСТЬ',
-        'bladebind': '💥 BLADE BIND!',
-        'stun': '⚡ ОГЛУШЕНИЕ'
+        'exhaust': '⚠ EXHAUSTED',
+        'stun': '⚡ STUNNED'
     };
     const colors = {
         'exhaust': '#ffaa44',
-        'bladebind': '#ffaa00',
         'stun': '#cc44ff'
     };
     
-    if (type === 'bladebind') return;
-    const c = entityBodyCenter(ent);
-    hitFX.push({
+    const c = $.POS.body(ent);
+    $.FX.hit({
         x: c.x, 
         y: c.y - 50, 
-        t: labels[type] || '💫 ДЕБАФФ',
+        t: labels[type] || '⚠ DEBUFF',
         life: 45, 
         big: true, 
         col: colors[type] || '#ff8844'
     });
 }
-// ── ПОЛУЧИТЬ МНОЖИТЕЛЬ СКОРОСТИ МЕЧА ОТ ДЕБАФФА ────────────────────────
+// ─── GET DEBUFF SWORD MULTIPLIER ──────────────────────────────────
 function getDebuffSwordMult(ent) {
     if (!ent || !ent._debuffActive || (ent._debuffUntil || 0) < GameTime) {
-        // Дебафф истёк
+        // Debuff expired
         if (ent._debuffActive) {
             ent._debuffActive = false;
             ent._debuffType = null;
@@ -1318,20 +1122,17 @@ function getDebuffSwordMult(ent) {
     
     switch(type) {
         case 'exhaust':
-            // Обычная усталость - из слайдера
+            // Exhaustion - reduced sword speed
             return sv('exhswd2') * (1 - intensity * 0.3);
-        case 'bladebind':
-            // BladeBind - почти полная остановка
-            return 0.03 * (1 - intensity * 0.5);
         case 'stun':
-            // Оглушение - полная остановка
+            // Stun - almost no sword movement
             return 0.01;
         default:
             return 1.0;
     }
 }
 
-// ── ПОЛУЧИТЬ ПРОЗРАЧНОСТЬ МЕЧА ОТ ДЕБАФФА ──────────────────────────────
+// ─── GET DEBUFF ALPHA ──────────────────────────────────────────────────
 function getDebuffAlpha(ent) {
     if (isWeaponDisabled(ent)) return 0.3;
     if (!ent || !ent._debuffActive || (ent._debuffUntil || 0) < GameTime) {
@@ -1348,8 +1149,6 @@ function getDebuffAlpha(ent) {
     switch(type) {
         case 'exhaust':
             return 0.45 + (1 - intensity) * 0.3;
-        case 'bladebind':
-            return 0.2 + (1 - intensity) * 0.3;
         case 'stun':
             return 0.3;
         default:
@@ -1357,7 +1156,7 @@ function getDebuffAlpha(ent) {
     }
 }
 
-// ── ПОЛУЧИТЬ ТЕКСТ ДЕБАФФА ДЛЯ HUD ──────────────────────────────────────
+// ─── GET DEBUFF TEXT FOR HUD ──────────────────────────────────────────
 function getDebuffText(ent) {
     if (!ent || !ent._debuffActive || (ent._debuffUntil || 0) < GameTime) {
         if (ent._debuffActive) {
@@ -1372,85 +1171,29 @@ function getDebuffText(ent) {
     
     switch(type) {
         case 'exhaust':
-            return '😫 УСТАЛОСТЬ ' + remaining.toFixed(1) + 's';
-        case 'bladebind':
-            return '💥 BLADE BIND ' + remaining.toFixed(1) + 's';
+            return '⚠ EXHAUSTED ' + remaining.toFixed(1) + 's';
         case 'stun':
-            return '⚡ ОГЛУШЕНИЕ ' + remaining.toFixed(1) + 's';
+            return '⚡ STUNNED ' + remaining.toFixed(1) + 's';
         default:
             return '';
     }
 }
-function triggerBladeBind(attacker, defender){
-  if((BB._cd||0) > GameTime) return;
-  BB._cd = GameTime + 1.0;
-  attacker._bbWait = -1;
-  const defC = entityBodyCenter(defender);
-  const atkC = entityBodyCenter(attacker);
-
-  const strikeAng = Math.atan2(defC.y - atkC.y, defC.x - atkC.x);
-  const swingDir = attacker.vel > 0 ? -1 : 1;
-  const openAng = strikeAng + Math.PI/2 * swingDir;
-  const ellipseR = Math.max(csv('ex'), csv('ey')) * 1.5;
-  defender.tpX = Math.cos(openAng) * ellipseR;
-  defender.tpY = Math.sin(openAng) * ellipseR;
-  defender.pvX = defender.tpX;
-  defender.pvY = defender.tpY;
-  
-  // 💥 ОТСКОК МЕЧА
-  const pushAngle = openAng + Math.PI/2 * (swingDir > 0 ? 1 : -1);
-  const pushForce = 0.5 + Math.random() * 0.3;
-  defender.pvX += Math.cos(pushAngle) * 25 * pushForce;
-  defender.pvY += Math.sin(pushAngle) * 25 * pushForce;
-  
-  // 🔥 ЕДИНЫЙ ДЕБАФФ - BLADEBIND (2.5 сек, максимальная интенсивность)
-  applyDebuff(defender, 'bladebind', 2, 1.0);
-  applyBladeBind(defender, 2);
-  
-  // Шанс выбить оружие
-  if(typeof disarmEntity==='function' && Math.random() < (sv('disarmchance')/100)){
-    disarmEntity(defender);
-    hitFX.push({x:defC.x, y:defC.y-70, t:'🗡 ВЫБИТО!', life:60, big:true, col:'#ff6644'});
-  }
-  
-  // Blade Bind has no separate floating text; disbalance owns the status label.
-  FX_EFFECTS.push({type:'shieldwave', x:defC.x, y:defC.y, t:0, duration:30, angle:strikeAng, followEntity:defender});
-  playSound('bladeblind');
-}
-
-// Вызывается при РЕАЛЬНОМ ударе/замахе (после открытия окна блоком).
-// Срабатывает только если: окно открыто, есть активная ярость СЕЙЧАС,
-// и это настоящий удар (vel выше порога — не воздушное кручение).
-function bladeBind_checkSwing(ent){
-  if((ent._bbWait||0) <= GameTime) return; // окно не открыто
-  const hasRage = ent.rageBuffEnd > GameTime;
-  if(!hasRage) return; // ярость должна быть активна именно в момент удара
-  if(Math.abs(ent.vel) <= sv('swthresh')) return; // должен быть реальный удар
-  const def = ent._bbDefender;
-  if(!def) return;
-  triggerBladeBind(ent, def);
-  ent._bbWait = -1; // окно закрыто после использования
-}
-
-// ── СТИЛИ ВЛАДЕНИЯ МЕЧОМ (позиционирование без ЛКМ) ─────────────────────────
-// Слайдеры: dist, ex, ey, blk, adaXb, adaXp; чекбоксы: adaY, adaD, ada12, adaX
+// ─── SWORD STYLES ──────────────────────────────────────────────────────
+// Style presets: dist, ex, ey, blk, adaXb, adaXp, adaY, adaD, ada12, adaX
 const SWORD_STYLES = [
-  { name:'Классика', dist:19, ex:21, ey:44, blk:0.2,  adaXb:40, adaXp:73, adaY:true, adaD:true,  ada12:false, adaX:false },
-  { name:'Фехтовальщик', dist:9, ex:37, ey:40, blk:0.17, adaXb:0, adaXp:6, adaY:true, adaD:false, ada12:false, adaX:true },
+  { name:'Classic', dist:19, ex:21, ey:44, blk:0.2,  adaXb:40, adaXp:73, adaY:true, adaD:true,  ada12:false, adaX:false },
+  { name:'Fencer', dist:9, ex:37, ey:40, blk:0.17, adaXb:0, adaXp:6, adaY:true, adaD:false, ada12:false, adaX:true },
 ];
 window.SWORD_STYLE_IDX = 0;
 
-// Применяет стиль к панели (меняет слайдеры и чекбоксы — влияет на игрока)
+// ─── APPLY SWORD STYLE ──────────────────────────────────────────────
 window.applySwordStyle = function(idx){
   const st = SWORD_STYLES[idx]; if(!st) return;
   window.SWORD_STYLE_IDX = idx;
   [['dist',st.dist],['ex',st.ex],['ey',st.ey],['blk',st.blk],['adaXb',st.adaXb],['adaXp',st.adaXp]].forEach(([id,v])=>{
     const el=document.getElementById('sl-'+id);
-    // bubbles:true — обязателен: sv()/_slCache обновляются через делегированный
-    // обработчик на document (см. выше), который слушает ВСПЛЫВАЮЩИЕ события.
-    // Без bubbles:true событие не долетало до document, кэш не обновлялся,
-    // и боевая логика (sv('dist') и т.п.) продолжала работать по старым
-    // значениям — реально менялась только надпись "СТИЛЬ: ..." на экране.
+    // bubbles:true ensures sv()/_slCache updates via event listener on document
+    // (see event binding in main), so it reflects immediately in sv('dist') etc.
     if(el){ el.value=v; el.dispatchEvent(new Event('input', {bubbles:true})); }
   });
   [['adaY',st.adaY],['adaD',st.adaD],['ada12',st.ada12],['adaX',st.adaX]].forEach(([id,v])=>{
@@ -1458,13 +1201,14 @@ window.applySwordStyle = function(idx){
     if(cbEl && cbEl.checked!==v){ cbEl.checked=v; cbEl.dispatchEvent(new Event('change', {bubbles:true})); }
   });
   if(typeof hitFX!=='undefined'&&typeof P!=='undefined')
-    hitFX.push({x:P.x,y:P.y-45,t:'СТИЛЬ: '+st.name,life:55,big:false,col:'#9ad0f0'});
+    $.FX.hit({x:P.x,y:P.y-45,t:(window.I18N ? window.I18N.t('combat.style',{name:st.name}) : ('STYLE: '+st.name)),life:55,big:false,col:'#9ad0f0'});
 };
 window.toggleSwordStyle = function(){
   window.applySwordStyle((window.SWORD_STYLE_IDX+1)%SWORD_STYLES.length);
 };
 
-// Бот: свои значения стиля (не трогают панель)
+// ─── STYLE HELPERS ────────────────────────────────────────────────────
+// Shortcuts for style values (with AI overrides)
 function dstyle(id){
   const s = (typeof AI!=='undefined') && AI._styleVals;
   return (s && s[id]!==undefined) ? s[id]*sv('cscl') : csv(id);
@@ -1479,10 +1223,10 @@ function dstyleCb(id){
   return cb(id);
 }
 
-// ── АПДЕЙТ ──────────────────────────────────────────────────────────────────
-// ── СМЕРТЬ / ПОБЕДА / ПОРАЖЕНИЕ ─────────────────────────────────────────────
+// ─── RESET PLAYER STATE ──────────────────────────────────────────────
+// ─── RESET / RESTART ──────────────────────────────────────────────────
 function resetPlayerState() {
-    // 🗑️ УДАЛЯЕМ БРОШЕННОЕ ОРУЖИЕ
+    // Clear dropped weapons
     if (typeof DROPPED_WEAPONS !== 'undefined') {
         DROPPED_WEAPONS.length = 0;
     }
@@ -1490,7 +1234,7 @@ function resetPlayerState() {
         PROJECTILES.length = 0;
     }
     
-    // 🗑️ ОЧИЩАЕМ ЭФФЕКТЫ
+    // Clear visual effects
     if (typeof WAND_PARTICLES !== 'undefined') WAND_PARTICLES.length = 0;
     if (typeof WAND_EXPLOSIONS !== 'undefined') WAND_EXPLOSIONS.length = 0;
     if (typeof MAGICSTAFF_CHARGE_FX !== 'undefined') MAGICSTAFF_CHARGE_FX.length = 0;
@@ -1500,7 +1244,7 @@ function resetPlayerState() {
     if (typeof BOW_TENSION_FX !== 'undefined') BOW_TENSION_FX.length = 0;
     if (typeof ARROW_SHATTER_FX !== 'undefined') ARROW_SHATTER_FX.length = 0;
     
-    // 💪 СБРАСЫВАЕМ ИГРОКА
+    // Reset player P
     P.hp = 100;
     P.stamina = P.stamMax || 100;
     P.rage = 0;
@@ -1514,11 +1258,9 @@ function resetPlayerState() {
     P._staminaRegenBoostUntil = 0;
     P._hitCD = -1;
     P._blockSlow = -1;
-    P._bbWait = -1;
-    P._bbDefender = null;
     P._rageTextShown = false;
     
-    // 🛡️ СБРАСЫВАЕМ ДЕБАФФЫ ОТ ЩИТА
+    // Reset shield-related timers
     P._shieldStunUntil = -1;
     P._shieldBodyHitCD = -1;
     P._dodgeActiveUntil = -1;
@@ -1530,7 +1272,7 @@ function resetPlayerState() {
     P._inABang = 0;
     P._abTilt = 0;
     
-    // 🔥 СБРАСЫВАЕМ ФЛАГИ ВОССТАНОВЛЕНИЯ
+    // Reset recovery state
     P._wasExhausted = false;
     P._recovering = false;
     P._recoverProgress = 0;
@@ -1538,13 +1280,13 @@ function resetPlayerState() {
     P._recoverTargetAngle = 0;
     P._recoverDuration = 1.0;
     
-    // 🌀 СБРАСЫВАЕМ ДЕБАФФЫ
+    // Reset debuffs
     P._debuffActive = false;
     P._debuffType = null;
     P._debuffUntil = -1;
     P._debuffIntensity = 0;
     
-    // ⚡ СБРАСЫВАЕМ ЗАРЯДКУ ОРУЖИЯ
+    // ─── RESET CHARGE STATES ──────────────────────────────────────
     if (P._wandCharging) {
         P._wandCharging = false;
         if (P._wandChargeSoundObj) {
@@ -1569,142 +1311,218 @@ function resetPlayerState() {
         if (typeof clearBowTensionFX === 'function') clearBowTensionFX();
     }
     
-    // 🗡️ ВОССТАНАВЛИВАЕМ ОРУЖИЕ, ЕСЛИ ВЫБИТО
+    // ─── RESET WEAPON ─────────────────────────────────────────────
     if (P.hasWeapon === false && typeof setWeapon === 'function') {
         setWeapon(P, P.weaponType || 0);
     }
     
-    // 🛡️ СБРАСЫВАЕМ ЩИТ (опционально, если хотим сохранять щит — закомментировать)
+    // ─── RESET SHIELD (but keep its type) ────────────────────────
     // P.shield = 0;
     // P._shieldFlipped = false;
     
-    // 📍 ПОЗИЦИЯ — по умолчанию слева
+    // ─── RESET POSITION ────────────────────────────────────────────
     P.x = W * 0.15;
     P.y = H * 0.8;
 }
+
+function clearEntityChargeState(ent) {
+    if (!ent) return;
+    if (ent._wandCharging) {
+        ent._wandCharging = false;
+        if (ent._wandChargeSoundObj) {
+            try { ent._wandChargeSoundObj.pause(); } catch(e) {}
+            ent._wandChargeSoundObj = null;
+        }
+    }
+    if (ent._magicCharging) {
+        ent._magicCharging = false;
+        if (ent._magicChargeSoundObj) {
+            try { ent._magicChargeSoundObj.pause(); } catch(e) {}
+            ent._magicChargeSoundObj = null;
+        }
+        if (typeof clearMagicStaffFX === 'function') clearMagicStaffFX(ent);
+    }
+    if (ent._bowCharging) {
+        ent._bowCharging = false;
+        if (ent._bowTensionSound) {
+            try { ent._bowTensionSound.pause(); } catch(e) {}
+            ent._bowTensionSound = null;
+        }
+        if (ent === P && typeof clearBowTensionFX === 'function') clearBowTensionFX();
+    }
+}
+
+function resetBotRoundState(bot, index, totalBots, enableAI) {
+    if (!bot) return;
+    clearEntityChargeState(bot);
+    bot.hp = 100;
+    bot.stamina = 100;
+    bot.rage = 0;
+    bot.rageBuffEnd = -1;
+    bot._hadExhaustion = false;
+    bot.exhausted = 0;
+    bot.unbalanced = 0;
+    bot.vx = 0;
+    bot.vy = 0;
+    bot.vel = 0;
+    bot._hitCD = -1;
+    bot._swingBlockCD = -1;
+    bot._blockSlow = -1;
+    bot._debuffActive = false;
+    bot._debuffType = null;
+    bot._debuffUntil = -1;
+    bot._debuffIntensity = 0;
+    bot._wasExhausted = false;
+    bot._recovering = false;
+    bot._recoverProgress = 0;
+    bot._defeated = false;
+    if (bot.hasWeapon === false && typeof setWeapon === 'function') setWeapon(bot, bot.weaponType);
+    const ang = totalBots > 0 ? (index / totalBots) * Math.PI * 2 : 0;
+    const bx = $.M.clamp(W / 2 + 110 + Math.cos(ang) * 140, 60, W - 100);
+    const by = $.M.clamp(H / 2 + Math.sin(ang) * 140, 60, H - 60);
+    if (typeof assignRandomSkin === 'function') assignRandomSkin(bot);
+    if (typeof placeBotPendingReveal === 'function') placeBotPendingReveal(bot, bx, by);
+    else { bot.x = bx; bot.y = by; }
+    if (bot._aiState) {
+        bot._aiState.enabled = enableAI;
+        bot._aiState._fakeMDown = false;
+    }
+}
+
+function setBotAiEnabled(enabled) {
+    for (const bot of ALL_BOTS) {
+        if (bot && bot._aiState) bot._aiState.enabled = enabled;
+    }
+    if (AI) AI.enabled = enabled;
+    const toggleBtn = document.getElementById('dtoggle');
+    if (toggleBtn) {
+        toggleBtn.textContent = window.I18N ? window.I18N.buttonText('dtoggle', enabled ? 'on' : 'pause') : (enabled ? 'ON' : 'PAUSE');
+        toggleBtn.classList.toggle('on', enabled);
+    }
+}
+
+window.restartCombatRound = function(options = {}) {
+    const {
+        resetScore = false,
+        keepPlayerSide = false,
+        playerWon = false,
+        enableAI = true
+    } = options;
+    if (resetScore && typeof resetWins === 'function') resetWins();
+    resetPlayerState();
+    if (keepPlayerSide) {
+        P.x = playerWon ? W * 0.15 : W * 0.82;
+        P.y = H * 0.6;
+    }
+    if (dummyOn && typeof applyBotCount === 'function') applyBotCount();
+    if (dummyOn) {
+        ALL_BOTS.forEach((bot, index) => resetBotRoundState(bot, index, ALL_BOTS.length, enableAI));
+        if (ALL_BOTS.length > 0) {
+            const preferredMain = ALL_BOTS.find(bot => !bot._manualControl) || ALL_BOTS[0];
+            for (const bot of ALL_BOTS) {
+                if (!bot || !bot._aiState) continue;
+                bot._aiState._isMain = bot === preferredMain;
+                bot._aiState._mode = bot === preferredMain ? 'attack' : 'defence';
+                bot._aiState._phase = bot === preferredMain ? 'attack' : 'defence';
+            }
+            D = preferredMain;
+            AI = preferredMain._aiState;
+        }
+    }
+    DEATH.dDead = false;
+    DEATH.pDead = false;
+    DEATH.fadeIn = false;
+    DEATH.fadeAlpha = 0;
+    DEATH.text = '';
+    DEATH.textCol = '#fff';
+    document.body.classList.remove('menu-open');
+    if (typeof window._setUiMenuPaused === 'function') window._setUiMenuPaused(false);
+    if (typeof gamePaused !== 'undefined') gamePaused = false;
+    setBotAiEnabled(enableAI);
+};
 
 
 
 const DEATH = { pDead: false, dDead: false, deathCross: [], fadeAlpha: 0, fadeIn: false, text: '', textCol: '#fff' };
 
-// Смерть бойца при 1-10 ботах: если жив хотя бы один другой бот — этот просто
-// выбывает из боя (небольшой эффект, без экрана победы). Полноценный
-// triggerDeath (экран победы/поражения) вызывается только для последнего бота.
+// ─── DEATH HANDLER ──────────────────────────────────────────────────
+// Called when a character's HP reaches 0. Handles bot removal, victory/defeat logic.
 function handleCombatDeath(ent){
+  if(typeof FactionRules!=='undefined' && FactionRules.handleDeath(ent)) return;
   if(ent === P){ triggerDeath(P, false); return; }
   if(!isBot(ent)) return;
+  if(typeof disarmEntity === 'function' && ent.hasWeapon !== false) disarmEntity(ent);
+  ent._defeated = true;
+  const entIndex = ALL_BOTS.indexOf(ent);
+  if(entIndex !== -1) ALL_BOTS.splice(entIndex, 1);
   const aliveOthers = ALL_BOTS.filter(b=>b!==ent && b.hp>0);
   if(aliveOthers.length > 0){
-    const bc = entityBodyCenter(ent);
+    const bc = $.POS.body(ent);
     for(let i=0;i<8;i++) spawnBlood(bc.x, bc.y, Math.cos(i*Math.PI/4), Math.sin(i*Math.PI/4));
     DEATH.deathCross.push({x:bc.x, y:bc.y, timer:2.0, isBot:true});
-    playSound('death');
-    ent._defeated = true;
-    ALL_BOTS.splice(ALL_BOTS.indexOf(ent), 1);
+    $.S.play('death');
     if(ent === D){
-      // "умный" бот пал — корона переходит ближайшему из живых
-      const pC = entityBodyCenter(P);
+      // "Main" bot died — transfer crown to the nearest alive
+      const pC = $.POS.body(P);
       let best=null, bestDist=Infinity;
       for(const b of aliveOthers){
-        const bcc = entityBodyCenter(b);
+        const bcc = $.POS.body(b);
         const dd = Math.hypot(bcc.x-pC.x, bcc.y-pC.y);
         if(dd < bestDist){ bestDist = dd; best = b; }
       }
       if(best) switchSmartBot(best);
     }
   } else {
-    triggerDeath(ent, true); // последний бот — полноценный конец боя
+    triggerDeath(ent, true); // Last bot — trigger victory
   }
 }
 function triggerDeath(ent, isBot){
   if(isBot && DEATH.dDead) return;
   if(!isBot && DEATH.pDead) return;
-  const bc = entityBodyCenter(ent);
+  const bc = $.POS.body(ent);
   for(let i=0;i<8;i++) spawnBlood(bc.x, bc.y, Math.cos(i*Math.PI/4), Math.sin(i*Math.PI/4));
   DEATH.deathCross.push({x:bc.x, y:bc.y, timer:2.0, isBot});
   DEATH.fadeAlpha = 0;
   DEATH.fadeIn = true;
-  // Заморозка управления для обоих игроков
-  if(typeof NET_SYNC!=='undefined'&&NET_SYNC.active) NET_CORE.send({type:'freeze'});
-  playSound('death');
+  // Freeze game for both players in PvP
+  if(typeof NET_SYNC!=='undefined'&&$.NET.active()) $.NET.send({type:'freeze'});
+  $.S.play('death');
 
-  const pvpActive = typeof NET_SYNC!=='undefined' && NET_SYNC.active;
+  const pvpActive = typeof NET_SYNC!=='undefined' && $.NET.active();
 
-  // Локальный ресет — всегда применяется к себе
+  // ─── LOCAL RESET ──────────────────────────────────────────────
     const localReset = (iWon)=>{
-    // 🗑️ ЕДИНЫЙ СБРОС ИГРОКА
-    resetPlayerState();
-    
-    // Победитель — слева, проигравший — справа
-    if(pvpActive){
-      P.x = iWon ? W*0.15 : W*0.82;
-      P.y = H*0.6;
-    } else {
-      P.x = W*0.15;
-      P.y = H*0.8;
-    }
-    
-    if(dummyOn && !pvpActive){
-      if(typeof applyBotCount==='function') applyBotCount();
-      ALL_BOTS.forEach((b, idx)=>{
-        // Сбрасываем состояние зарядки у ботов
-        if(b._wandCharging) { b._wandCharging = false; if(b._wandChargeSoundObj) { try{b._wandChargeSoundObj.pause();}catch(e){} b._wandChargeSoundObj = null; } }
-        if(b._magicCharging) { b._magicCharging = false; if(b._magicChargeSoundObj) { try{b._magicChargeSoundObj.pause();}catch(e){} b._magicChargeSoundObj = null; } }
-        if(b._bowCharging) { b._bowCharging = false; if(b._bowTensionSound) { try{b._bowTensionSound.pause();}catch(e){} b._bowTensionSound = null; } }
-        b.hp=100; b.stamina=100; b.rage=0;
-        b._hadExhaustion=false; b.exhausted=0; b.unbalanced=0;
-        b.vx=0; b.vy=0; b.vel=0;
-        b._hitCD=-1;
-        b._swingBlockCD=-1;
-        b._blockSlow=-1;
-		        // Сбрасываем дебаффы у ботов
-        b._debuffActive = false;
-        b._debuffType = null;
-        b._debuffUntil = -1;
-        b._debuffIntensity = 0;
-        if(b.hasWeapon===false && typeof setWeapon==='function') setWeapon(b, b.weaponType);
-        const ang = (idx/ALL_BOTS.length)*Math.PI*2;
-        const bx = clamp(W/2+110+Math.cos(ang)*140, 60, W-100);
-        const by = clamp(H/2+Math.sin(ang)*140, 60, H-60);
-        if(typeof assignRandomSkin==='function') assignRandomSkin(b);
-        if(typeof placeBotPendingReveal==='function') placeBotPendingReveal(b, bx, by);
-        else { b.x = bx; b.y = by; }
-        // Сбрасываем флаги восстановления у ботов
-        b._wasExhausted = false;
-        b._recovering = false;
-        b._recoverProgress = 0;
-      });
-      D = ALL_BOTS[0];
-      AI = D._aiState;
-    }
-    DEATH.dDead=false; DEATH.pDead=false;
-    DEATH.fadeIn=false; DEATH.text='';
+    window.restartCombatRound({
+      keepPlayerSide: pvpActive,
+      playerWon: iWon,
+      enableAI: !pvpActive
+    });
+    return;
   };
 
   if(isBot){
-    // D умер — мы победили. ТОЛЬКО победитель шлёт reset.
+    // D died — victory for player
     DEATH.dDead = true;
-    DEATH.text = '🏆 ПОБЕДА!';
+    DEATH.text = 'VICTORY!';
     DEATH.textCol = '#ffdd44';
-    playSound('whooshRage');
-    playSound('victory');
-    if(typeof addWin==='function' && !(typeof NET_SYNC!=='undefined'&&NET_SYNC.active)) addWin(false); // локально
+    $.S.play('whooshRage');
+    $.S.play('victory');
+    if(typeof addWin==='function' && !(typeof NET_SYNC!=='undefined'&&$.NET.active())) addWin(false); // Player wins
     setTimeout(()=>{
-      localReset(true); // победитель → влево
+      localReset(true); // Restart with player win
       if(pvpActive) NET_SYNC.sendReset(true);
     }, 2000);
   } else {
-    // P умер — мы проиграли. Ждём reset от победителя.
-    // Если за 3 сек не пришёл — делаем сами.
+    // P died — defeat
     DEATH.pDead = true;
-    DEATH.text = '💀 ПОРАЖЕНИЕ';
+    DEATH.text = 'DEFEAT';
     DEATH.textCol = '#ff6060';
-    if(typeof addWin==='function' && !(typeof NET_SYNC!=='undefined'&&NET_SYNC.active)) addWin(true); // локально
+    if(typeof addWin==='function' && !(typeof NET_SYNC!=='undefined'&&$.NET.active())) addWin(true); // Bot wins
     if(pvpActive){
-      // Не шлём reset — победитель пришлёт
-      // Но на случай потери пакета — fallback через 3.5 сек
+      // Don't reset immediately — wait for opponent's confirmation
+      // But still reset after 3.5s as fallback
       setTimeout(()=>{
-        if(DEATH.pDead){ // если ещё не сбросили
+        if(DEATH.pDead){ // If still dead (not revived)
           localReset(false);
           NET_SYNC.sendReset(false);
         }
@@ -1716,13 +1534,13 @@ function triggerDeath(ent, isBot){
 }
 
 function drawDeathCrosses(){
-  // Затемнение + текст победы/поражения
+  // ─── DRAW DEATH CROSSES + FADE ──────────────────────────────────────
   if(DEATH.fadeIn || DEATH.fadeAlpha > 0){
     if(DEATH.fadeIn) DEATH.fadeAlpha = Math.min(0.78, DEATH.fadeAlpha + 0.022);
     else DEATH.fadeAlpha = Math.max(0, DEATH.fadeAlpha - 0.03);
     ctx.fillStyle = `rgba(0,0,0,${DEATH.fadeAlpha})`;
     ctx.fillRect(0, 0, W, H);
-    // Жирный текст по центру
+    // ─── VICTORY/DEFEAT TEXT ──────────────────────────────────────
     if(DEATH.text && DEATH.fadeAlpha > 0.3){
       const textAlpha = Math.min(1, (DEATH.fadeAlpha-0.3)/0.4);
       ctx.save();
@@ -1747,33 +1565,30 @@ function drawDeathCrosses(){
   }
 }
 
-// Оранжевая кнопка — переключение блок-отбрасывания
+// ─── BLOCK KNOCKBACK ──────────────────────────────────────────────────
+// Global flag for block knockback (used in doClash)
 let blockKnockOn = false;
 
-// ── КЛАЦ: отскок мечей ────────────────────────────────────────────────────────
+// ─── CLASH HANDLER ────────────────────────────────────────────────────
+// Called when two weapons collide: deflects defender's blade, pushes both apart, plays effects.
 function doClash(entA, entB, res, strongSwing){
   const ang = Math.atan2(entB.y - entA.y, entB.x - entA.x);
-  // Определяем кто атакующий (у кого больше atkPts)
+  // Determine attacker/defender based on atkPts (who is more aggressive)
   const atkr = entA.isAttacker ? entA : entB;
   const defr = entA.isAttacker ? entB : entA;
-  // Отклонение лезвия защищающегося: 5-30° в зависимости от силы удара (vel атакующего)
+  // Deflection: 5-30° depending on attacker's velocity (scaled by deflectMin/deflectMax)
   const atkForce = Math.abs(atkr.vel);
   const deflectDeg = Math.min(getDynamicDeflectMax(), sv('deflectMin') + atkForce * 20);
   const deflectRad = deflectDeg * Math.PI / 180;
 
-  // ── Направление отскока ────────────────────────────────────────────────
-  // ВАЖНО: нельзя определять сторону через нормаль отрезка (px-qx,py-qy) —
-  // у отрезка (линии) нет "лица" и "спины", поэтому такая нормаль симметрична
-  // относительно поворота на 180° и на половине оборота лезвия защищающегося
-  // даёт противоположный (неверный) знак.
-  // Вместо этого берём РЕАЛЬНОЕ направление лезвия защищающегося (defr.angle) —
-  // оно однозначно (от рукояти к острию), т.е. не симметрично на 360°.
-  // Точка удара — ближайшая точка на клинке атакующего к клинку защищающегося.
+  // ─── DEFLECTION DIRECTION ──────────────────────────────────────
+  // Use the impact point (res.px/res.py) relative to defender's pivot to determine
+  // which side of the blade the hit landed on — not the global angle.
   const defDirX = Math.cos(defr.angle), defDirY = Math.sin(defr.angle);
-  const pivDefr = entityPivot(defr);
+  const pivDefr = $.POS.pivot(defr);
   let hitX, hitY;
   
-   // 🔥 БАФФ "NO SLOW" — после блока (клэша) на 2 секунды отключаем разгон
+   // ─── "NO SLOW" FLAG ──────────────────────────────────────────
     if (entA === P || entB === P) {
         P._noSlowUntil = GameTime + 1.0;
     }
@@ -1786,40 +1601,38 @@ function doClash(entA, entB, res, strongSwing){
     hitX = atkr.x; hitY = atkr.y;
   }
   const relX = hitX - pivDefr.x, relY = hitY - pivDefr.y;
-  // Кросс-произведение направления лезвия защищающегося и вектора к точке удара.
-  // Знак кросс-произведения не зависит от симметрии линии — только от того,
-  // с какой стороны от лезвия (если смотреть от рукояти к острию) находится удар.
+  // Cross product: positive = hit from clockwise side, negative = counter-clockwise
   const cross = defDirX*relY - defDirY*relX;
-  // cross > 0 → удар пришёлся с одной стороны лезвия → по часовой (+1)
-  // cross < 0 → удар пришёлся с другой стороны → против часовой (-1)
+  // cross > 0 → hit came from the clockwise side (+1)
+  // cross < 0 → hit came from the counter-clockwise side (-1)
   const deflectDir = cross >= 0 ? -1 : 1;
   defr.angle += deflectDir * deflectRad;
   defr.vel += deflectDir * deflectRad * 4;
 
-  // ── ДЕБАГ: направление отскока от удара игрока (только консоль) ───────────
+  // ─── APPLY PUSH ──────────────────────────────────────────────────
+  // Push both fighters apart (attacker and defender) with a knockback effect.
   if(typeof document!=='undefined' && cb('clashdbg')
      && typeof P!=='undefined' && atkr===P){
-    const dirTxt = deflectDir > 0 ? 'ПО ЧАСОВОЙ' : 'ПРОТИВ ЧАСОВОЙ';
-    console.log(`[CLASH DEBUG] Отскок: ${dirTxt} | cross=${cross.toFixed(3)} | defr.angle=${(defr.angle*180/Math.PI).toFixed(1)}° | hitX=${hitX.toFixed(1)}, hitY=${hitY.toFixed(1)} | pivDefr=(${pivDefr.x.toFixed(1)},${pivDefr.y.toFixed(1)}) | atkr.vel=${atkr.vel.toFixed(2)}`);
+    const dirTxt = deflectDir > 0 ? '⬅ CLOCKWISE' : '⬅ COUNTER-CLOCKWISE';
+    console.log(`[CLASH DEBUG] Clash: ${dirTxt} | cross=${cross.toFixed(3)} | defr.angle=${(defr.angle*180/Math.PI).toFixed(1)}° | hitX=${hitX.toFixed(1)}, hitY=${hitY.toFixed(1)} | pivDefr=(${pivDefr.x.toFixed(1)},${pivDefr.y.toFixed(1)}) | atkr.vel=${atkr.vel.toFixed(2)}`);
   }
 
-  // Отскок мечей: атакующий — сильно назад, defender — слабее назад
-  // "Назад" = против текущего направления вращения
-  const atkSign = atkr.vel >= 0 ? 1 : -1; // +1 = по часовой
-  atkr.vel = clamp(-atkSign * 3.0, -8, 8);  // реверс направления
-  defr.vel = clamp(-atkSign * 1.5, -8, 8);  // defender тоже реверс
+  // Clash: attacker's weapon goes backward, defender's weapon goes backward too (both rebound)
+  const atkSign = atkr.vel >= 0 ? 1 : -1; // +1 = clockwise direction
+  atkr.vel = $.M.clamp(-atkSign * 3.0, -8, 8);  // attacker rebounds
+  defr.vel = $.M.clamp(-atkSign * 1.5, -8, 8);  // defender rebounds slightly less
 
-  // Отталкивание — по вектору от тела к телу (надёжнее чем по нормали меча)
-  // ±30° случайный разброс чтобы не было всегда перпендикулярно
+  // ─── KNOCKBACK ──────────────────────────────────────────────────
+  // Apply a physical push that separates the two fighters (like a real clash).
   const push = Math.min(sv('bladeKB'), 25);
   if(push > 0){
     const bodyLen = Math.hypot(entB.x-entA.x, entB.y-entA.y) || 1;
     const bodyAng = Math.atan2(entB.y-entA.y, entB.x-entA.x);
-    // Подмешиваем направление меча атакующего для +реализм (±30°)
+    // Apply knockback in the direction of the swing (with a 30° bias)
     const swordBias = Math.atan2(
       Math.sin(atkr.angle)*0.5, Math.cos(atkr.angle)*0.5
     );
-    const finalAng = bodyAng + clamp(angDiff(swordBias, bodyAng), -Math.PI/6, Math.PI/6);
+    const finalAng = bodyAng + $.M.clamp($.M.angDiff(swordBias, bodyAng), -Math.PI/6, Math.PI/6);
     const pushX = Math.cos(finalAng), pushY = Math.sin(finalAng);
     // Separate knockback impulse cannot be overwritten by held movement.
     entA._dvx = (entA._dvx || 0) - pushX*push;
@@ -1830,54 +1643,46 @@ function doClash(entA, entB, res, strongSwing){
     entB._moveLockUntil = Math.max(entB._moveLockUntil || 0, GameTime + 0.35);
   }
 
-// Блок-отбрасывание если включено
+// ─── BLOCK KNOCKBACK ──────────────────────────────────────────────
   if(blockKnockOn){
     const bkb = sv('blockKB');
-    // Атакованный (defender) летит ОТ атакующего
+    // Attacker (aggressor) pushes defender (blocker) backward
     const atkr = entA.isAttacker ? entA : entB;
     const defr = entA.isAttacker ? entB : entA;
     const bkAng = Math.atan2(defr.y-atkr.y, defr.x-atkr.x);
-    // ── Используем _dvx/_dvy (тот же механизм, что и у доджа) вместо
-    // прямой добавки к vx/vy ──────────────────────────────────────────
-    // vx/vy каждый кадр пересчитываются через lerpDT() от текущего ввода
-    // движения (WASD у игрока / ai._fakeKeys у бота) — если персонаж в
-    // момент клэша продолжает жать движение, lerpDT почти мгновенно
-    // "перетягивает" скорость обратно к вводу и одноразовая += к vx/vy
-    // гасится за один-два тика, не успев сдвинуть персонажа. _dvx/_dvy —
-    // отдельный импульс, который применяется ПОВЕРХ обычного движения
-    // (см. блок "Применяем dodge impulse" в update()/updateDummy()) и
-    // затухает сам по экспоненте, поэтому не может быть мгновенно
-    // перебит зажатой клавишей.
+    // ─── USE _dvx/_dvy (like dodge) instead of vx/vy directly ──
+    // vx/vy are per-frame velocities that get overridden by $.M.lerpDT() with current input
+    // (WASD for player / ai._fakeKeys for bot) — they won't persist if we just += to vx/vy
+    // while input is held. _dvx/_dvy are impulse-based, applied in update()/updateDummy() and
+    // decay over time, so they correctly override the current movement.
     const _defrKick = bkb + sv('kbforce')*0.3;
     defr._dvx = (defr._dvx||0) + Math.cos(bkAng)*_defrKick;
     defr._dvy = (defr._dvy||0) + Math.sin(bkAng)*_defrKick;
     const _atkrKick = (bkb + sv('kbforce')*0.3) * 0.5;
     atkr._dvx = (atkr._dvx||0) - Math.cos(bkAng)*_atkrKick;
     atkr._dvy = (atkr._dvy||0) - Math.sin(bkAng)*_atkrKick;
-    // Стан-лок движения: на 0.5 сек полностью глушим реакцию на
-    // WASD/AI-ввод, иначе _dvx/_dvy просто СУММИРУЕТСЯ с обычным
-    // ускорением от зажатой клавиши, и толчок ощущается как "поехал чуть
-    // медленнее", а не как настоящий отскок назад.
+    // ─── MOVE LOCK ──────────────────────────────────────────────
     defr._moveLockUntil = GameTime + 0.5;
     atkr._moveLockUntil = GameTime + 0.5;
   }
 
-  // Эффект: молния + КЛАЦ
-  hitFX.push({x:hitX, y:hitY-4, t:'⚡', life:12, big:true, col:'#ffffff'});
-  hitFX.push({x:hitX, y:hitY+14, t:'КЛАЦ!', life:35, big:false, col:'#ccccaa'});
-  // strongSwing передаётся как параметр
+  // ─── EFFECTS ──────────────────────────────────────────────────────
+  $.FX.hit({x:hitX, y:hitY-4, t:'⚡', life:12, big:true, col:'#ffffff'});
+  $.FX.hit({x:hitX, y:hitY+14, t:(window.I18N ? window.I18N.t('combat.clash') : 'CLASH!'), life:35, big:false, col:'#ccccaa'});
+  // strongSwing creates a flash and cross effect
   if(strongSwing && Math.random() < 0.04) spawnFX('flash', hitX, hitY);
-  // Cross FX только при настоящем замахе
+  // Cross FX at the clash point
   if(strongSwing){
     spawnFX('cross', hitX, hitY);
   }
-  // Замедление обоих при блоке
+  // ─── SLOW DOWN ──────────────────────────────────────────────────
   const sld = sv('blockSlowDur');
   if(sld > 0){
     entA._blockSlow = GameTime + sld;
     entB._blockSlow = GameTime + sld;
   }
-  // Отключаем детект замаха на 0.25 сек (блок резко отклоняет меч)
+  // ─── BLOCK COOLDOWN ────────────────────────────────────────────
+  // Prevents spam (0.25s cooldown for both fighters)
   entA._swingBlockCD = GameTime + 0.25;
   entB._swingBlockCD = GameTime + 0.25;
 }
@@ -1885,7 +1690,7 @@ function doClash(entA, entB, res, strongSwing){
 
 
 function shieldCenter(ent, cursorX){
-  const c = entityBodyCenter(ent);
+  const c = $.POS.body(ent);
   const def = shieldDef(ent);
   if(!def) return null;
   const _autoSide = (cursorX < c.x) ? 1 : -1;
@@ -1899,14 +1704,15 @@ function shieldCenter(ent, cursorX){
 }
 
 
-// ── КОЛЛИЗИЯ ЩИТ vs МЕЧ ─────────────────────────────────────────────────────
-// Возвращает true если меч attacker попал по щиту defender и заблокирован
+// ─── SHIELD VS BLADE ──────────────────────────────────────────────────
+// Checks if the defender's shield blocks the attacker's blade.
 function checkShieldVsBlade(attacker, defender, bx1,by1, tx1,ty1){
   const def = shieldDef(defender);
   if(!def) return false;
   if(DEATH.pDead || DEATH.dDead) return false;
 
-  // При LMB атаке щит не работает (жезл/арбалет в счёт не идут — это не замах)
+  // ─── LMB ACTIVE ──────────────────────────────────────────────────
+  // Shield doesn't block if LMB is held (weapon is active)
   const lmbActive = (defender===P) ? (mDown && !isRangedWeapon(defender) && weaponKeyOf(defender) !== 'flail') : false;
   if(lmbActive) return false;
   if(defender._shieldAlpha < 0.5) return false;
@@ -1916,66 +1722,59 @@ function checkShieldVsBlade(attacker, defender, bx1,by1, tx1,ty1){
   const sc = shieldCenter(defender, curX);
   if(!sc) return false;
 
-  // Пересчитываем размер щита напрямую — не зависим от drawShield
+  // ─── SHIELD BOUNDS ──────────────────────────────────────────────
   const _cDef = shieldDef(defender);
   const _cH = CHAR_SPRITE_H * sv('cscl') * 1.2 * (_cDef?_cDef.scale:1);
   const _cW = _cH * 0.75; // fallback aspect ratio
   const shW = (defender._shieldW>0 ? defender._shieldW : _cW);
   const shH = (defender._shieldH>0 ? defender._shieldH : _cH);
-  // Башенный щит — чуть шире коллайдер
+  // ─── SHIELD SIZE ──────────────────────────────────────────────
   const shWfinal = (defender.shield===3) ? shW*1.2 : shW;
-  // Простая AABB для щита (немного упрощённо)
+  // ─── SIMPLE AABB ──────────────────────────────────────────────
   const left=sc.x-shWfinal/2, right=sc.x+shWfinal/2;
   const top=sc.y-shH/2, bot=sc.y+shH/2;
-  // debug коллайдер (раскомментировать при отладке)
+  // debug collider (uncomment for testing)
   // ctx.strokeStyle='#f00'; ctx.strokeRect(left,top,shWfinal,shH);
 
-  // Проверяем пересечение отрезка меча с прямоугольником щита
-  // (используем общий segmentIntersectsRect из MODULE: MATH HELPERS —
-  // раньше здесь была локальная копия той же логики)
+  // ─── INTERSECTION TEST ────────────────────────────────────────
+  // (using segmentIntersectsRect from MATH HELPERS module)
   if(!segmentIntersectsRect(bx1,by1,tx1,ty1, left,top,right,bot)) return false;
 
-  // Попадание по щиту
+  // ─── HIT EFFECTS ──────────────────────────────────────────────
   const mx=(bx1+tx1)/2, my2=(by1+ty1)/2;
   applyShieldBlockFX(mx, my2, attacker, defender, {hitstopMag:3, waveDuration:22, unbalanceAmt:1.2, textLife:35});
   const _bvx=(tx1-bx1), _bvy=(ty1-by1), _bl=Math.hypot(_bvx,_bvy)||1;
   attacker.vx -= _bvx/_bl*4;
   attacker.vy -= _bvy/_bl*4;
-  // 10% шанс bladeblind атакующего
-  if(Math.random()<0.10 && typeof triggerBladeBind==='function'){
-    triggerBladeBind(defender, attacker);
-    hitFX.push({x:mx,y:my2-25,t:'BIND!',life:40,big:false,col:'#ffcc44'});
-  }
   return true;
 }
 
-// ── ЦИКЛ ────────────────────────────────────────────────────────────────────
-// (lastT/GameTime/RealTime/rawDt перенесены в ЯДРО ДВИЖКА в начало файла —
-// это общее игровое время, читается практически всеми модулями)
+// ─────────────────────────────────────────────────────────────────────────────────
+// ─── FLICK/ORBIT DETECTORS ─────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────────
+// (lastT/GameTime/RealTime/rawDt are global variables defined in main — 
+// they are accessible here and updated every frame.)
 
-// ── Детектор флик-замаха (быстрое туда-сюда курсором) ────────────────────
-// Работает через GameTime (не FPS-зависимо): накапливает угловую скорость
-// за реальное время, детектит пик и смену направления.
-const FLICK = {
-  prevSwordAngle: null, // P.angle предыдущего кадра (для realAngVel)
-  curDir: 0,        // направление текущего маха
-  curAmp: 0,        // накопленная амплитуда текущего маха
-  swings: [],       // история завершённых махов: {time, amp}
-};
-
-// ── Детектор орбиты меча (вращение вокруг себя без ЛКМ) ─────────────────
+// ─── ORBIT DETECTOR ──────────────────────────────────────────────────
+// Detects continuous circular motion (orbit) without flicking.
 const ORBIT = {
-  accumAngle: 0,   // накопленный угол (рад)
+  accumAngle: 0,   // accumulated angle (radians)
   lastAngle: null,
   windowStart: -1,
   lastDir: 0,
+};
+
+const FLICK = {
+  swings: [],
+  curDir: 0,
+  curAmp: 0,
 };
 
 function updateOrbitDetect(swordAngle, rawDt) {
   if (!cb('orbitdet')) return false;
   if (mDown) { ORBIT.accumAngle = 0; ORBIT.lastAngle = null; ORBIT.lastDir = 0; return false; }
   
-  // ✅ БЕЗ ОРУЖИЯ — НЕТ ОРБИТЫ
+  // ─── IF PLAYER HAS NO WEAPON ──────────────────────────────────
   if (P.hasWeapon === false) return false;
 
   if (ORBIT.lastAngle === null) { ORBIT.lastAngle = swordAngle; ORBIT.windowStart = RealTime; return false; }
@@ -1989,7 +1788,7 @@ function updateOrbitDetect(swordAngle, rawDt) {
     return false;
   }
 
-  const dAng = angDiff(swordAngle, ORBIT.lastAngle);
+  const dAng = $.M.angDiff(swordAngle, ORBIT.lastAngle);
   ORBIT.lastAngle = swordAngle;
 
   const curDir = Math.sign(dAng);
@@ -2011,14 +1810,14 @@ function updateOrbitDetect(swordAngle, rawDt) {
   return false;
 }
 
-// Детект серии быстрых махов туда-сюда: >= flickCount маха за flickWindow
-// секунд, каждый мах с |realAngVel| > flickMinVel и амплитудой
-// flickMinAmp <= amp <= flickMinAmp*flickmaxmult (откалибровано в FlickTest.html:
-// flickcount=2, flickmaxmult=5 — "идеально").
-// curAngle здесь — уже realAngVel (рад/сек), посчитанный снаружи с клампом шага.
+// ─── FLICK DETECTOR ──────────────────────────────────────────────────
+// Detects rapid direction changes: >= flickCount swings within flickWindow
+// seconds, with |realAngVel| > flickMinVel and amplitude between
+// flickMinAmp <= amp <= flickMinAmp*flickmaxmult (from FlickTest.html:
+// flickcount=2, flickmaxmult=5 — "ideal").
+// curAngle here is the same as realAngVel (rad/frame), pre-calculated from sword angle.
 function updateFlickDetect(realAngVel, rawDt) {
   if (!cb('flickdet')) return false;
-if (weaponKeyOf(P) === 'flail' && P._flailExt < 0.97) return false;
   const flickWindow  = sv('flickwindow');
   const flickMinVel  = sv('flickminvel');
   const flickMinAmp  = sv('flickminamp');
@@ -2028,7 +1827,7 @@ if (weaponKeyOf(P) === 'flail' && P._flailExt < 0.97) return false;
   const dir = Math.sign(realAngVel);
   const fastEnough = Math.abs(realAngVel) > flickMinVel;
 
-  // Убираем устаревшие махи из истории (старше flickWindow)
+  // ─── FILTER SWINGS WITHIN WINDOW ──────────────────────────────
   FLICK.swings = FLICK.swings.filter(s => RealTime - s.time <= flickWindow);
 
   if (dir === 0) return false;
@@ -2048,14 +1847,14 @@ if (weaponKeyOf(P) === 'flail' && P._flailExt < 0.97) return false;
     return false;
   }
 
-  // Смена направления — завершаем текущий мах.
+  // ─── DIRECTION CHANGE — record swing ──────────────────────────
   if (FLICK.curAmp >= flickMinAmp && FLICK.curAmp <= flickMinAmp * flickMaxMult) {
     FLICK.swings.push({ time: RealTime, amp: FLICK.curAmp });
   } else if (FLICK.curAmp > flickMinAmp * flickMaxMult) {
-    // Слишком широкий мах — сбрасывает серию
+    // Too large swing — reset the sequence
     FLICK.swings = [];
   }
-  // amp < flickMinAmp — слишком мелкое движение, игнорируем без сброса
+  // amp < flickMinAmp — ignore, keep accumulating
 
   if (fastEnough) {
     FLICK.curDir = dir;
@@ -2074,6 +1873,8 @@ if (weaponKeyOf(P) === 'flail' && P._flailExt < 0.97) return false;
   return false;
 }
 
-// ──────────────── END LAYER: COMBAT ────────────────
+// ─────────────────────────────────────────────────────────────────────────────────
+// END LAYER: COMBAT
+// ─────────────────────────────────────────────────────────────────────────────────
 
-// ════════════════════════════════════════════════════════════════════════════
+// ••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••

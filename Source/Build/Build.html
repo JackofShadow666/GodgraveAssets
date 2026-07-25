@@ -1,9 +1,9 @@
-<!DOCTYPE html>
-<html lang="ru">
+﻿<!DOCTYPE html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sword — КОМБО + Body Offset</title>
+<title>Sword - Combat + Body Offset</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Oswald:wght@300;600&display=swap');
 *{margin:0;padding:0;box-sizing:border-box;user-select:none;}
@@ -12,9 +12,9 @@ canvas{display:block;position:fixed;top:0;left:0;cursor:none;}
 #panel{
   position:fixed;top:0;right:0;width:280px;height:100vh;
   background:#0a0e14;border-left:1px solid #1a2e44;
-  display:none;flex-direction:column;overflow:hidden;  /* скрыта по умолчанию */
+  display:none;flex-direction:column;overflow:hidden;  /* Hidden until toggle, scrolls internally */
   box-shadow:-6px 0 30px rgba(0,0,0,0.7);
-  z-index:2000; /* всегда поверх HUD/канваса, не должна сдвигать другие элементы */
+  z-index:2000; /* Above HUD/canvas, doesn't shift game view */
 }
 #panel.open{ display:flex; }
 #ph{padding:14px 16px 10px;border-bottom:1px solid #1a2e44;flex-shrink:0;}
@@ -50,7 +50,7 @@ canvas{display:block;position:fixed;top:0;left:0;cursor:none;}
 /* debug marker */
 .root-dot{pointer-events:none;}
 
-/* ── ЕДИНАЯ СИСТЕМА МЕНЮ ───────────────────────────────────── */
+/* ─── OVERLAY SYSTEM ──────────────────────────────────────────────── */
 .game-overlay{
   display:none;
   position:fixed;inset:0;z-index:5000;
@@ -62,13 +62,13 @@ canvas{display:block;position:fixed;top:0;left:0;cursor:none;}
   -webkit-user-select:text;user-select:text;
   box-sizing:border-box;
 }
-/* Вертикальное центрирование только если контент меньше экрана */
+/* Vertically center name overlay if enough space */
 @media(min-height:600px){
   #name-overlay.open{ justify-content:center; }
 }
 .game-overlay.open{display:flex;}
 
-/* Скрываем ВСЁ кроме самого overlay */
+/* Hide game UI when any overlay is open */
 body.menu-open canvas,
 body.menu-open #hud,
 body.menu-open #pvp-hud,
@@ -155,14 +155,14 @@ body.menu-open #mob-zone-btn{ visibility:hidden !important; }
 <body>
 <canvas id="c"></canvas>
 <div id="hud" style="position:fixed;top:16px;left:0;width:100%;pointer-events:none;font-family:'Share Tech Mono',monospace;padding:0 24px;display:flex;justify-content:space-between;align-items:flex-start;gap:16px;">
-  <!-- Игрок слева -->
+  <!-- PLAYER HUD -->
   <div id="hud-player" style="width:220px;">
     <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
-      <span style="font-size:9px;color:#4a90c8;letter-spacing:1px;" id="hud-player-name">ИГРОК</span>
+      <span style="font-size:10px;color:#dff4ff;letter-spacing:1px;font-weight:900;background:rgba(5,15,25,.78);padding:2px 6px;border-radius:3px;text-shadow:0 0 6px #5ab8ff;" id="hud-player-name">PLAYER</span>
       <span id="hud-p-wins" style="font-size:11px;color:#4acc80;letter-spacing:1px;font-weight:bold;"></span>
       <span id="hud-p-status" style="font-size:9px;color:#ffaa44;"></span>
     </div>
-    <div style="background:rgba(0,0,0,0.6);border:1px solid #1a3a20;border-radius:2px;height:11px;margin-bottom:3px;overflow:hidden;">
+    <div style="background:rgba(0,0,0,0.6);border:2px solid #f0f4ff;border-radius:2px;height:11px;margin-bottom:3px;overflow:hidden;box-shadow:0 0 5px rgba(255,255,255,.35);">
       <div id="hud-p-hp" style="height:100%;background:#2acc50;width:100%;transition:width 0.08s;"></div>
     </div>
     <div style="background:rgba(0,0,0,0.5);border:1px solid #2a2a10;border-radius:2px;height:7px;margin-bottom:3px;overflow:hidden;">
@@ -172,18 +172,18 @@ body.menu-open #mob-zone-btn{ visibility:hidden !important; }
       <div id="hud-p-rage" style="height:100%;background:linear-gradient(90deg,#cc2020,#ff5020);width:0%;transition:width 0.12s;"></div>
     </div>
     <div style="display:flex;margin-top:2px;font-size:7px;color:#3a6080;">
-      <span>HP</span><span style="flex:1;text-align:center;color:#8a7020;">СТАМ</span><span style="color:#802020;">ЯРОСТЬ</span>
+      <span>HP</span><span style="flex:1;text-align:center;color:#8a7020;">STAM</span><span style="color:#802020;">RAGE</span>
     </div>
     <div id="hud-p-buff" style="font-size:9px;color:#ff4040;margin-top:2px;letter-spacing:1px;"></div>
   </div>
-  <!-- Бот справа -->
+  <!-- BOT HUD -->
   <div id="hud-bot" style="width:220px;text-align:right;opacity:0;transition:opacity 0.3s;">
     <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
       <span id="hud-b-phase" style="font-size:9px;letter-spacing:0.5px;"></span>
       <span id="hud-b-wins" style="font-size:11px;color:#cc4040;letter-spacing:1px;font-weight:bold;"></span>
-      <span style="font-size:9px;color:#c84a4a;letter-spacing:1px;">БОТ</span>
+      <span id="hud-b-label" style="font-size:10px;color:#dff4ff;letter-spacing:1px;font-weight:900;background:rgba(5,15,25,.78);padding:2px 6px;border-radius:3px;text-shadow:0 0 6px #398cff;">BOT</span>
     </div>
-    <div style="background:rgba(0,0,0,0.6);border:1px solid #3a1a10;border-radius:2px;height:11px;margin-bottom:3px;overflow:hidden;">
+    <div style="background:rgba(0,0,0,0.6);border:2px solid #287cff;border-radius:2px;height:11px;margin-bottom:3px;overflow:hidden;box-shadow:0 0 5px rgba(40,124,255,.4);">
       <div id="hud-b-hp" style="height:100%;background:#cc4040;width:100%;transition:width 0.08s;"></div>
     </div>
     <div style="background:rgba(0,0,0,0.5);border:1px solid #2a2a10;border-radius:2px;height:7px;margin-bottom:3px;overflow:hidden;">
@@ -193,15 +193,32 @@ body.menu-open #mob-zone-btn{ visibility:hidden !important; }
       <div id="hud-b-rage" style="height:100%;background:linear-gradient(90deg,#ff5020,#cc2020);width:0%;transition:width 0.12s;float:right;"></div>
     </div>
     <div style="display:flex;margin-top:2px;font-size:7px;color:#5a4040;">
-      <span style="color:#802020;">ЯРОСТЬ</span><span style="flex:1;text-align:center;color:#8a7020;">СТАМ</span><span>HP</span>
+      <span style="color:#802020;">RAGE</span><span style="flex:1;text-align:center;color:#8a7020;">STAM</span><span>HP</span>
     </div>
     <span id="hud-b-status" style="font-size:9px;color:#ffaa44;"></span>
   </div>
 </div>
 
-<div id="adisplay">pivot: (0,0) | угол: 0°</div>
+<!-- Slots 3-4 are placed at the bottom for future four-player local PvP. -->
+<div id="hud-local-bottom" style="position:fixed;bottom:16px;left:24px;right:24px;pointer-events:none;font-family:'Share Tech Mono',monospace;display:flex;justify-content:space-between;align-items:flex-end;gap:16px;z-index:20;">
+  <div id="hud-player-3" style="display:none;width:220px;">
+    <div style="font-size:10px;color:#eafff0;letter-spacing:1px;font-weight:900;background:rgba(5,15,25,.78);padding:2px 6px;border-radius:3px;margin-bottom:3px;text-shadow:0 0 6px #24d66b;display:inline-block;">PLAYER 3</div>
+    <div style="background:rgba(0,0,0,.6);border:2px solid #24d66b;height:11px;margin-bottom:3px;overflow:hidden;"><div data-hp style="height:100%;background:#2acc50;width:100%;"></div></div>
+    <div style="background:rgba(0,0,0,.5);border:1px solid #2a2a10;height:7px;margin-bottom:3px;overflow:hidden;"><div data-stam style="height:100%;background:#ccaa20;width:100%;"></div></div>
+    <div style="background:#1a0808;border:1px solid #5a1010;height:5px;overflow:hidden;"><div data-rage style="height:100%;background:#2060cc;width:0%;"></div></div>
+  </div>
+  <div id="hud-player-4" style="display:none;width:220px;text-align:right;">
+    <div style="font-size:10px;color:#f4f4f4;letter-spacing:1px;font-weight:900;background:rgba(5,5,5,.82);padding:2px 6px;border-radius:3px;margin-bottom:3px;text-shadow:0 0 5px #888;display:inline-block;">PLAYER 4</div>
+    <div style="background:rgba(0,0,0,.6);border:2px solid #181818;height:11px;margin-bottom:3px;overflow:hidden;box-shadow:0 0 0 1px #555;"><div data-hp style="height:100%;background:#2acc50;width:100%;float:right;"></div></div>
+    <div style="background:rgba(0,0,0,.5);border:1px solid #2a2a10;height:7px;margin-bottom:3px;overflow:hidden;"><div data-stam style="height:100%;background:#ccaa20;width:100%;float:right;"></div></div>
+    <div style="background:#1a0808;border:1px solid #5a1010;height:5px;overflow:hidden;"><div data-rage style="height:100%;background:#2060cc;width:0%;float:right;"></div></div>
+  </div>
+</div>
 
-<!-- ПВП HUD — виден во время сетевой игры -->
+<div id="adisplay">pivot: (0,0) | angle: 0°</div>
+
+<!-- ─── PVP HUD ─────────────────────────────────────────────────────── -->
+<!-- Visible during PvP, shows peer name and ping -->
 <div id="pvp-hud" style="
   display:none; position:fixed; bottom:14px; left:50%; transform:translateX(-50%);
   background:rgba(8,14,22,0.9); border:1px solid #1a3a54; border-radius:20px;
@@ -214,225 +231,257 @@ body.menu-open #mob-zone-btn{ visibility:hidden !important; }
   <button onclick="openMenu('net-overlay');showNetScreen('net-screen-chat');"
     style="background:rgba(20,50,80,0.9);border:1px solid #2a6a9a;color:#6ab0d0;
     padding:4px 10px;border-radius:12px;cursor:pointer;font-family:inherit;font-size:10px;">
-    💬 ЧАТ
+    💬 CHAT
   </button>
   <button onclick="NET_SYNC.disconnect();"
     style="background:rgba(50,10,10,0.9);border:1px solid #6a2020;color:#cc5050;
     padding:4px 10px;border-radius:12px;cursor:pointer;font-family:inherit;font-size:10px;">
-    ✕ ВЫЙТИ
+    ⚡ EXIT
   </button>
 </div>
 
 <div id="panel">
   <div id="ph">
-    <h2>⚔ КОМБО · BODY OFFSET</h2>
-    <p>МЕЧ → РУТ. ТЕЛО СМЕЩАЕТСЯ ПРОТИВ КУРСОРА.<br>АНИМАЦИЯ ВЕСА И ИНЕРЦИИ.</p>
+    <h2>⚙️ SWORD CONTROLS + BODY OFFSET</h2>
+    <p>Live tuning. Change any slider and see the effect immediately.<br>All settings are saved locally.</p>
   </div>
-  <!-- ════════════════════════════════════════════════════════════════════
-       MODULE: SETTINGS PANEL  (все ползунки и галочки настроек)
+  <!-- ••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+       MODULE: SETTINGS PANEL  (all sliders and checkboxes)
        Future: extract to settings-panel.html, load via fetch+innerHTML
-       ════════════════════════════════════════════════════════════════════ -->
+       •••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••• -->
   <div id="controls">
-    <!-- БЛОК: СВЕЧЕНИЕ ИГРОКА -->
+    <!-- ─── SECTION: GAMEPAD FLICK SETTINGS ─── -->
     <div class="sec">
-      <div class="sec-title">█ СВЕЧЕНИЕ ИГРОКА</div>
+      <div class="sec-title">⚡ GAMEPAD FLICK SETTINGS</div>
       <div class="row">
-        <div class="row-head"><label>Интенсивность</label><span class="val" id="vl-playerglow">1.0</span></div>
+        <div class="row-head"><label>Player glow</label><span class="val" id="vl-playerglow">1.0</span></div>
         <input type="range" id="sl-playerglow" min="0" max="3" step="0.1" value="1.0">
+      </div>
+      <div class="row">
+        <div class="row-head"><label>Player respawn (legacy)</label><span class="val" id="vl-playerrespawn-legacy">15</span></div>
+        <input type="range" id="sl-playerrespawn-legacy" min="0" max="30" step="1" value="15">
+      </div>
+      <div class="row" style="flex-direction:row;align-items:center;gap:7px;">
+        <input type="checkbox" id="cb-gamepadflickdet-legacy" style="accent-color:#ccaa30;cursor:pointer;" checked>
+        <label for="cb-gamepadflickdet-legacy" style="font-size:8px;color:#8a7020;cursor:pointer;letter-spacing:0.5px;">Gamepad: separate flick detect (legacy)</label>
+      </div>
+      <div class="row">
+        <div class="row-head"><label style="color:#8a7020;">Gamepad flick: window (sec)</label><span class="val" id="vl-gamepadflickwindow-legacy" style="color:#ccaa30;">1</span></div>
+        <input type="range" id="sl-gamepadflickwindow-legacy" min="0.05" max="1.5" step="0.05" value="1" style="accent-color:#ccaa30;">
+      </div>
+      <div class="row">
+        <div class="row-head"><label style="color:#8a7020;">Gamepad flick: min speed</label><span class="val" id="vl-gamepadflickminvel-legacy" style="color:#ccaa30;">3.2</span></div>
+        <input type="range" id="sl-gamepadflickminvel-legacy" min="0.5" max="8.0" step="0.1" value="3.2" style="accent-color:#ccaa30;">
+      </div>
+      <div class="row">
+        <div class="row-head"><label style="color:#8a7020;">Gamepad flick: min amplitude</label><span class="val" id="vl-gamepadflickminamp-legacy" style="color:#ccaa30;">0.4</span></div>
+        <input type="range" id="sl-gamepadflickminamp-legacy" min="0.05" max="2.0" step="0.05" value="0.4" style="accent-color:#ccaa30;">
+      </div>
+      <div class="row">
+        <div class="row-head"><label style="color:#8a7020;">Gamepad flick: swing count</label><span class="val" id="vl-gamepadflickcount-legacy" style="color:#ccaa30;">2</span></div>
+        <input type="range" id="sl-gamepadflickcount-legacy" min="2" max="8" step="1" value="2" style="accent-color:#ccaa30;">
+      </div>
+      <div class="row">
+        <div class="row-head"><label style="color:#8a7020;">Gamepad flick: max amplitude</label><span class="val" id="vl-gamepadflickmaxmult-legacy" style="color:#ccaa30;">5</span></div>
+        <input type="range" id="sl-gamepadflickmaxmult-legacy" min="1.5" max="10" step="0.5" value="5" style="accent-color:#ccaa30;">
+      </div>
+      <div class="row">
+        <div class="row-head"><label style="color:#8a7020;">Gamepad flick: stamina</label><span class="val" id="vl-gamepadstamflick-legacy" style="color:#ccaa30;">25</span></div>
+        <input type="range" id="sl-gamepadstamflick-legacy" min="0" max="60" step="5" value="25" style="accent-color:#ccaa30;">
       </div>
     </div>
 
-    <!-- БЛОК: ФОН АРЕНЫ -->
+    <!-- ─── SECTION: BACKGROUND ─── -->
     <div class="sec">
-      <div class="sec-title">█ ФОН АРЕНЫ</div>
+      <div class="sec-title">🎨 BACKGROUND</div>
       <div class="row">
-        <div class="row-head"><label>Яркость фона</label><span class="val" id="vl-bgbright">1.8</span></div>
+        <div class="row-head"><label>Brightness</label><span class="val" id="vl-bgbright">1.8</span></div>
         <input type="range" id="sl-bgbright" min="0" max="5" step="0.1" value="1.8">
       </div>
       <div class="row">
-        <div class="row-head"><label>Яркость сетки</label><span class="val" id="vl-gridbright">1</span></div>
+        <div class="row-head"><label>Grid brightness</label><span class="val" id="vl-gridbright">1</span></div>
         <input type="range" id="sl-gridbright" min="0" max="3" step="0.05" value="1">
       </div>
     </div>
 
-    <!-- БЛОК: ОФФСЕТ ТЕЛА -->
+    <!-- ─── SECTION: MOVEMENT ─── -->
     <div class="sec">
-      <div class="sec-title">█ ОФФСЕТ ТЕЛА</div>
+      <div class="sec-title">🏃 MOVEMENT</div>
       <div class="row">
-        <div class="row-head"><label>Дальность</label><span class="val" id="vl-dist">19</span></div>
+        <div class="row-head"><label>Distance</label><span class="val" id="vl-dist">19</span></div>
         <input type="range" id="sl-dist" min="0" max="120" step="1" value="19">
       </div>
       <div class="row">
-        <div class="row-head"><label>Скорость</label><span class="val" id="vl-spd">0.09</span></div>
+        <div class="row-head"><label>Speed</label><span class="val" id="vl-spd">0.09</span></div>
         <input type="range" id="sl-spd" min="0.01" max="0.5" step="0.01" value="0.09">
       </div>
       <div class="row">
-        <div class="row-head"><label>Инерция движения</label><span class="val" id="vl-inertia">0.95</span></div>
+        <div class="row-head"><label>Inertia</label><span class="val" id="vl-inertia">0.95</span></div>
         <input type="range" id="sl-inertia" min="0.5" max="0.99" step="0.01" value="0.95">
       </div>
     </div>
 
-    <!-- БЛОК: КОМБО СХЕМА -->
+    <!-- ─── SECTION: SWORD OFFSET ─── -->
     <div class="sec">
-      <div class="sec-title">█ БЕЗ ЛКМ · БЛОК (инв.эллипс)</div>
+      <div class="sec-title">⚔️ SWORD OFFSET (body-relative)</div>
       <div class="row">
-        <div class="row-head"><label>Эллипс X</label><span class="val" id="vl-ex">21</span></div>
+        <div class="row-head"><label>Offset X</label><span class="val" id="vl-ex">21</span></div>
         <input type="range" id="sl-ex" min="0" max="200" step="1" value="21">
       </div>
       <div class="row">
-        <div class="row-head"><label>Эллипс Y</label><span class="val" id="vl-ey">44</span></div>
+        <div class="row-head"><label>Offset Y</label><span class="val" id="vl-ey">44</span></div>
         <input type="range" id="sl-ey" min="0" max="300" step="1" value="44">
       </div>
       <div class="row">
-        <div class="row-head"><label>Скорость lerp</label><span class="val" id="vl-blk">0.2</span></div>
+        <div class="row-head"><label>Lerp speed</label><span class="val" id="vl-blk">0.2</span></div>
         <input type="range" id="sl-blk" min="0.01" max="0.6" step="0.01" value="0.2">
       </div>
       <div class="row" style="flex-direction:row;align-items:center;gap:7px;margin-top:2px;">
         <input type="checkbox" id="cb-adaY" style="accent-color:#3a9acc;cursor:pointer;" checked>
-        <label for="cb-adaY" style="font-size:8px;color:#4a7090;cursor:pointer;letter-spacing:0.5px;">Адапт. Y по часам (12→смещ.вверх)</label>
+        <label for="cb-adaY" style="font-size:8px;color:#4a7090;cursor:pointer;letter-spacing:0.5px;">Adapt Y (12 o'clock offset)</label>
       </div>
       <div class="row" id="row-adaY" style="display:flex;">
-        <div class="row-head"><label>Смещение вверх °12</label><span class="val" id="vl-adaY">60</span></div>
+        <div class="row-head"><label>Adapt Y offset 12</label><span class="val" id="vl-adaY">60</span></div>
         <input type="range" id="sl-adaY" min="0" max="200" step="1" value="60">
       </div>
       <div class="row" style="flex-direction:row;align-items:center;gap:7px;margin-top:2px;">
         <input type="checkbox" id="cb-adaD" style="accent-color:#3a9acc;cursor:pointer;" checked>
-        <label for="cb-adaD" style="font-size:8px;color:#4a7090;cursor:pointer;letter-spacing:0.5px;">Адапт. Y вниз (6 ч макс, 4.5/7.5 мин)</label>
+        <label for="cb-adaD" style="font-size:8px;color:#4a7090;cursor:pointer;letter-spacing:0.5px;">Adapt Y (6 o'clock offset)</label>
       </div>
       <div class="row" id="row-adaD" style="display:flex;">
-        <div class="row-head"><label>Смещение вниз °6</label><span class="val" id="vl-adaD">45</span></div>
+        <div class="row-head"><label>Adapt Y offset 6</label><span class="val" id="vl-adaD">45</span></div>
         <input type="range" id="sl-adaD" min="0" max="200" step="1" value="45">
       </div>
       <div class="row" style="flex-direction:row;align-items:center;gap:7px;margin-top:2px;">
         <input type="checkbox" id="cb-adaX" style="accent-color:#3a9acc;cursor:pointer;">
-        <label for="cb-adaX" style="font-size:8px;color:#4a7090;cursor:pointer;letter-spacing:0.5px;">Адапт. X (пики 12/6 ч → расш., бока → 5)</label>
+        <label for="cb-adaX" style="font-size:8px;color:#4a7090;cursor:pointer;letter-spacing:0.5px;">Adapt X (12/6 o'clock, base 5)</label>
       </div>
       <div class="row" id="row-adaX" style="display:none;">
-        <div class="row-head"><label>X база (бока)</label><span class="val" id="vl-adaXb">40</span></div>
+        <div class="row-head"><label>X base (12 o'clock)</label><span class="val" id="vl-adaXb">40</span></div>
         <input type="range" id="sl-adaXb" min="0" max="100" step="1" value="40">
       </div>
       <div class="row" id="row-adaX2" style="display:none;">
-        <div class="row-head"><label>X пик (12/6 ч)</label><span class="val" id="vl-adaXp">73</span></div>
+        <div class="row-head"><label>X peak (6/12)</label><span class="val" id="vl-adaXp">73</span></div>
         <input type="range" id="sl-adaXp" min="0" max="200" step="1" value="73">
       </div>
       <div class="row" style="flex-direction:row;align-items:center;gap:7px;margin-top:4px;">
         <input type="checkbox" id="cb-ada12" style="accent-color:#3a9acc;cursor:pointer;">
-        <label for="cb-ada12" style="font-size:8px;color:#4a7090;cursor:pointer;letter-spacing:0.5px;">Смещ. пивота вниз на 11-12-1 ч</label>
+        <label for="cb-ada12" style="font-size:8px;color:#4a7090;cursor:pointer;letter-spacing:0.5px;">Adapt 12 (11-12-1 o'clock offset)</label>
       </div>
       <div class="row" id="row-ada12" style="display:none;">
-        <div class="row-head"><label>Смещ. вниз °12 пик</label><span class="val" id="vl-ada12">25</span></div>
+        <div class="row-head"><label>Adapt 12 offset</label><span class="val" id="vl-ada12">25</span></div>
         <input type="range" id="sl-ada12" min="0" max="100" step="1" value="25">
       </div>
     </div>
 
-    <!-- БЛОК: ЩИТ -->
+    <!-- ─── SECTION: SHIELD ─── -->
     <div class="sec">
-      <div class="sec-title">█ ЩИТ</div>
+      <div class="sec-title">🛡 SHIELD</div>
       <div class="row">
-        <div class="row-head"><label>Скорость смены стороны</label><span class="val" id="vl-shieldSideSpd">3.3</span></div>
+        <div class="row-head"><label>Shield side speed</label><span class="val" id="vl-shieldSideSpd">3.3</span></div>
         <input type="range" id="sl-shieldSideSpd" min="1" max="20" step="0.1" value="3.3">
       </div>
     </div>
 
-    <!-- БЛОК: ЛКМ АТАКА -->
+    <!-- ─── SECTION: COMBO PIVOT ─── -->
     <div class="sec">
-      <div class="sec-title">█ ЛКМ · АТАКА (эллипс)</div>
+      <div class="sec-title">🌀 COMBO PIVOT (body-relative)</div>
       <div class="row">
-        <div class="row-head"><label>Эллипс X</label><span class="val" id="vl-aex">22</span></div>
+        <div class="row-head"><label>Offset X</label><span class="val" id="vl-aex">22</span></div>
         <input type="range" id="sl-aex" min="0" max="100" step="1" value="22">
       </div>
       <div class="row">
-        <div class="row-head"><label>Эллипс Y</label><span class="val" id="vl-aey">15</span></div>
+        <div class="row-head"><label>Offset Y</label><span class="val" id="vl-aey">15</span></div>
         <input type="range" id="sl-aey" min="0" max="100" step="1" value="15">
       </div>
       <div class="row">
-        <div class="row-head"><label>Скорость</label><span class="val" id="vl-as">0.28</span></div>
+        <div class="row-head"><label>Speed</label><span class="val" id="vl-as">0.28</span></div>
         <input type="range" id="sl-as" min="0.1" max="0.5" step="0.01" value="0.28">
       </div>
     </div>
 
-    <!-- БЛОК: МЕЧ -->
+    <!-- ─── SECTION: SWORD ─── -->
     <div class="sec">
-      <div class="sec-title">█ МЕЧ · СКЕЙЛ И ПОВОРОТ</div>
+      <div class="sec-title">⚔ SWORD SCALE &amp; OFFSET</div>
       <div class="row">
-        <div class="row-head"><label>Скейл без ЛКМ</label><span class="val" id="vl-sc0">0.8</span></div>
+        <div class="row-head"><label>Scale without LMB</label><span class="val" id="vl-sc0">0.8</span></div>
         <input type="range" id="sl-sc0" min="0.3" max="1.5" step="0.01" value="0.8">
       </div>
       <div class="row">
-        <div class="row-head"><label>Скейл с ЛКМ</label><span class="val" id="vl-sc1">1.0</span></div>
+        <div class="row-head"><label>Scale with LMB</label><span class="val" id="vl-sc1">1.0</span></div>
         <input type="range" id="sl-sc1" min="0.3" max="2.0" step="0.01" value="1.0">
       </div>
       <div class="row">
-        <div class="row-head"><label>Скорость lerp</label><span class="val" id="vl-scs">0.46</span></div>
+        <div class="row-head"><label>Lerp speed</label><span class="val" id="vl-scs">0.46</span></div>
         <input type="range" id="sl-scs" min="0.05" max="1.0" step="0.01" value="0.46">
       </div>
       <div class="row">
-        <div class="row-head"><label>Амплитуда диаг. °</label><span class="val" id="vl-srot">0</span></div>
+        <div class="row-head"><label>Angle offset</label><span class="val" id="vl-srot">0</span></div>
         <input type="range" id="sl-srot" min="0" max="90" step="1" value="0">
       </div>
       <div class="row">
-        <div class="row-head"><label>Оффсет вдоль</label><span class="val" id="vl-sox">0</span></div>
+        <div class="row-head"><label>Pivot offset X</label><span class="val" id="vl-sox">0</span></div>
         <input type="range" id="sl-sox" min="-60" max="60" step="1" value="0">
       </div>
       <div class="row">
-        <div class="row-head"><label>Оффсет перп.</label><span class="val" id="vl-soy">0</span></div>
+        <div class="row-head"><label>Pivot offset Y</label><span class="val" id="vl-soy">0</span></div>
         <input type="range" id="sl-soy" min="-60" max="60" step="1" value="0">
       </div>
     </div>
 
-    <!-- БЛОК: ПЕРСОНАЖ И МЕЧ -->
+    <!-- ─── SECTION: CHARACTER & WEAPON ─── -->
     <div class="sec">
-      <div class="sec-title">█ ПЕРСОНАЖ · СКЕЙЛ И МЕЧ</div>
+      <div class="sec-title">👤 CHARACTER &amp; WEAPON</div>
       <div class="row">
-        <div class="row-head"><label>Скейл персонажа</label><span class="val" id="vl-cscl">1.4</span></div>
+        <div class="row-head"><label>Character scale</label><span class="val" id="vl-cscl">1.4</span></div>
         <input type="range" id="sl-cscl" min="0.3" max="3.0" step="0.05" value="1.4">
       </div>
       <div class="row">
-        <div class="row-head"><label>Размер меча (глоб.)</label><span class="val" id="vl-swlen">1.4</span></div>
+        <div class="row-head"><label>Weapon length (global)</label><span class="val" id="vl-swlen">1.4</span></div>
         <input type="range" id="sl-swlen" min="0.2" max="3.0" step="0.05" value="1.4">
       </div>
       <div class="row">
-        <div class="row-head"><label>Скорость раскрутки цепа</label><span class="val" id="vl-flailspeedmult">1.5</span></div>
+        <div class="row-head"><label>Flail speed multiplier</label><span class="val" id="vl-flailspeedmult">1.5</span></div>
         <input type="range" id="sl-flailspeedmult" min="0.5" max="3.0" step="0.05" value="1.5">
       </div>
       <div class="row">
-        <div class="row-head"><label>Сила провисания цепа</label><span class="val" id="vl-flailsag">1.0</span></div>
+        <div class="row-head"><label>Flail sag</label><span class="val" id="vl-flailsag">1.0</span></div>
         <input type="range" id="sl-flailsag" min="0" max="3.0" step="0.05" value="5.0">
       </div>
     </div>
 
-    <!-- БЛОК: МЁРТВАЯ ЗОНА -->
+    <!-- ─── SECTION: DEAD ZONE ─── -->
     <div class="sec">
-      <div class="sec-title" style="color:#8a2020;">█ МЁРТВАЯ ЗОНА КУРСОРА</div>
+      <div class="sec-title" style="color:#8a2020;">🎯 DEAD ZONE (cursor smoothing)</div>
       <div class="row">
-        <div class="row-head"><label style="color:#8a3030;">Радиус (красный)</label><span class="val" id="vl-dzone" style="color:#cc4040;">0</span></div>
+        <div class="row-head"><label style="color:#8a3030;">Distance (radius)</label><span class="val" id="vl-dzone" style="color:#cc4040;">0</span></div>
         <input type="range" id="sl-dzone" min="0" max="300" step="5" value="0" style="accent-color:#cc3030;">
       </div>
     </div>
 
 
 
-    <!-- БЛОК: АВТОБЛОК (AI) вырезан по запросу — механика с радиусом удалена -->
+    <!-- ─── SECTION: AI (overrides for testing) ─────────────────── -->
     <div class="sec">
-      <div class="sec-title" style="color:#4a9a60;">█ AI · ДУЭЛЬ / ПРОЧЕЕ</div>
+      <div class="sec-title" style="color:#4a9a60;">🤖 AI SETTINGS</div>
       <div class="row">
-        <div class="row-head"><label style="color:#3a7a50;">Угол позиций бота N°</label><span class="val" id="vl-aiang" style="color:#3acc70;">35</span></div>
+        <div class="row-head"><label style="color:#3a7a50;">Bot angle N°</label><span class="val" id="vl-aiang" style="color:#3acc70;">35</span></div>
         <input type="range" id="sl-aiang" min="5" max="90" step="1" value="35" style="accent-color:#2a9a50;">
       </div>
       <div class="row">
-        <div class="row-head"><label style="color:#3a7a50;">Duel Radius (пикс)</label><span class="val" id="vl-duelrad" style="color:#3acc70;">100</span></div>
+        <div class="row-head"><label style="color:#3a7a50;">Duel Radius (px)</label><span class="val" id="vl-duelrad" style="color:#3acc70;">100</span></div>
         <input type="range" id="sl-duelrad" min="30" max="300" step="10" value="100" style="accent-color:#2a9a50;">
       </div>
       <div class="row">
-        <div class="row-head"><label style="color:#3a7a50;">Шанс обхода % (отступ)</label><span class="val" id="vl-circchance" style="color:#3acc70;">35</span></div>
+        <div class="row-head"><label style="color:#3a7a50;">Circle chance %</label><span class="val" id="vl-circchance" style="color:#3acc70;">35</span></div>
         <input type="range" id="sl-circchance" min="0" max="100" step="5" value="35" style="accent-color:#2a9a50;">
       </div>
       <div class="row">
-        <div class="row-head"><label style="color:#3a7a50;">Шанс probing вместо атаки %</label><span class="val" id="vl-probingchance" style="color:#3acc70;">30</span></div>
+        <div class="row-head"><label style="color:#3a7a50;">Probing chance %</label><span class="val" id="vl-probingchance" style="color:#3acc70;">30</span></div>
         <input type="range" id="sl-probingchance" min="0" max="100" step="1" value="30" style="accent-color:#2a9a50;">
       </div>
       <div class="row">
-        <div class="row-head"><label style="color:#3a7a50;">Дальность отхода probing (x обычной)</label><span class="val" id="vl-probingretreat" style="color:#3acc70;">0.1</span></div>
+        <div class="row-head"><label style="color:#3a7a50;">Probing retreat multiplier</label><span class="val" id="vl-probingretreat" style="color:#3acc70;">0.1</span></div>
         <input type="range" id="sl-probingretreat" min="0.1" max="0.1" step="0.05" value="0.1" style="accent-color:#2a9a50;">
       </div>
       <div class="row" style="flex-direction:row;align-items:center;gap:7px;">
@@ -440,296 +489,375 @@ body.menu-open #mob-zone-btn{ visibility:hidden !important; }
         <label for="cb-duel" style="font-size:8px;color:#3a8a50;cursor:pointer;letter-spacing:0.5px;">Duel Position System</label>
       </div>
       <div class="row">
-        <div class="row-head"><label style="color:#3a7a50;">Длит. вращения (сек)</label><span class="val" id="vl-spindur" style="color:#3acc70;">0.8</span></div>
+        <div class="row-head"><label style="color:#3a7a50;">Spin duration (sec)</label><span class="val" id="vl-spindur" style="color:#3acc70;">0.8</span></div>
         <input type="range" id="sl-spindur" min="0.3" max="3.0" step="0.1" value="0.8" style="accent-color:#2a9a50;">
       </div>
       <div class="row" style="flex-direction:row;align-items:center;gap:7px;">
         <input type="checkbox" id="cb-nospin" style="accent-color:#3acc70;cursor:pointer;">
-        <label for="cb-nospin" style="font-size:8px;color:#3a8a50;cursor:pointer;letter-spacing:0.5px;">Запретить вращения</label>
+        <label for="cb-nospin" style="font-size:8px;color:#3a8a50;cursor:pointer;letter-spacing:0.5px;">Disable spin</label>
       </div>
       <div class="row" style="flex-direction:row;align-items:center;gap:7px;">
         <input type="checkbox" id="cb-alwaysmirror" style="accent-color:#3acc70;cursor:pointer;">
-        <label for="cb-alwaysmirror" style="font-size:8px;color:#3a8a50;cursor:pointer;letter-spacing:0.5px;">Всегда Mirror стиль</label>
+        <label for="cb-alwaysmirror" style="font-size:8px;color:#3a8a50;cursor:pointer;letter-spacing:0.5px;">Always mirror style</label>
       </div>
     </div>
 
-    <!-- БЛОК: БОТ -->
-    <div class="sec" id="sec-mobile-cam">
-      <div class="sec-title">█ СКОРОСТЬ ИГРЫ</div>
+    <!-- ─── SECTION: LOCAL PLAYERS ────────────────────────────────── -->
+    <div class="sec" id="sec-local-players">
+      <div class="sec-title" style="color:#6ab0d0;">👥 LOCAL PLAYER SLOTS</div>
       <div class="row">
-        <div class="row-head"><label>Скорость игры (x)</label><span class="val" id="vl-gamespeed">1.0</span></div>
+        <div class="row-head"><label for="gamepad-player-slot">Gamepad 1 controls</label></div>
+        <select id="gamepad-player-slot" style="width:100%;padding:6px;background:#081522;border:1px solid #1a5070;border-radius:3px;color:#8ad8ff;font-family:'Share Tech Mono',monospace;font-size:9px;cursor:pointer;">
+          <option value="0">Player 1 (keyboard + mouse)</option>
+          <option value="1">Player 2</option>
+          <option value="2">Player 3</option>
+          <option value="3">Player 4</option>
+        </select>
+        <div id="gamepad-player-status" style="font-size:8px;line-height:1.45;color:#4f8198;margin-top:6px;"></div>
+      </div>
+      <div class="row">
+        <div class="row-head"><label for="local-faction-mode">Faction &amp; victory</label></div>
+        <select id="local-faction-mode" style="width:100%;padding:6px;background:#081522;border:1px solid #1a5070;border-radius:3px;color:#8ad8ff;font-family:'Share Tech Mono',monospace;font-size:9px;cursor:pointer;">
+          <option value="ffa">Free-for-all</option>
+          <option value="coop">Co-op vs bots</option>
+        </select>
+      </div>
+      <div class="row" style="flex-direction:row;align-items:center;gap:7px;">
+        <input type="checkbox" id="cb-coopdefeatall" style="accent-color:#3a9acc;cursor:pointer;" checked>
+        <label for="cb-coopdefeatall" style="font-size:8px;color:#4a7090;cursor:pointer;letter-spacing:.5px;">Co-op defeat only when all players are dead</label>
+      </div>
+      <div class="row">
+        <div class="row-head"><label>Player respawn (sec)</label><span class="val" id="vl-playerrespawn">15</span></div>
+        <input type="range" id="sl-playerrespawn" min="0" max="30" step="1" value="15">
+      </div>
+      <div class="row" style="flex-direction:row;align-items:center;gap:7px;">
+        <input type="checkbox" id="cb-gamepadflickdet" style="accent-color:#ccaa30;cursor:pointer;" checked>
+        <label for="cb-gamepadflickdet" style="font-size:8px;color:#8a7020;cursor:pointer;letter-spacing:0.5px;">Gamepad: separate flick detect</label>
+      </div>
+      <div class="row">
+        <div class="row-head"><label style="color:#8a7020;">Gamepad flick: window (sec)</label><span class="val" id="vl-gamepadflickwindow" style="color:#ccaa30;">1</span></div>
+        <input type="range" id="sl-gamepadflickwindow" min="0.05" max="1.5" step="0.05" value="1" style="accent-color:#ccaa30;">
+      </div>
+      <div class="row">
+        <div class="row-head"><label style="color:#8a7020;">Gamepad flick: min speed</label><span class="val" id="vl-gamepadflickminvel" style="color:#ccaa30;">3.2</span></div>
+        <input type="range" id="sl-gamepadflickminvel" min="0.5" max="8.0" step="0.1" value="3.2" style="accent-color:#ccaa30;">
+      </div>
+      <div class="row">
+        <div class="row-head"><label style="color:#8a7020;">Gamepad flick: min amplitude</label><span class="val" id="vl-gamepadflickminamp" style="color:#ccaa30;">0.4</span></div>
+        <input type="range" id="sl-gamepadflickminamp" min="0.05" max="2.0" step="0.05" value="0.4" style="accent-color:#ccaa30;">
+      </div>
+      <div class="row">
+        <div class="row-head"><label style="color:#8a7020;">Gamepad flick: swing count</label><span class="val" id="vl-gamepadflickcount" style="color:#ccaa30;">2</span></div>
+        <input type="range" id="sl-gamepadflickcount" min="2" max="8" step="1" value="2" style="accent-color:#ccaa30;">
+      </div>
+      <div class="row">
+        <div class="row-head"><label style="color:#8a7020;">Gamepad flick: max amplitude</label><span class="val" id="vl-gamepadflickmaxmult" style="color:#ccaa30;">5</span></div>
+        <input type="range" id="sl-gamepadflickmaxmult" min="1.5" max="10" step="0.5" value="5" style="accent-color:#ccaa30;">
+      </div>
+      <div class="row">
+        <div class="row-head"><label style="color:#8a7020;">Gamepad flick: stamina</label><span class="val" id="vl-gamepadstamflick" style="color:#ccaa30;">25</span></div>
+        <input type="range" id="sl-gamepadstamflick" min="0" max="60" step="5" value="25" style="accent-color:#ccaa30;">
+      </div>
+    </div>
+
+    <div class="sec" id="sec-mobile-cam">
+      <div class="sec-title">📱 MOBILE &amp; CAMERA</div>
+      <div class="row">
+        <div class="row-head"><label>Game speed (x)</label><span class="val" id="vl-gamespeed">1.0</span></div>
         <input type="range" id="sl-gamespeed" min="0.1" max="2.0" step="0.05" value="1.0">
       </div>
       <div class="row">
-        <div class="row-head"><label>Дальность камеры (клеток)</label><span class="val" id="vl-camrows">14</span></div>
+        <div class="row-head"><label>Camera zoom (cells)</label><span class="val" id="vl-camrows">14</span></div>
         <input type="range" id="sl-camrows" min="6" max="24" step="1" value="14">
       </div>
       <div class="row">
-        <div class="row-head"><label>Громкость музыки</label><span class="val" id="vl-musicvol">0.5</span></div>
+        <div class="row-head"><label>Music volume</label><span class="val" id="vl-musicvol">0.5</span></div>
         <input type="range" id="sl-musicvol" min="0" max="1" step="0.05" value="0.5">
       </div>
       <div class="row">
-        <div class="row-head"><label>Кол-во ботов</label><span class="val" id="vl-botcount">1</span></div>
-        <input type="range" id="sl-botcount" min="1" max="10" step="1" value="1">
+        <div class="row-head"><label>Bot count</label><span class="val" id="vl-botcount">1</span></div>
+        <input type="range" id="sl-botcount" min="0" max="10" step="1" value="1">
+      </div>
+      <div class="row" style="flex-direction:row;align-items:center;gap:7px;">
+        <input type="checkbox" id="cb-overheadbars" style="accent-color:#3a9acc;cursor:pointer;" checked>
+        <label for="cb-overheadbars" style="font-size:8px;color:#4a7090;cursor:pointer;letter-spacing:.5px;">Show HP bars above enemies</label>
       </div>
     </div>
     <div class="sec">
-      <div class="sec-title" style="color:#7a5a30;">█ БОТ · СКОРОСТЬ</div>
+      <div class="sec-title" style="color:#7a5a30;">🤖 BOT SPEED &amp; SCALE</div>
       <div class="row">
-        <div class="row-head"><label>Скорость бота (x игрока)</label><span class="val" id="vl-botspd">0.8</span></div>
-        <input type="range" id="sl-botspd" min="0.3" max="1.5" step="0.05" value="0.8">
+        <div class="row-head"><label>Bot speed (x player)</label><span class="val" id="vl-botspd">0.7</span></div>
+        <input type="range" id="sl-botspd" min="0.3" max="1.5" step="0.05" value="0.7">
       </div>
       <div class="row">
-        <div class="row-head"><label>Шанс доджа бота при ударе %</label><span class="val" id="vl-botdodgechance">50</span></div>
+        <div class="row-head"><label>Bot dodge chance %</label><span class="val" id="vl-botdodgechance">50</span></div>
         <input type="range" id="sl-botdodgechance" min="0" max="100" step="1" value="50">
       </div>
       <div class="row">
-        <div class="row-head"><label>Шанс доджа В СТОРОНУ героя %</label><span class="val" id="vl-botdodgetoward">20</span></div>
+        <div class="row-head"><label>Bot dodge toward %</label><span class="val" id="vl-botdodgetoward">20</span></div>
         <input type="range" id="sl-botdodgetoward" min="0" max="100" step="1" value="20">
       </div>
       <div class="row">
-        <div class="row-head"><label>Скейл бота (тело)</label><span class="val" id="vl-botscale">1.0</span></div>
+        <div class="row-head"><label>Bot scale (body)</label><span class="val" id="vl-botscale">1.0</span></div>
         <input type="range" id="sl-botscale" min="0.5" max="2.0" step="0.05" value="1.0">
       </div>
       <div class="row">
-        <div class="row-head"><label>Скейл меча бота</label><span class="val" id="vl-botswordscale">1.0</span></div>
+        <div class="row-head"><label>Bot sword scale</label><span class="val" id="vl-botswordscale">1.0</span></div>
         <input type="range" id="sl-botswordscale" min="0.3" max="2.5" step="0.05" value="1.0">
       </div>
       <div class="row">
-        <div class="row-head"><label>Общая скорость (x)</label><span class="val" id="vl-globalspd">1.0</span></div>
+        <div class="row-head"><label>Global speed (x)</label><span class="val" id="vl-globalspd">1.0</span></div>
         <input type="range" id="sl-globalspd" min="0.2" max="2.0" step="0.05" value="1.0">
       </div>
     </div>
 
-    <!-- БЛОК: БОЕВАЯ СИСТЕМА -->
+    <!-- ─── SECTION: COMBAT SETTINGS ─── -->
     <div class="sec">
-      <div class="sec-title" style="color:#9a7a30;">█ БОЕВАЯ СИСТЕМА</div>
+      <div class="sec-title" style="color:#9a7a30;">⚔️ COMBAT SETTINGS</div>
       <div class="row">
-        <div class="row-head"><label>Порог замаха °/с</label><span class="val" id="vl-swthresh">1.2</span></div>
+        <div class="row-head"><label>Threshold for swing</label><span class="val" id="vl-swthresh">1.2</span></div>
         <input type="range" id="sl-swthresh" min="0.1" max="8" step="0.1" value="1.2">
       </div>
       <div class="row">
-        <div class="row-head"><label>Стамина блока (потеря)</label><span class="val" id="vl-stamblock">20</span></div>
+        <div class="row-head"><label>Block stamina cost</label><span class="val" id="vl-stamblock">20</span></div>
         <input type="range" id="sl-stamblock" min="1" max="50" step="1" value="20">
       </div>
+      <div class="row" style="display:flex;align-items:center;gap:7px;">
+        <input type="checkbox" id="cb-safecounter" style="accent-color:#a040d0;cursor:pointer;" checked>
+        <label for="cb-safecounter" style="font-size:8px;color:#b060dd;cursor:pointer;letter-spacing:0.5px;">Safe counter window (1.5s after block)</label>
+      </div>
       <div class="row">
-        <div class="row-head"><label>Стамина замаха (потеря)</label><span class="val" id="vl-stamswing">17</span></div>
+        <div class="row-head"><label>Swing stamina cost</label><span class="val" id="vl-stamswing">17</span></div>
         <input type="range" id="sl-stamswing" min="0" max="100" step="1" value="17">
       </div>
       <div class="row">
-        <div class="row-head"><label>Сила отбрасывания</label><span class="val" id="vl-kbforce">20</span></div>
+        <div class="row-head"><label>Knockback force</label><span class="val" id="vl-kbforce">20</span></div>
         <input type="range" id="sl-kbforce" min="0" max="40" step="0.5" value="20">
       </div>
 
       <div class="row">
-        <div class="row-head"><label>Дисбаланс: длит. (сек)</label><span class="val" id="vl-unbdur">3</span></div>
+        <div class="row-head"><label>Disbalance duration (sec)</label><span class="val" id="vl-unbdur">3</span></div>
         <input type="range" id="sl-unbdur" min="0.5" max="6" step="0.5" value="3">
       </div>
       <div class="row">
-        <div class="row-head"><label>Дисбаланс: окно комбо (сек)</label><span class="val" id="vl-unbcombo">2</span></div>
+        <div class="row-head"><label>Disbalance combo window</label><span class="val" id="vl-unbcombo">2</span></div>
         <input type="range" id="sl-unbcombo" min="0.5" max="5" step="0.1" value="2">
       </div>
       <div class="row" style="display:flex;align-items:center;gap:7px;">
         <input type="checkbox" id="cb-unbcombodbg" style="accent-color:#ccaa30;cursor:pointer;">
-        <label for="cb-unbcombodbg" style="font-size:8px;color:#8a7020;cursor:pointer;letter-spacing:0.5px;">Дебаг: этапы комбо дисбаланса</label>
+        <label for="cb-unbcombodbg" style="font-size:8px;color:#8a7020;cursor:pointer;letter-spacing:0.5px;">Debug: disbalance combo steps</label>
       </div>
       <div class="row">
-        <div class="row-head"><label>Восст. стамины / сек</label><span class="val" id="vl-stamreg">28</span></div>
+        <div class="row-head"><label>Stamina regen / sec</label><span class="val" id="vl-stamreg">28</span></div>
         <input type="range" id="sl-stamreg" min="1" max="60" step="1" value="28">
       </div>
       <div class="row">
-        <div class="row-head"><label>Стам. ЛКМ (начало)</label><span class="val" id="vl-lmbcost">40</span></div>
+        <div class="row-head"><label>LMB stamina %</label><span class="val" id="vl-lmbcost">40</span></div>
         <input type="range" id="sl-lmbcost" min="0" max="80" step="5" value="40">
       </div>
       <div class="row">
-        <div class="row-head"><label>Урон при ЛКМ (x)</label><span class="val" id="vl-lmbdmg">1.5</span></div>
+        <div class="row-head"><label>LMB damage (x)</label><span class="val" id="vl-lmbdmg">1.5</span></div>
         <input type="range" id="sl-lmbdmg" min="1" max="3" step="0.1" value="1.5">
       </div>
     </div>
 
-    <!-- БЛОК: ЯРОСТЬ (красная рамка) -->
+    <!-- ─── SECTION: RAGE (red bar) ──────────────────────────────── -->
     <div class="sec" style="border:1px solid #3a1010;padding:8px;border-radius:3px;">
-      <div class="sec-title" style="color:#cc3030;">█ ЯРОСТЬ</div>
+      <div class="sec-title" style="color:#cc3030;">🔥 RAGE</div>
       <div class="row">
-        <div class="row-head"><label style="color:#8a3030;">Блоков до 100 ярости</label><span class="val" id="vl-rageper" style="color:#cc4040;">10</span></div>
+        <div class="row-head"><label style="color:#8a3030;">Blocks for 100 rage</label><span class="val" id="vl-rageper" style="color:#cc4040;">10</span></div>
         <input type="range" id="sl-rageper" min="1" max="30" step="1" value="10" style="accent-color:#cc2020;">
       </div>
       <div class="row">
-        <div class="row-head"><label style="color:#8a3030;">Длит. баффа ЯРОСТЬ (сек)</label><span class="val" id="vl-ragebuf" style="color:#cc4040;">5</span></div>
+        <div class="row-head"><label style="color:#8a3030;">Rage buff duration (sec)</label><span class="val" id="vl-ragebuf" style="color:#cc4040;">5</span></div>
         <input type="range" id="sl-ragebuf" min="2" max="15" step="1" value="5" style="accent-color:#cc2020;">
       </div>
     </div>
 
-    <!-- БЛОК: УСТАЛОСТЬ (красная рамка) -->
+    <!-- ─── SECTION: EXHAUSTION (yellow bar) ────────────────────── -->
     <div class="sec" style="border:1px solid #3a1010;padding:8px;border-radius:3px;">
-      <div class="sec-title" style="color:#cc3030;">█ УСТАЛОСТЬ</div>
+      <div class="sec-title" style="color:#cc3030;">⚠ EXHAUSTION</div>
       <div class="row">
-        <div class="row-head"><label style="color:#8a3030;">Длительность (сек)</label><span class="val" id="vl-exhdur2">1</span></div>
-        <input type="range" id="sl-exhdur2" min="0.5" max="8" step="0.1" value="1" style="accent-color:#cc2020;">
+        <div class="row-head"><label style="color:#8a3030;">Duration (sec)</label><span class="val" id="vl-exhdur2">1.7</span></div>
+        <input type="range" id="sl-exhdur2" min="0.5" max="8" step="0.1" value="1.7" style="accent-color:#cc2020;">
       </div>
       <div class="row">
-        <div class="row-head"><label style="color:#8a3030;">Замедл. движения</label><span class="val" id="vl-exhspd2">0.4</span></div>
+        <div class="row-head"><label style="color:#8a3030;">Speed penalty</label><span class="val" id="vl-exhspd2">0.4</span></div>
         <input type="range" id="sl-exhspd2" min="0.1" max="1" step="0.05" value="0.5" style="accent-color:#cc2020;">
       </div>
       <div class="row">
-        <div class="row-head"><label style="color:#8a3030;">Замедл. меча</label><span class="val" id="vl-exhswd2">0.13</span></div>
+        <div class="row-head"><label style="color:#8a3030;">Sword penalty</label><span class="val" id="vl-exhswd2">0.13</span></div>
         <input type="range" id="sl-exhswd2" min="0.01" max="0.5" step="0.01" value="0.13" style="accent-color:#cc2020;">
       </div>
     </div>
 
-    <!-- БЛОК: КОЛЛИЗИЯ МЕЧЕЙ -->
+    <!-- ─── SECTION: CLASH / DEFLECTION ──────────────────────────── -->
     <div class="sec">
-      <div class="sec-title" style="color:#7a6a30;">█ КОЛЛИЗИЯ МЕЧЕЙ</div>
+      <div class="sec-title" style="color:#7a6a30;">⚡ CLASH / DEFLECTION</div>
       <div class="row">
-        <div class="row-head"><label>Сопротивление меча</label><span class="val" id="vl-swres">0.85</span></div>
+        <div class="row-head"><label>Weapon restitution</label><span class="val" id="vl-swres">0.85</span></div>
         <input type="range" id="sl-swres" min="0" max="1" step="0.05" value="0.85">
       </div>
       <div class="row">
-        <div class="row-head"><label style="color:#4060cc;">Откат при столкн. мечей</label><span class="val" id="vl-bladeKB" style="color:#5080ff;">3.5</span></div>
+        <div class="row-head"><label style="color:#4060cc;">Blade knockback</label><span class="val" id="vl-bladeKB" style="color:#5080ff;">3.5</span></div>
         <input type="range" id="sl-bladeKB" min="0" max="20" step="0.5" value="3.5" style="accent-color:#3060cc;">
       </div>
       <div class="row">
-        <div class="row-head"><label style="color:#9040cc;">Откат от меча по телу</label><span class="val" id="vl-bodyKB" style="color:#bb60ff;">1</span></div>
+        <div class="row-head"><label style="color:#9040cc;">Body knockback</label><span class="val" id="vl-bodyKB" style="color:#bb60ff;">1</span></div>
         <input type="range" id="sl-bodyKB" min="0" max="20" step="0.5" value="1" style="accent-color:#7020aa;">
       </div>
       <div class="row">
-        <div class="row-head"><label>Замедл. при блоке (сек)</label><span class="val" id="vl-blockSlowDur">0.4</span></div>
+        <div class="row-head"><label>Block slow duration (sec)</label><span class="val" id="vl-blockSlowDur">0.4</span></div>
         <input type="range" id="sl-blockSlowDur" min="0.1" max="2" step="0.1" value="0.4">
       </div>
       <div class="row">
-        <div class="row-head"><label>Замедл. при блоке (x)</label><span class="val" id="vl-blockSlowMult">0.5</span></div>
+        <div class="row-head"><label>Block slow multiplier</label><span class="val" id="vl-blockSlowMult">0.5</span></div>
         <input type="range" id="sl-blockSlowMult" min="0.1" max="1" step="0.05" value="0.5">
       </div>
       <div class="row">
-        <div class="row-head"><label>Откл. меча при блоке мин°</label><span class="val" id="vl-deflectMin">50</span></div>
+        <div class="row-head"><label>Min deflection angle</label><span class="val" id="vl-deflectMin">50</span></div>
         <input type="range" id="sl-deflectMin" min="0" max="90" step="1" value="50">
       </div>
       <div class="row">
-        <div class="row-head"><label>Откл. меча при блоке макс°</label><span class="val" id="vl-deflectMax">100</span></div>
+        <div class="row-head"><label>Max deflection angle</label><span class="val" id="vl-deflectMax">100</span></div>
         <input type="range" id="sl-deflectMax" min="5" max="180" step="1" value="100">
       </div>
       <div class="row">
-        <div class="row-head"><label>Меч сзади: буст скор.</label><span class="val" id="vl-swordback">0.55</span></div>
+        <div class="row-head"><label>Sword back multiplier</label><span class="val" id="vl-swordback">0.55</span></div>
         <input type="range" id="sl-swordback" min="0.3" max="1.0" step="0.05" value="0.4">
       </div>
       <div class="row">
-        <div class="row-head"><label style="color:#cc8020;">Блок-откат сила</label><span class="val" id="vl-blockKB" style="color:#cc8020;">5</span></div>
+        <div class="row-head"><label style="color:#cc8020;">Block knockback</label><span class="val" id="vl-blockKB" style="color:#cc8020;">5</span></div>
         <input type="range" id="sl-blockKB" min="0" max="20" step="0.5" value="5" style="accent-color:#cc6010;">
       </div>
     </div>
 
-    <!-- БЛОК: BLADE BIND -->
+    <!-- ─── SECTION: FLICK / ORBIT DETECTORS ───────────────────── -->
     <div class="sec">
-      <div class="sec-title" style="color:#9a6a20;">█ BLADE BIND</div>
-      <div class="row" style="flex-direction:row;align-items:center;gap:7px;">
-        <input type="checkbox" id="cb-bbind" style="accent-color:#ccaa30;cursor:pointer;" checked>
-        <label for="cb-bbind" style="font-size:8px;color:#8a7020;cursor:pointer;letter-spacing:0.5px;">Включить Blade Bind</label>
-      </div>
+      <div class="sec-title" style="color:#9a6a20;">🌀 FLICK / ORBIT DETECTORS</div>
       <div class="row">
-        <div class="row-head"><label style="color:#8a7020;">Bladebind: окно (сек)</label><span class="val" id="vl-bbwindow" style="color:#ccaa30;">1.2</span></div>
-        <input type="range" id="sl-bbwindow" min="0.3" max="3.0" step="0.1" value="1.2" style="accent-color:#ccaa30;">
-      </div>
-      <div class="row">
-        <div class="row-head"><label style="color:#8a7020;">Шанс выбить оружие %</label><span class="val" id="vl-disarmchance" style="color:#ccaa30;">30</span></div>
+        <div class="row-head"><label style="color:#8a7020;">Disarm chance %</label><span class="val" id="vl-disarmchance" style="color:#ccaa30;">30</span></div>
         <input type="range" id="sl-disarmchance" min="0" max="100" step="1" value="30" style="accent-color:#ccaa30;">
       </div>
       <div class="row" style="flex-direction:row;align-items:center;gap:7px;">
         <input type="checkbox" id="cb-orbitdet" style="accent-color:#cc5020;cursor:pointer;" checked>
-        <label for="cb-orbitdet" style="font-size:8px;color:#8a5020;cursor:pointer;letter-spacing:0.5px;">Детект вращения меча (орбита)</label>
+        <label for="cb-orbitdet" style="font-size:8px;color:#8a5020;cursor:pointer;letter-spacing:0.5px;">Detect orbit (continuous rotation)</label>
       </div>
       <div class="row">
-        <div class="row-head"><label style="color:#8a5020;">Орбита: окно (сек)</label><span class="val" id="vl-orbitwindow" style="color:#cc7040;">1.0</span></div>
+        <div class="row-head"><label style="color:#8a5020;">Orbit: window (sec)</label><span class="val" id="vl-orbitwindow" style="color:#cc7040;">1.0</span></div>
         <input type="range" id="sl-orbitwindow" min="0.3" max="3.0" step="0.1" value="1.0" style="accent-color:#cc5020;">
       </div>
       <div class="row">
-        <div class="row-head"><label style="color:#8a5020;">Орбита: полных оборотов</label><span class="val" id="vl-orbitturns" style="color:#cc7040;">1.0</span></div>
+        <div class="row-head"><label style="color:#8a5020;">Orbit: turns required</label><span class="val" id="vl-orbitturns" style="color:#cc7040;">1.0</span></div>
         <input type="range" id="sl-orbitturns" min="0.3" max="3.0" step="0.1" value="1.0" style="accent-color:#cc5020;">
       </div>
       <div class="row">
-        <div class="row-head"><label style="color:#8a5020;">Орбита: стамина (потеря)</label><span class="val" id="vl-stamorbit" style="color:#cc7040;">30</span></div>
+        <div class="row-head"><label style="color:#8a5020;">Orbit: stamina cost</label><span class="val" id="vl-stamorbit" style="color:#cc7040;">30</span></div>
         <input type="range" id="sl-stamorbit" min="0" max="60" step="5" value="30" style="accent-color:#cc5020;">
       </div>
       <div class="row" style="flex-direction:row;align-items:center;gap:7px;">
         <input type="checkbox" id="cb-flickdet" style="accent-color:#ccaa30;cursor:pointer;" checked>
-        <label for="cb-flickdet" style="font-size:8px;color:#8a7020;cursor:pointer;letter-spacing:0.5px;">Детект флик-замаха (туда-сюда)</label>
+        <label for="cb-flickdet" style="font-size:8px;color:#8a7020;cursor:pointer;letter-spacing:0.5px;">Detect flick (quick direction change)</label>
       </div>
       <div class="row">
-        <div class="row-head"><label style="color:#8a7020;">Флик: окно (сек)</label><span class="val" id="vl-flickwindow" style="color:#ccaa30;">1</span></div>
+        <div class="row-head"><label style="color:#8a7020;">Flick: window (sec)</label><span class="val" id="vl-flickwindow" style="color:#ccaa30;">1</span></div>
         <input type="range" id="sl-flickwindow" min="0.05" max="1.5" step="0.05" value="1" style="accent-color:#ccaa30;">
       </div>
       <div class="row">
-        <div class="row-head"><label style="color:#8a7020;">Флик: мин.скорость (рад/с)</label><span class="val" id="vl-flickminvel" style="color:#ccaa30;">4</span></div>
+        <div class="row-head"><label style="color:#8a7020;">Flick: min speed (rad/s)</label><span class="val" id="vl-flickminvel" style="color:#ccaa30;">4</span></div>
         <input type="range" id="sl-flickminvel" min="0.5" max="8.0" step="0.25" value="4" style="accent-color:#ccaa30;">
       </div>
       <div class="row">
-        <div class="row-head"><label style="color:#8a7020;">Флик: мин.амплитуда (рад)</label><span class="val" id="vl-flickminamp" style="color:#ccaa30;">0.45</span></div>
+        <div class="row-head"><label style="color:#8a7020;">Flick: min amplitude (rad)</label><span class="val" id="vl-flickminamp" style="color:#ccaa30;">0.45</span></div>
         <input type="range" id="sl-flickminamp" min="0.05" max="2.0" step="0.05" value="0.45" style="accent-color:#ccaa30;">
       </div>
       <div class="row">
-        <div class="row-head"><label style="color:#8a7020;">Флик: кол-во махов</label><span class="val" id="vl-flickcount" style="color:#ccaa30;">2</span></div>
+        <div class="row-head"><label style="color:#8a7020;">Flick: swing count</label><span class="val" id="vl-flickcount" style="color:#ccaa30;">2</span></div>
         <input type="range" id="sl-flickcount" min="2" max="8" step="1" value="2" style="accent-color:#ccaa30;">
       </div>
       <div class="row">
-        <div class="row-head"><label style="color:#8a7020;">Флик: макс.амп (x мульт)</label><span class="val" id="vl-flickmaxmult" style="color:#ccaa30;">5</span></div>
+        <div class="row-head"><label style="color:#8a7020;">Flick: max amplitude (x min)</label><span class="val" id="vl-flickmaxmult" style="color:#ccaa30;">5</span></div>
         <input type="range" id="sl-flickmaxmult" min="1.5" max="10" step="0.5" value="5" style="accent-color:#ccaa30;">
       </div>
       <div class="row">
-        <div class="row-head"><label style="color:#8a7020;">Флик: стамина (потеря)</label><span class="val" id="vl-stamflick" style="color:#ccaa30;">25</span></div>
+        <div class="row-head"><label style="color:#8a7020;">Flick: stamina cost</label><span class="val" id="vl-stamflick" style="color:#ccaa30;">25</span></div>
         <input type="range" id="sl-stamflick" min="0" max="60" step="5" value="25" style="accent-color:#ccaa30;">
+      </div>
+      <div class="row" style="flex-direction:row;align-items:center;gap:7px;">
+        <input type="checkbox" id="cb-debugbrowser" style="accent-color:#3acc70;cursor:pointer;">
+        <label for="cb-debugbrowser" style="font-size:8px;color:#4aa070;cursor:pointer;letter-spacing:0.5px;">Debug: unlock browser RMB/keys</label>
       </div>
     </div>
 
-    <!-- БЛОК: ДЕБАГ -->
+    <!-- ─── SECTION: DEBUG ────────────────────────────────────────── -->
     <div class="sec">
-      <div class="sec-title">█ ОТЛАДКА</div>
+      <div class="sec-title">🐞 DEBUG</div>
       <div class="row">
-        <div class="row-head"><label>Показать рут</label><span class="val" id="vl-dbg">ВЫКЛ</span></div>
+        <div class="row-head"><label>Debug toggle</label><span class="val" id="vl-dbg">OFF</span></div>
         <input type="range" id="sl-dbg" min="0" max="1" step="1" value="0">
       </div>
       <div class="row" style="flex-direction:row;align-items:center;gap:7px;">
         <input type="checkbox" id="cb-clashdbg" style="accent-color:#cc4090;cursor:pointer;">
-        <label for="cb-clashdbg" style="font-size:8px;color:#8a4070;cursor:pointer;letter-spacing:0.5px;">Дебаг: сторона удара по мечу (лог+экран)</label>
+        <label for="cb-clashdbg" style="font-size:8px;color:#8a4070;cursor:pointer;letter-spacing:0.5px;">Debug: log clash data (console)</label>
       </div>
     </div>
 
-    <!-- БЛОК: ДЕЙСТВИЯ -->
+    <!-- ─── SECTION: CONTROLS ─────────────────────────────────────── -->
     <div class="sec">
-      <div class="sec-title">█ ДЕЙСТВИЯ</div>
-      <button id="btn-export" style="width:100%;padding:7px 0;background:#0e2a1e;border:1px solid #1a5a30;border-radius:3px;color:#3acc70;font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:1px;cursor:pointer;margin-bottom:8px;">📋 ЭКСПОРТ НАСТРОЕК → БУФЕР</button>
-      <button id="dtoggle" style="width:100%;padding:7px 0;background:#1a1a0e;border:1px solid #5a5a1a;border-radius:3px;color:#cccc40;font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:1px;cursor:pointer;margin-bottom:8px;">🤖 МАНЕКЕН: ВЫКЛ</button>
-      <button id="btn-balls" style="width:100%;padding:7px 0;background:#1a0e0e;border:1px solid #5a1a1a;border-radius:3px;color:#cc4040;font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:1px;cursor:pointer;margin-bottom:8px;">⚽ СПАВН ШАРИКОВ</button>
-      <button id="btn-boxes" style="width:100%;padding:7px 0;background:#100e1a;border:1px solid #3a1a5a;border-radius:3px;color:#9040cc;font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:1px;cursor:pointer;margin-bottom:8px;">📦 ЯЩИКИ: ВЫКЛ</button>
-      <button id="btn-blockkb" style="width:100%;padding:7px 0;background:#1a1000;border:1px solid #6a4010;border-radius:3px;color:#cc8020;font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:1px;cursor:pointer;margin-bottom:8px;">🛡 БЛОК-ОТКАТ: ВЫКЛ</button>
-      <button id="musicToggleBtn" style="width:100%;padding:7px 0;background:#0e1a0e;border:1px solid #2a5a2a;border-radius:3px;color:#4acc70;font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:1px;cursor:pointer;">🎵 МУЗЫКА: ВКЛ</button>
+      <div class="sec-title">🎮 CONTROLS</div>
+      <button id="btn-export" style="width:100%;padding:7px 0;background:#0e2a1e;border:1px solid #1a5a30;border-radius:3px;color:#3acc70;font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:1px;cursor:pointer;margin-bottom:8px;">📤 Export settings to file</button>
+      <button id="dtoggle" style="width:100%;padding:7px 0;background:#1a1a0e;border:1px solid #5a5a1a;border-radius:3px;color:#cccc40;font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:1px;cursor:pointer;margin-bottom:8px;">🤖 Toggle AI: OFF</button>
+      <button id="btn-balls" style="width:100%;padding:7px 0;background:#1a0e0e;border:1px solid #5a1a1a;border-radius:3px;color:#cc4040;font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:1px;cursor:pointer;margin-bottom:8px;">⚾ Toggle Balls: OFF</button>
+      <button id="btn-boxes" style="width:100%;padding:7px 0;background:#100e1a;border:1px solid #3a1a5a;border-radius:3px;color:#9040cc;font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:1px;cursor:pointer;margin-bottom:8px;">📦 Toggle Boxes: ON</button>
+      <button id="btn-blockkb" style="width:100%;padding:7px 0;background:#1a1000;border:1px solid #6a4010;border-radius:3px;color:#cc8020;font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:1px;cursor:pointer;margin-bottom:8px;">🛡 Toggle Block-KB: OFF</button>
+      <button id="musicToggleBtn" style="width:100%;padding:7px 0;background:#0e1a0e;border:1px solid #2a5a2a;border-radius:3px;color:#4acc70;font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:1px;cursor:pointer;">🎵 Toggle Music: OFF</button>
     </div>
 
-    <!-- УПРАВЛЕНИЕ -->
+    <!-- ─── KEYBOARD SHORTCUTS ────────────────────────────────────── -->
     <div class="sec">
-      <div class="sec-title">█ УПРАВЛЕНИЕ</div>
+      <div class="sec-title">⌨️ KEYBOARD SHORTCUTS</div>
       <div class="keys">
-        <span class="key">WASD — движение рута</span>
-        <span class="key">Мышь — курсор / направление</span>
-        <span class="key">Без ЛКМ — инв.эллипс (блок)</span>
-        <span class="key">ЛКМ — атака к манекену</span>
-        <span class="key">Автоблок: курсор внутри синей зоны — меч всегда смотрит к угрозе</span>
-        <span class="key">Радиус прицела 0 = выкл, >0 = виртуальный курсор на окружности (оранжевая)</span>
-        <span class="key">T — манекен вкл/выкл</span>
+        <span class="key">WASD — movement</span>
+        <span class="key">Mouse — cursor / aim</span>
+        <span class="key">LMB — hold sword in position (attack)</span>
+        <span class="key">Shift — dodge (with momentum)</span>
+        <span class="key">T — toggle AI on/off</span>
+        <span class="key">Y — spawn bot</span>
+        <span class="key">E — pick up weapon</span>
+        <span class="key">1 — throw weapon</span>
+        <span class="key">R — toggle sword style</span>
+        <span class="key">Q — flip shield side</span>
+        <span class="key">C — cycle player weapon</span>
+        <span class="key">V — cycle bot weapon</span>
+        <span class="key">Z — cycle player shield</span>
+        <span class="key">X — cycle bot shield</span>
+        <span class="key">G — force exhaustion</span>
+        <span class="key">H — add rage</span>
+        <span class="key">U — apply disbalance to player</span>
+        <span class="key">I — apply disbalance to bot</span>
+        <span class="key">O — toggle arena zone</span>
+        <span class="key">Enter — open/close menu</span>
+        <span class="key">Escape — close menu</span>
       </div>
     </div>
   </div>
-  <!-- ════════════════ END MODULE: SETTINGS PANEL ════════════════════════ -->
+  <!-- ••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+       END MODULE: SETTINGS PANEL
+       •••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••• -->
 
   <div id="infobar">
-    <div class="ir"><span>РУТ</span><span class="iv" id="inf-root">0,0</span></div>
-    <div class="ir"><span>ОФФСЕТ ТЕЛА</span><span class="iv" id="inf-boff">0,0</span></div>
+    <div class="ir"><span>🧭 Root</span><span class="iv" id="inf-root">0,0</span></div>
+    <div class="ir"><span>⚔️ Body offset</span><span class="iv" id="inf-boff">0,0</span></div>
   </div>
 </div>
 
-<div id="hint">WASD движение · T манекен · мышь целиться · Enter → меню сети</div>
+<div id="hint">WASD movement · T toggle AI · Mouse aims · LMB attacks · Enter menu</div>
 
 <script charset="utf-8" src="src/core/engine.js"></script>
 <script charset="utf-8" src="src/core/math.js"></script>
 <script charset="utf-8" src="src/core/entity.js"></script>
+<script charset="utf-8" src="src/core/i18n.js"></script>
+<script charset="utf-8" src="src/core/debug-config.js"></script>
 <script charset="utf-8" src="src/core/settings.js"></script>
 <script charset="utf-8" src="src/systems/fx.js"></script>
 <script charset="utf-8" src="src/systems/buff.js"></script>
@@ -738,16 +866,20 @@ body.menu-open #mob-zone-btn{ visibility:hidden !important; }
 <script charset="utf-8" src="src/combat/weapons.js"></script>
 <script charset="utf-8" src="src/combat/flail.js"></script>
 <script charset="utf-8" src="src/combat/ranged.js"></script>
+<script charset="utf-8" src="src/combat/debug-balls.js"></script>
 <script charset="utf-8" src="src/combat/combat.js"></script>
+<script charset="utf-8" src="src/combat/factions.js"></script>
 <script charset="utf-8" src="src/ai/ai.js"></script>
+<script charset="utf-8" src="src/input/keyboard-layout.js"></script>
+<script charset="utf-8" src="src/input/player-controls.js"></script>
 <script charset="utf-8" src="src/arena/arena.js"></script>
 <script charset="utf-8" src="src/ui/hud.js"></script>
 <script charset="utf-8" src="src/main.js"></script>
 
 <style id="mobile-style">
-/* ── МОБИЛЬ: скрыть панель, canvas на весь экран ────────────────────────── */
+/* ─── MOBILE OVERRIDES ────────────────────────────────────────────── */
 body.is-mobile #panel { display: none !important; }
-/* До нажатия СТАРТ — скрываем игру полностью */
+/* When mobile start screen is active — hide everything else */
 body.is-mobile.mob-pregame canvas,
 body.is-mobile.mob-pregame #hud,
 body.is-mobile.mob-pregame #mobile-ctrl,
@@ -760,7 +892,7 @@ body.is-mobile #adisplay { display: none !important; }
 body.is-mobile #hint { display: none !important; }
 body.is-mobile #dtoggle { display: none !important; }
 
-/* ── ROTATE PROMPT ────────────────────────────────────────────────────────*/
+/* ─── ROTATE PROMPT ────────────────────────────────────────────────── */
 #rotate-prompt {
   display: none;
   position: fixed; inset: 0; z-index: 999; pointer-events: all;
@@ -776,7 +908,7 @@ body.is-mobile.is-portrait #hud { visibility: hidden; }
 @keyframes rotateHint { 0%,100%{transform:rotate(0deg);} 50%{transform:rotate(90deg);} }
 #rotate-prompt .txt { font-size: 13px; letter-spacing: 2px; opacity: 0.8; }
 
-/* ── ДЖОЙСТИКИ (плавающие) ───────────────────────────────────────────────*/
+/* ─── MOBILE CONTROLS (visible on mobile) ────────────────────────── */
 #mobile-ctrl {
   display: none;
   position: fixed; inset: 0;
@@ -785,7 +917,7 @@ body.is-mobile.is-portrait #hud { visibility: hidden; }
 }
 body.is-mobile:not(.is-portrait) #mobile-ctrl { display: block; }
 body.is-mobile:not(.is-portrait) #mob-dodge-btn { display: flex; }
-/* Кнопки должны быть НАД зонами стиков и кликабельны независимо */
+/* Buttons need to be above sticks and clickable */
 #mob-spawn-btn, #mob-menu-btn, #mob-dodge-btn, #mob-music-btn, #mob-zone-btn, #mob-style-btn, #mob-shield-flip-btn, #mob-bot-shield-btn {
   z-index: 1000;
   pointer-events: auto !important;
@@ -793,7 +925,7 @@ body.is-mobile:not(.is-portrait) #mob-dodge-btn { display: flex; }
 }
 .touch-zone { z-index: 100; }
 
-/* Зоны касания — невидимые, большие, делят экран пополам */
+/* Touch zones — invisible but capture input */
 .touch-zone {
   position: absolute; top: 0; bottom: 0;
   pointer-events: all; touch-action: none;
@@ -801,7 +933,7 @@ body.is-mobile:not(.is-portrait) #mob-dodge-btn { display: flex; }
 #zone-move  { left: 0;  width: 45%; top: 90px; }
 #zone-sword { right: 0; width: 55%; top: 90px; }
 
-/* Плавающий джойстик: появляется в точке касания */
+/* Joystick bases — appear on touch */
 .stick-base {
   position: absolute;
   border-radius: 50%;
@@ -839,20 +971,20 @@ body.is-mobile:not(.is-portrait) #mob-dodge-btn { display: flex; }
   border-color: rgba(255,120,120,0.6);
 }
 
-/* ── Режим 2: ФИКСИРОВАННЫЙ стик (всегда виден в углу) ─────────────────── */
+/* ─── MODE 2: FIXED STICK (alternative control scheme) ──────────── */
 #fixed-stick-base {
   position: absolute;
   width: 130px; height: 130px;
   border-radius: 50%;
   background: rgba(255,255,255,0.06);
   border: 2px solid rgba(255,255,255,0.2);
-  display: none; /* включается через body.fixed-stick-mode */
+  display: none; /* Enabled via body.fixed-stick-mode */
   pointer-events: none;
   z-index: 90;
 }
 body.fixed-stick-mode #fixed-stick-base { display: block; }
 body.fixed-stick-mode #zone-sword .stick-base,
-body.fixed-stick-mode #zone-sword .stick-knob { display: none; } /* прячем плавающий */
+body.fixed-stick-mode #zone-sword .stick-knob { display: none; } /* Hide floating stick */
 
 #fixed-stick-knob {
   position: absolute; top: 50%; left: 50%;
@@ -870,7 +1002,7 @@ body.fixed-stick-mode #zone-sword .stick-knob { display: none; } /* прячем
   border-color: rgba(255,120,120,0.6);
 }
 
-/* Прицел — вращается вокруг стика, показывает текущее направление меча */
+/* Reticle — shows aim direction */
 #fixed-stick-reticle {
   position: absolute; top: 50%; left: 50%;
   width: 22px; height: 22px;
@@ -887,7 +1019,7 @@ body.fixed-stick-mode #zone-sword .stick-knob { display: none; } /* прячем
   background:#ffcc40; border-radius:50%;
 }
 
-/* Кнопка спавна бота */
+/* ─── MOBILE BUTTONS ──────────────────────────────────────────────── */
 #mob-spawn-btn {
   position: absolute; top: 14px; left: calc(50% - 53px);
   background: rgba(10,30,20,0.9); border: 1px solid #2a6a40; border-radius: 50%;
@@ -896,7 +1028,7 @@ body.fixed-stick-mode #zone-sword .stick-knob { display: none; } /* прячем
   pointer-events: auto !important; touch-action: none;
   z-index: 1000;
 }
-/* Кнопка переключения щита бота — рядом со спавном бота */
+/* Bot shield cycle button — next to spawn */
 #mob-bot-shield-btn {
   position: absolute; top: 14px; left: calc(50% - 109px);
   background: rgba(10,30,20,0.9); border: 1px solid #2a6a40; border-radius: 50%;
@@ -905,7 +1037,7 @@ body.fixed-stick-mode #zone-sword .stick-knob { display: none; } /* прячем
   pointer-events: auto !important; touch-action: none;
   z-index: 1000;
 }
-/* Кнопка смены оружия бота — рядом со щитом бота */
+/* Bot weapon cycle button */
 #mob-bot-weapon-btn {
   position: absolute; top: 14px; left: calc(50% - 165px);
   background: rgba(10,30,20,0.9); border: 1px solid #2a6a40; border-radius: 50%;
@@ -915,7 +1047,7 @@ body.fixed-stick-mode #zone-sword .stick-knob { display: none; } /* прячем
   z-index: 1000;
 }
 
-/* Кнопка меню (⚙) — открывает оверлей с настройками поверх экрана */
+/* Menu button (pause) — right side */
 #mob-menu-btn {
   position: absolute; top: 14px; left: calc(50% + 59px);
   background: rgba(10,20,30,0.9); border: 1px solid #1a4060; border-radius: 50%;
@@ -956,7 +1088,7 @@ body.fixed-stick-mode #zone-sword .stick-knob { display: none; } /* прячем
   pointer-events: auto !important; touch-action: none; z-index: 1000;
 }
 body.is-mobile:not(.is-portrait) #mob-shield-flip-btn { display: flex; }
-/* Кнопка смены оружия игрока — рядом со щитом */
+/* Player weapon cycle button */
 #mob-weapon-btn {
   position: absolute; top: 100px; left: 70px;
   background: rgba(10,20,30,0.9); border: 1px solid #2a4a7a; border-radius: 50%;
@@ -965,9 +1097,7 @@ body.is-mobile:not(.is-portrait) #mob-shield-flip-btn { display: flex; }
   pointer-events: auto !important; touch-action: none; z-index: 1000;
 }
 body.is-mobile:not(.is-portrait) #mob-weapon-btn { display: flex; }
-/* Кнопка броска оружия игроком — рядом со щитом. Расположена на месте кнопки
-   стиля боя (поменяны местами по просьбе: бросок реже нужен под рукой, чем
-   смена стиля, которая используется активнее в бою). */
+/* Throw weapon button — on the right side */
 #mob-throw-btn {
   position: absolute; top: 90px; right: 72px;
   background: rgba(10,20,30,0.9); border: 1px solid #7a4a2a; border-radius: 50%;
@@ -986,7 +1116,7 @@ body.is-mobile:not(.is-portrait) #mob-throw-btn { display: flex; }
 }
 #mob-dodge-btn:active { background: rgba(20,60,30,0.95); }
 
-/* Оверлей меню: пауза + рестарт + настройки */
+/* Mobile menu overlay — pause/restart/settings */
 #mob-menu-overlay {
   display: none;
   position: fixed; inset: 0; z-index: 500;
@@ -1019,25 +1149,25 @@ body.is-mobile:not(.is-portrait) #mob-throw-btn { display: flex; }
 .menu-btn:active { background: rgba(40,70,100,0.95); }
 .mob-menu-embed { max-height: 60vh; overflow-y: auto; width: 90%; }
 </style>
-<!-- ── ROTATE PROMPT ───────────────────────────────────────────────────────-->
+<!-- ─── ROTATE PROMPT ────────────────────────────────────────────── -->
 <div id="rotate-prompt">
-  <div class="icon">📱</div>
-  <div class="txt">ПОВЕРНИТЕ УСТРОЙСТВО<br>ГОРИЗОНТАЛЬНО</div>
+  <div class="icon">↻</div>
+  <div class="txt">Please rotate your device<br>to landscape mode</div>
 </div>
 
-<!-- ── МОБИЛЬНЫЙ КОНТРОЛЛЕР ────────────────────────────────────────────────-->
+<!-- ─── MOBILE CONTROLS (visible on mobile) ────────────────────── -->
 <div id="mobile-ctrl">
-  <button id="mob-bot-shield-btn" title="Щит бота">🛡🤖</button>
-  <button id="mob-bot-weapon-btn" title="Оружие бота">🗡🤖</button>
+  <button id="mob-bot-shield-btn" title="Bot shield cycle">🛡️</button>
+  <button id="mob-bot-weapon-btn" title="Bot weapon cycle">⚔️</button>
   <button id="mob-spawn-btn">🤖</button>
-  <button id="mob-menu-btn">⚙</button>
+  <button id="mob-menu-btn">☰</button>
   <button id="mob-style-btn">⚔</button>
   <button id="mob-shield-flip-btn">🛡</button>
-  <button id="mob-weapon-btn" title="Смена оружия">🗡</button>
-  <button id="mob-throw-btn" title="Бросить оружие">🎯</button>
+  <button id="mob-weapon-btn" title="Cycle weapon">⚔</button>
+  <button id="mob-throw-btn" title="Throw weapon">⬇</button>
   <button id="mob-dodge-btn">💨</button>
   <button id="mob-music-btn">🎵</button>
-  <button id="mob-zone-btn" title="Зона арены">⭕</button>
+  <button id="mob-zone-btn" title="Toggle zone">⏺</button>
 
   <div id="zone-move" class="touch-zone">
     <div id="move-base" class="stick-base"></div><div id="move-knob" class="stick-knob"></div>
@@ -1046,97 +1176,97 @@ body.is-mobile:not(.is-portrait) #mob-throw-btn { display: flex; }
     <div id="sword-base" class="stick-base"><div id="sword-knob" class="stick-knob"></div></div>
   </div>
 
-  <!-- Фиксированный стик (режим 2) — позиционируется через JS в правый нижний угол -->
+  <!-- Fixed stick (mode 2) — positioned via JS, overlays the right zone -->
   <div id="fixed-stick-base">
     <div id="fixed-stick-knob"></div>
     <div id="fixed-stick-reticle"></div>
   </div>
 </div>
 
-<!-- ── МЕНЮ (пауза/рестарт/настройки) ─────────────────────────────────────-->
+<!-- ─── MOBILE MENU OVERLAY (pause/restart/settings) ────────────── -->
 <div id="mob-menu-overlay">
-  <button id="mob-resume" class="menu-btn">▶ ПРОДОЛЖИТЬ</button>
-  <button id="mob-profile-btn" class="menu-btn">👤 ПРОФИЛЬ</button>
-  <!-- Сгруппированная кнопка сети — вписана в размер обычных кнопок -->
+  <button id="mob-resume" class="menu-btn">▶ RESUME</button>
+  <button id="mob-profile-btn" class="menu-btn">👤 PROFILE</button>
+  <!-- Quick match / network buttons grouped together -->
   <div class="mob-net-group">
-    <button id="mob-quickmatch-btn" class="menu-btn mob-net-half left">🔍 ПОИСК</button>
-    <button id="mob-net-btn" class="menu-btn mob-net-half right">🌐 СЕТЬ</button>
+    <button id="mob-quickmatch-btn" class="menu-btn mob-net-half left">⚡ QUICK</button>
+    <button id="mob-net-btn" class="menu-btn mob-net-half right">🌐 NET</button>
   </div>
-  <button id="mob-control-mode-btn" class="menu-btn">🎮 УПРАВЛЕНИЕ</button>
-  <button id="mob-toggle-settings" class="menu-btn">⚙ НАСТРОЙКИ</button>
-  <button id="mob-restart" class="menu-btn" style="margin-top:8px;">🔄 РЕСТАРТ</button>
+  <button id="mob-control-mode-btn" class="menu-btn">🎮 CONTROL MODE</button>
+  <button id="mob-toggle-settings" class="menu-btn">⚙️ SETTINGS</button>
+  <button id="mob-restart" class="menu-btn" style="margin-top:8px;">🔄 RESTART</button>
 </div>
 
-<!-- Отдельное окно настроек (поверх меню) -->
+<!-- ─── SETTINGS OVERLAY (mobile fullscreen) ────────────────────── -->
 <div id="mob-settings-overlay" style="
   display:none; position:fixed; inset:0; z-index:600;
   background:rgba(5,8,12,0.96);
   flex-direction:column; align-items:center; justify-content:center;
   overflow-y:auto; padding:20px 16px;
 ">
-  <div style="font-family:'Share Tech Mono',monospace;font-size:13px;color:#6ab0d0;letter-spacing:2px;margin-bottom:16px;">⚙ НАСТРОЙКИ</div>
+  <div style="font-family:'Share Tech Mono',monospace;font-size:13px;color:#6ab0d0;letter-spacing:2px;margin-bottom:16px;">⚙️ SETTINGS</div>
   <div id="mob-settings-embed" style="width:100%;max-width:400px;"></div>
   <button id="mob-settings-close" style="
     margin-top:20px;font-family:'Share Tech Mono',monospace;font-size:13px;
     padding:10px 32px;border-radius:22px;background:rgba(20,30,45,0.9);
     color:#6ab0d0;border:1px solid #2a5a80;cursor:pointer;
-  ">← ЗАКРЫТЬ</button>
+  ">✕ CLOSE</button>
 </div>
 
 <script charset="utf-8" src="src/ui/mobile.js"></script>
 
-<!-- ── OVERLAY: ВВОД ИМЕНИ ──────────────────────────────────── -->
+<!-- ─── OVERLAY: NAME INPUT ───────────────────────────────────────── -->
 <div id="name-overlay" class="game-overlay">
-  <p class="ov-sub">ДОБРО ПОЖАЛОВАТЬ</p>
-  <h2 class="ov-title">ВВЕДИ СВОЁ ИМЯ</h2>
-  <input type="text" id="name-input" class="ov-input" maxlength="16" placeholder="Игрок" autocomplete="off" spellcheck="false">
+  <p class="ov-sub">Enter your name</p>
+  <h2 class="ov-title">WELCOME TO THE ARENA</h2>
+  <input type="text" id="name-input" class="ov-input" maxlength="16" placeholder="YOUR NAME" autocomplete="off" spellcheck="false">
 
-  <!-- Выбор щита -->
+  <!-- ─── SHIELD SELECTION ─────────────────────────────────────── -->
   <div class="ov-card" style="max-width:340px;width:100%;margin-top:12px;">
-    <h3 style="margin:0 0 10px;font-size:10px;color:#2a6a8a;letter-spacing:1px;">🛡 ЩИТ</h3>
+    <h3 style="margin:0 0 10px;font-size:10px;color:#2a6a8a;letter-spacing:1px;">🛡 SHIELD</h3>
     <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
       <button class="ov-btn small shield-pick" data-shield="0" style="flex:1;min-width:60px;" onclick="pickShield(0)">
-        ✗ Нет
+        ✖ None
       </button>
       <button class="ov-btn small shield-pick" data-shield="1" style="flex:1;min-width:60px;" onclick="pickShield(1)">
-        🛡 Малый
+        🛡 Small
       </button>
       <button class="ov-btn small shield-pick" data-shield="2" style="flex:1;min-width:60px;" onclick="pickShield(2)">
-        🛡 Большой
+        🛡 Large
       </button>
       <button class="ov-btn small shield-pick" data-shield="3" style="flex:1;min-width:60px;" onclick="pickShield(3)">
-        🛡 Башенный
+        🛡 Tower
       </button>
     </div>
     
-    <!-- 🔥 РЯД С ШИПАСТЫМИ ЩИТАМИ -->
+    <!-- Spiked shields row -->
     <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:4px;">
       <button class="ov-btn small shield-pick" data-shield="4" style="flex:1;min-width:60px;" onclick="pickShield(4)">
-        🗡 Малый
+        🔥 Small
       </button>
       <button class="ov-btn small shield-pick" data-shield="5" style="flex:1;min-width:60px;" onclick="pickShield(5)">
-        🗡 Средний
+        🔥 Medium
       </button>
       <button class="ov-btn small shield-pick" data-shield="6" style="flex:1;min-width:60px;" onclick="pickShield(6)">
-        🗡 Большой
+        🔥 Large
       </button>
     </div>
     
-    <div style="font-size:9px;color:#1a4a5a;margin-top:8px;text-align:center;" id="shield-info">Без щита</div>
+    <div style="font-size:9px;color:#1a4a5a;margin-top:8px;text-align:center;" id="shield-info">No shield</div>
   </div>
 
-  <button id="name-confirm" class="ov-btn accent" style="margin-top:12px;">СОХРАНИТЬ →</button>
+  <button id="name-confirm" class="ov-btn accent" style="margin-top:12px;">✅ CONFIRM</button>
 </div>
 
-<!-- ── OVERLAY: МЕНЮ СЕТИ ────────────────────────────────────── -->
+<!-- ─── OVERLAY: NETWORK MENU ─────────────────────────────────────── -->
 <div id="net-overlay" class="game-overlay">
 
-  <!-- ── ЭКРАН: ГЛАВНЫЙ ─────────────────────────────────── -->
+  <!-- ─── MAIN SCREEN ─────────────────────────────────────────────── -->
   <div id="net-screen-main" class="net-screen">
-    <h2 class="ov-title">🌐 МУЛЬТИПЛЕЕР</h2>
+    <h2 class="ov-title">🌐 NETWORK</h2>
     <div class="ov-card" style="max-width:380px;">
       <div class="ov-row" style="margin-bottom:0;">
-        <span class="ov-label">Игрок:</span>
+        <span class="ov-label">Player:</span>
         <span class="ov-val" id="net-myname">—</span>
         <span class="ov-val" id="net-myid" style="font-size:9px;color:#2a7a50;flex:none;"></span>
         <button class="ov-btn small" id="net-rename">✏</button>
@@ -1144,78 +1274,83 @@ body.is-mobile:not(.is-portrait) #mob-throw-btn { display: flex; }
       </div>
     </div>
 
-    <!-- Выбор сервера — два варианта на случай блокировок -->
+    <!-- Server selection — two options (main/backup) -->
     <div class="ov-card" style="max-width:380px;" id="net-server-select">
-      <h3 style="margin:0 0 8px;font-size:10px;color:#2a6a8a;">Сервер подключения</h3>
+      <h3 style="margin:0 0 8px;font-size:10px;color:#2a6a8a;">🔌 SIGNALING SERVER</h3>
       <div style="display:flex;gap:8px;">
         <button class="ov-btn small" id="net-srv-main" style="flex:1;" onclick="chooseServer(0)">
-          🌍 Основной
+          🌐 Main
         </button>
         <button class="ov-btn small" id="net-srv-alt" style="flex:1;" onclick="chooseServer(1)">
-          🔁 Запасной
+          🔄 Backup
         </button>
       </div>
       <div style="font-size:9px;color:#1a4a5a;margin-top:6px;line-height:1.5;">
-        Если "Основной" не подключается (заблокирован) — нажми "Запасной".
+        If "Main" doesn't connect — try "Backup" (may be slower).
       </div>
     </div>
 
     <div id="net-log" style="max-width:380px;width:100%;min-height:32px;padding:0 4px;"></div>
     <button class="ov-btn" onclick="showNetScreen('net-screen-friends')" style="max-width:380px;width:100%;">
-      👥 Игра по ID / Друзья
+      📇 FRIENDS / ID BOOK
     </button>
-    <button class="ov-btn back" id="net-close-btn">← ЗАКРЫТЬ</button>
+    <button class="ov-btn back" id="net-close-btn">✕ CLOSE</button>
   </div>
 
-  <!-- ── ЭКРАН: ИГРА ПО ID ─────────────────────────────── -->
+  <!-- ─── FRIENDS SCREEN ───────────────────────────────────────────── -->
   <div id="net-screen-friends" class="net-screen" style="display:none;">
-    <h2 class="ov-title">👥 ДРУЗЬЯ / ID</h2>
+    <h2 class="ov-title">📇 FRIENDS / ID BOOK</h2>
     <div class="ov-card" style="max-width:380px;">
-      <h3>Друзья <span id="net-friends-count" style="color:#2a7a50;">(0/30)</span></h3>
+      <h3>Contacts <span id="net-friends-count" style="color:#2a7a50;">(0/30)</span></h3>
       <div class="ov-row">
-        <input type="text" id="net-friend-name" class="ov-input wide" placeholder="Имя" maxlength="16" style="flex:1;">
-        <input type="text" id="net-friend-id" class="ov-input wide" placeholder="ID друга" maxlength="20" style="flex:1.5;">
+        <input type="text" id="net-friend-name" class="ov-input wide" placeholder="Name" maxlength="16" style="flex:1;">
+        <input type="text" id="net-friend-id" class="ov-input wide" placeholder="ID (from clipboard)" maxlength="20" style="flex:1.5;">
         <button class="ov-btn accent small" id="net-add-friend">+</button>
       </div>
       <div id="net-friends-list" style="max-height:200px;overflow-y:auto;margin-top:4px;"></div>
     </div>
-    <button class="ov-btn back" onclick="showNetScreen('net-screen-main')">← НАЗАД</button>
+    <button class="ov-btn back" onclick="showNetScreen('net-screen-main')">← BACK</button>
   </div>
 
-  <!-- ── ЭКРАН: БЫСТРЫЙ ПОИСК ──────────────────────────────── -->
+  <!-- ─── LOBBY SCREEN ─────────────────────────────────────────────── -->
   <div id="net-screen-lobby" class="net-screen" style="display:none;">
-    <h2 class="ov-title">🔍 БЫСТРЫЙ ПОИСК</h2>
+    <h2 class="ov-title">🔍 LOBBY SEARCH</h2>
     <div class="ov-card" style="max-width:380px;text-align:center;">
-      <div id="lobby-status" style="font-size:12px;color:#2a7a9a;margin-bottom:12px;">Ищем игроков...</div>
+      <div id="lobby-status" style="font-size:12px;color:#2a7a9a;margin-bottom:12px;">Searching for players...</div>
       <div id="lobby-list" style="max-height:200px;overflow-y:auto;margin-bottom:10px;"></div>
       <div style="font-size:10px;color:#1a4a5a;margin-top:8px;">
-        Все кто открыл этот экран видят друг друга.<br>Нажми 🔗 чтобы подключиться.
-        <br><b style="color:#cc8040;">⚠ Работает только если у вас выбран ОДИН И ТОТ ЖЕ сервер (Основной/Запасной)!</b>
+        Everyone sees the same list. Click a player to connect.
+        <br><b style="color:#cc8040;">⚠️ A bot only fights if you press PLAY in chat!</b>
       </div>
     </div>
-    <button class="ov-btn back" onclick="stopLobby();showNetScreen('net-screen-main');">← НАЗАД</button>
+    <button class="ov-btn back" onclick="stopLobby();showNetScreen('net-screen-main');">← BACK</button>
   </div>
 
-  <!-- ── ЭКРАН: ЧАТ ──────────────────────────────────────── -->
+  <!-- ─── CHAT SCREEN ──────────────────────────────────────────────── -->
   <div id="net-screen-chat" class="net-screen" style="display:none;width:100%;max-width:480px;">
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;max-width:480px;width:100%;">
       <span class="ov-title" style="margin:0;">💬</span>
       <span id="net-chat-peer" style="color:#4acc80;font-size:14px;flex:1;"></span>
-      <button class="ov-btn accent small" id="net-chat-play">▶ ИГРАТЬ</button>
-      <button class="ov-btn danger small" id="net-chat-disconnect">✕ Выйти</button>
+      <button class="ov-btn accent small" id="net-chat-play">▶ PLAY</button>
+      <button class="ov-btn danger small" id="net-chat-disconnect">⚡ EXIT</button>
     </div>
     <div class="ov-card" style="max-width:480px;width:100%;">
       <div id="net-chat-msgs" style="height:220px;overflow-y:auto;display:flex;flex-direction:column;gap:5px;margin-bottom:8px;"></div>
       <div style="display:flex;gap:8px;">
-        <input type="text" id="net-chat-input" class="ov-input wide" placeholder="Сообщение..." maxlength="200" autocomplete="off" style="flex:1;max-width:none;">
-        <button class="ov-btn accent small" id="net-chat-send">→</button>
+        <input type="text" id="net-chat-input" class="ov-input wide" placeholder="Type a message..." maxlength="200" autocomplete="off" style="flex:1;max-width:none;">
+        <button class="ov-btn accent small" id="net-chat-send">➤</button>
       </div>
     </div>
   </div>
 
 </div>
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
-<script charset="utf-8" src="src/network/net.js"></script>
-<script src="gamepad-controls.js"></script>
+<script charset="utf-8" src="src/network/net-ui.js"></script>
+<script charset="utf-8" src="src/network/net-core.js"></script>
+<script charset="utf-8" src="src/network/net-sync.js"></script>
+<script charset="utf-8" src="src/network/net-lobby.js"></script>
+<script charset="utf-8" src="src/network/net-effects.js"></script>
+<script charset="utf-8" src="src/input/gamepad-adapter.js"></script>
+<script charset="utf-8" src="src/input/gamepad-controls.js"></script>
 </body>
 </html>

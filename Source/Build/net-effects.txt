@@ -1,0 +1,10 @@
+{
+  "net.wins.score": "SCORE {wins}/{total}",
+  "net.wins.player": "Player",
+  "net.wins.bot": "Bot",
+  "net.wins.seriesWin": "🏆 {name} WON THE SERIES!",
+  "net.wins.champion": "🏆 {name} WON!",
+  "net.zone.active": "ZONE ACTIVE",
+  "net.zone.inactive": "ZONE OFF",
+  "net.zone.damageSuffix": "🔥"
+}

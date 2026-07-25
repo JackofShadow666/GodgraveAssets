@@ -1,69 +1,67 @@
 // === src/combat/ranged.js ===
 // Extracted from Build.html; loaded as a classic script to preserve shared runtime state.
-// LAYER: RANGED WEAPONS — жезл и арбалет (снаряды, зарядка, AI стрельбы)
+// LAYER: RANGED WEAPONS — Wand, Crossbow, Magic Staff (projectiles, charging, AI behavior)
 // Module file: ranged.js
-// ════════════════════════════════════════════════════════════════════════════
+// ••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
 
-// ── Настройки жезла ──
-// WAND_CHARGE_TIME — запасное значение, если в WeaponTalbe.txt не задано поле chargeTime.
-const WAND_CHARGE_TIME = 0.5;   // сек подготовки перед выстрелом (герой не двигается)
-const WAND_PROJ_SPEED  = 13;    // скорость магического снаряда, px/кадр
-const WAND_BASE_DMG    = 20;    // базовый урон, множится на 1x..2x от ярости
-const WAND_SHOT_CD     = 0.35;  // пауза после выстрела перед след. накоплением
-const WAND_MAX_DMG_PCT = 0.25;  // потолок урона за попадание (% от MAX_HP цели)
+// ─── WAND SETTINGS ───
+// WAND_CHARGE_TIME — charge duration, if not provided in WeaponTable.txt via chargeTime.
+const WAND_CHARGE_TIME = 0.5;   // seconds before projectile fires (the longer, the more powerful)
+const WAND_PROJ_SPEED  = 13;    // projectile speed, px/frame
+const WAND_BASE_DMG    = 20;    // base damage, multiplied by 1x..2x depending on rage
+const WAND_SHOT_CD     = 0.35;  // pause between shots. On mobile it's slightly longer
+const WAND_MAX_DMG_PCT = 0.25;  // max damage as % of target's MAX_HP per hit
 
-// Время накопления заряда жезла — берётся из WeaponTalbe.txt (поле chargeTime),
-// если не задано — используется WAND_CHARGE_TIME.
+// ── WAND charge time from WeaponTable.txt (if available), otherwise WAND_CHARGE_TIME.
 function wandChargeTimeFor(ent){
   const d = weaponDefFor(ent);
   return (d && d.chargeTime != null) ? d.chargeTime : WAND_CHARGE_TIME;
 }
 
 
-// ── Настройки магического посоха ──
-const MAGICSTAFF_CHARGE_FULLTIME = 1.5;   // сек до полной зарядки
-const MAGICSTAFF_CHARGE_MINTIME  = 0.4;   // сек до первого выстрела
+// ─── MAGIC STAFF SETTINGS ───
+const MAGICSTAFF_CHARGE_FULLTIME = 1.5;   // seconds to fully charge
+const MAGICSTAFF_CHARGE_MINTIME  = 0.4;   // minimum charge time before release
 
-const MAGICSTAFF_DMG_MIN = 20;        // до 2 сек урона нет
-const MAGICSTAFF_DMG_MAX = 50;       // макс урон как у жезла
-const MAGICSTAFF_RADIUS = 280;        // радиус взрыва (2 посоха)
-const MAGICSTAFF_KB_FORCE = 15;       // сила отбрасывания
-const MAGICSTAFF_SHOT_CD = 1.0;       // кулдаун после взрыва
-const MAGICSTAFF_STAMINADRAIN =2.5;  // расход стамины в сек
+const MAGICSTAFF_DMG_MIN = 20;        // minimum damage
+const MAGICSTAFF_DMG_MAX = 50;       // maximum damage at full charge
+const MAGICSTAFF_RADIUS = 280;        // explosion radius (2 cells)
+const MAGICSTAFF_KB_FORCE = 15;       // knockback strength
+const MAGICSTAFF_SHOT_CD = 1.0;       // cooldown between explosions
+const MAGICSTAFF_STAMINADRAIN = 2.5;  // stamina drain per second
 
-// ── Эффекты магического посоха ──
+// ─── MAGIC STAFF EFFECTS ───
 
 let MAGICSTAFF_CHARGE_FX = [];
 let MAGICSTAFF_LIGHTNING_FX = [];
 let MAGICSTAFF_GLOW_FX = [];
 
 
-// ── Настройки арбалета ──
-const CROSSBOW_PROJ_SPEED = 25;  // скорость стрелы, px/кадр (в 2 раза медленнее прежней)
+// ─── CROSSBOW SETTINGS ───
+const CROSSBOW_PROJ_SPEED = 25;  // projectile speed, px/frame (about 2x faster than wand)
 const CROSSBOW_DMG_MIN    = 20;
 const CROSSBOW_DMG_MAX    = 56;
-const CROSSBOW_RELOAD     = 1.6;  // сек между выстрелами (перезарядка в 1.5 раза медленнее прежней)
+const CROSSBOW_RELOAD     = 1.6;  // seconds between shots (about 1.5x slower than wand)
 const CROSSBOW_MAX_DMG_PCT= 0.45;
-// ── Настройки лука ──
-const BOW_PROJ_SPEED = 15;    // скорость стрелы, px/кадр (чуть быстрее арбалета)
+// ─── BOW SETTINGS ───
+const BOW_PROJ_SPEED = 15;    // projectile speed, px/frame (slower than crossbow)
 const BOW_DMG_MIN    = 4;
 const BOW_DMG_MAX    = 50;
-const BOW_RELOAD     = 1.0;   // сек между выстрелами (1 сек натяжение)
-const BOW_MAX_DMG_PCT= 0.35;  // потолок урона
+const BOW_RELOAD     = 1.0;   // seconds between shots (1 second for full draw)
+const BOW_MAX_DMG_PCT= 0.35;  // max damage as % of target's MAX_HP
 
 
-// Шанс, с которым БОТ уворачивается от снаряда (жезл/арбалет) в момент попадания.
+// ── Chance for a bot to dodge a projectile completely (no damage).
 const PROJECTILE_DODGE_CHANCE = 0.15;
-// Шанс, с которым БОТ проактивно уворачивается ЗАРАНЕЕ, увидев летящий в него снаряд.
+// ── Chance for a bot to predictively dodge a projectile before it reaches them.
 const PROJECTILE_PREDODGE_CHANCE = 0.25;
 
 let PROJECTILES = []; // {kind:'wand'|'arrow', x,y,vx,vy,rot,owner,dmg,ownerImmuneUntil,bornAt,fade,img}
-let WAND_PARTICLES = []; // {x,y,tx,ty,life,maxLife,owner} — синие частицы, стягивающиеся к наконечнику жезла во время накопления
+let WAND_PARTICLES = []; // {x,y,tx,ty,life,maxLife,owner} — particles during charging, attracted to wand tip
 
-// Выстрел: сохраняет либо готовый урон (жезл — уже умноженный на ярость),
-// либо диапазон, который был рассчитан заранее (арбалет — 5..20 при выстреле).
+// ── Helper: spawns a projectile (wand or arrow) at the weapon tip with given angle and damage.
 function spawnProjectile(owner, kind, angle, dmg, speedOverride, maxDmgPct){
-  const c = weaponTipPos(owner);
+  const c = $.POS.tip(owner);
   
   let speed;
   if (speedOverride !== undefined) {
@@ -74,7 +72,7 @@ function spawnProjectile(owner, kind, angle, dmg, speedOverride, maxDmgPct){
     speed = CROSSBOW_PROJ_SPEED;
   }
   
-  // 🔥 СОХРАНЯЕМ maxDmgPct
+  // Use provided maxDmgPct or default based on weapon type
   const maxPct = maxDmgPct || (kind === 'wand' ? WAND_MAX_DMG_PCT : CROSSBOW_MAX_DMG_PCT);
   
   PROJECTILES.push({
@@ -84,25 +82,25 @@ function spawnProjectile(owner, kind, angle, dmg, speedOverride, maxDmgPct){
     maxDmgPct: maxPct,
     ownerImmuneUntil: GameTime + 0.15,
     bornAt: GameTime,
-    // 🔥 ДЛЯ МОЛНИИ — запоминаем позицию стрелка
+    // Save shooter position for lightning trail effects
     shooterPos: {x: c.x, y: c.y},
   });
-  hitFX.push({x:c.x, y:c.y-30, t: kind==='wand' ? '✨' : '🏹', life:20, big:false, col: kind==='wand'?'#c090ff':'#d9c08a'});
+  $.FX.hit({x:c.x, y:c.y-30, t: kind==='wand' ? '✨' : '➹', life:20, big:false, col: kind==='wand'?'#c090ff':'#d9c08a'});
 }
 
 
 
 
 
-// ── Частицы накопления жезла: синие искры притягиваются к кончику ──────────
-// Вызывается каждый кадр, пока ent._wandCharging === true.
+// ─── WAND PARTICLES ──────────────────────────────────────────────────────
+// Attracted particles orbiting the wand tip while charging.
 function updateWandChargeParticles(dt, ent){
-  const tip = weaponTipPos(ent);
-  // Периодически спавним новые частицы вокруг персонажа
+  const tip = $.POS.tip(ent);
+  // Periodically spawn new particles around the character
   ent._wandParticleSpawnCD = (ent._wandParticleSpawnCD||0) - dt;
   if(ent._wandParticleSpawnCD <= 0){
     ent._wandParticleSpawnCD = 0.02;
-    const c = entityBodyCenter(ent);
+    const c = $.POS.body(ent);
     const a = Math.random()*Math.PI*2;
     const r = 30 + Math.random()*40;
     WAND_PARTICLES.push({
@@ -110,11 +108,11 @@ function updateWandChargeParticles(dt, ent){
       owner: ent, life: 1, maxLife: 1,
     });
   }
-  // Двигаем существующие частицы этого владельца к текущему кончику жезла
+  // Move existing particles toward the wand tip
   for(const p of WAND_PARTICLES){
     if(p.owner !== ent) continue;
-    p.x += (tip.x - p.x) * clamp(dt*6, 0, 1);
-    p.y += (tip.y - p.y) * clamp(dt*6, 0, 1);
+    p.x += (tip.x - p.x) * $.M.clamp(dt*6, 0, 1);
+    p.y += (tip.y - p.y) * $.M.clamp(dt*6, 0, 1);
     p.life -= dt*1.6;
   }
 }
@@ -128,7 +126,7 @@ function updateWandParticles(dt){
 }
 function drawWandParticles(){
   for(const p of WAND_PARTICLES){
-    const a = clamp(p.life / p.maxLife, 0, 1);
+    const a = $.M.clamp(p.life / p.maxLife, 0, 1);
     ctx.save();
     ctx.globalAlpha = a;
     const grad = ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,5);
@@ -140,7 +138,8 @@ function drawWandParticles(){
   }
 }
 
-// ── Взрыв снаряда жезла: синие частицы разлетаются в разные стороны ────────
+// ─── WAND EXPLOSIONS ────────────────────────────────────────────────────
+// Flash/spark effects when wand projectile hits something.
 let WAND_EXPLOSIONS = []; // {x,y,vx,vy,life,maxLife,r}
 function spawnWandExplosion(x, y){
   const n = 16;
@@ -164,7 +163,7 @@ function updateWandExplosions(dt){
 }
 function drawWandExplosions(){
   for(const p of WAND_EXPLOSIONS){
-    const a = clamp(p.life / p.maxLife, 0, 1);
+    const a = $.M.clamp(p.life / p.maxLife, 0, 1);
     ctx.save();
     ctx.globalAlpha = a;
     const grad = ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.r*2.4);
@@ -186,7 +185,7 @@ function fxDrawMagicExplosion(ctx, p, x, y, radius){
   ctx.save();
   ctx.globalAlpha = p * 0.6;
   
-  // Внешнее кольцо
+  // Outer glow
   const grad = ctx.createRadialGradient(x, y, 0, x, y, r);
   grad.addColorStop(0, 'rgba(200, 240, 255, 0)');
   grad.addColorStop(0.3, `rgba(150, 220, 255, ${p * 0.3})`);
@@ -197,7 +196,7 @@ function fxDrawMagicExplosion(ctx, p, x, y, radius){
   ctx.arc(x, y, r, 0, Math.PI * 2);
   ctx.fill();
   
-  // Белое свечение в центре
+  // Bright center core
   const innerGrad = ctx.createRadialGradient(x, y, 0, x, y, r * 0.3);
   innerGrad.addColorStop(0, `rgba(255, 255, 255, ${p * 0.5})`);
   innerGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
@@ -214,11 +213,11 @@ function fxDrawMagicExplosion(ctx, p, x, y, radius){
 function drawMagicStaffRadius(ent){
   if(!ent._magicCharging) return;
   
-  const c = entityBodyCenter(ent);
+  const c = $.POS.body(ent);
   const progress = Math.min(1, (GameTime - ent._magicChargeStart) / MAGICSTAFF_CHARGE_FULLTIME);
   const radius = MAGICSTAFF_RADIUS * (1 + progress * 0.5);
   
-  // Только после 1.5 сек показываем радиус
+  // Only show after 1.5 seconds of charging
   const chargeTime = GameTime - ent._magicChargeStart;
   if(chargeTime < 1.5) return;
   
@@ -230,7 +229,7 @@ function drawMagicStaffRadius(ent){
   
 
   
-  // Внутреннее кольцо (пульсирующее)
+  // Inner pulsing ring
   const innerRadius = radius * (0.7 + 0.3 * Math.sin(GameTime * 2));
   ctx.strokeStyle = 'rgba(150, 220, 255, 0.5)';
   ctx.lineWidth = 1;
@@ -238,7 +237,7 @@ function drawMagicStaffRadius(ent){
   ctx.arc(c.x, c.y, innerRadius, 0, Math.PI * 2);
   ctx.stroke();
   
-  // Метки по краям (показывают направление)
+  // Orbiting dots along the radius
   for(let i = 0; i < 8; i++){
     const angle = (i / 8) * Math.PI * 2 + GameTime * 0.2;
     const x = c.x + Math.cos(angle) * radius;
@@ -255,10 +254,10 @@ function drawMagicStaffRadius(ent){
 
 
 function spawnMagicStaffGlow(ent){
-  const tip = weaponTipPos(ent);
+  const tip = $.POS.tip(ent);
   const progress = Math.min(1, (GameTime - ent._magicChargeStart) / MAGICSTAFF_CHARGE_FULLTIME);
   
-  // Мерцание (синус + случайность)
+  // Flickering glow at the staff tip
   const flicker = 0.7 + 0.3 * Math.sin(GameTime * 15 + ent._magicSeed || 0);
   const size = 5 + progress * 25 * flicker;
   const alpha = 0.3 + progress * 0.6 * flicker;
@@ -278,8 +277,7 @@ function updateMagicStaffGlow(dt){
   for(let i = arr.length - 1; i >= 0; i--){
     arr[i].life -= dt / arr[i].maxLife;
     if(arr[i].life <= 0){
-      // Порядок частиц не важен — удаление свапом с последним элементом
-      // вместо splice() дешевле (O(1) вместо сдвига всего хвоста массива).
+      // Remove without using splice for O(1) performance
       arr[i] = arr[arr.length - 1];
       arr.pop();
     }
@@ -297,13 +295,13 @@ function drawMagicStaffGlow(){
     const a = g.life * g.alpha;
     if(a < 0.01) continue;
     
-    // 🔥 ПРОВЕРКА НА КОРРЕКТНЫЕ ЗНАЧЕНИЯ
+    // Safety check for invalid values
     if(!isFinite(g.x) || !isFinite(g.y) || !isFinite(g.size) || g.size <= 0) continue;
     
     ctx.save();
     ctx.globalAlpha = a;
     
-    // Свечение на кончике
+    // Glow gradient
     try {
       const grad = ctx.createRadialGradient(g.x, g.y, 0, g.x, g.y, g.size);
       grad.addColorStop(0, 'rgba(200, 240, 255, 0.95)');
@@ -315,14 +313,14 @@ function drawMagicStaffGlow(){
       ctx.arc(g.x, g.y, g.size, 0, Math.PI * 2);
       ctx.fill();
     } catch(e) {
-      // Если градиент не создался — рисуем простой круг
+      // Fallback if gradient creation fails
       ctx.fillStyle = `rgba(100, 200, 255, ${a * 0.5})`;
       ctx.beginPath();
       ctx.arc(g.x, g.y, Math.max(1, g.size * 0.5), 0, Math.PI * 2);
       ctx.fill();
     }
     
-    // Яркая точка в центре
+    // Bright core
     ctx.shadowColor = 'rgba(150, 220, 255, 0.9)';
     ctx.shadowBlur = 20;
     ctx.fillStyle = 'rgba(220, 245, 255, 0.9)';
@@ -335,9 +333,9 @@ function drawMagicStaffGlow(){
 }
 
 function spawnMagicStaffLightning(ent){
-  const c = entityBodyCenter(ent);
+  const c = $.POS.body(ent);
   const progress = Math.min(1, (GameTime - ent._magicChargeStart) / MAGICSTAFF_CHARGE_FULLTIME);
-  const numBolts = 3 + Math.floor(progress * 5); // 3-8 молний
+  const numBolts = 3 + Math.floor(progress * 5); // 3-8 bolts
   
   for(let i = 0; i < numBolts; i++){
     const angle = Math.random() * Math.PI * 2;
@@ -345,7 +343,7 @@ function spawnMagicStaffLightning(ent){
     const startX = c.x + Math.cos(angle) * dist;
     const startY = c.y + Math.sin(angle) * dist - 10;
     
-    // Создаём зигзаг (молнию) с несколькими сегментами
+    // Create zigzag lightning (multiple segments) with random jitter
     const segments = 3 + Math.floor(progress * 3);
     let points = [{x: startX, y: startY}];
     let currentX = startX, currentY = startY;
@@ -354,7 +352,7 @@ function spawnMagicStaffLightning(ent){
       const t = (s + 1) / segments;
       const targetX = c.x + Math.cos(angle) * dist * (1 - t * 0.9);
       const targetY = c.y + Math.sin(angle) * dist * (1 - t * 0.9) - 10;
-      // Зигзаг: отклонение в сторону
+      // Jitter: random offset perpendicular to the main direction
       const perpAngle = angle + Math.PI/2;
       const jitter = (Math.random() - 0.5) * 15 * (1 - t * 0.5);
       currentX = targetX + Math.cos(perpAngle) * jitter;
@@ -394,7 +392,7 @@ function drawMagicStaffLightning(){
     ctx.globalAlpha = a;
     
     const points = bolt.points;
-    // Основная линия молнии
+    // Outer glow
     ctx.shadowColor = 'rgba(100, 200, 255, 0.8)';
     ctx.shadowBlur = 10;
     ctx.strokeStyle = '#88ddff';
@@ -409,7 +407,7 @@ function drawMagicStaffLightning(){
     }
     ctx.stroke();
     
-    // Яркая внутренняя линия (белая)
+    // Inner bright core
     ctx.shadowBlur = 20;
     ctx.strokeStyle = 'rgba(200, 240, 255, 0.6)';
     ctx.lineWidth = bolt.width * 0.4;
@@ -429,7 +427,7 @@ function spawnMagicStaffChargeFX(ent){
   if(!ent || !ent._magicCharging) return;
   
   const progress = Math.min(1, (GameTime - ent._magicChargeStart) / MAGICSTAFF_CHARGE_FULLTIME);
-  const c = entityBodyCenter(ent);
+  const c = $.POS.body(ent);
   const radius = MAGICSTAFF_RADIUS * (1 + progress * 0.5);
   const count = 3 + Math.floor(progress * 5);
   
@@ -438,14 +436,14 @@ function spawnMagicStaffChargeFX(ent){
     const dist = radius * (0.3 + Math.random() * 0.7);
     const speed = 0.5 + progress * 2;
     
-    // 🔥 УБЕДИТЕСЬ, ЧТО ВСЕ ЗНАЧЕНИЯ — ЧИСЛА
+    // Safety check for NaN
     const x = c.x + Math.cos(angle) * dist * 0.2;
     const y = c.y + Math.sin(angle) * dist * 0.2 - 10;
     const targetX = c.x + Math.cos(angle) * dist;
     const targetY = c.y + Math.sin(angle) * dist - 10;
     const r = 2 + progress * 4 + Math.random() * 3;
     
-    // Проверка на NaN
+    // Skip if any value is NaN
     if(!isFinite(x) || !isFinite(y) || !isFinite(targetX) || !isFinite(targetY) || !isFinite(r)) continue;
     
     MAGICSTAFF_CHARGE_FX.push({
@@ -469,13 +467,12 @@ function updateMagicStaffChargeFX(dt){
   for(let i = arr.length - 1; i >= 0; i--){
     const p = arr[i];
     p.life -= dt / p.maxLife;
-    // Движение к цели
+    // Move toward target
     p.x += (p.targetX - p.x) * dt * 2;
     p.y += (p.targetY - p.y) * dt * 2;
     p.alpha *= 0.995;
     if(p.life <= 0 || p.alpha < 0.01){
-      // Порядок не важен для рендера частиц — свап с последним даёт O(1)
-      // удаление вместо splice(), который сдвигает весь хвост массива.
+      // Remove without using splice for O(1) performance
       arr[i] = arr[arr.length - 1];
       arr.pop();
     }
@@ -485,11 +482,11 @@ function updateMagicStaffChargeFX(dt){
 
 
 function spawnMagicStaffRadiusParticles(ent){
-  const c = entityBodyCenter(ent);
+  const c = $.POS.body(ent);
   const progress = Math.min(1, (GameTime - ent._magicChargeStart) / MAGICSTAFF_CHARGE_FULLTIME);
   const radius = MAGICSTAFF_RADIUS * (1 + progress * 0.5);
   
-  // Количество частиц увеличивается с прогрессом (меньше на мобиле — тяжёлый эффект)
+  // Fewer particles on mobile for performance
   const count = window.IS_MOBILE ? 1 + Math.floor(progress * 2) : 2 + Math.floor(progress * 4);
   
   for(let i = 0; i < count; i++){
@@ -497,7 +494,7 @@ function spawnMagicStaffRadiusParticles(ent){
     const dist = radius * (0.6 + Math.random() * 0.4);
     const speed = 0.5 + progress * 1.5;
     
-    // Частица летит по радиусу наружу (от центра к краю)
+    // Particle starts near center and drifts outward
     const outwardAngle = angle;
     const vx = Math.cos(outwardAngle) * speed * (0.3 + Math.random() * 0.3);
     const vy = Math.sin(outwardAngle) * speed * (0.3 + Math.random() * 0.3);
@@ -520,7 +517,7 @@ function spawnMagicStaffRadiusParticles(ent){
 
 
 function drawMagicStaffChargeFX(){
-  // Сначала обновляем позиции частиц
+  // Update existing particles
   for(const p of MAGICSTAFF_CHARGE_FX){
     if(p.targetX !== undefined && p.targetY !== undefined){
       p.x += (p.targetX - p.x) * 0.05;
@@ -534,7 +531,7 @@ function drawMagicStaffChargeFX(){
     p.alpha *= 0.995;
   }
   
-  // Удаляем мёртвые или некорректные частицы
+  // Filter out dead particles
   MAGICSTAFF_CHARGE_FX = MAGICSTAFF_CHARGE_FX.filter(p => {
     return p.life > 0 && 
            p.alpha > 0.01 && 
@@ -544,19 +541,19 @@ function drawMagicStaffChargeFX(){
            p.r > 0;
   });
   
-  // Рисуем все частицы
+  // Draw all particles
   for(const p of MAGICSTAFF_CHARGE_FX){
     const a = p.life * p.alpha;
     if(a < 0.01) continue;
     
-    // 🔥 ДОПОЛНИТЕЛЬНАЯ ПРОВЕРКА ПЕРЕД РИСОВАНИЕМ
+    // Safety check for invalid values
     if(!isFinite(p.x) || !isFinite(p.y) || !isFinite(p.r) || p.r <= 0) continue;
     
     ctx.save();
     ctx.globalAlpha = a * 0.8;
     
-    // 🔥 БЕЗОПАСНОЕ СОЗДАНИЕ ГРАДИЕНТА
-    const radius = Math.max(1, p.r * 2); // гарантируем положительное число
+    // Glow with radius
+    const radius = Math.max(1, p.r * 2); // Ensure positive radius
     const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, radius);
     
     if(p.type === 'particle'){
@@ -581,7 +578,7 @@ function drawMagicStaffChargeFX(){
     ctx.arc(p.x, p.y, radius, 0, Math.PI * 2);
     ctx.fill();
     
-    // Яркая точка в центре
+    // Bright core
     ctx.shadowColor = 'rgba(200, 240, 255, 0.5)';
     ctx.shadowBlur = 10;
     ctx.fillStyle = `rgba(255, 255, 255, ${a * 0.7})`;
@@ -596,17 +593,21 @@ function drawMagicStaffChargeFX(){
 
 
 
-// ════════════════════════════════════════════════════════════════════
-// 🔥 ЕДИНАЯ ФУНКЦИЯ НАНЕСЕНИЯ УРОНА
-// ════════════════════════════════════════════════════════════════════
+// ••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+// ─── UNIFIED DAMAGE FUNCTION ───
+// ••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
 function applyDamage(defender, damage, attacker, options){
-const dC2 = entityBodyCenter(defender);
+const dC2 = $.POS.body(defender);
 
   if(!defender || defender.hp <= 0) return;
+  if(typeof FactionRules!=='undefined'){
+    if(!FactionRules.canDamage(attacker,defender)) return;
+    FactionRules.contact(attacker,defender);
+  }
 
   if(damage <= 0) return;
   if(defender._hitCD !== undefined && defender._hitCD >= GameTime) return;
-// ── БАЗОВЫЕ ПАРАМЕТРЫ ──
+// ─── OPTIONS ───
   const opts = options || {};
   const isMagic = opts.isMagic || false;
 
@@ -624,15 +625,17 @@ const dC2 = entityBodyCenter(defender);
   const spawnLightning = opts.spawnLightning || null;
   const playSoundOpt = opts.playSound !== undefined ? opts.playSound : true;
 
-  // ── ПРИМЕНЯЕМ УРОН ──
-  const finalDmg = Math.min(damage, Math.max(1, Math.round(MAX_HP * 0.70))); // 70 макс урон
+  // ─── DAMAGE APPLICATION ───
+  const finalDmg = Math.min(damage, Math.max(1, Math.round(MAX_HP * 0.70))); // 70% max per hit
   defender.hp = Math.max(0, defender.hp - finalDmg);
-  defender._hitCD = Math.max(defender._hitCD || -1, GameTime + 1.0);
+  defender._hitCD = Math.max(defender._hitCD || -1, GameTime + 0.4);
   defender.hitFlash = GameTime + 0.3;
+  defender._healthBarUntil = GameTime + 3;
+  if(attacker) attacker._healthBarUntil = GameTime + 3;
 
-  // ── МОЛНИЯ (если передана) ──
+  // ─── LIGHTNING EFFECT ───
   if(spawnLightning && typeof spawnLightningHit === 'function'){
-    const dC = entityBodyCenter(defender);
+    const dC = $.POS.body(defender);
     spawnLightningHit(
       spawnLightning.fromX, 
       spawnLightning.fromY, 
@@ -642,10 +645,10 @@ const dC2 = entityBodyCenter(defender);
     );
   }
 
-  // ── ОТБРАСЫВАНИЕ ──
+  // ─── KNOCKBACK ───
   if(attacker && knockbackMult > 0){
-    const aC = entityBodyCenter(attacker);
-    const dC = entityBodyCenter(defender);
+    const aC = $.POS.body(attacker);
+    const dC = $.POS.body(defender);
     const dx = dC.x - aC.x;
     const dy = dC.y - aC.y;
     const len = Math.hypot(dx, dy) || 1;
@@ -656,7 +659,7 @@ const dC2 = entityBodyCenter(defender);
   
 
   
-  // ── КРОВЬ ──
+  // ─── BLOOD ───
 
   for(let i = 0; i < bloodCount; i++){
     const angle = Math.random() * Math.PI * 2;
@@ -671,69 +674,59 @@ const dC2 = entityBodyCenter(defender);
     }
   }
   
-  // ── ЛУЖА КРОВИ ──
+  // ─── BLOOD POOL ───
   if(typeof spawnBloodPool === 'function'){
     spawnBloodPool(dC2.x, dC2.y, finalDmg);
   }
   
-  // ── ТЕКСТ УРОНА (ТОЛЬКО ОДИН РАЗ!) ──
+  // ─── DAMAGE TEXT ───
   let label = '-' + finalDmg;
   if(isMagic) label += ' ✨';
   if(isExplosion) label += ' 💥';
-  if(isProjectile) label += ' 🏹';
+  if(isProjectile) label += ' ➹';
   if(textSuffix) label += ' ' + textSuffix;
   
-  hitFX.push({
+  $.FX.hit({
     x: dC2.x,
-    y: dC2.y - 35 - (Math.random() - 0.5) * 8, // небольшой разброс
+    y: dC2.y - 35 - (Math.random() - 0.5) * 8, // slight vertical randomness
     t: label,
     life: 45,
     big: finalDmg > 15,
     col: textColor
   });
   
-  // ── ХИТСТОП И ТРЯСКА ──
+  // ─── HITSTOP ───
   if(typeof triggerHitstop === 'function'){
     triggerHitstop(hitstopFrames, shakePower);
   }
   
-  // ── ЗВУК ──
+  // ─── SOUND ───
   if(playSoundOpt !== false){
     if(isMagic || isExplosion){
-      playSound('magicHit');
-      if(finalDmg > 30) playSound('clashHard');
+      $.S.play('magicHit');
+      if(finalDmg > 30) $.S.play('clashHard');
     } else if(isProjectile){
-      playSound('arrowHit');
+      $.S.play('arrowHit');
     } else {
-      playSound(isHeavySwingWeapon(attacker) ? 'damageHammer' : 'damage');
+      $.S.play(isHeavySwingWeapon(attacker) ? 'damageHammer' : 'damage');
     }
   }
   
-  // ── СМЕРТЬ ──
+  // ─── DEATH ───
   if(defender.hp <= 0){
-    if(defender === P){
-      if(typeof triggerDeath === 'function') triggerDeath(defender, false);
-    } else {
-      if(typeof handleCombatDeath === 'function') handleCombatDeath(defender);
-    }
+    if(typeof handleCombatDeath === 'function') handleCombatDeath(defender);
   }
 }
 
-
-
-
-
-
-
-// ════════════════════════════════════════════════════════════════════
-// 🔥 ЕДИНАЯ ФУНКЦИЯ НАНЕСЕНИЯ УРОНА
-// ════════════════════════════════════════════════════════════════════
-// Взрыв магического посоха A
+// ••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+// ─── MAGIC STAFF EXPLOSION ───
+// ••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+// ─── Magic Staff Explosion A ───
 function spawnMagicStaffExplosion(ent, radius, dmg){
-  const c = entityBodyCenter(ent);
-  console.log('💥🔮 ВЗРЫВ МАГИЧЕСКОГО ПОСОХА!', {radius, dmg});
+  const c = $.POS.body(ent);
+  console.log('💥 Magic Staff Explosion!', {radius, dmg});
   
-  // ── КОЛЬЦО ВЗРЫВА (50 частиц) ──
+  // ─── PARTICLE BURST (50 particles) ───
   for(let i = 0; i < 50; i++){
     const angle = Math.random() * Math.PI * 2;
     const dist = Math.random() * radius;
@@ -752,7 +745,7 @@ function spawnMagicStaffExplosion(ent, radius, dmg){
     });
   }
   
-  // ── ВСПЫШКА ──
+  // ─── FLASH EFFECT ───
   FX_EFFECTS.push({
     type: 'flash', 
     x: c.x, y: c.y, 
@@ -764,7 +757,7 @@ function spawnMagicStaffExplosion(ent, radius, dmg){
   
 
   
-  // ── МАГИЧЕСКИЙ ВЗРЫВ ──
+  // ─── EXPLOSION EFFECT ───
   FX_EFFECTS.push({
     type: 'magic_explosion', 
     x: c.x, y: c.y, 
@@ -774,25 +767,25 @@ function spawnMagicStaffExplosion(ent, radius, dmg){
     followEntity: ent,
     radius: radius
   });
-  playSound('magicExplode');
-  // ════════════════════════════════════════════════════════════════════
-  // 🔥 УРОН ПО ВСЕМ ВРАГАМ ЧЕРЕЗ applyDamage
-  // ════════════════════════════════════════════════════════════════════
+  $.S.play('magicExplode');
+  // ••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+  // ─── DAMAGE APPLICATION VIA applyDamage ───
+  // ••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
   const defenders = [P, ...ALL_BOTS];
   
   for(const defender of defenders){
     if(defender === ent || defender.hp <= 0) continue;
-    const dC = entityBodyCenter(defender);
+    const dC = $.POS.body(defender);
     const dist = Math.hypot(dC.x - c.x, dC.y - c.y);
     
     if(dist < radius){
-const minFactor = 0.5; // 50% от урона — минимум
+const minFactor = 0.5; // 50% damage minimum — closest hits deal full
 const distFactor = Math.max(minFactor, 1 - dist / radius);
 let finalDmg = Math.round(dmg * distFactor);
       const intensity = Math.min(1, distFactor * 1.5);
-      // ════════════════════════════════════════════════════════════════
-      // 🔥 ЕДИНЫЙ ВЫЗОВ applyDamage СО ВСЕМИ ЭФФЕКТАМИ
-      // ════════════════════════════════════════════════════════════════
+      // ••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+      // ─── UNIFIED applyDamage CALL ───
+      // ••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
 applyDamage(defender, finalDmg, ent, {
   isMagic: true,
   isExplosion: true,
@@ -821,22 +814,19 @@ applyDamage(defender, finalDmg, ent, {
 
 
 
-// ── Разрушение стрелы при блоке: щепки древка + перья разлетаются ──────────
-// В отличие от WAND_EXPLOSIONS (радиальная магическая вспышка), здесь
-// направленный "веер" обломков — стрела не взрывается, а буквально
-// разлетается кусками от точки удара, преимущественно назад по своей
-// прежней траектории и немного в стороны (гравитация утягивает их вниз).
+// ─── ARROW SHATTER EFFECT ──────────────────────────────────────────────────────
+// Creates wood splinters and feather fragments when an arrow is blocked.
 let ARROW_SHATTER_FX = []; // {x,y,vx,vy,life,maxLife,rot,rotSpd,len,kind}
 function spawnArrowShatter(x, y, incomingAngle){
   const n = 7;
-  const backAngle = incomingAngle + Math.PI; // назад относительно полёта стрелы
+  const backAngle = incomingAngle + Math.PI; // opposite to incoming trajectory
   for(let i = 0; i < n; i++){
-    const spread = (Math.random()-0.5) * 1.8; // веер разлёта, не строго назад
+    const spread = (Math.random()-0.5) * 1.8; // wider spread, not too focused backwards
     const a = backAngle + spread;
     const spd = 1.5 + Math.random()*3.5;
-    const isFeather = i < 2; // пара кусочков — оперение (короче, светлее)
+    const isFeather = i < 2; // the first two are feathers (lighter)
     ARROW_SHATTER_FX.push({
-      x, y, vx: Math.cos(a)*spd, vy: Math.sin(a)*spd - 1, // лёгкий начальный подброс вверх
+      x, y, vx: Math.cos(a)*spd, vy: Math.sin(a)*spd - 1, // slight upward bias for visual variety
       life: 1, maxLife: 1,
       rot: Math.random()*Math.PI*2, rotSpd: (Math.random()-0.5)*10,
       len: isFeather ? 5+Math.random()*3 : 8+Math.random()*8,
@@ -848,7 +838,7 @@ function updateArrowShatterFX(dt){
   for(let i = ARROW_SHATTER_FX.length-1; i >= 0; i--){
     const p = ARROW_SHATTER_FX[i];
     p.x += p.vx; p.y += p.vy;
-    p.vy += dt*9; // гравитация утягивает щепки вниз
+    p.vy += dt*9; // gravity, pulling fragments down
     p.vx *= 0.96; p.vy *= 0.98;
     p.rot += p.rotSpd*dt;
     p.life -= dt*1.8;
@@ -857,7 +847,7 @@ function updateArrowShatterFX(dt){
 }
 function drawArrowShatterFX(){
   for(const p of ARROW_SHATTER_FX){
-    const a = clamp(p.life / p.maxLife, 0, 1);
+    const a = $.M.clamp(p.life / p.maxLife, 0, 1);
     ctx.save();
     ctx.globalAlpha = a;
     ctx.translate(p.x, p.y);
@@ -874,16 +864,16 @@ function drawArrowShatterFX(){
   }
 }
 
-let BOW_TENSION_FX = []; // частицы натяжения тетивы
+let BOW_TENSION_FX = []; // particles for bow draw tension
 function spawnBowTensionFX(ent){
-  const tip = weaponTipPos(ent);
+  const tip = $.POS.tip(ent);
   const progress = Math.min(1, (GameTime - ent._bowChargeStart) / BOW_RELOAD);
   
-  // 🔥 МЕНЬШЕ ЧАСТИЦ
-  const count = Math.random() < 0.6 ? 1 : 0; // 60% шанс 1 частицы, 40% шанс 0
+  // Particle spawn chance
+  const count = Math.random() < 0.6 ? 1 : 0; // 60% chance for 1 particle, 40% for 0
   
   for(let i = 0; i < count; i++){
-    const spread = (Math.random() - 0.5) * 0.25; // узкий конус
+    const spread = (Math.random() - 0.5) * 0.25; // slight spread angle
     const angle = ent.angle + spread;
     const dist = 3 + Math.random() * 5;
     const speed = 0.3 + Math.random() * 0.8;
@@ -895,7 +885,7 @@ function spawnBowTensionFX(ent){
       vy: Math.sin(angle) * speed,
       life: 1,
       maxLife: rf(0.15, 0.1),
-      r: 0.8 + Math.random() * 1.2, // маленькие частицы
+      r: 0.8 + Math.random() * 1.2, // particle size
       alpha: 0.3 + Math.random() * 0.3,
     });
   }
@@ -920,7 +910,7 @@ function drawBowTensionFX(){
     ctx.save();
     ctx.globalAlpha = a * 0.8;
     
-    // Свечение
+    // Glow gradient
     const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r * 2);
     grad.addColorStop(0, `rgba(255, 200, 100, ${a * 0.9})`);
     grad.addColorStop(0.3, `rgba(255, 180, 80, ${a * 0.6})`);
@@ -930,7 +920,7 @@ function drawBowTensionFX(){
     ctx.arc(p.x, p.y, p.r * 2, 0, Math.PI * 2);
     ctx.fill();
     
-    // Яркая точка в центре
+    // Bright center core
     ctx.fillStyle = `rgba(255, 220, 150, ${a * 0.9})`;
     ctx.beginPath();
     ctx.arc(p.x, p.y, p.r * 0.4, 0, Math.PI * 2);
@@ -948,12 +938,12 @@ function clearBowTensionFX(){
 }
 
 function clearMagicStaffFX(ent){
-  // Очищаем массивы эффектов
+  // Clear all magic staff effect arrays
   MAGICSTAFF_CHARGE_FX = [];
   MAGICSTAFF_LIGHTNING_FX = [];
   MAGICSTAFF_GLOW_FX = [];
   
-  // Сбрасываем состояние у сущности
+  // Reset entity state
   if(ent){
     ent._magicCharging = false;
     ent._magicSpawnCD = 0;
@@ -970,7 +960,7 @@ function clearMagicStaffFX(ent){
   }
 }
 function spawnMagicStaffParticles(ent){
-  const c = entityBodyCenter(ent);
+  const c = $.POS.body(ent);
   const progress = Math.min(1, (GameTime - ent._magicChargeStart) / MAGICSTAFF_CHARGE_FULLTIME);
   const radius = MAGICSTAFF_RADIUS * (1 + progress * 0.5);
   const count = 2 + Math.floor(progress * 3);
@@ -993,14 +983,15 @@ function spawnMagicStaffParticles(ent){
     });
   }
 }
-// Общая функция стрельбы — используется и игроком (mDown из мыши), и ботами
-// (виртуальный "зажат ли спуск", вычисленный их ИИ). aimAngleOverride нужен
-// для ботов, у которых нет курсора мыши.
+// ─── UNIFIED RANGED WEAPON FIRE HANDLER ─────────────────────────────────
+// Called from update() for both player and bots (mDown and click/release), and can
+// override aim angle for AI. aimAngleOverride is used for bots, otherwise
+// the cursor position determines the aim.
 function updateRangedWeaponFire(ent, fireHeld, aimAngleOverride){
   const key = weaponKeyOf(ent);
   
   // ============================================================
-  // 🔥 ЖЕЗЛ
+  // ─── WAND ───
   // ============================================================
   if(key === 'wand'){
   
@@ -1020,7 +1011,7 @@ function updateRangedWeaponFire(ent, fireHeld, aimAngleOverride){
 
 
       if(ent._wandCharging){
-  // Молнии (каждые 0.1 сек)
+  // Lightning bolts (every 0.1 sec)
   if(!ent._lightningCD) ent._lightningCD = 0;
   ent._lightningCD -= rawDt;
   if(ent._lightningCD <= 0){
@@ -1028,13 +1019,13 @@ function updateRangedWeaponFire(ent, fireHeld, aimAngleOverride){
     spawnMagicStaffLightning(ent);
   }
   
-  // Свечение на кончике (каждый кадр)
+  // Glow at the tip (every frame)
   spawnMagicStaffGlow(ent);
   
   
   
   
-  // Частицы вверх (каждые 0.05 сек)
+  // Particles (every 0.05 sec)
   if(!ent._particleCD) ent._particleCD = 0;
   ent._particleCD -= rawDt;
   if(ent._particleCD <= 0){
@@ -1048,12 +1039,12 @@ function updateRangedWeaponFire(ent, fireHeld, aimAngleOverride){
         ent._wandChargeSoundObj = null;
         if(chargedEnough){
           const aimAngle = aimAngleOverride != null ? aimAngleOverride
-            : (ent === P ? Math.atan2(mY - rootCenter().y, mX - rootCenter().x) : ent.angle);
-          const rageMult = 1 + clamp(ent.rage||0, 0, 100)/100;
+            : (ent === P ? Math.atan2(mY - $.POS.root().y, mX - $.POS.root().x) : ent.angle);
+          const rageMult = 1 + $.M.clamp(ent.rage||0, 0, 100)/100;
           spawnProjectile(ent, 'wand', aimAngle, WAND_BASE_DMG * rageMult);
-          ent.stamina = Math.max(0, ent.stamina - sv('stamswing') * weaponStaminaMult(ent));
+          drainStamina(ent, sv('stamswing') * weaponStaminaMult(ent));
           if(ent.stamina <= 0 && !isExhausted(ent)) applyExhaust(ent);
-          playSound('magicPush');
+          $.S.play('magicPush');
           ent.rage = 0;
           ent._rangedShotCD = GameTime + WAND_SHOT_CD;
           ent.vx -= Math.cos(aimAngle) * 7;
@@ -1063,9 +1054,9 @@ function updateRangedWeaponFire(ent, fireHeld, aimAngleOverride){
     }
     
   // ============================================================
-  // 🔥 ЛУК
+  // ─── BOW ───
   // ============================================================
-// 🔥 ЛУК
+// ─── BOW ───
   } else if(key === 'bow'){
     if(fireHeld && ent.hasWeapon !== false && !isExhausted(ent) && !(GameTime < (ent._rangedShotCD||0))){
       if(!ent._bowCharging){
@@ -1076,14 +1067,14 @@ function updateRangedWeaponFire(ent, fireHeld, aimAngleOverride){
         ent._reloadSoundPlayed = false;
       }
       
-      // ✅ ДРЕЙН ВО ВРЕМЯ УДЕРЖАНИЯ
+      // Drain stamina continuously while holding
       const staminaDrain = 3 * rawDt;
-      ent.stamina = Math.max(0, ent.stamina - staminaDrain);
+      drainStamina(ent, staminaDrain);
       
-      // ✅ Если стамина кончилась - включаем усталость, НО НЕ ПРЕРЫВАЕМ
+      // If stamina runs out - release immediately
       if(ent.stamina <= 0 && !isExhausted(ent)){
         applyExhaust(ent);
-		 ent._hadExhaustion = true;  // ← ДОБАВИТЬ ЭТУ СТРОЧКУ
+		 ent._hadExhaustion = true;  // mark that exhaustion happened
       }
       
       if(ent === P || ent === D){
@@ -1108,13 +1099,13 @@ function updateRangedWeaponFire(ent, fireHeld, aimAngleOverride){
         clearBowTensionFX();
         
         const aimAngle = aimAngleOverride != null ? aimAngleOverride
-          : (ent === P ? Math.atan2(mY - rootCenter().y, mX - rootCenter().x) : ent.angle);
+          : (ent === P ? Math.atan2(mY - $.POS.root().y, mX - $.POS.root().x) : ent.angle);
         
         const maxCharge = BOW_RELOAD;
         const progress = Math.min(1, chargeTime / maxCharge);
         const dmg = BOW_DMG_MIN + (BOW_DMG_MAX - BOW_DMG_MIN) * progress;
         
-        const tip = weaponTipPos(ent);
+        const tip = $.POS.tip(ent);
         for(let i = 0; i < 6; i++){
           const angle = ent.angle + (Math.random() - 0.5) * 0.8;
           const dist = 3 + Math.random() * 6;
@@ -1132,17 +1123,17 @@ function updateRangedWeaponFire(ent, fireHeld, aimAngleOverride){
         
         spawnProjectile(ent, 'arrow', aimAngle, dmg, BOW_PROJ_SPEED, BOW_MAX_DMG_PCT);
         
-        // ✅ ТРАТИМ 15 ИЛИ ВСЁ ЧТО ОСТАЛОСЬ
+        // Drain 15 stamina on release
 const staminaCost = Math.min(15, ent.stamina);
-ent.stamina = Math.max(0, ent.stamina - staminaCost);
+drainStamina(ent, staminaCost);
         
-        // ✅ ЕСЛИ СТАМИНА СТАЛА 0 - УСТАЛОСТЬ
+        // If stamina reaches 0 - exhaust
         if(ent.stamina <= 0 && !isExhausted(ent)){
           applyExhaust(ent);
-		   ent._hadExhaustion = true;  // ← ДОБАВИТЬ ЭТУ СТРОЧКУ
+		   ent._hadExhaustion = true;  // mark that exhaustion happened
         }
         
-        playSound('bowPush');
+        $.S.play('bowPush');
         ent._rangedShotCD = GameTime + 0.5;
         
         const recoilForce = 2;
@@ -1153,41 +1144,41 @@ ent.stamina = Math.max(0, ent.stamina - staminaCost);
         ent._recoilOffset = -6;
         ent._recoilAnimTime = 0.1;
         
-        hitFX.push({x:ent.x, y:ent.y-40, t:'🏹 ' + Math.round(dmg), life:30, big:false, col:'#ffdd88'});
+        $.FX.hit({x:ent.x, y:ent.y-40, t:'➹ ' + Math.round(dmg), life:30, big:false, col:'#ffdd88'});
       }
     }
   
   // ============================================================
-  // 🔥 АРБАЛЕТ
+  // ─── CROSSBOW ───
   // ============================================================
  // ============================================================
-// 🔥 АРБАЛЕТ
+// ─── CROSSBOW ───
 // ============================================================
 } else if(key === 'crossbow'){
     if(fireHeld && ent.hasWeapon !== false && !isExhausted(ent)){
         if(GameTime < (ent._rangedShotCD||0)){
             if(!ent._reloadSoundPlayed){
                 ent._reloadSoundPlayed = true;
-                const tip = weaponTipPos(ent);
-                hitFX.push({x:tip.x, y:tip.y-16, t:'⏳ ЗАРЯЖАЮ...', life:35, big:false, col:'#ff8844'});
+                const tip = $.POS.tip(ent);
+                $.FX.hit({x:tip.x, y:tip.y-16, t:(window.I18N ? window.I18N.t('ranged.crossbowReload') : 'RELOADING...'), life:35, big:false, col:'#ff8844'});
             }
         } else {
             const aimAngle = aimAngleOverride != null ? aimAngleOverride
-                : (ent === P ? Math.atan2(mY - rootCenter().y, mX - rootCenter().x) : ent.angle);
+                : (ent === P ? Math.atan2(mY - $.POS.root().y, mX - $.POS.root().x) : ent.angle);
             const dmg = CROSSBOW_DMG_MIN + Math.random()*(CROSSBOW_DMG_MAX - CROSSBOW_DMG_MIN);
             spawnProjectile(ent, 'arrow', aimAngle, dmg, CROSSBOW_PROJ_SPEED, CROSSBOW_MAX_DMG_PCT);
             
-            // ✅ ТРАТИМ 15 ИЛИ ВСЁ ЧТО ОСТАЛОСЬ
+            // Drain 15 stamina on shot
    const staminaCost = Math.min(15, ent.stamina);
-ent.stamina = Math.max(0, ent.stamina - staminaCost);
+drainStamina(ent, staminaCost);
             
-            // ✅ ЕСЛИ СТАМИНА СТАЛА 0 - УСТАЛОСТЬ
+            // If stamina reaches 0 - exhaust
 if(ent.stamina <= 0 && !isExhausted(ent)){
   applyExhaust(ent);
   ent._hadExhaustion = true;
 }
             
-            playSound('arrowPush');
+            $.S.play('arrowPush');
             
             ent._rangedShotCD = GameTime + CROSSBOW_RELOAD;
             ent._reloadSoundPlayed = false;
@@ -1204,12 +1195,12 @@ if(ent.stamina <= 0 && !isExhausted(ent)){
 
     
 // ============================================================
-// 🔥 МАГИЧЕСКИЙ ПОСОХ — ГИБРИДНЫЙ РЕЖИМ
+// ─── MAGIC STAFF ─── (full rework: "click" vs "hold" modes)
 // ============================================================
 
-// Добавляем флаг для детекта "клик" vs "удержание"
+// Initialize state for magic staff if not exists
   } else if (weaponKeyOf(ent) === 'magicstaff') {
-  // Инициализация состояния
+  // Initialize state for magic staff
   if (!ent._magicStaffState) {
     ent._magicStaffState = {
       clickStartTime: 0,
@@ -1222,17 +1213,17 @@ if(ent.stamina <= 0 && !isExhausted(ent)){
       wasReleased: false,
       releaseTime: 0,
       _releaseProcessed: false,
-      _penaltyApplied: false,    // ← ФЛАГ: применили ли штраф через 1 сек
-      _penaltyTimer: 0,           // ← ТАЙМЕР ДЛЯ ШТРАФА
+      _penaltyApplied: false,    // Flag: penalty applied after 1 second
+      _penaltyTimer: 0,           // Timer for penalty countdown
 	  _explosionTriggered: false
     };
   }
   
   const state = ent._magicStaffState;
   
-  // ── ОБРАБОТКА НАЖАТИЯ ──────────────────────────────────
+  // ─── HELD STATE ──────────────────────────────────────────────────────────────
   if (fireHeld && ent.hasWeapon !== false && !isExhausted(ent) && !(GameTime < (ent._rangedShotCD||0))) {
-    // Запоминаем время нажатия (только если только что нажали)
+    // Start holding if not already
     if (!state.isHeld) {
       state.isHeld = true;
       state.clickStartTime = GameTime;
@@ -1250,9 +1241,9 @@ if(ent.stamina <= 0 && !isExhausted(ent)){
     
     const holdTime = GameTime - state.clickStartTime;
     
-    // ── ЕСЛИ УДЕРЖИВАЕМ БОЛЬШЕ 0.3 СЕК — РЕЖИМ НАКОПЛЕНИЯ ──
+    // ─── AFTER 0.3 SECONDS — start charging ──────────────────────
     if (holdTime > 0.3) {
-      // Зарядка
+      // Start charging
       if (!ent._magicCharging) {
         ent._magicCharging = true;
         ent._magicChargeStart = GameTime;
@@ -1260,7 +1251,7 @@ if(ent.stamina <= 0 && !isExhausted(ent)){
         ent._magicSeed = Math.random() * 100;
       }
       
-      // Тратим ярость и стамину вместе (каждые 0.1 сек)
+      // Drain rage and stamina gradually (every 0.1 sec)
       state.rageDrainTimer += rawDt;
       if (state.rageDrainTimer >= 0.1) {
         state.rageDrainTimer = 0;
@@ -1277,21 +1268,21 @@ if(ent.stamina <= 0 && !isExhausted(ent)){
 if ((ent.rage || 0) < 1 || ent.stamina < 1) {
   const chargeTime = GameTime - ent._magicChargeStart;
   
-  // 🔥 ЕСЛИ ЗАРЯЖАЛИ БОЛЬШЕ 2 СЕК — СНАЧАЛА ВЗРЫВ!
+  // If held for more than 2 seconds — trigger explosion!
   if (chargeTime > MAGICSTAFF_CHARGE_MINTIME && state.rageConsumed) {
     const progress = Math.min(1, (chargeTime - 2.0) / 2.0);
     const dmg = MAGICSTAFF_DMG_MIN + (MAGICSTAFF_DMG_MAX - MAGICSTAFF_DMG_MIN) * progress * 3;
     const radius = MAGICSTAFF_RADIUS * (1 + progress * 0.5);
     spawnMagicStaffExplosion(ent, radius, dmg);
-    playSound('magicPush');
+    $.S.play('magicPush');
     ent.vx -= Math.cos(ent.angle) * 5;
     ent.vy -= Math.sin(ent.angle) * 5;
     ent._rangedShotCD = GameTime + MAGICSTAFF_SHOT_CD;
-    //hitFX.push({x: ent.x, y: ent.y - 50, t: '💥 ВЗРЫВ!', life: 50, big: true, col: '#88ddff'});
-    state._explosionTriggered = true;  // ← помечаем что взрыв уже был
+    //$.FX.hit({x: ent.x, y: ent.y - 50, t: '💥 EXPLOSION!', life: 50, big: true, col: '#88ddff'});
+    state._explosionTriggered = true;  // mark that explosion has occurred
   }
   
-  // Потом прерываем зарядку
+  // Stop charging
   ent._magicCharging = false;
   if (ent._magicChargeSoundObj) {
     fadeOutSound(ent._magicChargeSoundObj, 0.2);
@@ -1300,11 +1291,11 @@ if ((ent.rage || 0) < 1 || ent.stamina < 1) {
   clearMagicStaffFX(ent);
   if (!isExhausted(ent)) applyExhaust(ent);
   
-  // Показываем сообщение о нехватке ресурсов
+  // Show notification about resource depletion
   if ((ent.rage || 0) < 1) {
-   // hitFX.push({x: ent.x, y: ent.y - 30, t: '🔥 НЕТ ЯРОСТИ!', life: 30, big: false, col: '#ff8844'});
+   // $.FX.hit({x: ent.x, y: ent.y - 30, t: '⚠ No rage!', life: 30, big: false, col: '#ff8844'});
   } else if (ent.stamina < 1) {
-   // hitFX.push({x: ent.x, y: ent.y - 30, t: '😫 НЕТ СТАМИНЫ!', life: 30, big: false, col: '#ff8844'});
+   // $.FX.hit({x: ent.x, y: ent.y - 30, t: '⚠ No stamina!', life: 30, big: false, col: '#ff8844'});
   }
   
   state.isHeld = false;
@@ -1312,9 +1303,8 @@ if ((ent.rage || 0) < 1 || ent.stamina < 1) {
 }}
     
       
-      // Эффекты зарядки
-      // На мобиле эффект заряжания посоха ощутимо тормозит — снижаем частоту
-      // спавна частиц и молний (реже создаём, меньше живых объектов разом).
+      // ─── EFFECTS DURING CHARGING ──────────────────────────────
+      // Mobile devices get fewer particles for performance
       const _fxMobileMult = window.IS_MOBILE ? 2.2 : 1;
       ent._magicSpawnCD = (ent._magicSpawnCD || 0) - rawDt;
       if (ent._magicSpawnCD <= 0) {
@@ -1338,19 +1328,19 @@ if ((ent.rage || 0) < 1 || ent.stamina < 1) {
         spawnMagicStaffParticles(ent);
       }
       
-      return; // Всё, дальше не идём
+      return; // Exit, don't process further
     }
     
-    // ── КОРОТКОЕ НАЖАТИЕ (< 0.3 сек) — МАГИЧЕСКИЙ ВЫПАД ──
+    // ─── QUICK CLICK (< 0.3 seconds) ─── ──────────────────────────────────
     if (!state.hasFired) {
       const hasRage = (ent.rage || 0) >= 30;
       
       if (hasRage) {
-        // 🔥 МАГИЧЕСКИЙ УДАР
+        // ─── QUICK CLICK WITH RAGE ───
         const aimAngle = aimAngleOverride != null ? aimAngleOverride
-          : (ent === P ? Math.atan2(mY - rootCenter().y, mX - rootCenter().x) : ent.angle);
+          : (ent === P ? Math.atan2(mY - $.POS.root().y, mX - $.POS.root().x) : ent.angle);
         
-        const tip = weaponTipPos(ent);
+        const tip = $.POS.tip(ent);
         
         ent.angle = aimAngle;
         ent.vel = sv('swthresh') * 2.5;
@@ -1361,7 +1351,7 @@ if ((ent.rage || 0) < 1 || ent.stamina < 1) {
         
         spawnWandExplosion(tip.x, tip.y);
         
-        // Молния (тонкая)
+        // ─── LIGHTNING ───
         const lightningPoints = [];
         const segments = 6;
         for (let i = 0; i <= segments; i++) {
@@ -1388,18 +1378,18 @@ if ((ent.rage || 0) < 1 || ent.stamina < 1) {
           alpha: 1,
         });
         
-        // Магический урон 10 ед.
+        // ─── DAMAGE 10 HP ───
         const defenders = [P, ...ALL_BOTS];
         let closestEnemy = null;
         let closestDist = Infinity;
         
         for (const defender of defenders) {
           if (defender === ent || defender.hp <= 0) continue;
-          const dC = entityBodyCenter(defender);
+          const dC = $.POS.body(defender);
           const dist = Math.hypot(dC.x - tip.x, dC.y - tip.y);
           
           const toEnemy = Math.atan2(dC.y - tip.y, dC.x - tip.x);
-          const angleDiff = Math.abs(angDiff(toEnemy, aimAngle));
+          const angleDiff = Math.abs($.M.angDiff(toEnemy, aimAngle));
           
           if (dist < 120 && angleDiff < Math.PI / 4 && dist < closestDist) {
             closestDist = dist;
@@ -1425,15 +1415,15 @@ if ((ent.rage || 0) < 1 || ent.stamina < 1) {
           });
         }
         
-        //hitFX.push({x: ent.x, y: ent.y - 40, t: '✨ МАГИЯ!', life: 35, big: true, col: '#c090ff'});
-        playSound('magicPush');
+        //$.FX.hit({x: ent.x, y: ent.y - 40, t: '✨ QUICK!', life: 35, big: true, col: '#c090ff'});
+        $.S.play('magicPush');
         
         ent._rangedShotCD = GameTime + 0.3;
         
       } else {
-        // 🔥 ОБЫЧНЫЙ ВЫПАД (без магии)
+        // ─── QUICK CLICK WITHOUT RAGE ─── (just a push)
         const aimAngle = aimAngleOverride != null ? aimAngleOverride
-          : (ent === P ? Math.atan2(mY - rootCenter().y, mX - rootCenter().x) : ent.angle);
+          : (ent === P ? Math.atan2(mY - $.POS.root().y, mX - $.POS.root().x) : ent.angle);
         
         ent.angle = aimAngle;
         ent.vel = sv('swthresh') * 2;
@@ -1442,12 +1432,12 @@ if ((ent.rage || 0) < 1 || ent.stamina < 1) {
         ent.tpX = Math.cos(aimAngle) * lungeDist;
         ent.tpY = Math.sin(aimAngle) * lungeDist;
         
-        hitFX.push({x: ent.x, y: ent.y - 40, t: '⚔ ВЫПАД', life: 30, big: false, col: '#ffaa44'});
-        playSound('hammerSwing');
+        $.FX.hit({x: ent.x, y: ent.y - 40, t: '💫 PUSH', life: 30, big: false, col: '#ffaa44'});
+        $.S.play('hammerSwing');
       }
       
       state.hasFired = true;
-      // 🔥 ЗАПУСКАЕМ ТАЙМЕР ШТРАФА (через 1 сек)
+      // Start penalty timer (after 1 second)
       state._penaltyTimer = 0.3;
       state._penaltyApplied = false;
     }
@@ -1455,15 +1445,15 @@ if ((ent.rage || 0) < 1 || ent.stamina < 1) {
     return;
   }
   
-  // ── ОТПУСКАНИЕ ──────────────────────────────────────────
+  // ─── RELEASED ──────────────────────────────────────────────────────────────
   if (!fireHeld) {
-    // Обрабатываем отпуск ТОЛЬКО ОДИН РАЗ
+    // Process release only once
     if (!state._releaseProcessed) {
       state._releaseProcessed = true;
       
       const holdTime = GameTime - state.clickStartTime;
       
-      // Если был режим накопления — взрыв
+      // If was charging — release explosion
       if (ent._magicCharging) {
         const chargeTime = GameTime - ent._magicChargeStart;
         ent._magicCharging = false;
@@ -1473,63 +1463,62 @@ if ((ent.rage || 0) < 1 || ent.stamina < 1) {
         }
         clearMagicStaffFX(ent);
         
-        // Взрыв только если заряжали > 2 сек
+        // Release explosion if charged > 2 seconds
         if (chargeTime > MAGICSTAFF_CHARGE_MINTIME) {
           const progress = Math.min(1, (chargeTime - 2.0) / 2.0);
           const dmg = MAGICSTAFF_DMG_MIN + (MAGICSTAFF_DMG_MAX - MAGICSTAFF_DMG_MIN) * progress * 3;
           const radius = MAGICSTAFF_RADIUS * (1 + progress * 0.5);
           spawnMagicStaffExplosion(ent, radius, dmg);
-          playSound('magicPush');
+          $.S.play('magicPush');
           ent.vx -= Math.cos(ent.angle) * 5;
           ent.vy -= Math.sin(ent.angle) * 5;
           ent._rangedShotCD = GameTime + MAGICSTAFF_SHOT_CD;
-          hitFX.push({x: ent.x, y: ent.y - 50, t: '💥 ВЗРЫВ!', life: 50, big: true, col: '#88ddff'});
+          $.FX.hit({x: ent.x, y: ent.y - 50, t: (window.I18N ? window.I18N.t('ranged.magicStaffExplosion') : 'EXPLOSION!'), life: 50, big: true, col: '#88ddff'});
         } else {
-          hitFX.push({x: ent.x, y: ent.y - 40, t: '❌ нужно >2 сек', life: 30, big: false, col: '#ff8844'});
+          $.FX.hit({x: ent.x, y: ent.y - 40, t: (window.I18N ? window.I18N.t('ranged.chargeNeedHold') : 'Hold >2 sec'), life: 30, big: false, col: '#ff8844'});
         }
       }
     }
     
-    // Сбрасываем состояние
+    // Reset state
     state.isHeld = false;
     state.rageDrainTimer = 0;
   }
   
-  // ── ЕЖЕКАДРОВАЯ ПРОВЕРКА ШТРАФА ──
+  // ─── PENALTY AFTER QUICK CLICK ─────────────────────────────────────────
 if (state.hasFired && !state._penaltyApplied && state._penaltyTimer > 0) {
   state._penaltyTimer -= rawDt;
   
-  // ЧЕРЕЗ 1 СЕКУНДУ ПОСЛЕ ВЫПАДА — ТРАТИМ 50 ЯРОСТИ И 50 СТАМИНЫ
+  // After 1 second — apply penalty: drain 50 rage and 50 stamina
   if (state._penaltyTimer <= 0 && !state._penaltyApplied) {
     state._penaltyApplied = true;
     
-    // Проверяем есть ли ярость
+    // Check if rage is available
     const hasRage = (ent.rage || 0) >= 30;
     
     if (hasRage) {
-      // ✅ ЕСТЬ ЯРОСТЬ: тратим 30 ярости и 30 стамины
+      // Has rage: drain 30 rage and 30 stamina
       ent.rage = Math.max(0, ent.rage - 30);
-      ent.stamina = Math.max(0, ent.stamina - 30);
-    //  hitFX.push({x: ent.x, y: ent.y - 50, t: '🔥 -30 ЯРОСТИ! 💧 -30 СТАМ', life: 35, big: true, col: '#ff6030'});
+      drainStamina(ent, 30);
+    //  $.FX.hit({x: ent.x, y: ent.y - 50, t: '⚠ -30 RAGE! 💧 -30 STAM', life: 35, big: true, col: '#ff6030'});
     } else {
-      // ❌ НЕТ ЯРОСТИ: тратим только 50 стамины (штраф)
-      ent.stamina = Math.max(0, ent.stamina -30);
-     // hitFX.push({x: ent.x, y: ent.y - 40, t: '❌ НЕТ ЯРОСТИ! 💧 -30 СТАМ', life: 35, big: true, col: '#ff8844'});
+      // No rage: drain 50 stamina (penalty)
+      drainStamina(ent, 30);
+     // $.FX.hit({x: ent.x, y: ent.y - 40, t: '⚠ No rage! 💧 -30 STAM', life: 35, big: true, col: '#ff8844'});
     }
     
     if (ent.stamina <= 0 && !isExhausted(ent)) applyExhaust(ent);
     
-    // Сбрасываем флаг
+    // Reset flag
     state.hasFired = false;
   }
 }
 }
 }
 
-// Проверяет всех сущностей с арбалетом: если КД перезарядки только что истёк
-// (GameTime >= _rangedShotCD) и звук перезарядки ещё не был сыгран для этого
-// цикла — играет 'crossbowReload' ровно в момент готовности оружия, а не по
-// приблизительному таймеру после выстрела.
+// ─── CROSSBOW RELOAD SOUND ────────────────────────────────────────────────
+// Plays a reload sound when the weapon is ready to fire again (GameTime >= _rangedShotCD)
+// and prevents spamming by using _reloadSoundPlayed flag.
 function updateCrossbowReloadSound(ent){
   const key = weaponKeyOf(ent);
   if(key !== 'crossbow' && key !== 'bow') return;
@@ -1537,38 +1526,39 @@ function updateCrossbowReloadSound(ent){
   if(ent._rangedShotCD == null) return;
   if(GameTime >= ent._rangedShotCD){
     if(key === 'crossbow') {
-      playSound('crossbowReload');
+      $.S.play('crossbowReload');
     } else if(key === 'bow') {
-      playSound('bowReload');
+      $.S.play('bowReload');
     }
     ent._reloadSoundPlayed = true;
   }
 }
 
-// ── Физика/столкновения снарядов (как у DROPPED_WEAPONS, но без подбора) ──
+// ─── PROJECTILES UPDATE ────────────────────────────────────────────────────
+// Updates all projectiles: movement, blocking by blade/shield, damage to entities.
 function updateProjectiles(dt){
-  const step = simStep(dt);
+  const step = $.M.step(dt);
   const BOUND_L = 40, BOUND_R = W-80, BOUND_T = 40, BOUND_B = H-40;
   for(let i = PROJECTILES.length-1; i >= 0; i--){
     const w = PROJECTILES[i];
     w.x += w.vx*step; w.y += w.vy*step;
 
-    // Улетел за пределы арены или слишком долго летит — исчезает
+    // ─── OUT OF BOUNDS OR TOO OLD ───
     if(w.x < BOUND_L-60 || w.x > BOUND_R+60 || w.y < BOUND_T-60 || w.y > BOUND_B+60 || (GameTime - w.bornAt) > 3.0){
       PROJECTILES.splice(i,1); continue;
     }
 
-    // Стрела арбалета: теряет скорость и "истаивает" через прозрачность
+    // ─── ARROW DRAG & FADE ──────────────────────────────────────────────
     if(w.kind === 'arrow'){
-      w.vx = decayDT(w.vx, 0.996, dt/2);
-      w.vy = decayDT(w.vy, 0.996, dt/2);
+      w.vx = $.M.decay(w.vx, 0.996, dt/2);
+      w.vy = $.M.decay(w.vy, 0.996, dt/2);
       if(Math.hypot(w.vx,w.vy) < CROSSBOW_PROJ_SPEED*0.35){
         w.fade = (w.fade!=null ? w.fade : 1) - dt*1.5;
         if(w.fade <= 0){ PROJECTILES.splice(i,1); continue; }
       }
     }
 
-    // ── Блок клинком/щитом ──
+    // ─── BLOCK CHECK (blade/shield) ─────────────────────────────────────
     let blocked = false, blockedByBlade = false, blockedByShield = false, blocker = null;
     const defenders = [P, ...ALL_BOTS];
     const wSpd = Math.hypot(w.vx, w.vy);
@@ -1578,74 +1568,72 @@ function updateProjectiles(dt){
       if(!ent || ent.hp <= 0 || ent._awaitingReveal) continue;
       if(ent === w.owner && GameTime < w.ownerImmuneUntil) continue;
       
-      // Блок клинком
+      // ─── BLADE BLOCK ──────────────────────────────────────────────────
       if(ent.hasWeapon !== false && !isExhausted(ent)){
-        const piv = entityPivot(ent);
+        const piv = $.POS.pivot(ent);
         const reach = weaponReach(ent) * sv('swlen') * (isBot(ent)?sv('botswordscale'):1);
         const tipX = piv.x + Math.cos(ent.angle)*reach, tipY = piv.y + Math.sin(ent.angle)*reach;
-        // Оружие с коллизией 'tip' (копьё, алебарда) блокирует снаряды только
-        // ближним к концу участком клинка, а не всей длиной древка.
+        // Use 'tip' collision only for weapons where the blade is only at the tip
+        // (e.g., spear) — otherwise use full blade length.
         const isTipOnly = weaponCollisionType(ent) === 'tip';
         const segStartX = isTipOnly ? (piv.x + (tipX-piv.x)*0.7) : piv.x;
         const segStartY = isTipOnly ? (piv.y + (tipY-piv.y)*0.7) : piv.y;
         const segDX=tipX-segStartX, segDY=tipY-segStartY, segL2=segDX*segDX+segDY*segDY||1;
-        // Радиус коллайдера снаряда: у стрелы по древку копья/алебарды он был
-        // заметно шире визуального древка — сужаем именно для 'tip'-оружия.
-        // Магический снаряд, наоборот, крупнее и должен блокироваться легче —
-        // радиус для него вдвое больше базового.
+        // Calculate distance from projectile to blade segment, with thickness.
+        // For 'tip' weapons, only the tip area blocks projectiles.
         let BLOCK_R = 14;
         if(w.kind === 'wand') BLOCK_R = 28;
         else if(w.kind === 'arrow' && isTipOnly) BLOCK_R = 7;
         
-        const t = clamp(((w.x-segStartX)*segDX+(w.y-segStartY)*segDY)/segL2, 0, 1);
+        const t = $.M.clamp(((w.x-segStartX)*segDX+(w.y-segStartY)*segDY)/segL2, 0, 1);
         const nearX=segStartX+t*segDX, nearY=segStartY+t*segDY;
         let hitBlade = Math.hypot(w.x-nearX, w.y-nearY) < BLOCK_R;
         
         if(!hitBlade && wSpd > BLOCK_R){
-          const t2 = clamp(((segStartX-wPrevX)*w.vx+(segStartY-wPrevY)*w.vy)/(wSpd*wSpd||1), 0, 1);
+          const t2 = $.M.clamp(((segStartX-wPrevX)*w.vx+(segStartY-wPrevY)*w.vy)/(wSpd*wSpd||1), 0, 1);
           const nearPathX = wPrevX + w.vx*t2, nearPathY = wPrevY + w.vy*t2;
-          const t3 = clamp(((nearPathX-segStartX)*segDX+(nearPathY-segStartY)*segDY)/segL2, 0, 1);
+          const t3 = $.M.clamp(((nearPathX-segStartX)*segDX+(nearPathY-segStartY)*segDY)/segL2, 0, 1);
           const bladeX2 = segStartX+t3*segDX, bladeY2 = segStartY+t3*segDY;
           if(Math.hypot(nearPathX-bladeX2, nearPathY-bladeY2) < BLOCK_R) hitBlade = true;
         }
         if(hitBlade){ blocked = true; blockedByBlade = true; blocker = ent; break; }
       }
       
-      // Блок щитом
+      // ─── SHIELD BLOCK ──────────────────────────────────────────────────
       if(shieldDef(ent) && !isShieldSuppressed(ent) && ent._shieldSide !== undefined){
-        const shc = entityBodyCenter(ent);
+        const shc = $.POS.body(ent);
         const scx = shc.x + ent._shieldSide*20*0.9, scy = shc.y + Math.sin(ent.angle)*14;
         const halfW=(ent._shieldW||20)/2, halfH=(ent._shieldH||30)/2;
         if(Math.abs(w.x-scx)<halfW+12 && Math.abs(w.y-scy)<halfH+12){
           blocked = true;
           blockedByShield = true;
           blocker = ent;
-          applyShieldBlockFX(w.x, w.y, null, null, {waveAngle: Math.atan2(w.vy, w.vx), hitstopMag:0});
+          applyShieldBlockFX(w.x, w.y, null, blocker, {waveAngle: Math.atan2(w.vy, w.vx), hitstopMag:0});
           break;
         }
       }
     }
     
     if(blocked){
-      // Стамина за блок снаряда: у игрока 1x, у бота 2x от базовой стоимости блока
+      // ─── STAMINA COST FOR BLOCKING ─────────────────────────────────
       const staminaTarget = w.owner || blocker;
       if(staminaTarget){
-        const projStamCost = sv('stamblock') * (isBot(staminaTarget) ? 2 : 1);
-        staminaTarget.stamina = Math.max(0, staminaTarget.stamina - projStamCost);
+        const projStamCost = blockStaminaCost(staminaTarget, true);
+        drainStamina(staminaTarget, projStamCost);
 if(staminaTarget.stamina <= 0 && !isExhausted(staminaTarget)){
   applyExhaust(staminaTarget);
 }
       }
-      playSound(w.kind==='wand' ? 'magicHit' : 'arrowHit');
+      $.S.play(w.kind==='wand' ? 'magicHit' : 'arrowHit');
       if(blockedByBlade){
         const flySpdAtBlock = Math.hypot(w.vx, w.vy);
         const strongHit = flySpdAtBlock > 6;
-        hitFX.push({x:w.x, y:w.y-8, t:'✦', life:18, big:strongHit, col:'#ffdd88'});
-        playSound(strongHit ? 'clashHard' : 'clash');
+        $.FX.hit({x:w.x, y:w.y-8, t:'⚔', life:18, big:strongHit, col:'#ffdd88'});
+        $.S.play(strongHit ? 'clashHard' : 'clash');
         if(typeof triggerHitstop === 'function') triggerHitstop(strongHit?3:2, strongHit?3:1.5);
         if(blocker) addRage(blocker, clashRageGain());
       } else {
-        hitFX.push({x:w.x,y:w.y-8,t:'✦',life:16,big:false,col:'#ffdd88'});
+        $.FX.hit({x:w.x,y:w.y-8,t:'⚔',life:16,big:false,col:'#ffdd88'});
         if(typeof triggerHitstop === 'function') triggerHitstop(2,2);
       }
       if(w.kind === 'wand'){
@@ -1656,16 +1644,16 @@ if(staminaTarget.stamina <= 0 && !isExhausted(staminaTarget)){
       PROJECTILES.splice(i,1); continue;
     }
 
-    // ── Попадание в тело ──
+    // ─── HIT CHECK ──────────────────────────────────────────────────────
     let hit = false;
     for(const ent of defenders){
       if(!ent || ent.hp <= 0 || ent._awaitingReveal) continue;
       if(ent === w.owner && GameTime < w.ownerImmuneUntil) continue;
-      const c = entityBodyCenter(ent);
+      const c = $.POS.body(ent);
       const hitR = 22 * (isBot(ent) ? sv('cscl')*sv('botscale') : sv('cscl'));
       const d = Math.hypot(c.x-w.x, c.y-w.y);
       if(d < hitR){
-        // ── Уворот ботов ──
+        // ─── BOT DODGE ─────────────────────────────────────────────────
         if(isBot(ent) && (!ent._aiState || ent._aiState.enabled !== false)){
           if(!w._dodgeRolled) w._dodgeRolled = new Set();
           if(!w._dodgeRolled.has(ent)){
@@ -1674,26 +1662,26 @@ if(staminaTarget.stamina <= 0 && !isExhausted(staminaTarget)){
               const dodgeDir = Math.random() < 0.5 ? -1 : 1;
               const perpX = -Math.sin(w.rot)*dodgeDir, perpY = Math.cos(w.rot)*dodgeDir;
               ent.vx += perpX*4; ent.vy += perpY*4;
-              hitFX.push({x:c.x, y:c.y-20, t:'УВОРОТ!', life:30, big:false, col:'#8fd6ff'});
+              $.FX.hit({x:c.x, y:c.y-20, t:(window.I18N ? window.I18N.t('ranged.botDodge') : 'DODGE!'), life:30, big:false, col:'#8fd6ff'});
               continue;
             }
           }
         }
         
-        // ── РАСЧЁТ УРОНА ──
+        // ─── DAMAGE CAP ──────────────────────────────────────────────────
         const maxPct = w.maxDmgPct || (w.kind === 'wand' ? WAND_MAX_DMG_PCT : CROSSBOW_MAX_DMG_PCT);
         let dmg = Math.round(w.dmg);
         dmg = Math.min(dmg, Math.max(1, Math.round(MAX_HP*maxPct)));
         
-        // ── МОЛНИЯ ДЛЯ ЖЕЗЛА ──
+        // ─── LIGHTNING EFFECT ──────────────────────────────────────────
         if(w.kind === 'wand' && w.shooterPos){
           const intensity = Math.min(1, (w.dmg || 10) / 30);
           spawnLightningHit(w.shooterPos.x, w.shooterPos.y, c.x, c.y, intensity);
         }
         
-        // ════════════════════════════════════════════════════════════════
-        // 🔥 ЕДИНЫЙ ВЫЗОВ applyDamage
-        // ════════════════════════════════════════════════════════════════
+        // ••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+        // ─── UNIFIED applyDamage CALL ───
+        // ••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
         const isMagic = w.kind === 'wand';
         
         applyDamage(ent, dmg, w.owner, {
@@ -1703,21 +1691,21 @@ if(staminaTarget.stamina <= 0 && !isExhausted(staminaTarget)){
           hitstopFrames: isMagic ? 5 : 3,
           shakePower: dmg > 15 ? (isMagic ? 6 : 4) : 3,
           textColor: isMagic ? '#c090ff' : '#ff8844',
-          textSuffix: isMagic ? '✨' : '🏹',
+          textSuffix: isMagic ? '✨' : '➹',
           bloodCount: isMagic ? 6 : 4,
           playSound: false
         });
         
-        // ── ДОПОЛНИТЕЛЬНЫЙ СДВИГ (специфично для снарядов) ──
+        // ─── EXTRA KNOCKBACK ───────────────────────────────────────────
         const nx = d>0.1?(c.x-w.x)/d:0, ny = d>0.1?(c.y-w.y)/d:-1;
         const kb = w.kind==='wand' ? 14 : 8;
         ent.x += nx*kb*0.7; ent.y += ny*kb*0.7;
         
-        // ── ВЗРЫВ ДЛЯ ЖЕЗЛА ──
+        // ─── EXPLOSION EFFECT ─────────────────────────────────────────
         if(w.kind === 'wand') spawnWandExplosion(w.x, w.y);
         
-        // ── ЗВУК ──
-        playSound(w.kind==='wand' ? 'magicHit' : 'arrowHit');
+        // ─── SOUND ─────────────────────────────────────────────────────
+        $.S.play(w.kind==='wand' ? 'magicHit' : 'arrowHit');
         
         hit = true; break;
       }
@@ -1726,11 +1714,12 @@ if(staminaTarget.stamina <= 0 && !isExhausted(staminaTarget)){
   }
 }
 
-// ── ИИ: проактивный уворот ботов от летящих снарядов (жезл/арбалет) ────────
-// В отличие от PROJECTILE_DODGE_CHANCE (который решает уже В МОМЕНТ попадания),
-// эта проверка запускается КАЖДЫЙ кадр для каждого летящего снаряда и пытается
-// заметить, что снаряд летит прямо в бота, ПОКА он ещё далеко — и увернуться
-// заранее, а не стоять на месте до последнего.
+// ─── AI PRE-DODGE ──────────────────────────────────────────────────────────
+// Gives bots a chance to dodge projectiles BEFORE they get close
+// (PROJECTILE_PREDODGE_CHANCE). Unlike regular dodge, this happens early,
+// before the projectile reaches the bot, and it's a proactive sidestep.
+// This makes bots much harder to hit at range, while regular dodge
+// (PROJECTILE_DODGE_CHANCE) is a last-second evasion.
 function updateProjectileDodgeAI(){
   if(!dummyOn || PROJECTILES.length === 0) return;
   for(const w of PROJECTILES){
@@ -1740,23 +1729,23 @@ function updateProjectileDodgeAI(){
     const dirX = w.vx/spd, dirY = w.vy/spd;
     for(const bot of ALL_BOTS){
       if(!bot || bot.hp <= 0 || bot._awaitingReveal || bot === w.owner) continue;
-      if(bot._aiState && bot._aiState.enabled === false) continue; // манекен на паузе (T) — не уворачивается
+      if(bot._aiState && bot._aiState.enabled === false) continue; // Mannequin (T) — not controlled by AI
       if(!w._preDodgeRolled) w._preDodgeRolled = new Set();
       if(w._preDodgeRolled.has(bot)) continue;
 
-      const bc = entityBodyCenter(bot);
+      const bc = $.POS.body(bot);
       const toBotX = bc.x - w.x, toBotY = bc.y - w.y;
-      const along = toBotX*dirX + toBotY*dirY; // расстояние вдоль полёта до ближайшей точки к боту
-      if(along <= 0 || along > 260) continue;   // снаряд либо уже пролетел мимо, либо ещё слишком далеко
-      const perp = Math.abs(toBotX*(-dirY) + toBotY*dirX); // насколько снаряд "прицелен" в бота
-      if(perp > 46) continue; // мимо — не целится в бота
+      const along = toBotX*dirX + toBotY*dirY; // Distance along projectile trajectory to bot
+      if(along <= 0 || along > 260) continue;   // Projectile already passed or too far
+      const perp = Math.abs(toBotX*(-dirY) + toBotY*dirX); // Perpendicular distance "off course" from bot
+      if(perp > 46) continue; // Too far off course — won't hit
 
       w._preDodgeRolled.add(bot);
       if(Math.random() < PROJECTILE_PREDODGE_CHANCE){
         const dodgeDir = Math.random() < 0.5 ? -1 : 1;
         bot._dvx = (bot._dvx||0) + (-dirY)*dodgeDir*7;
         bot._dvy = (bot._dvy||0) + (dirX)*dodgeDir*7;
-        hitFX.push({x:bc.x, y:bc.y-24, t:'УВОРОТ!', life:26, big:false, col:'#8fd6ff'});
+        $.FX.hit({x:bc.x, y:bc.y-24, t:(window.I18N ? window.I18N.t('ranged.botDodge') : 'DODGE!'), life:26, big:false, col:'#8fd6ff'});
       }
     }
   }
@@ -1765,7 +1754,7 @@ function updateProjectileDodgeAI(){
 function drawProjectiles(){
   for(const w of PROJECTILES){
     if(w.kind === 'wand'){
-      const r = 18; // визуально в 2x крупнее (было 9)
+      const r = 18; // Visual radius 2x larger (was 9)
       ctx.save();
       const grad = ctx.createRadialGradient(w.x,w.y,0,w.x,w.y,r*2.2);
       grad.addColorStop(0,'rgba(210,150,255,0.95)');
@@ -1777,9 +1766,9 @@ function drawProjectiles(){
       ctx.beginPath(); ctx.arc(w.x,w.y,r*0.55,0,Math.PI*2); ctx.fill();
       ctx.restore();
     } else {
-      const fadeA = w.fade != null ? clamp(w.fade,0,1) : 1;
+      const fadeA = w.fade != null ? $.M.clamp(w.fade,0,1) : 1;
 
-      // ── Трейл: след из недавних позиций стрелы, тускнеющий к хвосту ──
+      // ─── TRAIL ──────────────────────────────────────────────────────
       if(!w._trail) w._trail = [];
       const last = w._trail[w._trail.length-1];
       if(!last || Math.hypot(w.x-last.x, w.y-last.y) > 1){
@@ -1804,27 +1793,25 @@ function drawProjectiles(){
       const img = url ? loadSpriteImage(url) : null;
       ctx.save();
       ctx.globalAlpha = fadeA;
-      // ── Свечение наконечника/древка стрелы ──
+      // ─── GLOW ────────────────────────────────────────────────────────
       ctx.shadowColor = 'rgba(255,215,140,0.95)';
       ctx.shadowBlur = 16;
       if(img && img.complete && img.naturalWidth > 0){
         const L = 34;
         ctx.translate(w.x,w.y);
-        // Допущение: спрайт стрелы нарисован ГОРИЗОНТАЛЬНО (остриём вправо).
-        // Если исходный T_Arrow_01.png нарисован вертикально — раскомментировать
-        // следующую строку (добавит поворот на 90°):
+        // Fix: arrows are drawn horizontally by default (T_Arrow_01.png is horizontal)
         // ctx.rotate(Math.PI/2);
         ctx.rotate(w.rot);
         const width = L * spriteAspectFor(img);
         ctx.drawImage(img, -L/2, -width/2, L, width);
       } else {
-        // Пока спрайт не загружен — рисуем временную полоску, чтобы снаряд был виден
+        // Fallback if sprite not loaded — draw simple arrow
         ctx.translate(w.x,w.y); ctx.rotate(w.rot);
         ctx.strokeStyle = '#d9c08a'; ctx.lineWidth = 2;
         ctx.beginPath(); ctx.moveTo(-16,0); ctx.lineTo(16,0); ctx.stroke();
       }
       ctx.restore();
-      // Мягкое дополнительное свечение вокруг наконечника стрелы (кончик = вперёд по rot)
+      // Extra glow behind the arrow (independent of rot)
       const glowGrad = ctx.createRadialGradient(w.x,w.y,0,w.x,w.y,10);
       glowGrad.addColorStop(0,'rgba(255,225,160,0.55)');
       glowGrad.addColorStop(1,'rgba(255,225,160,0)');
@@ -1837,14 +1824,15 @@ function drawProjectiles(){
   }
 }
 function updateCrossbowBotAI(dt, bot){
-  const target = P;
+  const target = typeof FactionRules!=='undefined' ? FactionRules.getBotTarget(bot) : P;
+  if(!target) return;
   if(target.hp <= 0) return;
   const dist = Math.hypot(target.x-bot.x, target.y-bot.y);
   const aimAngle = Math.atan2(target.y-bot.y, target.x-bot.x);
   bot.prevAngle = bot.angle;
   bot.angle = aimAngle;
 
-  // ── Гистерезис для порогов дистанции ──
+  // ─── STATE MANAGEMENT ──────────────────────────────────────────────────
   const AVOID_DIST_ENTER = 5 * CELL_PX;
   const AVOID_DIST_EXIT  = 6.4 * CELL_PX;
   const MELEE_PANIC_ENTER = 110;
@@ -1880,7 +1868,7 @@ function updateCrossbowBotAI(dt, bot){
       mx = wdx/wl; my = wdy/wl;
       bot._cbLastMode = 'wander';
     }
-    // Отталкивание от стен
+    // ─── WALL AVOIDANCE ──────────────────────────────────────────────
     const WALL_MARGIN = 130;
     const _bl=40, _br=W-80, _bt=40, _bb=H-40;
     const dL=bot.x-_bl, dR=_br-bot.x, dT=bot.y-_bt, dB=_bb-bot.y;
@@ -1900,7 +1888,7 @@ function updateCrossbowBotAI(dt, bot){
   }
   let mx = bot._cbMoveX||0, my = bot._cbMoveY||0;
 
-  // Скорость
+  // ─── SPEED ─────────────────────────────────────────────────────────────
   const exhMult = getMod(bot, 'moveSlow', 1);
   const unbMult = hasMod(bot, 'weaponRecoil') ? 0.3 : 1;
   const speedMult = exhMult * unbMult;
@@ -1915,55 +1903,51 @@ function updateCrossbowBotAI(dt, bot){
   const dbBlockSlow = (bot._blockSlow||0) > GameTime ? sv('blockSlowMult') : 1;
   const maxV = 6 * sv('botspd') * speedMult * retreatScale * dbBlockSlow * sv('globalspd') * botSpeedMult * _dShBaseMult * _dShWrongMult * weaponMoveSpeedMult(bot);
   
-  bot.vx = lerpDT(bot.vx, mx*maxV, 0.16, dt);
-  bot.vy = lerpDT(bot.vy, my*maxV, 0.16, dt);
-  bot.vx = clamp(bot.vx,-15,15); bot.vy = clamp(bot.vy,-15,15);
-  const step = simStep(dt);
-  bot.x = clamp(bot.x+bot.vx*step, 40, W-80);
-  bot.y = clamp(bot.y+bot.vy*step, 40, H-40);
+  bot.vx = $.M.lerpDT(bot.vx, mx*maxV, 0.16, dt);
+  bot.vy = $.M.lerpDT(bot.vy, my*maxV, 0.16, dt);
+  bot.vx = $.M.clamp(bot.vx,-15,15); bot.vy = $.M.clamp(bot.vy,-15,15);
+  const step = $.M.step(dt);
+  bot.x = $.M.clamp(bot.x+bot.vx*step, 40, W-80);
+  bot.y = $.M.clamp(bot.y+bot.vy*step, 40, H-40);
   resolveBoxCollision(bot);
 
-// Усталость/стамина/дисбаланс бота обрабатывает updateDummy(), которая
-  // вызывается для этого же бота следующим шагом в игровом цикле —
-  // здесь ничего не трогаем, чтобы не декрементить exhausted дважды за кадр.
+// The rest of updateCrossbowBotAI is handled by updateDummy(), so we don't
+// duplicate physics here — this ensures exhausted doesn't get stuck per frame.
 
-// 🔥 СТРЕЛЬБА (лук и арбалет — единая точка входа)
+// ─── FIRE LOGIC (bow/crossbow) ───────────────────────────────────────────
   let ready = bot.stamina > 0 && bot.exhausted <= 0 && !(GameTime < (bot._rangedShotCD||0));
 
   const _wKey = weaponKeyOf(bot);
 
-  // Лук: бот не должен держать тетиву натянутой вечно — отпускаем
-  // (стреляем) через случайные 1-6 сек после начала натяжения.
+  // ─── BOW: limit hold time ────────────────────────────────────────────
   if(_wKey === 'bow'){
     if(bot._bowCharging){
       if(bot._bowHoldLimit === undefined){
-        bot._bowHoldLimit = rf(1, 5) + 1; // 1..6 сек
+        bot._bowHoldLimit = rf(1, 5) + 1; // 1..6 seconds
       }
       if(GameTime - bot._bowChargeStart >= bot._bowHoldLimit){
-        ready = false; // сигнал updateRangedWeaponFire отпустить тетиву
+        ready = false; // Force release in updateRangedWeaponFire
       }
     } else {
-      bot._bowHoldLimit = undefined; // сброс перед следующим натяжением
+      bot._bowHoldLimit = undefined; // Reset after release
     }
   }
 
-  // Арбалет: запоминаем прежний CD, чтобы после выстрела иногда
-  // добавить случайную доп. задержку (см. ниже).
+  // ─── CROSSBOW: extra random delay after reload ──────────────────────
   const _prevRangedCD = bot._rangedShotCD || 0;
 
   updateRangedWeaponFire(bot, ready, aimAngle);
 
-  // Арбалет: иногда (40%) добавляем случайную доп. паузу 1-3 сек к КД,
-  // чтобы боты не стреляли строго метрономом.
+  // ─── CROSSBOW: add random delay (40% chance) ────────────────────────
   if(_wKey === 'crossbow' && bot._rangedShotCD > _prevRangedCD && Math.random() < 0.4){
-    bot._rangedShotCD += rf(1, 2) + 1; // доп. 1..3 сек
+    bot._rangedShotCD += rf(1, 2) + 1; // Add 1..3 seconds
   }
 
   updateCrossbowReloadSound(bot);
 }
 
 
-// 🔥 ОБЩАЯ ФУНКЦИЯ ДЛЯ РАСЧЁТА МАКСИМАЛЬНОЙ СКОРОСТИ БОТА
+// ─── HELPER: get bot max speed (wrapper for calcSpeedMultipliers) ───────
 function getBotMaxSpeed(bot){
   return calcSpeedMultipliers(bot, false);
 }
@@ -1976,21 +1960,21 @@ function getBotMaxSpeed(bot){
 
 
 
-// ── ИИ: Жезл — циклический режим дальнего боя, откат в ближний бой вплотную ──
-// Возвращает true, если в этот тик отработал дальний режим (обычный updateAI
-// вызывать НЕ нужно); false — если сейчас фаза ближнего боя (пусть работает
-// обычный updateAI, как для любого другого оружия).
+// ─── AI: WAND BOT ──────────────────────────────────────────────────────────
+// Returns true if the bot is actively charging/using the wand (so the main
+// updateAI should skip normal movement for this bot); false otherwise.
 function updateWandBotAI(dt, bot){
-  const target = P;
+  const target = typeof FactionRules!=='undefined' ? FactionRules.getBotTarget(bot) : P;
+  if(!target) return false;
   const dist = Math.hypot(target.x - bot.x, target.y - bot.y);
   const aimAngle = Math.atan2(target.y - bot.y, target.x - bot.x);
   const weaponKey = weaponKeyOf(bot);
 
-  // ════════════════════════════════════════════════════════════════════
-  // 🔥 МАГИЧЕСКИЙ ПОСОХ - ДОПОЛНИТЕЛЬНАЯ ЛОГИКА К ОБЫЧНОМУ БОЮ
-  // ════════════════════════════════════════════════════════════════════
+  // ••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+  // ─── MAGIC STAFF AI ─────────────────────────────────────────────────────
+  // ••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
   if(weaponKey === 'magicstaff'){
-    // Инициализация
+    // Initialize AI state
     if(bot._magicStaffAI === undefined){
       bot._magicStaffAI = {
         state: 'idle',        // idle | charging | cooldown
@@ -2004,37 +1988,37 @@ function updateWandBotAI(dt, bot){
     const magicAI = bot._magicStaffAI;
     magicAI.timeInState += dt;
     
-// ── УСЛОВИЯ ДЛЯ МАГИИ ──
-const isPlayerExhausted = isExhausted(P) || P.stamina < 30;
+// ─── DECISION: SHOULD WE USE MAGIC? ──────────────────────────────────────
+const isPlayerExhausted = isExhausted(target) || target.stamina < 30;
 const isInRange = dist < MAGICSTAFF_RADIUS * 0.9  && dist > 30;
 const hasStamina = bot.stamina > 10;
 const isReady = GameTime >= (bot._rangedShotCD || 0);
 const notCharging = magicAI.state !== 'charging' && magicAI.state !== 'cooldown';
 
-// 🔥 ПРОВЕРКА ЯРОСТИ ДЛЯ БОТА (НУЖНО >= 50)
+// Check if bot has enough rage (>= 50)
 const hasRage = (bot.rage || 0) >= 50;
 
-// ════════════════════════════════════════════════════════════════════
-// 🔥 РЕШЕНИЕ: ИСПОЛЬЗОВАТЬ МАГИЮ
-// ════════════════════════════════════════════════════════════════════
+// ••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+// ─── DECISION LOGIC: WHEN TO USE MAGIC ───
+// ••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
 let shouldUseMagic = false;
 
-// Случай 1: Игрок устал - 70% шанс начать зарядку
+// ─── RULE 1: Player exhausted - 70% chance ──────────────────────────────
 if(isPlayerExhausted && isInRange && hasStamina && isReady && notCharging && hasRage){
   shouldUseMagic = Math.random() < 0.7;
 }
 
-// Случай 2: Игрок НЕ устал - 20% шанс начать зарядку (для разнообразия)
+// ─── RULE 2: Even if not exhausted - 20% chance ─────────────────────────
 if(!shouldUseMagic && isInRange && hasStamina && isReady && notCharging && hasRage && Math.random() < 0.6){
   shouldUseMagic = true;
-  console.log('🔮 БОТ РЕШИЛ КАСТОВАТЬ, ХОТЯ ИГРОК НЕ УСТАЛ!');
+  console.log('🔮 Bot decided to charge magic, even though player is not exhausted!');
 }
 
-// ════════════════════════════════════════════════════════════════════
-// 🔥 ЕСЛИ МОЖНО ИСПОЛЬЗОВАТЬ МАГИЮ - НАЧИНАЕМ ЗАРЯДКУ
-// ════════════════════════════════════════════════════════════════════
+// ••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+// ─── IF SHOULD USE MAGIC - START CHARGING ───
+// ••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
 if(shouldUseMagic){
-  console.log('🔮 БОТ НАЧИНАЕТ ЗАРЯДКУ МАГИИ! (ярость:', Math.round(bot.rage), ')');
+  console.log('🔮 Bot started charging magic! (Rage:', Math.round(bot.rage), ')');
   magicAI.state = 'charging';
   magicAI.chargeStart = GameTime;
   magicAI.fireHeld = true;
@@ -2046,37 +2030,37 @@ if(shouldUseMagic){
   
 
   
-  hitFX.push({x: bot.x, y: bot.y - 40, t: '🔮 ЗАРЯДКА!', life: 30, big: false, col: '#88ddff'});
-  bot.stamina = Math.max(0, bot.stamina - 10);
+  $.FX.hit({x: bot.x, y: bot.y - 40, t: (window.I18N ? window.I18N.t('ranged.magicStaffCharge') : 'CHARGE!'), life: 30, big: false, col: '#88ddff'});
+  drainStamina(bot, 10);
   
-  // 🔥 ВОЗВРАЩАЕМ true - бот занят зарядкой
+  // Return true to signal that bot is busy charging
   return true;
 }
 
-// ── ПРОЦЕСС ЗАРЯДКИ ──
+// ─── CHARGING STATE ──────────────────────────────────────────────────────
 if(magicAI.state === 'charging'){
   const chargeTime = GameTime - magicAI.chargeStart;
   
-  // Бот стоит на месте
-  bot.vx = lerpDT(bot.vx, 0, 0.9, dt);
-  bot.vy = lerpDT(bot.vy, 0, 0.9, dt);
-  const step = simStep(dt);
-  bot.x = clamp(bot.x + bot.vx*step, 40, W-80);
-  bot.y = clamp(bot.y + bot.vy*step, 40, H-40);
+  // Stop moving while charging
+  bot.vx = $.M.lerpDT(bot.vx, 0, 0.9, dt);
+  bot.vy = $.M.lerpDT(bot.vy, 0, 0.9, dt);
+  const step = $.M.step(dt);
+  bot.x = $.M.clamp(bot.x + bot.vx*step, 40, W-80);
+  bot.y = $.M.clamp(bot.y + bot.vy*step, 40, H-40);
   bot.angle = aimAngle;
-  bot.stamina = Math.max(0, bot.stamina - 15 * dt);
+  drainStamina(bot, 15 * dt);
   
-  // Вызываем updateRangedWeaponFire с fireHeld = true
+  // Call updateRangedWeaponFire with fireHeld = true
   updateRangedWeaponFire(bot, true, aimAngle);
   
-  // ── УСЛОВИЯ ПРЕРЫВАНИЯ ──
-  const playerRecovered = P.exhausted <= 0 && P.stamina > 60;
+  // ─── ABORT CONDITIONS ──────────────────────────────────────────────
+  const playerRecovered = !isExhausted(target) && target.stamina > 60;
   const playerTooFar = dist > MAGICSTAFF_RADIUS * 2.5;
   const playerTooClose = dist < 10;
   const outOfStamina = bot.stamina < 5;
   
   if( playerTooFar || playerTooClose || outOfStamina){
-    console.log('❌ ПРЕРЫВАНИЕ ЗАРЯДКИ');
+    console.log('⛔ Bot aborted charging');
     magicAI.state = 'idle';
     magicAI.fireHeld = false;
     bot._magicCharging = false;
@@ -2088,20 +2072,20 @@ if(magicAI.state === 'charging'){
       bot._magicChargeSoundObj = null;
     }
     
-    let reason = 'ПРЕРВАНО';
-    if(playerRecovered) reason = '💪 ИГРОК ОК';
-    else if(playerTooFar) reason = '📏 ДАЛЕКО';
-    else if(playerTooClose) reason = '😱 БЛИЗКО';
-    else if(outOfStamina) reason = '😫 НЕТ СТАМ';
-    hitFX.push({x: bot.x, y: bot.y - 40, t: '❌ ' + reason, life: 20, big: false, col: '#ff8844'});
+    let reason = 'ABORT';
+    if(playerRecovered) reason = 'PLAYER RECOVERED';
+    else if(playerTooFar) reason = 'TOO FAR';
+    else if(playerTooClose) reason = 'TOO CLOSE';
+    else if(outOfStamina) reason = window.I18N ? window.I18N.t('ranged.abortReason.noStamina') : 'NO STAMINA';
+    $.FX.hit({x: bot.x, y: bot.y - 40, t: '⛔ ' + reason, life: 20, big: false, col: '#ff8844'});
     bot._rangedShotCD = GameTime + 0.5;
     
-    // 🔥 ВОЗВРАЩАЕМ false - позволяем обычному AI взять управление
+    // Return false to let AI take over movement again
     return false;
   }
-// ── ВЗРЫВ ──
+// ─── EXPLOSION ──────────────────────────────────────────────────────────
 if(chargeTime >= MAGICSTAFF_CHARGE_FULLTIME){
-  console.log('💥 ВЗРЫВ МАГИИ!');
+  console.log('💥 MAGIC STAFF EXPLOSION!');
   const progress = Math.min(1, (chargeTime - 2.0) / 2.0);
   const dmg = MAGICSTAFF_DMG_MIN + (MAGICSTAFF_DMG_MAX - MAGICSTAFF_DMG_MIN) * progress ;
   const radius = MAGICSTAFF_RADIUS * (1 + progress * 0.5);
@@ -2109,13 +2093,13 @@ if(chargeTime >= MAGICSTAFF_CHARGE_FULLTIME){
   magicAI.fireHeld = false;
   bot._magicCharging = false;
   
-  // ════════════════════════════════════════════════════════════════════
-  // 🔥 ВЫЗЫВАЕМ ВЗРЫВ С ЭФФЕКТАМИ
-  // ════════════════════════════════════════════════════════════════════
+  // ••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+  // ─── EXPLOSION WITH UNIFIED applyDamage ─────────────────────────────
+  // ••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
   spawnMagicStaffExplosion(bot, radius, dmg * 3);
   
-  // Отдельно вызываем звук (если он уже есть в spawnMagicStaffExplosion, то можно убрать)
-  playSound('magicPush');
+  // Effect already handled in spawnMagicStaffExplosion, but we need to play sound here
+  $.S.play('magicPush');
   
   bot.vx -= Math.cos(aimAngle) * 5;
   bot.vy -= Math.sin(aimAngle) * 5;
@@ -2129,47 +2113,47 @@ if(chargeTime >= MAGICSTAFF_CHARGE_FULLTIME){
   magicAI.state = 'cooldown';
   magicAI.timeInState = 0;
   
-  // Текст взрыва (уже есть внутри spawnMagicStaffExplosion, но можно оставить)
-  hitFX.push({x: bot.x, y: bot.y - 50, t: '💥 ВЗРЫВ!', life: 50, big: true, col: '#88ddff'});
+  // Extra explosion effect (already in spawnMagicStaffExplosion, but we want the text)
+  $.FX.hit({x: bot.x, y: bot.y - 50, t: (window.I18N ? window.I18N.t('ranged.magicStaffExplosion') : 'EXPLOSION!'), life: 50, big: true, col: '#88ddff'});
   
-  // 🔥 ПОСЛЕ ВЗРЫВА - ВОЗВРАЩАЕМСЯ К ОБЫЧНОМУ БОЮ
+  // Return false to let AI take over after explosion
   return false;
 }
       
-      // Показываем прогресс
+      // ─── PROGRESS INDICATOR ──────────────────────────────────────────
       if(chargeTime > 1.0 && chargeTime < 2.0){
         const progress = (chargeTime - 1.0) / 1.0;
         if(Math.floor(chargeTime * 4) % 2 === 0){
-          hitFX.push({x: bot.x, y: bot.y - 30, t: '⏳ ' + Math.round(progress * 100) + '%', life: 3, big: false, col: '#88ddff'});
+          $.FX.hit({x: bot.x, y: bot.y - 30, t: '⏳ ' + Math.round(progress * 100) + '%', life: 3, big: false, col: '#88ddff'});
         }
       }
       
-      return true; // Всё ещё заряжаем
+      return true; // Still charging
     }
     
-    // ── КУЛДАУН ──
+    // ─── COOLDOWN STATE ──────────────────────────────────────────────────
     if(magicAI.state === 'cooldown'){
       magicAI.timeInState += dt;
       
       if(GameTime >= bot._rangedShotCD){
         magicAI.state = 'idle';
         magicAI.timeInState = 0;
-        console.log('✅ КУЛДАУН ЗАКОНЧИЛСЯ');
-        // 🔥 ВОЗВРАЩАЕМ false - позволяем обычному AI взять управление
+        console.log('⚡ Cooldown finished');
+        // Return false to let AI take over after cooldown
         return false;
       }
       
-      // В кулдауне - просто ждём, обычный AI не должен двигать бота
-      // Но разрешаем обычному AI драться
+      // In cooldown - just wait, don't control the bot
+      // But still return false to let AI move
       return false;
     }
     
-    // ── IDLE ──
-    // Если не используем магию - ОТДАЁМ УПРАВЛЕНИЕ ОБЫЧНОМУ AI
+    // ─── IDLE STATE ────────────────────────────────────────────────────
+    // If not using magic - let AI handle movement
     if(magicAI.state === 'idle'){
-      // Проверяем, не пора ли начать зарядку (ещё раз)
+      // Check again if we should start charging (in case conditions changed)
       if(shouldUseMagic){
-        // Если условия изменились - начинаем зарядку
+        // If shouldUseMagic is true - start charging
         magicAI.state = 'charging';
         magicAI.chargeStart = GameTime;
         magicAI.fireHeld = true;
@@ -2179,20 +2163,20 @@ if(chargeTime >= MAGICSTAFF_CHARGE_FULLTIME){
         bot._magicChargeStart = GameTime;
         bot._magicChargeSoundObj = playControllableSound('magicEnergy');
         
-        hitFX.push({x: bot.x, y: bot.y - 40, t: '🔮 ЗАРЯДКА!', life: 30, big: false, col: '#88ddff'});
-        bot.stamina = Math.max(0, bot.stamina - 10);
+        $.FX.hit({x: bot.x, y: bot.y - 40, t: (window.I18N ? window.I18N.t('ranged.magicStaffCharge') : 'CHARGE!'), life: 30, big: false, col: '#88ddff'});
+        drainStamina(bot, 10);
         return true;
       }
       
-      // 🔥 ОТДАЁМ УПРАВЛЕНИЕ ОБЫЧНОМУ AI (ближний бой)
+      // If not using magic - let AI handle movement
       return false;
     }
     
     return false;
   }
-  // ════════════════════════════════════════════════════════════════════
-  // 🔥 ЖЕЗЛ - ОБЫЧНАЯ ЛОГИКА
-  // ════════════════════════════════════════════════════════════════════
+  // ••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+  // ─── WAND (regular wand) AI ────────────────────────────────────────────
+  // ••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
   if(bot._wandMode == null) bot._wandMode = 'melee';
   if(bot._wandModeUntil == null) bot._wandModeUntil = GameTime + rf(7,9);
 
@@ -2218,23 +2202,23 @@ if(chargeTime >= MAGICSTAFF_CHARGE_FULLTIME){
 
   if(bot._wandMode === 'melee') return false;
 
-  // ── Режим дальнего боя (жезл) ──
+  // ─── MOVEMENT ──────────────────────────────────────────────────────────
   const PREF_DIST = 240;
   let mx=0, my=0;
   if(dist < PREF_DIST*0.8){ mx=-Math.cos(aimAngle); my=-Math.sin(aimAngle); }
 else if(dist > PREF_DIST*1.3){ mx=Math.cos(aimAngle); my=Math.sin(aimAngle); }
 const maxV = 5 * getMod(bot, 'moveSlow', 1);
-bot.vx = lerpDT(bot.vx, mx*maxV, 0.2, dt);
-bot.vy = lerpDT(bot.vy, my*maxV, 0.2, dt);
-bot.vx = clamp(bot.vx,-15,15); bot.vy = clamp(bot.vy,-15,15);
+bot.vx = $.M.lerpDT(bot.vx, mx*maxV, 0.2, dt);
+bot.vy = $.M.lerpDT(bot.vy, my*maxV, 0.2, dt);
+bot.vx = $.M.clamp(bot.vx,-15,15); bot.vy = $.M.clamp(bot.vy,-15,15);
 if(!bot._wandCharging){
-  const step = simStep(dt);
-  bot.x = clamp(bot.x+bot.vx*step, 40, W-80);
-  bot.y = clamp(bot.y+bot.vy*step, 40, H-40);
+  const step = $.M.step(dt);
+  bot.x = $.M.clamp(bot.x+bot.vx*step, 40, W-80);
+  bot.y = $.M.clamp(bot.y+bot.vy*step, 40, H-40);
 }
 
-// 🔥 ВАЖНО: синхронизируем угол меча с aimAngle перед выстрелом
-bot.angle = aimAngle; // ← ДОБАВЬТЕ ЭТУ СТРОЧКУ
+// ─── FIRE LOGIC ──────────────────────────────────────────────────────────
+bot.angle = aimAngle; // Face target
 
 const chargeDone = bot._wandCharging && (GameTime - bot._wandChargeStart >= wandChargeTimeFor(bot));
 const fireHeld = bot.stamina > 20 && bot.exhausted <= 0 && !chargeDone;
@@ -2242,6 +2226,8 @@ updateRangedWeaponFire(bot, fireHeld, aimAngle);
 return true;
 }
 
-// ──────────────── END LAYER: RANGED ────────────────
+// ─────────────────────────────────────────────────────────────────────────────────
+// END LAYER: RANGED
+// ─────────────────────────────────────────────────────────────────────────────────
 
-// ════════════════════════════════════════════════════════════════════════════
+// ••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••

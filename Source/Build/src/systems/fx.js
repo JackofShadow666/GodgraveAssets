@@ -6,6 +6,23 @@
 const hitFX = [];
 const BLOOD = [];
 
+$.FX = $.FX || {
+  hit(fx){
+    hitFX[hitFX.length] = fx;
+    return fx;
+  },
+  dmg(fx){ return $.FX.hit(fx); },
+  block(fx){ return $.FX.hit(fx); },
+  clash(fx){ return $.FX.hit(fx); },
+  swing(fx){ return $.FX.hit(fx); },
+  flick(fx){ return $.FX.hit(fx); },
+  orbit(fx){ return $.FX.hit(fx); },
+  rage(fx){ return $.FX.hit(fx); },
+  poke(fx){ return $.FX.hit(fx); },
+  dodge(fx){ return $.FX.hit(fx); },
+  weaponDrop(fx){ return $.FX.hit(fx); }
+};
+
 // All floating combat labels use one visual preset.  `owner` is optional for
 // world/UI messages; labels owned by the same unit replace one another cleanly.
 const FLOATING_TEXT_LIFE = 40;
@@ -28,7 +45,7 @@ class FloatingText {
 function spawnFloatingText(owner, text, options = {}){
   const point = options.x !== undefined && options.y !== undefined
     ? { x: options.x, y: options.y }
-    : entityBodyCenter(owner);
+    : $.POS.body(owner);
   if(owner && owner._lastFloatingText && owner._lastFloatingText.life > 0){
     owner._lastFloatingText.fadeTwiceAsFast();
   }
@@ -39,7 +56,7 @@ function spawnFloatingText(owner, text, options = {}){
     { ...options, owner }
   );
   if(owner) owner._lastFloatingText = label;
-  hitFX.push(label);
+  $.FX.hit(label);
   return label;
 }
 
@@ -65,7 +82,7 @@ function updateBlood(dt){
     const b=BLOOD[i];
     b.x+=b.vx*dt*60; b.y+=b.vy*dt*60;
     b.vy+=0.25*dt*60;
-    b.vx=decayDT(b.vx,0.88,dt); b.vy=decayDT(b.vy,0.92,dt);
+    b.vx=$.M.decay(b.vx,0.88,dt); b.vy=$.M.decay(b.vy,0.92,dt);
     b.life-=dt*60;
     if(b.life<=0) BLOOD.splice(i,1);
   }
@@ -264,7 +281,7 @@ function fxDrawRageRing(ctx, p, x, y, ent){
   // Привязываемся к телу персонажа как тень (bodyCenter.y + 22)
   let fx=x, fy=y;
   if(ent){
-    const bc=entityBodyCenter(ent);
+    const bc=$.POS.body(ent);
     fx=bc.x; fy=bc.y+22; // точно как тень
   }
   ctx.save();
@@ -335,7 +352,7 @@ function drawFXEffects(){
     if(p <= 0.01) continue;
     let fx_x = fx.x, fx_y = fx.y;
     if(fx.followEntity){
-      const piv = entityPivot(fx.followEntity);
+      const piv = $.POS.pivot(fx.followEntity);
       fx_x = piv.x; fx_y = piv.y;
     }
     if(fx.type === 'blood'){

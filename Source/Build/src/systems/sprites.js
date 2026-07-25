@@ -56,8 +56,7 @@ const HANDRANGE = 10;
 // ОБЕ стороны по всей длине спрайта.
 function weaponColliderSpan(ent){
   const front = weaponReach(ent) * BLADEFIXSCALE; // уже full/2 для center-grip, full для остальных
-  const key = weaponKeyOf(ent);
-  if(key !== 'bow' && key !== 'crossbow' && CENTER_GRIP_CATEGORIES.includes(weaponDefFor(ent).category)){
+  if($.NOT(ent, 'bow', 'crossbow') && CENTER_GRIP_CATEGORIES.includes(weaponDefFor(ent).category)){
     // center-grip: весь спрайт длиной full = front*2, pivot ровно в середине —
     // значит назад тоже front
     return { back: front, front: front };
@@ -142,8 +141,7 @@ function shieldDef(ent){ return SHIELD_TYPES[ent.shield||0]||null; }
 // Щит неактивен, пока натягивается лук / копится маг. посох или жезл —
 // оружие держат двумя руками, щитом прикрыться нельзя.
 function isShieldSuppressed(ent){
-  if(!ent) return false;
-  return !!(ent._bowCharging || ent._magicCharging || ent._wandCharging);
+  return $.E.charging(ent);
 }
 
 // Щит на той же стороне что меч (курсор) = флип активен
@@ -178,11 +176,11 @@ function drawShield(ent, cursorX){
 
   const _rawTilt = Math.sin(ent.angle) * (15*Math.PI/180);
   const _maxTilt = 15*Math.PI/180;
-  const shieldAngle = clamp(_rawTilt, -_maxTilt, _maxTilt);
+  const shieldAngle = $.M.clamp(_rawTilt, -_maxTilt, _maxTilt);
 
-  const lmbActive = (ent===P) ? (mDown && !isRangedWeapon(ent) && weaponKeyOf(ent) !== 'flail')
-    : (typeof AI!=='undefined' && AI._fakeMDown && !isRangedWeapon(ent) && weaponKeyOf(ent) !== 'flail');
-  const _shDisabled = (ent.exhausted > 0) || (ent.unbalanced > 0);
+  const lmbActive = (ent===P) ? $.A.meleeHold(ent, mDown)
+    : (typeof AI!=='undefined' && $.A.meleeHold(ent, AI._fakeMDown));
+  const _shDisabled = $.E.shieldOff(ent);
   ent._shieldAlpha = lmbActive ? 0.25 : (_shDisabled ? 0.3 : 1.0);
 
   const _shWf = shW * _shExhMult;
@@ -299,7 +297,7 @@ function assignRandomSkin(ent){
 
 // Использует те же правила восстановления, что и игрок.
 function botRegenStamina(bot, dt){
-  regenStamina(bot, dt, !!bot._fakeMDown);
+  regenStamina(bot, dt, !!(bot._aiState && bot._aiState._fakeMDown));
 }
 
 // Обновляет усталость и дисбаланс
@@ -311,8 +309,8 @@ function botUpdateExhaustion(bot, dt){
 function botUpdateDodge(bot, dt){
   if(bot._dvx || bot._dvy){
     const step = decayingImpulseStep(dt);
-    bot.x = clamp(bot.x + bot._dvx * step, 40, W-80);
-    bot.y = clamp(bot.y + bot._dvy * step, 40, H-40);
+    bot.x = $.M.clamp(bot.x + bot._dvx * step, 40, W-80);
+    bot.y = $.M.clamp(bot.y + bot._dvy * step, 40, H-40);
     const decay = Math.pow(0.01, dt);
     bot._dvx *= decay;
     bot._dvy *= decay;
@@ -325,7 +323,7 @@ function botUpdateDodge(bot, dt){
 
 // Спавнит пыль под ногами при движении
 function botSpawnDust(bot, dt){
-  const dustSpd = typeof NET_SYNC!=='undefined' && NET_SYNC.active ? 8 : 0.5;
+  const dustSpd = typeof NET_SYNC!=='undefined' && $.NET.active() ? 8 : 0.5;
   if(Math.hypot(bot.vx, bot.vy) > dustSpd){
     bot._dustCD = (bot._dustCD||0) - dt;
     if(bot._dustCD <= 0){

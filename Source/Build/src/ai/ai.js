@@ -148,7 +148,7 @@ const CROWN_SWITCH_COOLDOWN = 1.0; // сек
 // Переключить "умный" AI на другого бота (вызывается при контакте меча с игроком)
 // Возвращает true, если смена реально произошла, false — если заблокирована кулдауном.
 function switchSmartBot(newBot){
-  if(!newBot || newBot === D) return false;
+  if(!newBot || newBot === D || newBot._manualControl || (D && D._manualControl)) return false;
   // Защита от слишком частой смены короны (не чаще раза в секунду)
   if(GameTime - _lastCrownSwitchTime < CROWN_SWITCH_COOLDOWN) return false;
   _lastCrownSwitchTime = GameTime;
@@ -171,13 +171,13 @@ function switchSmartBot(newBot){
   AI = newBot._aiState;
   
   //if(typeof hitFX !== 'undefined'){
-  //  hitFX.push({
+  //  $.FX.hit({
   //    x: newBot.x, y: newBot.y - 50,
    //   t: '👑 КОРОНА!',
    //   life: 50, big: true, col: '#ffdd44'
    // });
  // }
- // playSound('uiNote');
+ // $.S.play('uiNote');
   return true;
 }
 
@@ -196,12 +196,12 @@ const FEINT_STEP_PATTERNS = [[1,-1],[-1,1],[-1,1,-1],[-1,-1],[1,1],[2,-2],[-2,2]
 let _mainBotSwapTime = rf(5,10); // 5–15 сек до первой смены
 
 function updateMainBotRotation(){
-  if(!dummyOn || ALL_BOTS.length < 2) return;
+  if(!dummyOn || ALL_BOTS.length < 2 || (D && D._manualControl)) return;
   
   // Проверяем, наступило ли время смены
   //_mainBotSwapTime = GameTime+ 9999 test
   if(GameTime >= _mainBotSwapTime){
-    const alive = ALL_BOTS.filter(b => b.hp > 0 && b !== D);
+    const alive = ALL_BOTS.filter(b => b.hp > 0 && b !== D && !b._manualControl);
     if(alive.length > 0){
       const newMain = alive[Math.floor(Math.random() * alive.length)];
       switchSmartBot(newMain);
@@ -216,12 +216,17 @@ function updateMainBotRotation(){
 
 
 function applyBotCount(){
-  const target = Math.round(sv('botcount')) || 1;
+  const localPvpSlot = typeof LocalPlayerControls!=='undefined' && LocalPlayerControls.isLocalPvP()
+    ? LocalPlayerControls.getGamepadSlot() : 0;
+  // Local player slots reserve the first entities; the slider counts only
+  // additional AI bots, so PvP and bots can coexist.
+  const requestedBots = Math.max(0, Math.round(sv('botcount')) || 0);
+  const target = localPvpSlot > 0 ? Math.max(1, localPvpSlot) + requestedBots : Math.max(1, requestedBots);
   while(ALL_BOTS.length < target){
     const idx = ALL_BOTS.length;
     const ang = (idx / target) * Math.PI * 2;
-    const spawnX = clamp(W/2 + 110 + Math.cos(ang)*140, 60, W-100);
-    const spawnY = clamp(H/2 + Math.sin(ang)*140, 60, H-60);
+    const spawnX = $.M.clamp(W/2 + 110 + Math.cos(ang)*140, 60, W-100);
+    const spawnY = $.M.clamp(H/2 + Math.sin(ang)*140, 60, H-60);
     const nb = makeEntity(spawnX, spawnY, 0.8, '#4a1a10', { stamRegen: 28 });
     nb._aiState = freshAIState();
     // Если игра сейчас на паузе (T/Е) — новый бот тоже должен родиться замороженным
@@ -340,7 +345,7 @@ function aiStartSpin(durationSec){
   if(!dummyOn || AI._spinActive) return;
   if(cb('nospin')) return;
   if(AI.swordStyle === 'SWORD_STYLE_DUELIST') return; // duelist не вращает
-  const dBodyC = entityBodyCenter(D);
+  const dBodyC = $.POS.body(D);
   const dpivX = dBodyC.x + D.pvX, dpivY = dBodyC.y + D.pvY;
   // Начинаем с текущего положения меча бота (fakeMX/MY относительно пивота)
   const curAngToFakeM = Math.atan2(AI._fakeMY - dpivY, AI._fakeMX - dpivX);
@@ -362,11 +367,11 @@ function aiSetPhase(phase){
     if(dummyOn && Math.random() < getAIProfile().rageOnAttackChance){
       D.rageBuffEnd = GameTime + getAIProfile().rageDuration;
       D.rage = 100;
-      hitFX.push({x:entityBodyCenter(D).x, y:entityBodyCenter(D).y-40, t:'🔥', life:35, big:false, col:'#ff4020'});
+      $.FX.hit({x:$.POS.body(D).x, y:$.POS.body(D).y-40, t:'🔥', life:35, big:false, col:'#ff4020'});
     }
     // при начале атаки — если игрок далеко, прокрут
-    const pBodyC = entityBodyCenter(P);
-    const dBodyC = entityBodyCenter(D);
+    const pBodyC = $.POS.body(P);
+    const dBodyC = $.POS.body(D);
     const cscl = sv('cscl');
     const dist = Math.hypot(pBodyC.x-dBodyC.x, pBodyC.y-dBodyC.y);
     if(dist > 150*cscl){
@@ -390,8 +395,8 @@ function aiSetPhase(phase){
 
 // Вычисляем точку отступления: d пикс от игрока по направлению от бота
 function aiRetreatPoint(){
-  const pBodyC = entityBodyCenter(P);
-  const dBodyC = entityBodyCenter(D);
+  const pBodyC = $.POS.body(P);
+  const dBodyC = $.POS.body(D);
   const ang = Math.atan2(dBodyC.y - pBodyC.y, dBodyC.x - pBodyC.x);
   
   // 🔥 ЕСЛИ У ИГРОКА ЛУК/АРБАЛЕТ — ОТСТУПАЕМ ДАЛЬШЕ
@@ -439,8 +444,8 @@ function aiUpdateProbing(ai, bot, k, bBodyC, pBodyC, distToPlayer, cscl){
   const safeDist = Math.max(reach + 20 * cscl,
     baseSafeDist * (ai._probingDistanceScale || 1));
   const retreatDist = safeDist + (ai._probingRetreatStep || 125 * cscl * sv('probingretreat'));
-  const playerWeaponPivot = entityPivot(P);
-  const playerWeaponTip = weaponTipPos(P);
+  const playerWeaponPivot = $.POS.pivot(P);
+  const playerWeaponTip = $.POS.tip(P);
   const playerWeaponCenter = {
     x: (playerWeaponPivot.x + playerWeaponTip.x) * 0.5,
     y: (playerWeaponPivot.y + playerWeaponTip.y) * 0.5,
@@ -474,14 +479,14 @@ function aiUpdateProbing(ai, bot, k, bBodyC, pBodyC, distToPlayer, cscl){
   if(ai._probingPhase === 'strike'){
     if(distToPlayer < safeDist) aiMoveAway(k, bBodyC, pBodyC, safeDist, cscl);
     else k.w=k.a=k.s=k.d=false;
-    const botWeaponPivot = entityPivot(bot);
+    const botWeaponPivot = $.POS.pivot(bot);
     if(ai._probingMirrorBlock){
       // 30%: mirror into a block, limited to the forward +/-60 degree arc.
       const mirroredBlockAng = P.angle + Math.PI / 2 + (P.vel > 0 ? -0.3 : 0.3);
       const frontAng = Math.atan2(pBodyC.y - bBodyC.y, pBodyC.x - bBodyC.x);
       const maxFrontMirror = Math.PI / 3;
-      const blockAng = frontAng + clamp(
-        angDiff(mirroredBlockAng, frontAng), -maxFrontMirror, maxFrontMirror);
+      const blockAng = frontAng + $.M.clamp(
+        $.M.angDiff(mirroredBlockAng, frontAng), -maxFrontMirror, maxFrontMirror);
       aiPointMouse(bBodyC,
         botWeaponPivot.x + Math.cos(blockAng) * 150 * cscl,
         botWeaponPivot.y + Math.sin(blockAng) * 150 * cscl);
@@ -519,7 +524,7 @@ function aiUpdateProbing(ai, bot, k, bBodyC, pBodyC, distToPlayer, cscl){
   ai._fakeMDown = false;
   if(ai._probingPhase === 'retreat'){
     // Keep the weapon still while stepping back: no tracking or fencing.
-    const botWeaponPivot = entityPivot(bot);
+    const botWeaponPivot = $.POS.pivot(bot);
     aiPointMouse(bBodyC,
       botWeaponPivot.x + Math.cos(bot.angle) * 150 * cscl,
       botWeaponPivot.y + Math.sin(bot.angle) * 150 * cscl,
@@ -596,8 +601,8 @@ const DUEL = {
 function duelUpdate(dt){
   if(!dummyOn) return;
   if(!cb('duel')){ AI._duelPull=false; DUEL.active=false; return; }
-  const pBodyC = entityBodyCenter(P);
-  const dBodyC = entityBodyCenter(D);
+  const pBodyC = $.POS.body(P);
+  const dBodyC = $.POS.body(D);
   const cscl = sv('cscl');
   const duelRad = sv('duelrad') * cscl;
   const swReach = weaponReach(D) * sv('swlen') * 2.5;
@@ -621,8 +626,8 @@ function duelUpdate(dt){
     if(distFromCenter > duelRad && GameTime >= DUEL.nextMoveCD){
       const r = duelRad * 0.7;
       const ang = Math.random() * Math.PI * 2;
-      AI._duelTargX = clamp(DUEL.cx + Math.cos(ang)*r*Math.random(), 60, W-100);
-      AI._duelTargY = clamp(DUEL.cy + Math.sin(ang)*r*Math.random(), 60, H-60);
+      AI._duelTargX = $.M.clamp(DUEL.cx + Math.cos(ang)*r*Math.random(), 60, W-100);
+      AI._duelTargY = $.M.clamp(DUEL.cy + Math.sin(ang)*r*Math.random(), 60, H-60);
       AI._duelPull = true;
       DUEL.nextMoveCD = GameTime + rf(0.5,1.5);
     }
@@ -650,18 +655,18 @@ function aiNotifyContact(){
 
   // Фиксируем центр дуэли при первом контакте
   if(!DUEL.active){
-    const dBodyC = entityBodyCenter(D);
+    const dBodyC = $.POS.body(D);
     DUEL.cx = dBodyC.x;
     DUEL.cy = dBodyC.y;
     DUEL.active = true;
     DUEL.pLastInRange = GameTime;
-    hitFX.push({x:DUEL.cx, y:DUEL.cy-20, t:'⚔', life:30, big:false, col:'rgba(200,180,60,0.7)'});
+    $.FX.hit({x:DUEL.cx, y:DUEL.cy-20, t:'⚔', life:30, big:false, col:'rgba(200,180,60,0.7)'});
   }
 
   // 20% шанс на обычном оружии, 55% у рапиры (она заточена под уколы) —
   // шаг назад + выпад ЛКМ (цепом не колют и не делают выпад)
-  const _lungeChance = weaponKeyOf(D) === 'rapier' ? 0.55 : 0.2;
-  if(!AI._probingActive && Math.random() < _lungeChance && !AI._lungeActive && weaponKeyOf(D) !== 'flail'){
+  const _lungeChance = $.IS(D, 'rapier') ? 0.55 : 0.2;
+  if(!AI._probingActive && Math.random() < _lungeChance && !AI._lungeActive && $.NOT(D, 'flail')){
     AI._lungeActive = true;
     AI._lungePhase = 'back';
     AI._lungeEnd = GameTime + 0.35;
@@ -687,6 +692,8 @@ function estimateThrowRange(def){
  function updateAI(dt, bot){
   if(!bot || bot.hp <= 0 || !dummyOn) return;
   if(!bot._aiState) return;
+  const targetPlayer = typeof FactionRules!=='undefined' ? FactionRules.getBotTarget(bot) : P;
+  if(!targetPlayer) return;
   
   const ai = bot._aiState;
   if(!ai.enabled){
@@ -695,8 +702,8 @@ function estimateThrowRange(def){
     return;
   }
 
-  const pBodyC = entityBodyCenter(P);
-  const bBodyC = entityBodyCenter(bot);
+  const pBodyC = $.POS.body(targetPlayer);
+  const bBodyC = $.POS.body(bot);
   const angToPlayer = Math.atan2(pBodyC.y - bBodyC.y, pBodyC.x - bBodyC.x);
   const distToPlayer = Math.hypot(pBodyC.x - bBodyC.x, pBodyC.y - bBodyC.y);
   const cscl = sv('cscl');
@@ -706,12 +713,12 @@ function estimateThrowRange(def){
   // ════════════════════════════════════════════════════════════════════
   // 🔥 ПРОВЕРКА: ИГРОК ЗАРЯЖАЕТ МАГИЧЕСКИЙ ПОСОХ?
   // ════════════════════════════════════════════════════════════════════
-  const isChargingMagicStaff = P.hasWeapon !== false && 
-                               weaponKeyOf(P) === 'magicstaff' && 
-                               P._magicCharging === true;
+  const isChargingMagicStaff = targetPlayer.hasWeapon !== false &&
+                               $.IS(targetPlayer, 'magicstaff') &&
+                               targetPlayer._magicCharging === true;
   
   if(isChargingMagicStaff && bot === D){
-    const chargeTime = GameTime - P._magicChargeStart;
+    const chargeTime = GameTime - targetPlayer._magicChargeStart;
     const progress = Math.min(1, chargeTime / MAGICSTAFF_CHARGE_FULLTIME);
     const currentRadius = MAGICSTAFF_RADIUS * (1 + progress * 0.5);
     const dangerZone = currentRadius * 1.3;
@@ -727,13 +734,13 @@ function estimateThrowRange(def){
           ai._magicFleeState = 'ignore';
           ai._magicFleeTimer = 0.5 + Math.random() * 1.0;
           if(Math.random() < 0.3){
-            hitFX.push({x: bBodyC.x, y: bBodyC.y - 30, t: '😤 ИГНОР!', life: 25, big: false, col: '#ff8844'});
+            $.FX.hit({x: bBodyC.x, y: bBodyC.y - 30, t: '😤 ИГНОР!', life: 25, big: false, col: '#ff8844'});
           }
         } else {
           ai._magicFleeState = 'flee';
           ai._magicFleeTimer = 1.0 + Math.random() * 2.0;
           if(Math.random() < 0.3){
-            hitFX.push({x: bBodyC.x, y: bBodyC.y - 30, t: '😱 УБЕГАЮ!', life: 25, big: false, col: '#44aaff'});
+            $.FX.hit({x: bBodyC.x, y: bBodyC.y - 30, t: '😱 УБЕГАЮ!', life: 25, big: false, col: '#44aaff'});
           }
         }
       }
@@ -760,13 +767,13 @@ function estimateThrowRange(def){
           if(ai._magicFleeState === 'ignore'){
             ai._magicFleeState = 'flee';
             ai._magicFleeTimer = 1.0 + Math.random() * 1.5;
-            hitFX.push({x: bBodyC.x, y: bBodyC.y - 30, t: '🤔 ПЕРЕДУМАЛ!', life: 25, big: false, col: '#ffaa44'});
+            $.FX.hit({x: bBodyC.x, y: bBodyC.y - 30, t: '🤔 ПЕРЕДУМАЛ!', life: 25, big: false, col: '#ffaa44'});
           } else if(ai._magicFleeState === 'flee'){
             // Если убегал - может перестать (но реже)
             if(Math.random() < 0.2){
               ai._magicFleeState = 'ignore';
               ai._magicFleeTimer = 0.5 + Math.random() * 0.5;
-              hitFX.push({x: bBodyC.x, y: bBodyC.y - 30, t: '🤔 ХВАТИТ!', life: 25, big: false, col: '#88aaff'});
+              $.FX.hit({x: bBodyC.x, y: bBodyC.y - 30, t: '🤔 ХВАТИТ!', life: 25, big: false, col: '#88aaff'});
             }
           }
           
@@ -807,7 +814,7 @@ function estimateThrowRange(def){
       const dpivX = bBodyC.x + bot.pvX;
       const dpivY = bBodyC.y + bot.pvY;
       const defAng = Math.atan2(pBodyC.y - dpivY, pBodyC.x - dpivX);
-      bot.angle = angLerpDT(bot.angle, defAng, 0.15, dt);
+      bot.angle = $.M.angLerpDT(bot.angle, defAng, 0.15, dt);
       
       ai._fakeMDown = false;
       
@@ -842,14 +849,14 @@ function estimateThrowRange(def){
   
   
   // 🔥 ПРОВЕРКА: у игрока лук или арбалет?
-  const isPlayerRanged = isRangedWeapon(P) && P.hasWeapon !== false;
+  const isPlayerRanged = isRangedWeapon(targetPlayer) && targetPlayer.hasWeapon !== false;
   // ── Бросок оружия по уставшему игроку ───────────────────────────────────
   // Условия: у бота одно из метательных видов оружия; игрок сейчас "устал"
   // (exhausted); дистанция больше 3 клеток, но меньше примерной дальности
   // броска этого оружия; глобальный таймер (30 сек на ВСЕХ ботов) не активен.
   // При выполнении условий раз в ~1-1.5 сек бросается кубик на 30%.
   if(bot.hasWeapon !== false && THROWABLE_MELEE_KEYS.includes(weaponKeyOf(bot)) &&
-     isExhausted(P) && GameTime >= GLOBAL_THROW_COOLDOWN_UNTIL){
+     isExhausted(targetPlayer) && GameTime >= GLOBAL_THROW_COOLDOWN_UNTIL){
     bot._throwCheckCD = (bot._throwCheckCD||0) - dt;
     if(bot._throwCheckCD <= 0){
       bot._throwCheckCD = 1.0 + Math.random()*0.5;
@@ -1021,7 +1028,7 @@ if(!ai._isMain){
       bot.angle = defAng;
     }
     
-    bot.vel = decayDT(bot.vel, 0.95, dt);
+    bot.vel = $.M.decay(bot.vel, 0.95, dt);
     if(Math.abs(bot.vel) < 0.01) bot.vel = 0;
     
     return;
@@ -1034,7 +1041,7 @@ if(!ai._isMain){
       ai._decisionTimer = rf(0.5,1.0);
       
       if(D && D.hp > 0){
-        const dBodyC = entityBodyCenter(D);
+        const dBodyC = $.POS.body(D);
         // Держится между игроком и главным ботом
         const midX = (pBodyC.x + dBodyC.x) / 2;
         const midY = (pBodyC.y + dBodyC.y) / 2;
@@ -1063,7 +1070,7 @@ if(!ai._isMain){
     }
     
     ai._fakeMDown = false;
-    bot.vel = decayDT(bot.vel, 0.95, dt);
+    bot.vel = $.M.decay(bot.vel, 0.95, dt);
     if(Math.abs(bot.vel) < 0.01) bot.vel = 0;
     
     return;
@@ -1095,7 +1102,7 @@ if(!ai._isMain){
     }
     
     ai._fakeMDown = false;
-    bot.vel = decayDT(bot.vel, 0.95, dt);
+    bot.vel = $.M.decay(bot.vel, 0.95, dt);
     if(Math.abs(bot.vel) < 0.01) bot.vel = 0;
     
     return;
@@ -1128,7 +1135,7 @@ if(!ai._isMain){
     }
     
     ai._fakeMDown = false;
-    bot.vel = decayDT(bot.vel, 0.95, dt);
+    bot.vel = $.M.decay(bot.vel, 0.95, dt);
     if(Math.abs(bot.vel) < 0.01) bot.vel = 0;
     
     return;
@@ -1150,7 +1157,7 @@ if(!ai._isMain){
       if(Math.random() < 0.02){
         ai._decisionX = pBodyC.x + Math.cos(angToPlayer) * 80 * cscl;
         ai._decisionY = pBodyC.y + Math.sin(angToPlayer) * 80 * cscl;
-        hitFX.push({
+        $.FX.hit({
           x: bBodyC.x, y: bBodyC.y - 20,
           t: '💨 РЫВОК!',
           life: 15, big: false, col: '#88ddff'
@@ -1171,7 +1178,7 @@ if(!ai._isMain){
     }
     
     ai._fakeMDown = false;
-    bot.vel = decayDT(bot.vel, 0.95, dt);
+    bot.vel = $.M.decay(bot.vel, 0.95, dt);
     if(Math.abs(bot.vel) < 0.01) bot.vel = 0;
     
     return;
@@ -1200,16 +1207,16 @@ if(!ai._isMain){
     if(Math.random() < 0.5){
       bot.rageBuffEnd = GameTime + 4.0;
       bot.rage = 100;
-      hitFX.push({x:entityBodyCenter(bot).x, y:entityBodyCenter(bot).y-40, t:'🔥', life:35, big:false, col:'#ff4020'});
+      $.FX.hit({x:$.POS.body(bot).x, y:$.POS.body(bot).y-40, t:'🔥', life:35, big:false, col:'#ff4020'});
     }
-    const pBodyC2 = entityBodyCenter(P);
-    const dBodyC2 = entityBodyCenter(bot);
+    const pBodyC2 = $.POS.body(targetPlayer);
+    const dBodyC2 = $.POS.body(bot);
     const dist2 = Math.hypot(pBodyC2.x-dBodyC2.x, pBodyC2.y-dBodyC2.y);
     if(dist2 > 150*cscl){
       // aiStartSpin с параметром bot
       if(!ai._spinActive && !cb('nospin') && ai.swordStyle !== 'SWORD_STYLE_DUELIST'){
         const dur = sv('spindur');
-        const dBodyC3 = entityBodyCenter(bot);
+        const dBodyC3 = $.POS.body(bot);
         const dpivX3 = dBodyC3.x + bot.pvX, dpivY3 = dBodyC3.y + bot.pvY;
         const curAngToFakeM = Math.atan2(ai._fakeMY - dpivY3, ai._fakeMX - dpivX3);
         ai._spinActive = true;
@@ -1242,7 +1249,7 @@ if(ai._contactCD > 0 && ai.phase === 'attack' && ai._contactCD <= GameTime){
     ai._contactCD = -1;
     
     // 🔥 ПРОВЕРКА: у игрока лук или арбалет?
-    const isPlayerRanged = isRangedWeapon(P) && P.hasWeapon !== false;
+    const isPlayerRanged = isRangedWeapon(targetPlayer) && targetPlayer.hasWeapon !== false;
     
     // Если у игрока лук — чаще отступаем (50% вместо 25%)
     const retreatChance = isPlayerRanged ? 0.50 : 0.25;
@@ -1256,7 +1263,7 @@ if(ai._contactCD > 0 && ai.phase === 'attack' && ai._contactCD <= GameTime){
       if(Math.random() < 0.5){
         if(!ai._spinActive && !cb('nospin') && ai.swordStyle !== 'SWORD_STYLE_DUELIST'){
           const dur = sv('spindur');
-          const dBodyC4 = entityBodyCenter(bot);
+          const dBodyC4 = $.POS.body(bot);
           const dpivX4 = dBodyC4.x + bot.pvX, dpivY4 = dBodyC4.y + bot.pvY;
           const curAngToFakeM = Math.atan2(ai._fakeMY - dpivY4, ai._fakeMX - dpivX4);
           ai._spinActive = true;
@@ -1280,15 +1287,15 @@ if(ai._contactCD > 0 && ai.phase === 'attack' && ai._contactCD <= GameTime){
     if(Math.random() < 0.5){
       bot.rageBuffEnd = GameTime + 4.0;
       bot.rage = 100;
-      hitFX.push({x:entityBodyCenter(bot).x, y:entityBodyCenter(bot).y-40, t:'🔥', life:35, big:false, col:'#ff4020'});
+      $.FX.hit({x:$.POS.body(bot).x, y:$.POS.body(bot).y-40, t:'🔥', life:35, big:false, col:'#ff4020'});
     }
-    const pBodyC4 = entityBodyCenter(P);
-    const dBodyC4 = entityBodyCenter(bot);
+    const pBodyC4 = $.POS.body(targetPlayer);
+    const dBodyC4 = $.POS.body(bot);
     const dist4 = Math.hypot(pBodyC4.x-dBodyC4.x, pBodyC4.y-dBodyC4.y);
     if(dist4 > 150*cscl){
       if(!ai._spinActive && !cb('nospin') && ai.swordStyle !== 'SWORD_STYLE_DUELIST'){
         const dur = sv('spindur');
-        const dBodyC5 = entityBodyCenter(bot);
+        const dBodyC5 = $.POS.body(bot);
         const dpivX5 = dBodyC5.x + bot.pvX, dpivY5 = dBodyC5.y + bot.pvY;
         const curAngToFakeM = Math.atan2(ai._fakeMY - dpivY5, ai._fakeMX - dpivX5);
         ai._spinActive = true;
@@ -1349,13 +1356,13 @@ if(ai._contactCD > 0 && ai.phase === 'attack' && ai._contactCD <= GameTime){
   // атаки издалека / после контакта и т.п. — для цепа это редко и нерегулярно.
   // Цеп — оружие вращения по своей сути, поэтому у него отдельный периодический
   // таймер (в 2 раза чаще базового 10±10-секундного цикла смены тактики).
-  if(weaponKeyOf(bot) === 'flail'){
+  if($.IS(bot, 'flail')){
     if(ai._flailSpinTimer === undefined) ai._flailSpinTimer = GameTime + rf(2.5,2.5);
     if(!ai._spinActive && !cb('nospin') && ai.swordStyle !== 'SWORD_STYLE_DUELIST'
        && GameTime >= ai._flailSpinTimer){
       ai._flailSpinTimer = GameTime + rf(2.5,2.5);
       const dur = sv('spindur');
-      const dBodyCF = entityBodyCenter(bot);
+      const dBodyCF = $.POS.body(bot);
       const dpivXF = dBodyCF.x + bot.pvX, dpivYF = dBodyCF.y + bot.pvY;
       const curAngToFakeM = Math.atan2(ai._fakeMY - dpivYF, ai._fakeMX - dpivXF);
       ai._spinActive = true;
@@ -1380,7 +1387,7 @@ if(ai._contactCD > 0 && ai.phase === 'attack' && ai._contactCD <= GameTime){
                         && bot.exhausted<=0 && bot.unbalanced<=0 && bot.stamina >= 30
                         && distToPlayer > Math.max(400, 55*cscl, _botReach)
                         && !(ai._botDodgeCooldown>0)
-                        && weaponKeyOf(bot) !== 'flail'; // цепом боты не колют
+                        && $.NOT(bot, 'flail'); // цепом боты не колют
     if(_canPokeDodge){
       ai._pokeDodgeActive = true;
       ai._pokeDodgeEnd = GameTime + 0.22;
@@ -1391,7 +1398,7 @@ if(ai._contactCD > 0 && ai.phase === 'attack' && ai._contactCD <= GameTime){
       bot._pokeStartTime = GameTime;
       if(typeof spawnDust==='function')
         for(let i=0;i<8;i++) spawnDust(bot.x,bot.y,-Math.cos(angToPlayer)*8,-Math.sin(angToPlayer)*8);
-      hitFX.push({x:bot.x,y:bot.y-30,t:'DODGE',life:35,big:false,col:'rgba(200,200,200,0.6)'});
+      $.FX.hit({x:bot.x,y:bot.y-30,t:(window.I18N ? window.I18N.t('common.dodge') : 'DODGE'),life:35,big:false,col:'rgba(200,200,200,0.6)'});
     }
   }
   if(ai._pokeDodgeActive){
@@ -1485,7 +1492,7 @@ if(ai._contactCD > 0 && ai.phase === 'attack' && ai._contactCD <= GameTime){
           ai._harassTimer = GameTime + rf(0.8,0.6);
           if(!ai._spinActive && !cb('nospin') && ai.swordStyle !== 'SWORD_STYLE_DUELIST'){
             const dur = sv('spindur');
-            const dBodyC6 = entityBodyCenter(bot);
+            const dBodyC6 = $.POS.body(bot);
             const dpivX6 = dBodyC6.x + bot.pvX, dpivY6 = dBodyC6.y + bot.pvY;
             const curAngToFakeM = Math.atan2(ai._fakeMY - dpivY6, ai._fakeMX - dpivX6);
             ai._spinActive = true;
@@ -1501,8 +1508,8 @@ if(ai._contactCD > 0 && ai.phase === 'attack' && ai._contactCD <= GameTime){
       ai._fakeMDown = false;
       ai._harassOrbitAng += ai._harassOrbitDir * 0.025;
       const orbitR = Math.max(60*cscl, distToPlayer);
-      const tx = clamp(pBodyC.x + Math.cos(ai._harassOrbitAng)*orbitR, 60, W-100);
-      const ty = clamp(pBodyC.y + Math.sin(ai._harassOrbitAng)*orbitR, 60, H-60);
+      const tx = $.M.clamp(pBodyC.x + Math.cos(ai._harassOrbitAng)*orbitR, 60, W-100);
+      const ty = $.M.clamp(pBodyC.y + Math.sin(ai._harassOrbitAng)*orbitR, 60, H-60);
       k.a=(tx-bBodyC.x)<-5; k.d=(tx-bBodyC.x)>5;
       k.w=(ty-bBodyC.y)<-5; k.s=(ty-bBodyC.y)>5;
       if(!ai._spinActive) aiPointMouse(bBodyC, pBodyC.x, pBodyC.y);
@@ -1545,8 +1552,8 @@ if(!ai._feintActive){
       } else {
         ai._circling = false;
         const pt = aiRetreatPoint();
-        ai._retreatTargX = clamp(pt.x, 60, W-100);
-        ai._retreatTargY = clamp(pt.y, 60, H-60);
+        ai._retreatTargX = $.M.clamp(pt.x, 60, W-100);
+        ai._retreatTargY = $.M.clamp(pt.y, 60, H-60);
         ai._retreatMoveCD = GameTime + rf(1,2);
       }
     }
@@ -1554,8 +1561,8 @@ if(!ai._feintActive){
     if(ai._circling){
       const orbitDist = distToPlayer;
       ai._circleAng += ai._circleDir * 0.018;
-      const targX = clamp(pBodyC.x + Math.cos(ai._circleAng) * orbitDist, 60, W-100);
-      const targY = clamp(pBodyC.y + Math.sin(ai._circleAng) * orbitDist, 60, H-60);
+      const targX = $.M.clamp(pBodyC.x + Math.cos(ai._circleAng) * orbitDist, 60, W-100);
+      const targY = $.M.clamp(pBodyC.y + Math.sin(ai._circleAng) * orbitDist, 60, H-60);
       k.a = (targX - bBodyC.x) < -5; k.d = (targX - bBodyC.x) > 5;
       k.w = (targY - bBodyC.y) < -5; k.s = (targY - bBodyC.y) > 5;
     } else {
@@ -1600,15 +1607,15 @@ if(!ai._feintActive){
         if(Math.random() < 0.5){
           bot.rageBuffEnd = GameTime + 4.0;
           bot.rage = 100;
-          hitFX.push({x:entityBodyCenter(bot).x, y:entityBodyCenter(bot).y-40, t:'🔥', life:35, big:false, col:'#ff4020'});
+          $.FX.hit({x:$.POS.body(bot).x, y:$.POS.body(bot).y-40, t:'🔥', life:35, big:false, col:'#ff4020'});
         }
-        const pBodyC5 = entityBodyCenter(P);
-        const dBodyC5 = entityBodyCenter(bot);
+        const pBodyC5 = $.POS.body(targetPlayer);
+        const dBodyC5 = $.POS.body(bot);
         const dist5 = Math.hypot(pBodyC5.x-dBodyC5.x, pBodyC5.y-dBodyC5.y);
         if(dist5 > 150*cscl){
           if(!ai._spinActive && !cb('nospin') && ai.swordStyle !== 'SWORD_STYLE_DUELIST'){
             const dur = sv('spindur');
-            const dBodyC7 = entityBodyCenter(bot);
+            const dBodyC7 = $.POS.body(bot);
             const dpivX7 = dBodyC7.x + bot.pvX, dpivY7 = dBodyC7.y + bot.pvY;
             const curAngToFakeM = Math.atan2(ai._fakeMY - dpivY7, ai._fakeMX - dpivX7);
             ai._spinActive = true;
@@ -1634,7 +1641,7 @@ if(!ai._feintActive){
   // ── SWORD_STYLE_DUELIST / MIRROR ──────────────────
   if(!ai._mirrorCooldown) ai._mirrorCooldown = -1;
   if(!ai._mirrorBuf) { ai._mirrorBuf = []; ai._mirrorLag = rf(0.5,0.5); }
-  ai._mirrorBuf.push({t: RealTime, angle: P.angle, vel: P.vel});
+  ai._mirrorBuf.push({t: RealTime, angle: targetPlayer.angle, vel: targetPlayer.vel});
   const lagTarget = ai._mirrorLag;
   while(ai._mirrorBuf.length > 1 && RealTime - ai._mirrorBuf[0].t > lagTarget + 0.1)
     ai._mirrorBuf.shift();
@@ -1642,14 +1649,14 @@ if(!ai._feintActive){
   if(ai.swordStyle === 'SWORD_STYLE_MIRROR' && !ai._spinActive
      && (ai._mirrorCooldown < 0 || GameTime > ai._mirrorCooldown)){
     const angToP = Math.atan2(pBodyC.y - bBodyC.y, pBodyC.x - bBodyC.x);
-    let laggedAngle = P.angle, laggedVel = P.vel;
+    let laggedAngle = targetPlayer.angle, laggedVel = targetPlayer.vel;
     for(const entry of ai._mirrorBuf){
       if(RealTime - entry.t >= lagTarget){ laggedAngle = entry.angle; laggedVel = entry.vel; }
       else break;
     }
-    const pSwordReach = weaponReach(P) * sv('swlen');
-    const pPiv = entityPivot(P);
-    const dPiv = entityPivot(bot);
+    const pSwordReach = weaponReach(targetPlayer) * sv('swlen');
+    const pPiv = $.POS.pivot(targetPlayer);
+    const dPiv = $.POS.pivot(bot);
     const pivDist = Math.hypot(pPiv.x - dPiv.x, pPiv.y - dPiv.y);
     const inStrikeRange = pivDist < pSwordReach * 1.2;
     let targetAng;
@@ -1657,12 +1664,12 @@ if(!ai._feintActive){
       const blockAng = laggedAngle + Math.PI/2 + (laggedVel > 0 ? -0.3 : 0.3);
       targetAng = blockAng;
     } else {
-      const playerRelAng = angDiff(laggedAngle, angToP);
+      const playerRelAng = $.M.angDiff(laggedAngle, angToP);
       const MAX_MIRROR = Math.PI / 4;
-      const clampedRel = clamp(playerRelAng, -MAX_MIRROR, MAX_MIRROR);
+      const clampedRel = $.M.clamp(playerRelAng, -MAX_MIRROR, MAX_MIRROR);
       targetAng = angToP - clampedRel;
     }
-    const dpiv2 = entityPivot(bot);
+    const dpiv2 = $.POS.pivot(bot);
     const mirrorDist = 140 * cscl;
     aiPointMouse(bBodyC,
       dpiv2.x + Math.cos(targetAng)*mirrorDist,
@@ -1673,11 +1680,12 @@ if(!ai._feintActive){
   if(ai.swordStyle === 'SWORD_STYLE_DUELIST' && !ai._spinActive){
     const swReach = weaponReach(bot) * sv('swlen') * 1.3;
     if(distToPlayer < swReach){
-      const pPivX = rootCenter().x + P.pvX;
-      const pPivY = rootCenter().y + P.pvY;
-      const pBladeX = Math.cos(P.angle), pBladeY = Math.sin(P.angle);
-      const blockAng = P.angle + Math.PI/2 + (P.vel > 0 ? -0.3 : 0.3);
-      const dpiv = entityPivot(bot);
+      const targetRoot = $.POS.body(targetPlayer);
+      const pPivX = targetRoot.x + targetPlayer.pvX;
+      const pPivY = targetRoot.y + targetPlayer.pvY;
+      const pBladeX = Math.cos(targetPlayer.angle), pBladeY = Math.sin(targetPlayer.angle);
+      const blockAng = targetPlayer.angle + Math.PI/2 + (targetPlayer.vel > 0 ? -0.3 : 0.3);
+      const dpiv = $.POS.pivot(bot);
       const bDist = 140 * cscl;
       aiPointMouse(bBodyC, dpiv.x + Math.cos(blockAng)*bDist, dpiv.y + Math.sin(blockAng)*bDist);
       ai._duelistBlocking = true;
@@ -1717,8 +1725,8 @@ function aiStartFeint(){
   if(AI._feintActive) return;
   if(AI._feintCD > GameTime) return;
   // выбираем паттерн
-  const pBodyC = entityBodyCenter(P);
-  const dBodyC = entityBodyCenter(D);
+  const pBodyC = $.POS.body(P);
+  const dBodyC = $.POS.body(D);
   const ang = Math.atan2(pBodyC.y-dBodyC.y, pBodyC.x-dBodyC.x);
   // fwd = к игроку, bwd = от игрока
   const fwd = { ang: ang };
@@ -1789,13 +1797,13 @@ function updateAIDispatch(dt, bot){
     bot._aiState._smoothInited = false;
   }
   
-  if(key === 'crossbow' || key === 'bow'){ 
+  if($.ISK(key, 'crossbow', 'bow')){
     bot._rangedMovementHandled = true;
     updateCrossbowBotAI(dt, bot); 
     return; 
   }
   
-  if(key === 'wand' || key === 'magicstaff'){ 
+  if($.ISK(key, 'wand', 'magicstaff')){
     // 🔥 ЕСЛИ updateWandBotAI ВОЗВРАЩАЕТ false - ВЫПОЛНЯЕТСЯ ОБЫЧНЫЙ AI
     const result = updateWandBotAI(dt, bot);
     if(result === false){
