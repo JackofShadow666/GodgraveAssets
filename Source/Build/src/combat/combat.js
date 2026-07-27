@@ -1484,14 +1484,12 @@ function triggerDeath(ent, isBot){
   DEATH.deathCross.push({x:bc.x, y:bc.y, timer:2.0, isBot});
   DEATH.fadeAlpha = 0;
   DEATH.fadeIn = true;
-  // Freeze game for both players in PvP
   if(typeof NET_SYNC!=='undefined'&&$.NET.active()) $.NET.send({type:'freeze'});
   $.S.play('death');
 
   const pvpActive = typeof NET_SYNC!=='undefined' && $.NET.active();
 
-  // ─── LOCAL RESET ──────────────────────────────────────────────
-    const localReset = (iWon)=>{
+  const localReset = (iWon)=>{
     window.restartCombatRound({
       keepPlayerSide: pvpActive,
       playerWon: iWon,
@@ -1501,28 +1499,26 @@ function triggerDeath(ent, isBot){
   };
 
   if(isBot){
-    // D died — victory for player
     DEATH.dDead = true;
-    DEATH.text = 'VICTORY!';
+    // ─── ИЗМЕНЕНО ──────────────────────────────────────────────
+    DEATH.text = I18N.t('combat.victory'); 
     DEATH.textCol = '#ffdd44';
     $.S.play('whooshRage');
     $.S.play('victory');
-    if(typeof addWin==='function' && !(typeof NET_SYNC!=='undefined'&&$.NET.active())) addWin(false); // Player wins
+    if(typeof addWin==='function' && !(typeof NET_SYNC!=='undefined'&&$.NET.active())) addWin(false);
     setTimeout(()=>{
-      localReset(true); // Restart with player win
+      localReset(true);
       if(pvpActive) NET_SYNC.sendReset(true);
     }, 2000);
   } else {
-    // P died — defeat
     DEATH.pDead = true;
-    DEATH.text = 'DEFEAT';
+    // ─── ИЗМЕНЕНО ──────────────────────────────────────────────
+    DEATH.text = I18N.t('combat.defeat');
     DEATH.textCol = '#ff6060';
-    if(typeof addWin==='function' && !(typeof NET_SYNC!=='undefined'&&$.NET.active())) addWin(true); // Bot wins
+    if(typeof addWin==='function' && !(typeof NET_SYNC!=='undefined'&&$.NET.active())) addWin(true);
     if(pvpActive){
-      // Don't reset immediately — wait for opponent's confirmation
-      // But still reset after 3.5s as fallback
       setTimeout(()=>{
-        if(DEATH.pDead){ // If still dead (not revived)
+        if(DEATH.pDead){
           localReset(false);
           NET_SYNC.sendReset(false);
         }

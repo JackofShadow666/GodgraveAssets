@@ -17,6 +17,13 @@
     if(el) el.style.width = clampPercent(value, max).toFixed(1) + '%';
   }
 
+  function setRageBar(el, value){
+    if(!el) return;
+    const rage = Number(value) || 0;
+    el.style.width = clampPercent(rage, 100).toFixed(1) + '%';
+    el.style.background = rage >= 50 ? '#2f8cff' : '#777f88';
+  }
+
   function setTextIfPresent(selector, text){
     const el = document.querySelector(selector);
     if(el) el.textContent = text || '';
@@ -77,7 +84,7 @@
     const maxStam = entity.stamMax || 100;
     setBarWidth('#' + prefix + '-hp', entity.hp, maxHp);
     setBarWidth('#' + prefix + '-stam', entity.stamina, maxStam);
-    setBarWidth('#' + prefix + '-rage', entity.rage, 100);
+    setRageBar(document.querySelector('#' + prefix + '-rage'), entity.rage);
     if(options && options.statusSelector){
       setTextIfPresent(options.statusSelector, entityStatusText(entity));
     }
@@ -96,7 +103,7 @@
     const rageBar = slotEl.querySelector('[data-rage]');
     if(hpBar) hpBar.style.width = clampPercent(entity.hp, entity.maxHp || 100).toFixed(1) + '%';
     if(stamBar) stamBar.style.width = clampPercent(entity.stamina, entity.stamMax || 100).toFixed(1) + '%';
-    if(rageBar) rageBar.style.width = clampPercent(entity.rage, 100).toFixed(1) + '%';
+    setRageBar(rageBar, entity.rage);
   }
 
   function updateHUD(){
@@ -116,12 +123,15 @@
       updateMainHudEntity('hud-b', D, {
         statusSelector: '#hud-b-status'
       });
-      setTextIfPresent('#hud-b-phase', botPhaseText(D));
+      const manualSlot = D._manualControl && Number.isInteger(D._playerSlot) ? D._playerSlot : -1;
+      setTextIfPresent('#hud-b-label', manualSlot >= 0 ? `PLAYER ${manualSlot + 1}` : t('hud.botLabel', 'BOT'));
+      setTextIfPresent('#hud-b-phase', manualSlot >= 0 ? '' : botPhaseText(D));
     }
 
-    const slots = Array.isArray(window.PLAYER_SLOTS) ? window.PLAYER_SLOTS : [];
-    updateLocalSlotHud(document.getElementById('hud-player-3'), slots[2] && slots[2].entity ? slots[2].entity : null);
-    updateLocalSlotHud(document.getElementById('hud-player-4'), slots[3] && slots[3].entity ? slots[3].entity : null);
+    const localPvp = typeof LocalPlayerControls !== 'undefined' && LocalPlayerControls.isLocalPvP();
+    const slots = localPvp && Array.isArray(window.PLAYER_SLOTS) ? window.PLAYER_SLOTS : [];
+    updateLocalSlotHud(document.getElementById('hud-player-3'), slots[2] && slots[2].source ? slots[2].entity : null);
+    updateLocalSlotHud(document.getElementById('hud-player-4'), slots[3] && slots[3].source ? slots[3].entity : null);
   }
 
   window.updateHUD = updateHUD;

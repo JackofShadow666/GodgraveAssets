@@ -1,6 +1,6 @@
 // === src/systems/audio.js ===
 // Extracted from Build.html; loaded as a classic script to preserve shared runtime state.
-// LAYER: AUDIO — звуки и музыка (SFX/BGM, загрузка, пул аудио)
+// LAYER: AUDIO вЂ” Р·РІСѓРєРё Рё РјСѓР·С‹РєР° (SFX/BGM, Р·Р°РіСЂСѓР·РєР°, РїСѓР» Р°СѓРґРёРѕ)
 // Module file: audio.js
 // ============================================================================
 
@@ -11,11 +11,11 @@
 
 const PROJECT_PATH_AUDIO = "https://raw.githubusercontent.com/JackofShadow666/GodgraveAssets/main/";
 const BUILD_LIST_URL_AUDIO = PROJECT_PATH_AUDIO + "Source/BuildList.txt";
-// -- fetch() с таймаутом -----------------------------------------------------
-// Обычный fetch() может висеть неограниченно долго, если сервер (или CDN)
-// не отвечает — раньше loadWeaponTable()/loadAudioDB() могли зависнуть в
-// состоянии "загрузка" навсегда. Теперь любой сорванный по таймауту запрос
-// уходит в catch, как и обычная сетевая ошибка.
+// -- fetch() СЃ С‚Р°Р№РјР°СѓС‚РѕРј -----------------------------------------------------
+// РћР±С‹С‡РЅС‹Р№ fetch() РјРѕР¶РµС‚ РІРёСЃРµС‚СЊ РЅРµРѕРіСЂР°РЅРёС‡РµРЅРЅРѕ РґРѕР»РіРѕ, РµСЃР»Рё СЃРµСЂРІРµСЂ (РёР»Рё CDN)
+// РЅРµ РѕС‚РІРµС‡Р°РµС‚ вЂ” СЂР°РЅСЊС€Рµ loadWeaponTable()/loadAudioDB() РјРѕРіР»Рё Р·Р°РІРёСЃРЅСѓС‚СЊ РІ
+// СЃРѕСЃС‚РѕСЏРЅРёРё "Р·Р°РіСЂСѓР·РєР°" РЅР°РІСЃРµРіРґР°. РўРµРїРµСЂСЊ Р»СЋР±РѕР№ СЃРѕСЂРІР°РЅРЅС‹Р№ РїРѕ С‚Р°Р№РјР°СѓС‚Сѓ Р·Р°РїСЂРѕСЃ
+// СѓС…РѕРґРёС‚ РІ catch, РєР°Рє Рё РѕР±С‹С‡РЅР°СЏ СЃРµС‚РµРІР°СЏ РѕС€РёР±РєР°.
 async function fetchWithTimeout(url, ms=10000){
   const ctrl=new AbortController();
   const t=setTimeout(()=>ctrl.abort(), ms);
@@ -26,50 +26,50 @@ async function fetchWithTimeout(url, ms=10000){
   }
 }
 
-// Игра читает BuildMusicList.txt и выбирает все файлы из этих папок
+// РРіСЂР° С‡РёС‚Р°РµС‚ BuildMusicList.txt Рё РІС‹Р±РёСЂР°РµС‚ РІСЃРµ С„Р°Р№Р»С‹ РёР· СЌС‚РёС… РїР°РїРѕРє
 const SFX_FOLDERS = {
   music:          'Source/Music/',
   nullsnd:        'Source/Sound/Empty/',
   clash:          'Source/Sound/Sword/SwordClink/',
   clashHard:      'Source/Sound/Sword/SwordHit/',
-  clashHard_rare: 'Source/Sound/Sword/SwordHit/',   // фильтр: Rare
-  whoosh:         'Source/Sound/Sword/SwordSwing/',  // фильтр: без Agressive
-  whooshRage:     'Source/Sound/Sword/SwordSwing/',  // фильтр: Agressive
+  clashHard_rare: 'Source/Sound/Sword/SwordHit/',   // С„РёР»СЊС‚СЂ: Rare
+  whoosh:         'Source/Sound/Sword/SwordSwing/',  // С„РёР»СЊС‚СЂ: Р±РµР· Agressive
+  whooshRage:     'Source/Sound/Sword/SwordSwing/',  // С„РёР»СЊС‚СЂ: Agressive
   damage:         'Source/Sound/Damage/Sword/',
   rage:           'Source/Sound/Rage/',
   bladeblind:     'Source/Sound/Shield/',
   shieldblock:    'Source/Sound/Shield/',
-  uiHover:        'Source/Sound/Ui/',   // фильтр: Hover
-  uiTap:          'Source/Sound/Ui/',   // фильтр: без Hover/Note/Death/Win/Pickup
-  uiNote:         'Source/Sound/Ui/',   // фильтр: Note
-  death:          'Source/Sound/Ui/',   // фильтр: Death — SFX_UI_Death_01/02.mp3
-  victory:        'Source/Sound/Ui/',   // фильтр: Win — SFX_UI_Win_01.mp3
-  pickupSound:    'Source/Sound/Ui/',   // фильтр: Pickup — SFX_UI_Pickup_01.mp3
-  // -- Тяжёлое оружие: молот/посох/жезл/копьё --
-  hammerSwing:    'Source/Sound/HammerSwing/',        // взмах
-  damageHammer:   'Source/Sound/Damage/Hummer/',       // удар/попадание
-  // -- Бросок оружия --
+  uiHover:        'Source/Sound/Ui/',   // С„РёР»СЊС‚СЂ: Hover
+  uiTap:          'Source/Sound/Ui/',   // С„РёР»СЊС‚СЂ: Р±РµР· Hover/Note/Death/Win/Pickup
+  uiNote:         'Source/Sound/Ui/',   // С„РёР»СЊС‚СЂ: Note
+  death:          'Source/Sound/Ui/',   // С„РёР»СЊС‚СЂ: Death вЂ” SFX_UI_Death_01/02.mp3
+  victory:        'Source/Sound/Ui/',   // С„РёР»СЊС‚СЂ: Win вЂ” SFX_UI_Win_01.mp3
+  pickupSound:    'Source/Sound/Ui/',   // С„РёР»СЊС‚СЂ: Pickup вЂ” SFX_UI_Pickup_01.mp3
+  // -- РўСЏР¶С‘Р»РѕРµ РѕСЂСѓР¶РёРµ: РјРѕР»РѕС‚/РїРѕСЃРѕС…/Р¶РµР·Р»/РєРѕРїСЊС‘ --
+  hammerSwing:    'Source/Sound/HammerSwing/',        // РІР·РјР°С…
+  damageHammer:   'Source/Sound/Damage/Hummer/',       // СѓРґР°СЂ/РїРѕРїР°РґР°РЅРёРµ
+  // -- Р‘СЂРѕСЃРѕРє РѕСЂСѓР¶РёСЏ --
   throwSound:     'Source/Sound/Throw/',
-  // -- Додж --
+  // -- Р”РѕРґР¶ --
   dodgeSound:     'Source/Sound/Dodge/',
-  // -- Жезл (магия) --
-  magicEnergy:    'Source/Sound/Magic/',  // фильтр: Energy — зарядка перед выстрелом
-  magicHit:       'Source/Sound/Magic/',  // фильтр: Hit — попадание снаряда
-  magicPush:      'Source/Sound/Magic/',  // фильтр: Push — сам выстрел/отдача
+  // -- Р–РµР·Р» (РјР°РіРёСЏ) --
+  magicEnergy:    'Source/Sound/Magic/',  // С„РёР»СЊС‚СЂ: Energy вЂ” Р·Р°СЂСЏРґРєР° РїРµСЂРµРґ РІС‹СЃС‚СЂРµР»РѕРј
+  magicHit:       'Source/Sound/Magic/',  // С„РёР»СЊС‚СЂ: Hit вЂ” РїРѕРїР°РґР°РЅРёРµ СЃРЅР°СЂСЏРґР°
+  magicPush:      'Source/Sound/Magic/',  // С„РёР»СЊС‚СЂ: Push вЂ” СЃР°Рј РІС‹СЃС‚СЂРµР»/РѕС‚РґР°С‡Р°
   magicExplode: 'Source/Sound/Magic/',
   
-  // -- Арбалет (стрела) --
-  arrowHit:       'Source/Sound/Arrow/',  // фильтр: Hit — попадание стрелы
-  arrowPush:      'Source/Sound/Arrow/',  // фильтр: Push — выстрел из арбалета
-  crossbowReload: 'Source/Sound/Arrow/',  // фильтр: Reload — перезарядка арбалета
+  // -- РђСЂР±Р°Р»РµС‚ (СЃС‚СЂРµР»Р°) --
+  arrowHit:       'Source/Sound/Arrow/',  // С„РёР»СЊС‚СЂ: Hit вЂ” РїРѕРїР°РґР°РЅРёРµ СЃС‚СЂРµР»С‹
+  arrowPush:      'Source/Sound/Arrow/',  // С„РёР»СЊС‚СЂ: Push вЂ” РІС‹СЃС‚СЂРµР» РёР· Р°СЂР±Р°Р»РµС‚Р°
+  crossbowReload: 'Source/Sound/Arrow/',  // С„РёР»СЊС‚СЂ: Reload вЂ” РїРµСЂРµР·Р°СЂСЏРґРєР° Р°СЂР±Р°Р»РµС‚Р°
   
-  // ?? ЗВУКИ ДЛЯ ЛУКА
-  bowPush:        'Source/Sound/Bow/BowPush/',      // выстрел — SFX_BowPush.mp3
-  bowReload:      'Source/Sound/Bow/BowReload/',      // перезарядился — SFX_Reload.mp3
-  bowTension:     'Source/Sound/Bow/BowTension/',      // натяжение — SFX_BowTension.mp3
+  // ?? Р—Р’РЈРљР Р”Р›РЇ Р›РЈРљРђ
+  bowPush:        'Source/Sound/Bow/BowPush/',      // РІС‹СЃС‚СЂРµР» вЂ” SFX_BowPush.mp3
+  bowReload:      'Source/Sound/Bow/BowReload/',      // РїРµСЂРµР·Р°СЂСЏРґРёР»СЃСЏ вЂ” SFX_Reload.mp3
+  bowTension:     'Source/Sound/Bow/BowTension/',      // РЅР°С‚СЏР¶РµРЅРёРµ вЂ” SFX_BowTension.mp3
 };
 
-// Runtime: заполняется из BuildMusicList.txt
+// Runtime: Р·Р°РїРѕР»РЅСЏРµС‚СЃСЏ РёР· BuildMusicList.txt
 let SFX_DB = {};          // { clash: ["fullUrl1",...], ... }
 let MUSIC_LIST_FULL = []; // ["fullUrl1", ...]
 
@@ -79,60 +79,60 @@ let currentMusicObj = null;
 let audioDBReady = false;
 
 // ====================================================================
-// ?? КЛЮЧ ДЛЯ localStorage
+// ?? РљР›Р®Р§ Р”Р›РЇ localStorage
 // ====================================================================
 const ASSETS_CACHE_KEY = 'godgrave_assets_list_v1';
 const ASSETS_VERSION = '1.0';
 
 async function loadAudioDB() {
   // ====================================================================
-  // ?? ПРОВЕРКА: ЕСТЬ ЛИ ДАННЫЕ В localStorage?
+  // ?? РџР РћР’Р•Р РљРђ: Р•РЎРўР¬ Р›Р Р”РђРќРќР«Р• Р’ localStorage?
   // ====================================================================
   const cached = localStorage.getItem(ASSETS_CACHE_KEY);
   if (cached) {
     try {
       const data = JSON.parse(cached);
       if (data.version === ASSETS_VERSION) {
-        console.log('? Загружаем ассеты из localStorage');
+        console.log('? Р—Р°РіСЂСѓР¶Р°РµРј Р°СЃСЃРµС‚С‹ РёР· localStorage');
         
-        // Восстанавливаем SPRITE_LISTS
+        // Р’РѕСЃСЃС‚Р°РЅР°РІР»РёРІР°РµРј SPRITE_LISTS
         for (const [cat, urls] of Object.entries(data.spriteLists)) {
           SPRITE_LISTS[cat] = urls;
         }
         
-        // Восстанавливаем SFX_DB
+        // Р’РѕСЃСЃС‚Р°РЅР°РІР»РёРІР°РµРј SFX_DB
         for (const [type, urls] of Object.entries(data.sfxDb)) {
           SFX_DB[type] = urls;
         }
         
-        // Восстанавливаем MUSIC_LIST_FULL
+        // Р’РѕСЃСЃС‚Р°РЅР°РІР»РёРІР°РµРј MUSIC_LIST_FULL
         MUSIC_LIST_FULL = data.musicList || [];
         
         spritesDBReady = true;
         audioDBReady = true;
         
-        // Назначаем скины
+        // РќР°Р·РЅР°С‡Р°РµРј СЃРєРёРЅС‹
         assignRandomSkin(P);
         for (const _b of ALL_BOTS) assignRandomSkin(_b);
         pickArenaBackground();
         
-        // Запускаем музыку если нужно
+        // Р—Р°РїСѓСЃРєР°РµРј РјСѓР·С‹РєСѓ РµСЃР»Рё РЅСѓР¶РЅРѕ
         if (audioEnabledFlag && musicEnabled && MUSIC_LIST_FULL.length) {
           playRandomMusicTrack();
         }
         
-        console.log('? Ассеты восстановлены из localStorage');
+        console.log('? РђСЃСЃРµС‚С‹ РІРѕСЃСЃС‚Р°РЅРѕРІР»РµРЅС‹ РёР· localStorage');
         return;
       }
     } catch(e) {
-      console.warn('? Кэш повреждён, загружаем заново');
+      console.warn('? РљСЌС€ РїРѕРІСЂРµР¶РґС‘РЅ, Р·Р°РіСЂСѓР¶Р°РµРј Р·Р°РЅРѕРІРѕ');
     }
   }
   
   // ====================================================================
-  // ?? ПЕРВАЯ ЗАГРУЗКА — СКАЧИВАЕМ С СЕРВЕРА
+  // ?? РџР•Р Р’РђРЇ Р—РђР“Р РЈР—РљРђ вЂ” РЎРљРђР§РР’РђР•Рњ РЎ РЎР•Р Р’Р•Р Рђ
   // ====================================================================
-  console.log('?? Загружаем BuildMusicList.txt с сервера...');
+  console.log('?? Р—Р°РіСЂСѓР¶Р°РµРј BuildMusicList.txt СЃ СЃРµСЂРІРµСЂР°...');
   
   let text = '';
   try {
@@ -140,23 +140,23 @@ async function loadAudioDB() {
     if (!r.ok) throw new Error('HTTP ' + r.status);
     text = await r.text();
   } catch(e) {
-    console.warn('? BuildMusicList.txt недоступен, звук отключён:', e.message);
+    console.warn('? BuildMusicList.txt РЅРµРґРѕСЃС‚СѓРїРµРЅ, Р·РІСѓРє РѕС‚РєР»СЋС‡С‘РЅ:', e.message);
     audioDBReady = true;
     return;
   }
 
-  // Парсим строки > полные URL
+  // РџР°СЂСЃРёРј СЃС‚СЂРѕРєРё > РїРѕР»РЅС‹Рµ URL
   const rawLines = text.split('\n')
     .map(l => l.trim().replace(/\\/g, '/'))
     .filter(l => l && !l.startsWith(';') && !l.startsWith('===')
-              && !l.includes('Создано:') && !l.includes('Папка:'));
+              && !l.includes('РЎРѕР·РґР°РЅРѕ:') && !l.includes('РџР°РїРєР°:'));
 
   const toUrl = l => PROJECT_PATH_AUDIO + (l.startsWith('Source/') ? l : 'Source/' + l);
 
   const lines = rawLines.filter(l => /\.(mp3|wav|ogg)$/i.test(l));
   const allUrls = lines.map(toUrl);
 
-  // -- Спрайты (PNG) --------------------------------------------------------
+  // -- РЎРїСЂР°Р№С‚С‹ (PNG) --------------------------------------------------------
   const pngLines = rawLines.filter(l => /\.png$/i.test(l));
   const pngUrls = pngLines.map(toUrl);
   
@@ -166,28 +166,28 @@ async function loadAudioDB() {
     const matches = pngUrls.filter(u => u.startsWith(prefix));
     SPRITE_LISTS[cat] = matches;
     spriteLists[cat] = matches;
-    if(matches.length === 0) console.warn(`? Нет спрайтов для "${cat}" в папке: ${folder}`);
+    if(matches.length === 0) console.warn(`? РќРµС‚ СЃРїСЂР°Р№С‚РѕРІ РґР»СЏ "${cat}" РІ РїР°РїРєРµ: ${folder}`);
   }
   spritesDBReady = true;
-  console.log(`?? Спрайты: ${Object.entries(SPRITE_LISTS).map(([k,v])=>k+'?'+v.length).join(', ')}`);
+  console.log(`?? РЎРїСЂР°Р№С‚С‹: ${Object.entries(SPRITE_LISTS).map(([k,v])=>k+'?'+v.length).join(', ')}`);
 
-  // Предзагрузка спрайтов
+  // РџСЂРµРґР·Р°РіСЂСѓР·РєР° СЃРїСЂР°Р№С‚РѕРІ
   for (const [cat, urls] of Object.entries(SPRITE_LISTS)) {
     for (const url of urls) loadSpriteImage(url);
   }
 
-  // Назначаем скины
+  // РќР°Р·РЅР°С‡Р°РµРј СЃРєРёРЅС‹
   assignRandomSkin(P);
   for(const _b of ALL_BOTS) assignRandomSkin(_b);
   pickArenaBackground();
 
-  // -- Звуки ----------------------------------------------------------------
+  // -- Р—РІСѓРєРё ----------------------------------------------------------------
   const sfxDb = {};
   for (const [type, folder] of Object.entries(SFX_FOLDERS)) {
     const prefix = PROJECT_PATH_AUDIO + folder;
     let matches = allUrls.filter(u => u.startsWith(prefix));
 
-    // Уточняющие фильтры
+    // РЈС‚РѕС‡РЅСЏСЋС‰РёРµ С„РёР»СЊС‚СЂС‹
     if (type === 'clashHard')      matches = matches.filter(u => !u.toLowerCase().includes('rare'));
     if (type === 'clashHard_rare') matches = matches.filter(u => u.toLowerCase().includes('rare'));
     if (type === 'whoosh')         matches = matches.filter(u => !u.toLowerCase().includes('agressive'));
@@ -217,20 +217,20 @@ async function loadAudioDB() {
     }
   }
 
-  console.log(`?? Треков: ${MUSIC_LIST_FULL.length}`);
+  console.log(`?? РўСЂРµРєРѕРІ: ${MUSIC_LIST_FULL.length}`);
   console.log(`?? SFX: ${Object.entries(SFX_DB).map(([k,v])=>k+'?'+v.length).join(', ')}`);
 
-  // Проверяем папки
+  // РџСЂРѕРІРµСЂСЏРµРј РїР°РїРєРё
   for (const [type, folder] of Object.entries(SFX_FOLDERS)) {
     if (type === 'music' || type === 'nullsnd') continue;
     if (!SFX_DB[type] || SFX_DB[type].length === 0) {
-      console.warn(`? Нет звуков для "${type}" в папке: ${folder}`);
+      console.warn(`? РќРµС‚ Р·РІСѓРєРѕРІ РґР»СЏ "${type}" РІ РїР°РїРєРµ: ${folder}`);
     }
   }
   audioDBReady = true;
 
   // ====================================================================
-  // ?? СОХРАНЯЕМ В localStorage ДЛЯ СЛЕДУЮЩЕЙ ЗАГРУЗКИ
+  // ?? РЎРћРҐР РђРќРЇР•Рњ Р’ localStorage Р”Р›РЇ РЎР›Р•Р”РЈР®Р©Р•Р™ Р—РђР“Р РЈР—РљР
   // ====================================================================
   try {
     const cacheData = {
@@ -240,25 +240,25 @@ async function loadAudioDB() {
       musicList: MUSIC_LIST_FULL,
     };
     localStorage.setItem(ASSETS_CACHE_KEY, JSON.stringify(cacheData));
-    console.log('?? Ассеты сохранены в localStorage');
+    console.log('?? РђСЃСЃРµС‚С‹ СЃРѕС…СЂР°РЅРµРЅС‹ РІ localStorage');
   } catch(e) {
-    console.warn('? Не удалось сохранить кэш:', e);
+    console.warn('? РќРµ СѓРґР°Р»РѕСЃСЊ СЃРѕС…СЂР°РЅРёС‚СЊ РєСЌС€:', e);
   }
 
-  // Запустить музыку если уже кликнули
+  // Р—Р°РїСѓСЃС‚РёС‚СЊ РјСѓР·С‹РєСѓ РµСЃР»Рё СѓР¶Рµ РєР»РёРєРЅСѓР»Рё
   if (audioEnabledFlag && musicEnabled && MUSIC_LIST_FULL.length) {
     playRandomMusicTrack();
   }
 }
 
 
-// -- СБРОС КЭША --
+// -- РЎР‘Р РћРЎ РљР­РЁРђ --
 function clearAssetsCache() {
   localStorage.removeItem(ASSETS_CACHE_KEY);
-  console.log('?? Кэш ассетов очищен');
+  console.log('?? РљСЌС€ Р°СЃСЃРµС‚РѕРІ РѕС‡РёС‰РµРЅ');
   location.reload();
 }
-// Можно вызвать из консоли: clearAssetsCache()
+// РњРѕР¶РЅРѕ РІС‹Р·РІР°С‚СЊ РёР· РєРѕРЅСЃРѕР»Рё: clearAssetsCache()
 
 window._musicVol=window._musicVol||0.5;
 function playRandomMusicTrack() {
@@ -295,12 +295,12 @@ function enableAudioSystem() {
   audioEnabledFlag = true;
   document.removeEventListener('mousedown', enableAudioSystem);
   document.removeEventListener('keydown',   enableAudioSystem);
-  // Музыка запустится сразу если DB готова, иначе loadAudioDB() запустит её сама
+  // РњСѓР·С‹РєР° Р·Р°РїСѓСЃС‚РёС‚СЃСЏ СЃСЂР°Р·Сѓ РµСЃР»Рё DB РіРѕС‚РѕРІР°, РёРЅР°С‡Рµ loadAudioDB() Р·Р°РїСѓСЃС‚РёС‚ РµС‘ СЃР°РјР°
   if (audioDBReady && musicEnabled && MUSIC_LIST_FULL.length) playRandomMusicTrack();
 }
 
-// -- SOUND_BLOCK: воспроизведение -----------------------------------------
-// -- Audio Pool: пул из 4 объектов на URL для быстрого воспроизведения ----
+// -- SOUND_BLOCK: РІРѕСЃРїСЂРѕРёР·РІРµРґРµРЅРёРµ -----------------------------------------
+// -- Audio Pool: РїСѓР» РёР· 4 РѕР±СЉРµРєС‚РѕРІ РЅР° URL РґР»СЏ Р±С‹СЃС‚СЂРѕРіРѕ РІРѕСЃРїСЂРѕРёР·РІРµРґРµРЅРёСЏ ----
 const AUDIO_POOL = {}; // url > [Audio, Audio, Audio, Audio]
 const POOL_SIZE = 4;
 
@@ -310,16 +310,16 @@ function getPoolAudio(url){
       const a = new Audio(url); a.preload = 'auto'; a.load(); return a;
     });
   }
-  // Ищем свободный (не играет или закончил)
+  // РС‰РµРј СЃРІРѕР±РѕРґРЅС‹Р№ (РЅРµ РёРіСЂР°РµС‚ РёР»Рё Р·Р°РєРѕРЅС‡РёР»)
   const pool = AUDIO_POOL[url];
   for(const a of pool){
     if(a.paused || a.ended){ return a; }
   }
-  // Все заняты — берём самый старый (перезапускаем)
+  // Р’СЃРµ Р·Р°РЅСЏС‚С‹ вЂ” Р±РµСЂС‘Рј СЃР°РјС‹Р№ СЃС‚Р°СЂС‹Р№ (РїРµСЂРµР·Р°РїСѓСЃРєР°РµРј)
   return pool[0];
 }
 
-// -- Звуки UI: hover и tap на кнопках ----------------------------------------
+// -- Р—РІСѓРєРё UI: hover Рё tap РЅР° РєРЅРѕРїРєР°С… ----------------------------------------
 $.S = $.S || {
   play(type){ return window['playSound'](type); },
   swing(){ return window['playSound']('whoosh'); },
@@ -356,7 +356,7 @@ function playSound(sfxType) {
   if (sfxType === 'clashHard' && Math.random() < 0.05 && SFX_DB['clashHard_rare']?.length)
     arr = SFX_DB['clashHard_rare'];
   if (!arr || arr.length === 0) {
-    if (audioDBReady) console.warn('?? Нет звука для типа:', sfxType);
+    if (audioDBReady) console.warn('?? РќРµС‚ Р·РІСѓРєР° РґР»СЏ С‚РёРїР°:', sfxType);
     return;
   }
   const idx = Math.floor(Math.random() * arr.length);
@@ -365,20 +365,20 @@ function playSound(sfxType) {
   audio.currentTime = 0;
   audio.volume = 0.5;
   audio.play().catch(() => {
-    // Если pool объект не готов — fallback new Audio
+    // Р•СЃР»Рё pool РѕР±СЉРµРєС‚ РЅРµ РіРѕС‚РѕРІ вЂ” fallback new Audio
     const fb = new Audio(url); fb.volume = 0.5; fb.play().catch(()=>{});
   });
 }
 
-// -- Управляемый звук (для длительных эффектов вроде зарядки жезла) ---------
-// В отличие от $.S.play() (fire-and-forget), возвращает ссылку на Audio,
-// чтобы вызывающий код мог остановить именно этот конкретный звук позже —
-// например, плавно притушить его, если игрок отменил накопление заряда.
+// -- РЈРїСЂР°РІР»СЏРµРјС‹Р№ Р·РІСѓРє (РґР»СЏ РґР»РёС‚РµР»СЊРЅС‹С… СЌС„С„РµРєС‚РѕРІ РІСЂРѕРґРµ Р·Р°СЂСЏРґРєРё Р¶РµР·Р»Р°) ---------
+// Р’ РѕС‚Р»РёС‡РёРµ РѕС‚ $.S.play() (fire-and-forget), РІРѕР·РІСЂР°С‰Р°РµС‚ СЃСЃС‹Р»РєСѓ РЅР° Audio,
+// С‡С‚РѕР±С‹ РІС‹Р·С‹РІР°СЋС‰РёР№ РєРѕРґ РјРѕРі РѕСЃС‚Р°РЅРѕРІРёС‚СЊ РёРјРµРЅРЅРѕ СЌС‚РѕС‚ РєРѕРЅРєСЂРµС‚РЅС‹Р№ Р·РІСѓРє РїРѕР·Р¶Рµ вЂ”
+// РЅР°РїСЂРёРјРµСЂ, РїР»Р°РІРЅРѕ РїСЂРёС‚СѓС€РёС‚СЊ РµРіРѕ, РµСЃР»Рё РёРіСЂРѕРє РѕС‚РјРµРЅРёР» РЅР°РєРѕРїР»РµРЅРёРµ Р·Р°СЂСЏРґР°.
 function playControllableSound(sfxType) {
   if (!audioEnabledFlag) return null;
   const arr = SFX_DB[sfxType];
   if (!arr || arr.length === 0) {
-    if (audioDBReady) console.warn('?? Нет звука для типа:', sfxType);
+    if (audioDBReady) console.warn('?? РќРµС‚ Р·РІСѓРєР° РґР»СЏ С‚РёРїР°:', sfxType);
     return null;
   }
   const idx = Math.floor(Math.random() * arr.length);
@@ -386,17 +386,17 @@ function playControllableSound(sfxType) {
   const audio = getPoolAudio(url);
   audio.currentTime = 0;
   audio.volume = 0.5;
-  audio._fadeOutRAF = null; // на случай если этот pool-объект уже кому-то фейдился раньше
+  audio._fadeOutRAF = null; // РЅР° СЃР»СѓС‡Р°Р№ РµСЃР»Рё СЌС‚РѕС‚ pool-РѕР±СЉРµРєС‚ СѓР¶Рµ РєРѕРјСѓ-С‚Рѕ С„РµР№РґРёР»СЃСЏ СЂР°РЅСЊС€Рµ
   audio.play().catch(() => {});
   return audio;
 }
 
-// -- Плавное затухание звука за заданное время (сек), затем пауза -----------
-// Используется, например, когда игрок отпускает жезл раньше времени накопления —
-// звук зарядки не обрывается резко, а гаснет за 0.3 сек.
+// -- РџР»Р°РІРЅРѕРµ Р·Р°С‚СѓС…Р°РЅРёРµ Р·РІСѓРєР° Р·Р° Р·Р°РґР°РЅРЅРѕРµ РІСЂРµРјСЏ (СЃРµРє), Р·Р°С‚РµРј РїР°СѓР·Р° -----------
+// РСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ, РЅР°РїСЂРёРјРµСЂ, РєРѕРіРґР° РёРіСЂРѕРє РѕС‚РїСѓСЃРєР°РµС‚ Р¶РµР·Р» СЂР°РЅСЊС€Рµ РІСЂРµРјРµРЅРё РЅР°РєРѕРїР»РµРЅРёСЏ вЂ”
+// Р·РІСѓРє Р·Р°СЂСЏРґРєРё РЅРµ РѕР±СЂС‹РІР°РµС‚СЃСЏ СЂРµР·РєРѕ, Р° РіР°СЃРЅРµС‚ Р·Р° 0.3 СЃРµРє.
 function fadeOutSound(audio, duration = 0.3){
   if(!audio) return;
-  if(audio._fadeOutRAF) cancelAnimationFrame(audio._fadeOutRAF); // не запускать второй фейд поверх первого
+  if(audio._fadeOutRAF) cancelAnimationFrame(audio._fadeOutRAF); // РЅРµ Р·Р°РїСѓСЃРєР°С‚СЊ РІС‚РѕСЂРѕР№ С„РµР№Рґ РїРѕРІРµСЂС… РїРµСЂРІРѕРіРѕ
   const startVol = audio.volume;
   const startT = performance.now();
   function step(now){
@@ -406,7 +406,7 @@ function fadeOutSound(audio, duration = 0.3){
       audio._fadeOutRAF = requestAnimationFrame(step);
     } else {
       audio.pause();
-      audio.volume = 0.5; // возвращаем громкость по умолчанию для следующего использования из пула
+      audio.volume = 0.5; // РІРѕР·РІСЂР°С‰Р°РµРј РіСЂРѕРјРєРѕСЃС‚СЊ РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ РґР»СЏ СЃР»РµРґСѓСЋС‰РµРіРѕ РёСЃРїРѕР»СЊР·РѕРІР°РЅРёСЏ РёР· РїСѓР»Р°
       audio._fadeOutRAF = null;
     }
   }

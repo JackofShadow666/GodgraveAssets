@@ -122,6 +122,11 @@
     if(typeof drainStamina==='function') drainStamina(entity,30);
   }
 
+  function manualFlickStaminaCost(){
+    const gamepadCost = sv('gamepadstamflick');
+    return Number.isFinite(gamepadCost) ? gamepadCost : sv('stamflick');
+  }
+
   function updateManualCombatStamina(entity, attack, aimAngle, dt){
     const staminaBefore=entity.stamina;
     const state=entity._manualCombatState || (entity._manualCombatState={
@@ -177,7 +182,7 @@
           if(amplitude>=sv('flickminamp') && amplitude<=sv('flickminamp')*sv('flickmaxmult')) state.flickCount++;
           state.flickStartAngle=aimAngle;
           if(state.flickCount>=sv('flickcount')){
-            drainStamina(entity,sv('stamflick')*staminaMult);
+            drainStamina(entity,manualFlickStaminaCost());
             $.FX.hit({x:entity.x,y:entity.y-25,t:(window.I18N ? window.I18N.t('playercontrols.hitFlick') : 'FLICK'),life:30,big:false,col:'#ffaa20'});
             state.flickCount=0; state.flickWindowStart=RealTime;
           }
@@ -296,7 +301,7 @@
           }
           state.flickStartAngle=aimAngle;
           if(state.flickCount>=sv('flickcount')){
-            drainStamina(entity,sv('stamflick')*staminaMult);
+            drainStamina(entity,manualFlickStaminaCost());
             $.FX.hit({x:entity.x,y:entity.y-25,t:(window.I18N ? window.I18N.t('playercontrols.hitFlick') : 'FLICK'),life:30,big:false,col:'#ffaa20'});
             $.S.play(isHeavySwingWeapon(entity)?'hammerSwing':'whoosh');
             state.flickCount=0;

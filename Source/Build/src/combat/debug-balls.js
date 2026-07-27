@@ -4,14 +4,14 @@
 // First module section: debug balls.
 // ============================================================================
 // ============================================================================
-// MODULE: DEBUG BALLS  (ÚÂÒÚÓ‚˚È ÂÊËÏ "ÒÔ‡‚Ì ¯‡ËÍÓ‚" ó Õ≈ ·ÓÂ‚˚Â ÒÌ‡ˇ‰˚)
+// MODULE: DEBUG BALLS  (—Ç–µ—Å—Ç–æ–≤—ã–π —Ä–µ–∂–∏–º "—Å–ø–∞–≤–Ω —à–∞—Ä–∏–∫–æ–≤" ‚Äî –ù–ï –±–æ–µ–≤—ã–µ —Å–Ω–∞—Ä—è–¥—ã)
 // Debug balls are already isolated as the first section of this module.
-// ›ÚÓ ÓÚ‰ÂÎ¸Ì‡ˇ ÔÂÒÓ˜ÌËˆ‡ ‰Îˇ ÔÓ‚ÂÍË ÍÓÎÎËÁËË ÓÛÊËˇ/ÚÂÎ‡ Ò ÎÂÚˇ˘ËÏË
-// Ó·˙ÂÍÚ‡ÏË; ÌÂ ÔÛÚ‡Ú¸ Ò PROJECTILES (Â‡Î¸Ì˚Â ÒÌ‡ˇ‰˚ ÊÂÁÎ‡/‡·‡ÎÂÚ‡,
-// ÒÏ. MODULE: RANGED WEAPONS ‰‡Î¸¯Â ‚ Ù‡ÈÎÂ).
+// –≠—Ç–æ –æ—Ç–¥–µ–ª—å–Ω–∞—è –ø–µ—Å–æ—á–Ω–∏—Ü–∞ –¥–ª—è –ø—Ä–æ–≤–µ—Ä–∫–∏ –∫–æ–ª–ª–∏–∑–∏–∏ –æ—Ä—É–∂–∏—è/—Ç–µ–ª–∞ —Å –ª–µ—Ç—è—â–∏–º–∏
+// –æ–±—ä–µ–∫—Ç–∞–º–∏; –Ω–µ –ø—É—Ç–∞—Ç—å —Å PROJECTILES (—Ä–µ–∞–ª—å–Ω—ã–µ —Å–Ω–∞—Ä—è–¥—ã –∂–µ–∑–ª–∞/–∞—Ä–±–∞–ª–µ—Ç–∞,
+// —Å–º. MODULE: RANGED WEAPONS –¥–∞–ª—å—à–µ –≤ —Ñ–∞–π–ª–µ).
 // ============================================================================
 
-// -- ÿ¿–» » ------------------------------------------------------------------
+// -- –®–ê–†–ò–ö–ò ------------------------------------------------------------------
 const BALLS = [];
 let ballsActive = false;
 let ballSpawnTimer = 0;
@@ -24,7 +24,7 @@ function spawnBall(){
   else if(side === 1){ x = W+16; y = Math.random()*H; }
   else if(side === 2){ x = Math.random()*W; y = H+16; }
   else { x = -16; y = Math.random()*H; }
-  // ˆÂÎËÏÒˇ ÔˇÏÓ ‚ ÚÂÎÓ Ë„ÓÍ‡ (ÌÂ ÛÚ), ÌÂ·ÓÎ¸¯ÓÈ ‡Á·ÓÒ
+  // —Ü–µ–ª–∏–º—Å—è –ø—Ä—è–º–æ –≤ —Ç–µ–ª–æ –∏–≥—Ä–æ–∫–∞ (–Ω–µ —Ä—É—Ç), –Ω–µ–±–æ–ª—å—à–æ–π —Ä–∞–∑–±—Ä–æ—Å
   const targetX = rc0.x + P.bx + (Math.random()-0.5)*30;
   const targetY = rc0.y + P.by + (Math.random()-0.5)*30;
   const ang = Math.atan2(targetY - y, targetX - x);
@@ -32,7 +32,7 @@ function spawnBall(){
   const vx = Math.cos(ang) * spd;
   const vy = Math.sin(ang) * spd;
   BALLS.push({ x, y, vx, vy, r: rf(10,5), life: 500, hit: 0,
-               initVx: vx, initVy: vy }); // Á‡ÔÓÏËÌ‡ÂÏ Ì‡˜‡Î¸ÌÛ˛ ÒÍÓÓÒÚ¸
+               initVx: vx, initVy: vy }); // –∑–∞–ø–æ–º–∏–Ω–∞–µ–º –Ω–∞—á–∞–ª—å–Ω—É—é —Å–∫–æ—Ä–æ—Å—Ç—å
 }
 
 document.getElementById('btn-balls').addEventListener('click', () => {
@@ -60,7 +60,7 @@ function updateBalls(dt){
   const pivY = $.POS.root().y + P.pvY;
   const swLen = weaponReach(P) * sv('swlen');
 
-  // ÔÓÁËˆËˇ Ì‡ÍÓÌÂ˜ÌËÍ‡ Ë œ–≈ƒ€ƒ”Ÿ≈√Œ Ì‡ÍÓÌÂ˜ÌËÍ‡ (‰Îˇ sweep-ÍÓÎÎËÁËË)
+  // –ø–æ–∑–∏—Ü–∏—è –Ω–∞–∫–æ–Ω–µ—á–Ω–∏–∫–∞ –∏ –ü–†–ï–î–´–î–£–©–ï–ì–û –Ω–∞–∫–æ–Ω–µ—á–Ω–∏–∫–∞ (–¥–ª—è sweep-–∫–æ–ª–ª–∏–∑–∏–∏)
   const tipX = pivX + Math.cos(P.angle) * swLen;
   const tipY = pivY + Math.sin(P.angle) * swLen;
   const prevTipX = pivX + Math.cos(P.angle - P.vel*0.8) * swLen;
@@ -69,7 +69,7 @@ function updateBalls(dt){
   for(let i = BALLS.length-1; i >= 0; i--){
     const b = BALLS[i];
 
-    // Ïˇ„ÍÓÂ Ì‡‚Â‰ÂÌËÂ Ì‡ ÚÂÎÓ Ë„ÓÍ‡ (homing)
+    // –º—è–≥–∫–æ–µ –Ω–∞–≤–µ–¥–µ–Ω–∏–µ –Ω–∞ —Ç–µ–ª–æ –∏–≥—Ä–æ–∫–∞ (homing)
     if(b.hit === 0){
       const rc1 = $.POS.root();
       const targetX = rc1.x + P.bx, targetY = rc1.y + P.by;
@@ -86,7 +86,7 @@ function updateBalls(dt){
     b.life-=step;
     if(b.hit > 0) b.hit-=step;
 
-    // --  ÓÎÎËÁËˇ Ò ÏÂ˜ÓÏ -------------------------------------------------
+    // -- –ö–æ–ª–ª–∏–∑–∏—è —Å –º–µ—á–æ–º -------------------------------------------------
     let hit = false;
     if(b.hit === 0){
       const BLADE_W = 6;
@@ -105,7 +105,7 @@ function updateBalls(dt){
           b.vx = nx*(5 + swordSpd*0.06) + bladeX*swordSpd*0.035;
           b.vy = ny*(5 + swordSpd*0.06) + bladeY*swordSpd*0.035;
           b.hit = 22;
-          $.FX.hit({x: b.x, y: b.y-14, t:'‚ú¶', life:28, big:false});
+          $.FX.hit({x: b.x, y: b.y-14, t:'–≤—ö¬¶', life:28, big:false});
           
           const aikb = sv('bodyKB') * 0.5;
           if(aikb > 0){
@@ -120,7 +120,7 @@ function updateBalls(dt){
       }
     }
 
-    // -- œŒœ¿ƒ¿Õ»≈ ÿ¿–» ¿ ¬ “≈ÀŒ »√–Œ ¿ ----------------------------------
+    // -- –ü–û–ü–ê–î–ê–ù–ò–ï –®–ê–†–ò–ö–ê –í –¢–ï–õ–û –ò–ì–†–û–ö–ê ----------------------------------
     {
       const rc0 = $.POS.root();
       const bodyCX = rc0.x + P.bx;
@@ -134,7 +134,7 @@ function updateBalls(dt){
           const dmg = Math.round(Math.hypot(b.vx, b.vy) * 4);
           
           // ================================================================
-          // ?? ≈ƒ»Õ€… ¬€«Œ¬ applyDamage
+          // ?? –ï–î–ò–ù–´–ô –í–´–ó–û–í applyDamage
           // ================================================================
           applyDamage(P, dmg, null, {
             isMagic: false,
@@ -143,12 +143,12 @@ function updateBalls(dt){
             hitstopFrames: 4,
             shakePower: 4,
             textColor: '#ff4040',
-            textSuffix: '‚öΩ',
+            textSuffix: '–≤—ô–Ö',
             bloodCount: 8,
             playSound: true
           });
           
-          // -- ƒŒœŒÀÕ»“≈À‹Õ€≈ ›‘‘≈ “€ (ÒÔÂˆËÙË˜Ì˚Â ‰Îˇ ¯‡ËÍÓ‚) --
+          // -- –î–û–ü–û–õ–ù–ò–¢–ï–õ–¨–ù–´–ï –≠–§–§–ï–ö–¢–´ (—Å–ø–µ—Ü–∏—Ñ–∏—á–Ω—ã–µ –¥–ª—è —à–∞—Ä–∏–∫–æ–≤) --
           const nx = (bodyCX - b.x)/(d||1), ny = (bodyCY - b.y)/(d||1);
           const kbf = sv('bodyKB') * 0.5;
           P.vx += nx * kbf; P.vy += ny * kbf;
@@ -170,10 +170,10 @@ function drawBalls(){
     const alpha = Math.min(1, b.life / 60);
     ctx.save();
     ctx.globalAlpha = alpha;
-    // ÚÂÌ¸
+    // —Ç–µ–Ω—å
     ctx.fillStyle = 'rgba(0,0,0,0.3)';
     ctx.beginPath(); ctx.ellipse(b.x+3, b.y+5, b.r*0.8, b.r*0.4, 0, 0, Math.PI*2); ctx.fill();
-    // ¯‡
+    // —à–∞—Ä
     const g = ctx.createRadialGradient(b.x - b.r*0.3, b.y - b.r*0.3, b.r*0.1, b.x, b.y, b.r);
     if(b.hit > 0){
       g.addColorStop(0, '#fff8c0'); g.addColorStop(0.4, '#ffcc40'); g.addColorStop(1, '#cc6010');
@@ -182,7 +182,7 @@ function drawBalls(){
     }
     ctx.fillStyle = g;
     ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI*2); ctx.fill();
-    // ·ÎËÍ
+    // –±–ª–∏–∫
     ctx.fillStyle = 'rgba(255,255,255,0.4)';
     ctx.beginPath(); ctx.arc(b.x - b.r*0.3, b.y - b.r*0.3, b.r*0.25, 0, Math.PI*2); ctx.fill();
     ctx.restore();

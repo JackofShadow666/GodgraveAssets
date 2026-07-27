@@ -1,11 +1,11 @@
 // === src/main.js ===
 // Extracted from Build.html; loaded as a classic script to preserve shared runtime state.
-// LAYER: UPDATE TICK — main frame update function (uses everything above)
+// LAYER: UPDATE TICK â€” main frame update function (uses everything above)
 // Module section: update tick.
 // =======================================================================================
 
 function update(dt){
-  if(DEATH.pDead) return; // dead — no update
+  if(DEATH.pDead) return; // dead â€” no update
   const step = $.M.step(dt);
   updateBuffs(P, dt);
     // ? DEBUFF UPDATE
@@ -17,8 +17,8 @@ function update(dt){
   }
   // --- character movement ---
   let mx=0, my=0;
-  if(keys['a']||keys['ô']) mx=-1; if(keys['d']||keys['â']) mx=1;
-  if(keys['w']||keys['ö']) my=-1; if(keys['s']||keys['û']) my=1;
+  if(keys['a']||keys['Ñ„']) mx=-1; if(keys['d']||keys['Ð²']) mx=1;
+  if(keys['w']||keys['Ñ†']) my=-1; if(keys['s']||keys['Ñ‹']) my=1;
   if(mx||my){ const l=Math.hypot(mx,my); mx/=l; my/=l; }
   
 // Stamina regeneration
@@ -39,7 +39,7 @@ regenStamina(P, dt, mDown);
   const lmbStaminaCost = P.stamMax * (sv('lmbcost') / 100) * weaponLmbStaminaMult(P);
 
   if(isRangedWeapon(P)){
-    // -- Staff/Crossbow: LMB fully replaces rage buff — shooting instead --
+    // -- Staff/Crossbow: LMB fully replaces rage buff â€” shooting instead --
     P.lmbWasDown = mDown;
     P.lmbHoldStart = -1;
     if(isExhausted(P)) mDown = false; // exhaustion cancels LMB just like before
@@ -308,7 +308,7 @@ const exhMult = getMod(P, 'moveSlow', 1);
   P.tbx = Math.cos(oppAng) * scaledDist;
   P.tby = Math.sin(oppAng) * scaledDist;
 
-  // ?? BODY — slow down when exhausted
+  // ?? BODY â€” slow down when exhausted
 const exhBodyMult = isExhausted(P) ? 0.3 : 1.0;
   const bspd = sv('spd') * exhBodyMult;
   P.bx = $.M.lerpDT(P.bx, P.tbx, bspd, dt);
@@ -369,7 +369,7 @@ const exhBodyMult = isExhausted(P) ? 0.3 : 1.0;
     P.tpY = $.M.lerpDT(P.tpY, ty, style.blk, dt);
   }
 
-  // ?? SWORD PIVOT (hand) — barely moves when exhausted
+  // ?? SWORD PIVOT (hand) â€” barely moves when exhausted
   const exhPivotMult = isExhausted(P) ? 0.05 : 0.35;
   P.pvX += (P.tpX - P.pvX) * exhPivotMult;
   P.pvY += (P.tpY - P.pvY) * exhPivotMult;
@@ -439,7 +439,7 @@ const exhBodyMult = isExhausted(P) ? 0.3 : 1.0;
       // ?? EXHAUSTION: remember that sword was frozen
       const wasExhausted = isExhausted(P);
       
-      // If exhaustion just ended — start smooth recovery
+      // If exhaustion just ended â€” start smooth recovery
       if (P._wasExhausted && !wasExhausted) {
         P._recoverStartAngle = P.angle;
         P._recoverTargetAngle = ta;
@@ -464,7 +464,7 @@ const exhBodyMult = isExhausted(P) ? 0.3 : 1.0;
         let targetAngle = P._recoverStartAngle + diff * eased;
         
         // ?? LIMIT MAXIMUM TURN PER FRAME
-        const MAX_TURN_PER_FRAME = 0.04; // ~2.3° per frame (very slow)
+        const MAX_TURN_PER_FRAME = 0.04; // ~2.3Â° per frame (very slow)
         let angleDiff = $.M.angDiff(targetAngle, P.angle);
         let clampedDiff = Math.max(-MAX_TURN_PER_FRAME, Math.min(MAX_TURN_PER_FRAME, angleDiff));
         P.angle += clampedDiff;
@@ -481,7 +481,7 @@ const exhBodyMult = isExhausted(P) ? 0.3 : 1.0;
         // ?? Exhaustion via exhswd2 (slider)
        const exhSwordMult = getMod(P, 'swordSlow', 1);
         
-        // ????>? WEAPON WEIGHT — slows turning
+        // ????>? WEAPON WEIGHT â€” slows turning
         const baseW = weaponWeight(P);
         const isRageActive = (P.rageBuffEnd || 0) > GameTime;
         let effectiveW = baseW;
@@ -546,7 +546,7 @@ if (hasMod(P, 'weaponRecoil')) {
       if($.IS(P, 'flail') && P._flailExt < 0.97){
         // Ignore
       } else if (!(GameTime < (P._dodgeActiveUntil||0))) {
-        drainStamina(P, sv('stamflick') * weaponStaminaMult(P));
+        drainStamina(P, sv('stamflick'));
         if(P.stamina <= 0 && !isExhausted(P)) applyExhaust(P);
         P._swingBlockCD = GameTime + 0.15;
         $.FX.hit({x: rc.x + P.pvX, y: rc.y + P.pvY - 25, t:(window.I18N ? window.I18N.t('main.flick') : 'FLICK'), life:30, big:false, col:'#ffaa20'});
@@ -625,7 +625,7 @@ if (hasMod(P, 'weaponRecoil')) {
 
 
 // ---------------------------------------------------------------------------------
-// LAYER: GAME LOOP — fixed timestep, requestAnimationFrame, II toggle
+// LAYER: GAME LOOP â€” fixed timestep, requestAnimationFrame, II toggle
 // Module section: game loop.
 // =======================================================================================
 // =======================================================================================
@@ -645,7 +645,7 @@ let accumulator = 0; // accumulated real time
 // =======================================================================================
 let gamePaused = false;
 // Pause caused by OPEN MENU (not tab switch). While this flag
-// is true, returning to the tab MUST NOT unpause — otherwise the menu
+// is true, returning to the tab MUST NOT unpause â€” otherwise the menu
 // stays on screen but combat (and bots) continues underneath it.
 let uiMenuPaused = false;
 window._setUiMenuPaused = function(v){ uiMenuPaused = v; };
@@ -806,9 +806,7 @@ if(dummyOn&&isUnbalanced(D)) drawUnbalancedStars(D);
     }
     
     { // Draw ALL bots
-      const _realD = D;
-      for(const _b of ALL_BOTS){ D = _b; drawDummy(); }
-      D = _realD;
+      for(const _b of ALL_BOTS){ drawDummy(_b); }
     }
     
     const _pSwordBehind = shieldDef(P) && shieldSameSideAsSword(P);
@@ -858,31 +856,31 @@ function browserInputLocked(){
 // accidental right-button gameplay bindings.
 window.addEventListener('contextmenu', e=>{ if(browserInputLocked()) e.preventDefault(); });
 window.addEventListener('mousedown', e=>{ if(e.button===2 && browserInputLocked()){ e.preventDefault(); e.stopImmediatePropagation(); } }, true);
-// Global handlers: if LMB released outside canvas/window, or window loses focus (alt-tab, tab switch) — reset mDown so
+// Global handlers: if LMB released outside canvas/window, or window loses focus (alt-tab, tab switch) â€” reset mDown so
 // the game doesn't "stick" in held-button mode.
 window.addEventListener('mouseup', e=>{ if(e.button===0) mDown=false; });
 window.addEventListener('blur', ()=>{ mDown=false; });
 document.addEventListener('mouseleave', ()=>{ mDown=false; });
 const FALLBACK_KEYBOARD_CODE_ALIASES = {
-  KeyW: ['w', 'ö'],
-  KeyA: ['a', 'ô'],
-  KeyS: ['s', 'û'],
-  KeyD: ['d', 'â'],
-  KeyT: ['t', 'å'],
-  KeyE: ['e', 'ó'],
-  KeyR: ['r', 'ê'],
-  KeyQ: ['q', 'é'],
-  KeyY: ['y', 'í'],
-  KeyZ: ['z', 'ÿ'],
-  KeyX: ['x', '÷'],
-  KeyC: ['c', 'ñ'],
-  KeyV: ['v', 'ì'],
-  KeyG: ['g', 'ï'],
-  KeyH: ['h', 'ð'],
-  KeyU: ['u', 'ã'],
-  KeyI: ['i', 'ø'],
-  KeyJ: ['j', 'î'],
-  KeyO: ['o', 'ù'],
+  KeyW: ['w', 'Ñ†'],
+  KeyA: ['a', 'Ñ„'],
+  KeyS: ['s', 'Ñ‹'],
+  KeyD: ['d', 'Ð²'],
+  KeyT: ['t', 'Ðµ'],
+  KeyE: ['e', 'Ñƒ'],
+  KeyR: ['r', 'Ðº'],
+  KeyQ: ['q', 'Ð¹'],
+  KeyY: ['y', 'Ð½'],
+  KeyZ: ['z', 'Ñ'],
+  KeyX: ['x', 'Ñ‡'],
+  KeyC: ['c', 'Ñ'],
+  KeyV: ['v', 'Ð¼'],
+  KeyG: ['g', 'Ð¿'],
+  KeyH: ['h', 'Ñ€'],
+  KeyU: ['u', 'Ð³'],
+  KeyI: ['i', 'Ñˆ'],
+  KeyJ: ['j', 'Ð¾'],
+  KeyO: ['o', 'Ñ‰'],
   Digit1: ['1'],
   Enter: ['enter'],
   Escape: ['escape']
@@ -937,37 +935,37 @@ window.addEventListener('keydown', e=>{
   if(document.querySelector('.game-overlay.open')) return;
   const k = e.key.toLowerCase();
   if(typeof LocalPlayerControls!=='undefined' && LocalPlayerControls.isLocalPvP() &&
-     ['x','÷','v','ì','j','î','i','ø'].includes(k)){
+     ['x','Ñ‡','v','Ð¼','j','Ð¾','i','Ñˆ'].includes(k)){
     // Bot-only debug hotkeys must not mutate an entity owned by player 2.
     return;
   }
-  // Open/close settings panel (~, ` or ¨)
-  if(e.code === 'Backquote' || e.key === '¸' || e.key === '¨'){
+  // Open/close settings panel (~, ` or Ð)
+  if(e.code === 'Backquote' || e.key === 'Ñ‘' || e.key === 'Ð'){
     if(!window.IS_MOBILE){
       const panel = document.getElementById('panel');
       panel.classList.toggle('open');
-      // Panel — overlay on top of the game (z-index), canvas/HUD never shift or shrink
+      // Panel â€” overlay on top of the game (z-index), canvas/HUD never shift or shrink
     }
     return;
   }
   setKeyState(e, true);
-  if(k==='t'||k==='ò'||k==='å') toggleDummy();  // T/ò/å (rus. "å" is same physical key as T) = PAUSE
-  if(k==='e'||k==='ó'){ if(typeof tryManualPickup==='function') tryManualPickup(P); } // E/ó = PICK UP WEAPON
+  if(k==='t'||k==='Ñ‚'||k==='Ðµ') toggleDummy();  // T/Ñ‚/Ðµ (rus. "Ðµ" is same physical key as T) = PAUSE
+  if(k==='e'||k==='Ñƒ'){ if(typeof tryManualPickup==='function') tryManualPickup(P); } // E/Ñƒ = PICK UP WEAPON
   // Debug shields
-  if(k==='r'||k==='ê'){ window.toggleSwordStyle(); }
-  if(k==='q'||k==='é'){
+  if(k==='r'||k==='Ðº'){ window.toggleSwordStyle(); }
+  if(k==='q'||k==='Ð¹'){
     P._shieldFlipped = !P._shieldFlipped;
   }
-  if(k==='y'||k==='í'){ toggleAI(); } // Y/í (same physical key as Y) = SPAWN BOT
-  if(k==='z'||k==='ÿ'){
+  if(k==='y'||k==='Ð½'){ toggleAI(); } // Y/Ð½ (same physical key as Y) = SPAWN BOT
+  if(k==='z'||k==='Ñ'){
     P.shield=(P.shield+1)%SHIELD_TYPES.length; setShield(P,P.shield);
     const n=SHIELD_TYPES[P.shield]; $.FX.hit({x:P.x,y:P.y-40,t:(window.I18N?window.I18N.t('main.shieldPlayer',{name:n?n.name:window.I18N.t('main.shieldNone')}):('SHIELD P: '+(n?n.name:'none'))),life:60,big:false,col:'#88ccff'});
   }
-  if(k==='x'||k==='÷'){
+  if(k==='x'||k==='Ñ‡'){
     D.shield=(D.shield+1)%SHIELD_TYPES.length; setShield(D,D.shield);
     const n=SHIELD_TYPES[D.shield]; $.FX.hit({x:D.x,y:D.y-40,t:(window.I18N?window.I18N.t('main.shieldBot',{name:n?n.name:window.I18N.t('main.shieldNone')}):('SHIELD D: '+(n?n.name:'none'))),life:60,big:false,col:'#ffaa44'});
   }
-if(k==='c'||k==='ñ'){ // player weapon switch
+if(k==='c'||k==='Ñ'){ // player weapon switch
   if(P.hasWeapon !== false){
     const next=(P.weaponType+1)%WEAPON_TYPES.length; 
     setWeapon(P,next);
@@ -978,7 +976,7 @@ if(k==='c'||k==='ñ'){ // player weapon switch
   }
 }
 
-if(k==='v'||k==='ì'){ // bot weapon switch
+if(k==='v'||k==='Ð¼'){ // bot weapon switch
   if(D.hasWeapon !== false){
     const next=(D.weaponType+1)%WEAPON_TYPES.length; 
     setWeapon(D,next);
@@ -988,27 +986,27 @@ if(k==='v'||k==='ì'){ // bot weapon switch
   }
 }
   if(k==='1'){ throwWeapon(P); } // player throws weapon
-  if(e.key==='g' || k==='g' || k==='ï'){
+  if(e.key==='g' || k==='g' || k==='Ð¿'){
     // Same path as natural stamina exhaustion.
     applyExhaust(P);
     P.stamina = 0;
   }
-  if(e.key==='h' || k==='h' || k==='ð'){
+  if(e.key==='h' || k==='h' || k==='Ñ€'){
     addRage(P, 100);
     $.FX.hit({x:W/3,y:H/2-40,t:(window.I18N?window.I18N.t('main.rageAdd'):'??+100 RAGE'),life:45,big:true,col:'#ff4020'});
   }
-  if(e.key==='j' || k==='j' || k==='î'){
+  if(e.key==='j' || k==='j' || k==='Ð¾'){
     if(dummyOn){
       D.rageBuffEnd = GameTime + 4.0;
       D.rage = 100;
       $.FX.hit({x:W*0.6,y:H/2-40,t:(window.I18N?window.I18N.t('main.botRage'):'?? BOT RAGE'),life:45,big:true,col:'#ff6030'});
     }
   }
-  if(e.key==='U' || k==='u' || k==='Ã'|| k==='ã'){
+  if(e.key==='U' || k==='u' || k==='Ð“'|| k==='Ð³'){
     // Test call of the same disbalance applied on block.
     if(!isUnbalanced(P)) applyDisbalance(P);
   }
-  if(e.key==='I' || k==='i' || k==='Ø'|| k==='ø'){
+  if(e.key==='I' || k==='i' || k==='Ð¨'|| k==='Ñˆ'){
     // Debug: exactly the same effect and duration, but on the bot.
     if(dummyOn && D && !isUnbalanced(D)) applyDisbalance(D);
   }
@@ -1023,7 +1021,7 @@ window.addEventListener('resize',  ()=>{
 });
 
 function toggleDummy(){
-  // T/Å = pause AI for ALL bots at once, mannequins remain visible
+  // T/Ð• = pause AI for ALL bots at once, mannequins remain visible
   AI.enabled = !AI.enabled;
   // Sync pause flag with all bots, not just the "main" one (D)
   for(const _b of ALL_BOTS){
@@ -1110,7 +1108,7 @@ function toggleAI(){
       if(_b.hasWeapon===false && typeof setWeapon==='function') setWeapon(_b, _b.weaponType);
     }
     
-    // ?? FIRST BOT — MAIN
+    // ?? FIRST BOT â€” MAIN
     if(ALL_BOTS.length > 0){
       D = ALL_BOTS[0];
       D._aiState._isMain = true;
@@ -1127,7 +1125,7 @@ function toggleAI(){
 }
 
 // ---------------------------------------------------------------------------------
-// LAYER: BOOTSTRAP — final launch: load sounds, init boxes, start loop
+// LAYER: BOOTSTRAP â€” final launch: load sounds, init boxes, start loop
 // Module section: game startup.
 // =======================================================================================
 

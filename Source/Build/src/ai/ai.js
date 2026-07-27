@@ -115,6 +115,43 @@ function freshAIState(){
 let ALL_BOTS = [];
 function isBot(ent){ return ALL_BOTS.indexOf(ent) !== -1; }
 
+const BOT_RANDOM_WEAPON_WEIGHTS = [
+  ['sword', 14],
+  ['axe', 12],
+  ['longsword', 11],
+  ['bow', 10],
+  ['halberd', 8],
+  ['hammer', 8],
+  ['greatsword', 7],
+  ['crossbow', 6],
+  ['flail', 5],
+  ['wand', 5],
+  ['staff', 4],
+  ['spear', 4],
+  ['magicstaff', 3],
+  ['dagger', 2],
+  ['rapier', 1],
+];
+
+function pickWeightedBotWeaponType(){
+  if(typeof WEAPON_TYPES === 'undefined') return 0;
+  const available = BOT_RANDOM_WEAPON_WEIGHTS
+    .map(([key, weight]) => ({ index: WEAPON_TYPES.findIndex(w => w.key === key), weight }))
+    .filter(item => item.index >= 0 && item.weight > 0);
+  const total = available.reduce((sum, item) => sum + item.weight, 0);
+  let roll = Math.random() * total;
+  for(const item of available){
+    roll -= item.weight;
+    if(roll <= 0) return item.index;
+  }
+  return available.length ? available[available.length - 1].index : 0;
+}
+
+function maybeSetRandomBotWeapon(bot, force = false){
+  if(!bot || typeof setWeapon !== 'function' || (!force && !cb('botrandomweapon'))) return;
+  setWeapon(bot, pickWeightedBotWeaponType());
+}
+
 // Бот считается "готовым" (можно рисовать/атаковать), когда его скин-спрайт
 // реально загружен. Пока это не так — держим бота ФИЗИЧЕСКИ далеко за пределами
 // арены (а не просто "невидимым" на месте спавна), чтобы по нему нельзя было
@@ -229,8 +266,10 @@ function applyBotCount(){
     const spawnY = $.M.clamp(H/2 + Math.sin(ang)*140, 60, H-60);
     const nb = makeEntity(spawnX, spawnY, 0.8, '#4a1a10', { stamRegen: 28 });
     nb._aiState = freshAIState();
+    maybeSetRandomBotWeapon(nb);
     // Если игра сейчас на паузе (T/Е) — новый бот тоже должен родиться замороженным
-    if(typeof AI!=='undefined' && AI && AI.enabled===false) nb._aiState.enabled = false;
+    const localPvpActive = typeof LocalPlayerControls!=='undefined' && LocalPlayerControls.isLocalPvP();
+    if(!localPvpActive && typeof AI!=='undefined' && AI && AI.enabled===false) nb._aiState.enabled = false;
     nb._isExtra = idx > 0;
     
     const rand = Math.random();
@@ -285,6 +324,11 @@ function applyBotCount(){
     D._aiState._phase = 'attack';
     D._aiState._fakeMDown = true;
     AI = D._aiState;
+  }
+  if(localPvpSlot > 0){
+    for(const bot of ALL_BOTS){
+      if(bot && !bot._manualControl && bot._aiState) bot._aiState.enabled = true;
+    }
   }
 }
 
@@ -472,7 +516,8 @@ function aiUpdateProbing(ai, bot, k, bBodyC, pBodyC, distToPlayer, cscl){
     const approachAim = ang + Math.sin(GameTime * 7) * 0.36 + ai._probingAngleJitter;
     aiPointMouse(bBodyC,
       bBodyC.x + Math.cos(approachAim) * 150 * cscl,
-      bBodyC.y + Math.sin(approachAim) * 150 * cscl);
+      bBodyC.y + Math.sin(approachAim) * 150 * cscl,
+      false, ai);
     return true;
   }
 
@@ -489,7 +534,8 @@ function aiUpdateProbing(ai, bot, k, bBodyC, pBodyC, distToPlayer, cscl){
         $.M.angDiff(mirroredBlockAng, frontAng), -maxFrontMirror, maxFrontMirror);
       aiPointMouse(bBodyC,
         botWeaponPivot.x + Math.cos(blockAng) * 150 * cscl,
-        botWeaponPivot.y + Math.sin(blockAng) * 150 * cscl);
+        botWeaponPivot.y + Math.sin(blockAng) * 150 * cscl,
+        false, ai);
       ai._fakeMDown = false;
     } else {
       // 70%: hold the weapon pointed directly at the player. No side swing
@@ -497,7 +543,8 @@ function aiUpdateProbing(ai, bot, k, bBodyC, pBodyC, distToPlayer, cscl){
       const pointAng = Math.atan2(pBodyC.y - botWeaponPivot.y, pBodyC.x - botWeaponPivot.x);
       aiPointMouse(bBodyC,
         botWeaponPivot.x + Math.cos(pointAng) * 150 * cscl,
-        botWeaponPivot.y + Math.sin(pointAng) * 150 * cscl);
+        botWeaponPivot.y + Math.sin(pointAng) * 150 * cscl,
+        false, ai);
       ai._fakeMDown = false;
     }
     if(GameTime >= ai._probingEnd){
@@ -528,7 +575,7 @@ function aiUpdateProbing(ai, bot, k, bBodyC, pBodyC, distToPlayer, cscl){
     aiPointMouse(bBodyC,
       botWeaponPivot.x + Math.cos(bot.angle) * 150 * cscl,
       botWeaponPivot.y + Math.sin(bot.angle) * 150 * cscl,
-      true);
+      true, ai);
     aiMoveAway(k, bBodyC, pBodyC, retreatDist, cscl);
     if(distToPlayer >= retreatDist || GameTime >= ai._probingEnd){
       k.w=k.a=k.s=k.d=false;
@@ -555,7 +602,7 @@ function aiUpdateProbing(ai, bot, k, bBodyC, pBodyC, distToPlayer, cscl){
 
   // Rare breather: half are 0.2-0.4s, the rest are 1-1.5s.
   k.w=k.a=k.s=k.d=false;
-  aiPointMouse(bBodyC, playerWeaponCenter.x, playerWeaponCenter.y);
+  aiPointMouse(bBodyC, playerWeaponCenter.x, playerWeaponCenter.y, false, ai);
   if(GameTime >= ai._probingEnd){
     if(GameTime < ai._probingModeEnd){
       // The mode is locked for 7-15 seconds: start another probing exchange.
@@ -577,18 +624,19 @@ function aiUpdateProbing(ai, bot, k, bBodyC, pBodyC, distToPlayer, cscl){
   return true;
 }
 
-function aiPointMouse(dBodyC, targetX, targetY, instant, _dt){
-  if(!AI._smoothInited || instant){
-    AI._smoothMX = targetX;
-    AI._smoothMY = targetY;
-    AI._smoothInited = true;
+function aiPointMouse(dBodyC, targetX, targetY, instant, state){
+  const aim = state || AI;
+  if(!aim._smoothInited || instant){
+    aim._smoothMX = targetX;
+    aim._smoothMY = targetY;
+    aim._smoothInited = true;
   }
   // Плавный lerp к целевой точке
   const lerpSpd = 0.18;
-  AI._smoothMX += (targetX - AI._smoothMX) * lerpSpd;
-  AI._smoothMY += (targetY - AI._smoothMY) * lerpSpd;
-  AI._fakeMX = AI._smoothMX;
-  AI._fakeMY = AI._smoothMY;
+  aim._smoothMX += (targetX - aim._smoothMX) * lerpSpd;
+  aim._smoothMY += (targetY - aim._smoothMY) * lerpSpd;
+  aim._fakeMX = aim._smoothMX;
+  aim._fakeMY = aim._smoothMY;
 }
 
 // ── DUEL POSITION SYSTEM ────────────────────────────────────────────────────
@@ -947,6 +995,51 @@ if(!ai._isMain){
   ai._decisionTimer -= dt;
   
   // ── РОЛЬ: ТРУС (80%) ─────────────────────────────
+  if(ai._supportStrikeState === undefined) ai._supportStrikeState = 'idle';
+  if(ai._supportStrikeCD === undefined) ai._supportStrikeCD = 0;
+
+  const supportStrikeRange = 115 * cscl;
+  const supportRetreatDist = 190 * cscl;
+  const supportStrikeReady = GameTime >= ai._supportStrikeCD &&
+    bot.hasWeapon !== false && bot.exhausted <= 0 && !hasMod(bot, 'weaponRecoil');
+
+  if(ai._supportStrikeState === 'idle' && supportStrikeReady && distToPlayer < supportStrikeRange){
+    ai._supportStrikeState = 'strike';
+    ai._supportStrikeEnd = GameTime + 0.55;
+    ai._supportStrikeDir = Math.random() < 0.5 ? 1 : -1;
+    ai._supportStrikeCD = GameTime + 2.0 + Math.random() * 1.2;
+  }
+
+  if(ai._supportStrikeState === 'strike'){
+    aiMoveToward(k, bBodyC, pBodyC, 25 * cscl, cscl);
+    const strikeProgress = 1 - Math.max(0, ai._supportStrikeEnd - GameTime) / 0.55;
+    const strikeSweep = (strikeProgress - 0.5) * 1.4 * (ai._supportStrikeDir || 1);
+    const strikeAng = angToPlayer + strikeSweep;
+    aiPointMouse(bBodyC,
+      pBodyC.x + Math.cos(strikeAng) * 80 * cscl,
+      pBodyC.y + Math.sin(strikeAng) * 80 * cscl,
+      false, ai);
+    ai._fakeMDown = true;
+    bot.vel = $.M.decay(bot.vel, 0.95, dt);
+    if(GameTime >= ai._supportStrikeEnd){
+      ai._supportStrikeState = 'retreat';
+      ai._supportRetreatEnd = GameTime + 0.75;
+      ai._fakeMDown = false;
+    }
+    return;
+  }
+
+  if(ai._supportStrikeState === 'retreat'){
+    aiMoveAway(k, bBodyC, pBodyC, supportRetreatDist, cscl);
+    aiPointMouse(bBodyC, pBodyC.x, pBodyC.y, false, ai);
+    ai._fakeMDown = false;
+    bot.vel = $.M.decay(bot.vel, 0.95, dt);
+    if(distToPlayer >= supportRetreatDist || GameTime >= ai._supportRetreatEnd){
+      ai._supportStrikeState = 'idle';
+    }
+    return;
+  }
+
   if(role === 'coward'){
     const maxDist = 330 * cscl;
     const minDist = 200 * cscl;
@@ -1402,7 +1495,7 @@ if(ai._contactCD > 0 && ai.phase === 'attack' && ai._contactCD <= GameTime){
     }
   }
   if(ai._pokeDodgeActive){
-    aiPointMouse(bBodyC, pBodyC.x, pBodyC.y);
+    aiPointMouse(bBodyC, pBodyC.x, pBodyC.y, false, ai);
     ai._fakeMDown = true;
     k.w=k.a=k.s=k.d=false;
     if(GameTime >= ai._pokeDodgeEnd){
@@ -1429,7 +1522,7 @@ if(ai._contactCD > 0 && ai.phase === 'attack' && ai._contactCD <= GameTime){
       const ax = Math.cos(angToPlayer)*dir, ay = Math.sin(angToPlayer)*dir;
       k.a = ax<-0.3; k.d = ax>0.3; k.w = ay<-0.3; k.s = ay>0.3;
       if(ai._lungePhase === 'lunge'){
-        aiPointMouse(bBodyC, pBodyC.x, pBodyC.y);
+        aiPointMouse(bBodyC, pBodyC.x, pBodyC.y, false, ai);
         ai._fakeMDown = true;
       }
     }
@@ -1461,7 +1554,7 @@ if(ai._contactCD > 0 && ai.phase === 'attack' && ai._contactCD <= GameTime){
   if(bot.exhausted > 0 || hasMod(bot, 'weaponRecoil')){
     k.w=k.a=k.s=k.d=false;
     ai._fakeMDown=false;
-    aiPointMouse(bBodyC, pBodyC.x, pBodyC.y);
+    aiPointMouse(bBodyC, pBodyC.x, pBodyC.y, false, ai);
     return;
   }
 
@@ -1471,7 +1564,7 @@ if(ai._contactCD > 0 && ai.phase === 'attack' && ai._contactCD <= GameTime){
     const hp = ai._harassPhase;
     if(hp === 'approach'){
       if(!ai._feintActive) aiMoveToward(k, bBodyC, pBodyC, 65*cscl, cscl);
-      if(!ai._spinActive) aiPointMouse(bBodyC, pBodyC.x, pBodyC.y);
+      if(!ai._spinActive) aiPointMouse(bBodyC, pBodyC.x, pBodyC.y, false, ai);
       if(distToPlayer < 90*cscl){
         ai._harassPhase = 'strike';
         ai._harassStrikes = Math.floor(Math.random()*2) + 1;
@@ -1480,7 +1573,7 @@ if(ai._contactCD > 0 && ai.phase === 'attack' && ai._contactCD <= GameTime){
       }
     } else if(hp === 'strike'){
       k.w=k.a=k.s=k.d=false;
-      aiPointMouse(bBodyC, pBodyC.x, pBodyC.y);
+      aiPointMouse(bBodyC, pBodyC.x, pBodyC.y, false, ai);
       ai._fakeMDown = true;
       if(GameTime >= ai._harassTimer){
         ai._harassStrikes--;
@@ -1512,7 +1605,7 @@ if(ai._contactCD > 0 && ai.phase === 'attack' && ai._contactCD <= GameTime){
       const ty = $.M.clamp(pBodyC.y + Math.sin(ai._harassOrbitAng)*orbitR, 60, H-60);
       k.a=(tx-bBodyC.x)<-5; k.d=(tx-bBodyC.x)>5;
       k.w=(ty-bBodyC.y)<-5; k.s=(ty-bBodyC.y)>5;
-      if(!ai._spinActive) aiPointMouse(bBodyC, pBodyC.x, pBodyC.y);
+      if(!ai._spinActive) aiPointMouse(bBodyC, pBodyC.x, pBodyC.y, false, ai);
       if(GameTime >= ai._harassTimer) ai._harassPhase = 'approach';
     }
   } else
@@ -1536,7 +1629,7 @@ if(!ai._feintActive){
       }
       const offsets = [0, sv('aiang')*Math.PI/180, -sv('aiang')*Math.PI/180];
       const aimAng = angToPlayer + offsets[ai._posIdx];
-      aiPointMouse(bBodyC, bBodyC.x + Math.cos(aimAng)*150*cscl, bBodyC.y + Math.sin(aimAng)*150*cscl);
+      aiPointMouse(bBodyC, bBodyC.x + Math.cos(aimAng)*150*cscl, bBodyC.y + Math.sin(aimAng)*150*cscl, false, ai);
     }
     ai._fakeMDown = false;
 
@@ -1584,7 +1677,7 @@ if(!ai._feintActive){
       }
       const offs2 = [0, sv('aiang')*Math.PI/180, -sv('aiang')*Math.PI/180];
       const blockAng = angToPlayer + offs2[ai._posIdx];
-      aiPointMouse(bBodyC, bBodyC.x + Math.cos(blockAng)*120*cscl, bBodyC.y + Math.sin(blockAng)*120*cscl);
+      aiPointMouse(bBodyC, bBodyC.x + Math.cos(blockAng)*120*cscl, bBodyC.y + Math.sin(blockAng)*120*cscl, false, ai);
     }
     ai._fakeMDown = false;
 
@@ -1634,7 +1727,7 @@ if(!ai._feintActive){
       }
       if(!ai._feintActive) k.w=k.a=k.s=k.d=false;
     }
-    aiPointMouse(bBodyC, pBodyC.x, pBodyC.y);
+    aiPointMouse(bBodyC, pBodyC.x, pBodyC.y, false, ai);
     ai._fakeMDown = false;
   }
 
@@ -1673,7 +1766,8 @@ if(!ai._feintActive){
     const mirrorDist = 140 * cscl;
     aiPointMouse(bBodyC,
       dpiv2.x + Math.cos(targetAng)*mirrorDist,
-      dpiv2.y + Math.sin(targetAng)*mirrorDist);
+      dpiv2.y + Math.sin(targetAng)*mirrorDist,
+      false, ai);
     ai._duelistBlocking = false;
   }
 
@@ -1687,10 +1781,10 @@ if(!ai._feintActive){
       const blockAng = targetPlayer.angle + Math.PI/2 + (targetPlayer.vel > 0 ? -0.3 : 0.3);
       const dpiv = $.POS.pivot(bot);
       const bDist = 140 * cscl;
-      aiPointMouse(bBodyC, dpiv.x + Math.cos(blockAng)*bDist, dpiv.y + Math.sin(blockAng)*bDist);
+      aiPointMouse(bBodyC, dpiv.x + Math.cos(blockAng)*bDist, dpiv.y + Math.sin(blockAng)*bDist, false, ai);
       ai._duelistBlocking = true;
     } else {
-      aiPointMouse(bBodyC, pBodyC.x, pBodyC.y);
+      aiPointMouse(bBodyC, pBodyC.x, pBodyC.y, false, ai);
       ai._duelistBlocking = false;
     }
   }

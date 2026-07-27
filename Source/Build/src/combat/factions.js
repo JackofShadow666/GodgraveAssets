@@ -50,6 +50,35 @@
     if(!bPlayer && aPlayer){ b._lastPlayerTarget = a; b._lastPlayerContactAt = GameTime; }
   }
 
+  function proximityTarget(bot, alive, currentTarget){
+    if(!bot || GameTime < (bot._nextProximityTargetCheck || 0)) return null;
+    bot._nextProximityTargetCheck = GameTime + 0.8 + Math.random() * 0.4;
+
+    const scale = typeof sv === 'function' ? sv('cscl') : 1;
+    const radius = 300 * scale;
+    const hysteresis = 70 * scale;
+    const bc = typeof $ !== 'undefined' && $.POS ? $.POS.body(bot) : bot;
+    let nearest = null;
+    let nearestD = Infinity;
+
+    for(const player of alive){
+      const pc = typeof $ !== 'undefined' && $.POS ? $.POS.body(player) : player;
+      const d = Math.hypot(pc.x - bc.x, pc.y - bc.y);
+      if(d < nearestD){
+        nearest = player;
+        nearestD = d;
+      }
+    }
+
+    if(!nearest || nearestD > radius) return null;
+    if(currentTarget && alive.includes(currentTarget)){
+      const tc = typeof $ !== 'undefined' && $.POS ? $.POS.body(currentTarget) : currentTarget;
+      const currentD = Math.hypot(tc.x - bc.x, tc.y - bc.y);
+      if(nearest !== currentTarget && nearestD + hysteresis >= currentD) return null;
+    }
+    return nearest;
+  }
+
   function getBotTarget(bot){
     const alive = alivePlayers();
     if(!alive.length) return null;
@@ -61,6 +90,14 @@
     const recentContact = bot._lastPlayerTarget && alive.includes(bot._lastPlayerTarget) &&
       GameTime - (bot._lastPlayerContactAt || 0) < 4;
     if(recentContact) return bot._lastPlayerTarget;
+
+    const currentTarget = alive.includes(bot._randomPlayerTarget) ? bot._randomPlayerTarget : null;
+    const nearbyTarget = proximityTarget(bot, alive, currentTarget);
+    if(nearbyTarget){
+      bot._lastPlayerTarget = nearbyTarget;
+      bot._lastPlayerContactAt = GameTime;
+      return nearbyTarget;
+    }
 
     if(botIndex < mainCount){
       const assigned = players()[botIndex];

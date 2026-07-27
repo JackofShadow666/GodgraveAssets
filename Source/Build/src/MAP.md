@@ -2,6 +2,14 @@
 
 Use this file as the first read for most tasks.
 
+## How to use this map
+
+- For a small obvious change, route by this map instead of running a broad project search.
+- If the target file is clear, read only that file and the nearest `AGENTS.md`.
+- Create this map before doing `src/` work if it is missing.
+- Update this map when files are added, removed, renamed, responsibilities move between modules, or a fast route becomes misleading.
+- Use broad search when the task is unclear, cross-cutting, risky, or explicitly asks for refactoring/debugging.
+
 ## Main flow
 
 - `src/main.js`: main update loop, orchestration, keyboard/mouse flow, render tick

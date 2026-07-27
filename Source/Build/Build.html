@@ -1,103 +1,93 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sword - Combat + Body Offset</title>
+<title data-i18n="title"></title>
 <style>
+/* ===== ОСНОВНЫЕ СТИЛИ ===== */
 @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Oswald:wght@300;600&display=swap');
 *{margin:0;padding:0;box-sizing:border-box;user-select:none;}
 body{background:#080b10;overflow:hidden;font-family:'Share Tech Mono',monospace;color:#c8d8e8;}
 canvas{display:block;position:fixed;top:0;left:0;cursor:none;}
-#panel{
-  position:fixed;top:0;right:0;width:280px;height:100vh;
-  background:#0a0e14;border-left:1px solid #1a2e44;
-  display:none;flex-direction:column;overflow:hidden;  /* Hidden until toggle, scrolls internally */
-  box-shadow:-6px 0 30px rgba(0,0,0,0.7);
-  z-index:2000; /* Above HUD/canvas, doesn't shift game view */
-}
-#panel.open{ display:flex; }
+
+/* ===== ПАНЕЛЬ ===== */
+#panel{position:fixed;top:0;right:0;width:280px;height:100vh;background:#0a0e14;border-left:1px solid #1a2e44;display:none;flex-direction:column;overflow:hidden;box-shadow:-6px 0 30px rgba(0,0,0,0.7);z-index:2000;}
+#panel.open{display:flex;}
 #ph{padding:14px 16px 10px;border-bottom:1px solid #1a2e44;flex-shrink:0;}
 #ph h2{font-family:'Oswald',sans-serif;font-size:14px;letter-spacing:3px;color:#6ab0d0;text-transform:uppercase;}
 #ph p{font-size:8px;color:#3a5a70;margin-top:3px;letter-spacing:1px;line-height:1.6;}
 #controls{flex:1;overflow-y:auto;padding:10px 12px;scrollbar-width:thin;scrollbar-color:#1e3050 transparent;}
 #controls::-webkit-scrollbar{width:3px;}
 #controls::-webkit-scrollbar-thumb{background:#1e3050;}
+#infobar{padding:8px 12px;border-top:1px solid #162030;font-size:8px;color:#304858;line-height:1.9;background:#060a0e;flex-shrink:0;}
+.ir{display:flex;justify-content:space-between;}
+.iv{color:#5a8898;}
 
+/* ===== СЕКЦИИ ===== */
 .sec{margin-bottom:18px;}
 .sec-title{font-size:8px;letter-spacing:2px;color:#2a5a70;text-transform:uppercase;margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid #0e2030;}
 
+/* ===== ROW (СЛАЙДЕРЫ/ЧЕКБОКСЫ) ===== */
 .row{display:flex;flex-direction:column;gap:3px;margin-bottom:9px;}
 .row-head{display:flex;justify-content:space-between;align-items:baseline;}
 .row-head label{font-size:8px;color:#4a7090;letter-spacing:0.5px;}
 .row-head .val{font-size:9px;color:#6ab0d0;font-weight:bold;}
 .row input[type=range]{width:100%;height:3px;cursor:pointer;accent-color:#3a9acc;}
+.row input[type=checkbox]{margin-right:4px;}
 
+/* ===== КЛАВИШИ ===== */
 .keys{display:flex;flex-direction:column;gap:3px;margin-top:4px;}
 .key{background:rgba(15,40,60,0.7);border:1px solid #1e4060;border-radius:2px;padding:3px 7px;font-size:8px;color:#4a7a8a;line-height:1.5;}
 
-#infobar{padding:8px 12px;border-top:1px solid #162030;font-size:8px;color:#304858;line-height:1.9;background:#060a0e;flex-shrink:0;}
-.ir{display:flex;justify-content:space-between;}
-.iv{color:#5a8898;}
+/* ===== HUD ===== */
+.hud-name { font-size:10px; color:#dff4ff; letter-spacing:1px; font-weight:900; background:rgba(5,15,25,.78); padding:2px 6px; border-radius:3px; text-shadow:0 0 6px #5ab8ff; }
+.hud-name-bot { text-shadow:0 0 6px #398cff; }
+.hud-wins { font-size:11px; color:#4acc80; letter-spacing:1px; font-weight:bold; }
+.hud-wins-bot { font-size:11px; color:#cc4040; letter-spacing:1px; font-weight:bold; }
+.hud-status { font-size:9px; color:#ffaa44; }
+.hud-phase { font-size:9px; letter-spacing:.5px; }
+.hud-buff { font-size:9px; color:#ff4040; margin-top:2px; letter-spacing:1px; }
 
+/* ===== КНОПКИ ===== */
+.menu-btn { width:100%; padding:7px 0; border-radius:3px; font-family:'Share Tech Mono',monospace; font-size:9px; letter-spacing:1px; cursor:pointer; margin-bottom:8px; }
+.mb-export { background:#0e2a1e; border:1px solid #1a5a30; color:#3acc70; }
+.mb-ai    { background:#1a1a0e; border:1px solid #5a5a1a; color:#cccc40; }
+.mb-balls { background:#1a0e0e; border:1px solid #5a1a1a; color:#cc4040; }
+.mb-boxes { background:#100e1a; border:1px solid #3a1a5a; color:#9040cc; }
+.mb-block { background:#1a1000; border:1px solid #6a4010; color:#cc8020; }
+.mb-music { background:#0e1a0e; border:1px solid #2a5a2a; color:#4acc70; }
+
+/* ===== HUD ПОЛОСКИ ===== */
+.hp-bar { background:rgba(0,0,0,0.6); border:2px solid #f0f4ff; border-radius:2px; height:11px; margin-bottom:3px; overflow:hidden; box-shadow:0 0 5px rgba(255,255,255,.35); }
+.hp-bar .fill { height:100%; background:#2acc50; width:100%; transition:width .08s; }
+.stam-bar { background:rgba(0,0,0,0.5); border:1px solid #2a2a10; border-radius:2px; height:7px; margin-bottom:3px; overflow:hidden; }
+.stam-bar .fill { height:100%; background:#ccaa20; width:100%; transition:width .08s; }
+.rage-bar { background:#1a0808; border:1px solid #5a1010; border-radius:2px; height:5px; margin-bottom:3px; overflow:hidden; }
+.rage-bar .fill { height:100%; background:linear-gradient(90deg,#cc2020,#ff5020); width:0%; transition:width .12s; }
+.hud-labels { display:flex; margin-top:2px; font-size:7px; color:#3a6080; }
+.hud-labels .hp { color:#3a6080; }
+.hud-labels .stam { flex:1; text-align:center; color:#8a7020; }
+.hud-labels .rage { color:#802020; }
+
+/* ===== ПРОЧЕЕ ===== */
 #badge{position:fixed;top:14px;left:14px;background:rgba(8,14,22,0.93);border:1px solid #1a3a54;border-radius:6px;padding:7px 12px;pointer-events:none;z-index:5;}
 #badge .bn{font-size:8px;color:#2a5068;letter-spacing:2px;}
 #badge .bname{font-size:13px;color:#7ac8e8;font-family:'Oswald',sans-serif;letter-spacing:2px;margin-top:1px;}
 #adisplay{display:none !important;}
 #dtoggle.on{border-color:#2a7a50;color:#4acc80;}
 #hint{position:fixed;bottom:14px;left:14px;font-size:8px;color:#2a4a5a;line-height:1.8;pointer-events:none;}
-
-/* debug marker */
 .root-dot{pointer-events:none;}
 
-/* ─── OVERLAY SYSTEM ──────────────────────────────────────────────── */
-.game-overlay{
-  display:none;
-  position:fixed;inset:0;z-index:5000;
-  background:rgba(5,8,12,0.97);
-  flex-direction:column;align-items:center;justify-content:flex-start;
-  gap:10px;padding:16px 12px 30px;overflow-y:auto;overflow-x:hidden;
-  font-family:'Share Tech Mono',monospace;
-  cursor:default;pointer-events:all;
-  -webkit-user-select:text;user-select:text;
-  box-sizing:border-box;
-}
-/* Vertically center name overlay if enough space */
-@media(min-height:600px){
-  #name-overlay.open{ justify-content:center; }
-}
+/* ===== ОВЕРЛЕИ ===== */
+.game-overlay{display:none;position:fixed;inset:0;z-index:5000;background:rgba(5,8,12,0.97);flex-direction:column;align-items:center;justify-content:flex-start;gap:10px;padding:16px 12px 30px;overflow-y:auto;overflow-x:hidden;font-family:'Share Tech Mono',monospace;cursor:default;pointer-events:all;-webkit-user-select:text;user-select:text;box-sizing:border-box;}
+@media(min-height:600px){#name-overlay.open{justify-content:center;}}
 .game-overlay.open{display:flex;}
-
-/* Hide game UI when any overlay is open */
-body.menu-open canvas,
-body.menu-open #hud,
-body.menu-open #pvp-hud,
-body.menu-open #badge,
-body.menu-open #adisplay,
-body.menu-open #hint,
-body.menu-open #panel,
-body.menu-open #dtoggle,
-body.menu-open #mobile-ctrl,
-body.menu-open #mob-spawn-btn,
-body.menu-open #mob-menu-btn{ visibility:hidden !important; }
-body.menu-open #mob-dodge-btn{ visibility:hidden !important; }
-body.menu-open #mob-style-btn{ visibility:hidden !important; }
-body.menu-open #mob-shield-flip-btn{ visibility:hidden !important; }
-body.menu-open #mob-weapon-btn{ visibility:hidden !important; }
-body.menu-open #mob-throw-btn{ visibility:hidden !important; }
-body.menu-open #mob-bot-weapon-btn{ visibility:hidden !important; }
-body.menu-open #mob-music-btn{ visibility:hidden !important; }
-body.menu-open #mob-zone-btn{ visibility:hidden !important; }
+body.menu-open canvas,body.menu-open #hud,body.menu-open #pvp-hud,body.menu-open #badge,body.menu-open #adisplay,body.menu-open #hint,body.menu-open #panel,body.menu-open #dtoggle,body.menu-open #mobile-ctrl,body.menu-open #mob-spawn-btn,body.menu-open #mob-menu-btn,body.menu-open #mob-dodge-btn,body.menu-open #mob-style-btn,body.menu-open #mob-shield-flip-btn,body.menu-open #mob-weapon-btn,body.menu-open #mob-throw-btn,body.menu-open #mob-bot-weapon-btn,body.menu-open #mob-music-btn,body.menu-open #mob-zone-btn{visibility:hidden !important;}
 
 .ov-title{color:#6ab0d0;font-size:15px;letter-spacing:4px;text-transform:uppercase;margin:0 0 4px;}
 .ov-sub{color:#2a5a70;font-size:10px;letter-spacing:2px;margin:0;}
-
-.ov-btn{
-  font-family:'Share Tech Mono',monospace;font-size:13px;letter-spacing:2px;
-  padding:11px 36px;border-radius:22px;cursor:pointer;
-  background:rgba(20,30,45,0.9);color:#6ab0d0;border:1px solid #2a5a80;
-  min-width:200px;text-align:center;
-}
+.ov-btn{font-family:'Share Tech Mono',monospace;font-size:13px;letter-spacing:2px;padding:11px 36px;border-radius:22px;cursor:pointer;background:rgba(20,30,45,0.9);color:#6ab0d0;border:1px solid #2a5a80;min-width:200px;text-align:center;}
 .ov-btn:hover{background:rgba(30,50,70,0.95);color:#8ad0e8;}
 .ov-btn.accent{color:#4acc80;border-color:#1a6a3a;}
 .ov-btn.accent:hover{background:rgba(10,30,20,0.95);}
@@ -105,1252 +95,687 @@ body.menu-open #mob-zone-btn{ visibility:hidden !important; }
 .ov-btn.danger:hover{background:rgba(30,10,10,0.95);}
 .ov-btn.small{min-width:0;padding:6px 14px;font-size:11px;border-radius:14px;}
 .ov-btn.back{min-width:0;color:#3a7a9a;border-color:#1a4060;font-size:11px;padding:8px 24px;border-radius:18px;}
-
-.ov-card{
-  background:rgba(8,16,26,0.9);border:1px solid #1a3a54;border-radius:8px;
-  padding:14px 18px;width:100%;max-width:460px;
-}
-.ov-card h3{
-  color:#2a7a9a;font-size:9px;letter-spacing:3px;text-transform:uppercase;
-  margin:0 0 10px;padding-bottom:7px;border-bottom:1px solid #122030;
-}
+.ov-card{background:rgba(8,16,26,0.9);border:1px solid #1a3a54;border-radius:8px;padding:14px 18px;width:100%;max-width:460px;}
+.ov-card h3{color:#2a7a9a;font-size:9px;letter-spacing:3px;text-transform:uppercase;margin:0 0 10px;padding-bottom:7px;border-bottom:1px solid #122030;}
 .ov-row{display:flex;align-items:center;gap:8px;margin-bottom:7px;flex-wrap:wrap;}
 .ov-label{color:#2a6a8a;font-size:11px;flex-shrink:0;}
 .ov-val{color:#8ab8c8;font-size:13px;word-break:break-all;flex:1;}
-
-.ov-input{
-  background:rgba(4,12,22,0.95);border:1px solid #1a3050;color:#cce;
-  padding:10px 16px;font-size:14px;font-family:'Share Tech Mono',monospace;
-  border-radius:20px;width:100%;max-width:280px;box-sizing:border-box;
-  outline:none;text-align:center;cursor:text;caret-color:#6ab0d0;
-}
+.ov-input{background:rgba(4,12,22,0.95);border:1px solid #1a3050;color:#cce;padding:10px 16px;font-size:14px;font-family:'Share Tech Mono',monospace;border-radius:20px;width:100%;max-width:280px;box-sizing:border-box;outline:none;text-align:center;cursor:text;caret-color:#6ab0d0;}
 .ov-input:focus{border-color:#2a6a9a;box-shadow:0 0 10px rgba(80,140,200,0.15);}
 .ov-input.wide{max-width:100%;text-align:left;border-radius:8px;padding:8px 12px;font-size:12px;}
-
-.ov-textarea{
-  background:rgba(4,12,22,0.95);border:1px solid #1a3050;color:#6a9ab0;
-  padding:8px 12px;font-size:10px;font-family:monospace;
-  border-radius:8px;width:100%;box-sizing:border-box;
-  resize:vertical;min-height:52px;max-height:90px;outline:none;cursor:text;
-}
-
-.friend-item{
-  display:flex;align-items:center;gap:6px;
-  padding:5px 8px;border-radius:10px;margin-bottom:3px;
-  background:rgba(4,12,20,0.8);border:1px solid #0e1e2e;
-}
+.ov-textarea{background:rgba(4,12,22,0.95);border:1px solid #1a3050;color:#6a9ab0;padding:8px 12px;font-size:10px;font-family:monospace;border-radius:8px;width:100%;box-sizing:border-box;resize:vertical;min-height:52px;max-height:90px;outline:none;cursor:text;}
+.friend-item{display:flex;align-items:center;gap:6px;padding:5px 8px;border-radius:10px;margin-bottom:3px;background:rgba(4,12,20,0.8);border:1px solid #0e1e2e;}
 .friend-item .fname{color:#7ab0c0;font-size:12px;flex:1;}
 .friend-item .fstatus{font-size:9px;color:#1a4050;flex-shrink:0;}
 .friend-item .fstatus.online{color:#3acc70;}
 #net-status-text{font-size:11px;color:#2a5a6a;margin-bottom:6px;}
+.net-msg{font-size:12px;line-height:1.5;word-break:break-word;}
+.net-who{font-size:9px;margin-right:5px;}
+.net-msg.me .net-who{color:#4acc80;}
+.net-msg.them .net-who{color:#6ab0d0;}
+.net-msg.sys{color:#1a5a6a;font-size:10px;text-align:center;font-style:italic;}
+.net-screen{display:flex;flex-direction:column;align-items:center;gap:12px;width:100%;}
 
-.net-msg{ font-size:12px; line-height:1.5; word-break:break-word; }
-.net-who{ font-size:9px; margin-right:5px; }
-.net-msg.me .net-who{ color:#4acc80; }
-.net-msg.them .net-who{ color:#6ab0d0; }
-.net-msg.sys{ color:#1a5a6a; font-size:10px; text-align:center; font-style:italic; }
-.net-screen{ display:flex; flex-direction:column; align-items:center; gap:12px; width:100%; }
+/* ===== MOBILE ===== */
+#mobile-ctrl{display:none;position:fixed;inset:0;pointer-events:none;z-index:100;}
+body.is-mobile:not(.is-portrait) #mobile-ctrl{display:block;}
+body.is-mobile #panel{display:none !important;}
+body.is-mobile.mob-pregame canvas,body.is-mobile.mob-pregame #hud,body.is-mobile.mob-pregame #mobile-ctrl,body.is-mobile.mob-pregame #adisplay,body.is-mobile.mob-pregame #hint,body.is-mobile.mob-pregame #dtoggle{visibility:hidden !important;}
+body.is-mobile canvas{width:100vw !important;height:100vh !important;}
+body.is-mobile #hud{width:100% !important;}
+body.is-mobile #adisplay{display:none !important;}
+body.is-mobile #hint{display:none !important;}
+body.is-mobile #dtoggle{display:none !important;}
+#rotate-prompt{display:none;position:fixed;inset:0;z-index:999;pointer-events:all;background:#060a0e;flex-direction:column;align-items:center;justify-content:center;color:#6ab0d0;font-family:'Share Tech Mono',monospace;text-align:center;}
+body.is-mobile.is-portrait #rotate-prompt{display:flex;}
+body.is-mobile.is-portrait #mobile-ctrl,body.is-mobile.is-portrait canvas,body.is-mobile.is-portrait #hud{visibility:hidden;}
+#rotate-prompt .icon{font-size:56px;margin-bottom:16px;animation:rotateHint 1.6s ease-in-out infinite;}
+@keyframes rotateHint{0%,100%{transform:rotate(0deg);}50%{transform:rotate(90deg);}}
+#rotate-prompt .txt{font-size:13px;letter-spacing:2px;opacity:0.8;}
+
+#mob-spawn-btn,#mob-menu-btn,#mob-dodge-btn,#mob-music-btn,#mob-zone-btn,#mob-style-btn,#mob-shield-flip-btn,#mob-bot-shield-btn,#mob-bot-weapon-btn,#mob-weapon-btn,#mob-throw-btn{z-index:1000;pointer-events:auto !important;position:absolute;}
+.touch-zone{z-index:100;position:absolute;top:0;bottom:0;pointer-events:all;touch-action:none;}
+#zone-move{left:0;width:45%;top:90px;}
+#zone-sword{right:0;width:55%;top:90px;}
+.stick-base{position:absolute;border-radius:50%;background:rgba(255,255,255,0.07);border:2px solid rgba(255,255,255,0.18);transform:translate(-50%,-50%);opacity:0;transition:opacity .1s;pointer-events:none;}
+.stick-base.active{opacity:1;visibility:visible;}
+.stick-knob{position:absolute;border-radius:50%;transform:translate(-50%,-50%);pointer-events:none;visibility:hidden;}
+.stick-base.active ~ .stick-knob,.stick-base.active + .stick-knob{visibility:visible;}
+#move-base{width:110px;height:110px;}
+#move-knob{width:50px;height:50px;background:rgba(200,200,200,0.25);box-shadow:0 2px 8px rgba(0,0,0,0.3);border:1.5px solid rgba(255,255,255,0.3);}
+#sword-base{width:150px;height:150px;}
+#sword-knob{width:68px;height:68px;background:rgba(200,200,200,0.25);box-shadow:0 2px 8px rgba(0,0,0,0.3);border:1.5px solid rgba(255,255,255,0.3);transition:background .1s,box-shadow .1s;}
+#sword-knob.lmb-active{background:rgba(255,80,80,0.45);box-shadow:0 4px 16px rgba(255,0,0,0.6);border-color:rgba(255,120,120,0.6);}
+#fixed-stick-base{position:absolute;width:130px;height:130px;border-radius:50%;background:rgba(255,255,255,0.06);border:2px solid rgba(255,255,255,0.2);display:none;pointer-events:none;z-index:90;}
+body.fixed-stick-mode #fixed-stick-base{display:block;}
+body.fixed-stick-mode #zone-sword .stick-base,body.fixed-stick-mode #zone-sword .stick-knob{display:none;}
+#fixed-stick-knob{position:absolute;top:50%;left:50%;width:56px;height:56px;border-radius:50%;background:rgba(200,200,200,0.2);border:1.5px solid rgba(255,255,255,0.25);box-shadow:0 2px 8px rgba(0,0,0,0.3);transform:translate(-50%,-50%);transition:background .1s,box-shadow .1s;}
+#fixed-stick-knob.lmb-active{background:rgba(255,80,80,0.4);box-shadow:0 4px 16px rgba(255,0,0,0.5);border-color:rgba(255,120,120,0.6);}
+#fixed-stick-reticle{position:absolute;top:50%;left:50%;width:22px;height:22px;margin:-11px 0 0 -11px;border:2px solid #ffcc40;border-radius:50%;box-shadow:0 0 8px rgba(255,200,60,0.7);pointer-events:none;transition:transform .05s linear;}
+#fixed-stick-reticle::after{content:'';position:absolute;top:50%;left:50%;width:6px;height:6px;margin:-3px 0 0 -3px;background:#ffcc40;border-radius:50%;}
+#mob-bot-shield-btn{top:14px;left:calc(50% - 109px);background:rgba(10,30,20,0.9);border:1px solid #2a6a40;border-radius:50%;width:50px;height:50px;color:#4acc70;font-size:18px;display:flex;align-items:center;justify-content:center;touch-action:none;}
+#mob-bot-weapon-btn{top:14px;left:calc(50% - 165px);background:rgba(10,30,20,0.9);border:1px solid #2a6a40;border-radius:50%;width:50px;height:50px;color:#4acc70;font-size:18px;display:flex;align-items:center;justify-content:center;touch-action:none;}
+#mob-spawn-btn{top:14px;left:calc(50% - 53px);background:rgba(10,30,20,0.9);border:1px solid #2a6a40;border-radius:50%;width:50px;height:50px;color:#4acc70;font-size:18px;display:flex;align-items:center;justify-content:center;touch-action:none;}
+#mob-menu-btn{top:14px;left:calc(50% + 59px);background:rgba(10,20,30,0.9);border:1px solid #1a4060;border-radius:50%;width:50px;height:50px;color:#6ab0d0;font-size:20px;display:flex;align-items:center;justify-content:center;touch-action:none;}
+#mob-music-btn{top:14px;left:calc(50% + 3px);background:rgba(10,20,30,0.9);border:1px solid #1a4060;border-radius:50%;width:50px;height:50px;color:#4acc70;font-size:20px;display:flex;align-items:center;justify-content:center;touch-action:none;z-index:1000;}
+#mob-zone-btn{top:14px;left:calc(50% + 115px);background:rgba(10,20,30,0.9);border:1px solid #3a3010;border-radius:50%;width:50px;height:50px;color:#ccaa30;font-size:20px;display:flex;align-items:center;justify-content:center;touch-action:none;z-index:1000;}
+#mob-zone-btn.active{border-color:#cc6010;color:#ff8020;background:rgba(40,20,5,0.9);}
+#mob-style-btn{top:100px;left:126px;background:rgba(10,20,30,0.9);border:1px solid #3a5a8a;border-radius:50%;width:50px;height:50px;color:#7ab0e0;font-size:18px;display:flex;align-items:center;justify-content:center;touch-action:none;}
+#mob-shield-flip-btn{top:100px;left:14px;background:rgba(10,20,30,0.9);border:1px solid #2a4a7a;border-radius:50%;width:50px;height:50px;color:#88ccff;font-size:20px;display:flex;align-items:center;justify-content:center;touch-action:none;z-index:1000;}
+body.is-mobile:not(.is-portrait) #mob-shield-flip-btn{display:flex;}
+#mob-weapon-btn{top:100px;left:70px;background:rgba(10,20,30,0.9);border:1px solid #2a4a7a;border-radius:50%;width:50px;height:50px;color:#88ccff;font-size:20px;display:flex;align-items:center;justify-content:center;touch-action:none;z-index:1000;}
+body.is-mobile:not(.is-portrait) #mob-weapon-btn{display:flex;}
+#mob-throw-btn{top:90px;right:72px;background:rgba(10,20,30,0.9);border:1px solid #7a4a2a;border-radius:50%;width:50px;height:50px;color:#ffaa66;font-size:20px;display:flex;align-items:center;justify-content:center;touch-action:none;z-index:1000;}
+body.is-mobile:not(.is-portrait) #mob-throw-btn{display:flex;}
+#mob-dodge-btn{top:90px;right:14px;background:rgba(10,20,30,0.9);border:1px solid #2a5a3a;border-radius:50%;width:50px;height:50px;color:#4acc80;font-size:18px;display:flex;align-items:center;justify-content:center;touch-action:none;z-index:1000;}
+#mob-dodge-btn:active{background:rgba(20,60,30,0.95);}
+#mob-menu-overlay{display:none;position:fixed;inset:0;z-index:500;background:rgba(5,8,12,0.92);flex-direction:column;align-items:center;justify-content:center;gap:10px;pointer-events:all;overflow-y:auto;padding:16px 0;}
+#mob-menu-overlay.open{display:flex;}
+.mob-net-group{display:flex;gap:0;width:220px;flex-shrink:0;}
+.mob-net-half{flex:1;margin:0 !important;padding:10px 2px !important;font-size:9px !important;letter-spacing:0.5px !important;min-width:0 !important;}
+.mob-net-half.left{border-radius:22px 0 0 22px !important;border-right:1px solid #0a2040 !important;}
+.mob-net-half.right{border-radius:0 22px 22px 0 !important;}
+.menu-btn-mob{font-family:'Share Tech Mono',monospace;font-size:13px;letter-spacing:2px;padding:10px 32px;border-radius:22px;cursor:pointer;background:rgba(20,30,45,0.9);color:#6ab0d0;border:1px solid #2a5a80;min-width:220px;flex-shrink:0;transition:background .15s,border-color .15s;}
+@media(hover:hover){.menu-btn-mob:hover{background:rgba(30,50,75,0.95);border-color:#4a8ab0;color:#8ad0f0;}.ov-btn:hover{filter:brightness(1.2);}}
+.menu-btn-mob:active{background:rgba(40,70,100,0.95);}
+.mob-menu-embed{max-height:60vh;overflow-y:auto;width:90%;}
+#mob-settings-overlay{display:none;position:fixed;inset:0;z-index:600;background:rgba(5,8,12,0.96);flex-direction:column;align-items:center;justify-content:center;overflow-y:auto;padding:20px 16px;}
+#mob-settings-overlay.open{display:flex;}
+#pvp-hud{display:none;position:fixed;bottom:14px;left:50%;transform:translateX(-50%);background:rgba(8,14,22,0.9);border:1px solid #1a3a54;border-radius:20px;padding:5px 12px;z-index:200;align-items:center;gap:10px;font-family:'Share Tech Mono',monospace;font-size:11px;}
+#pvp-hud.visible{display:flex;}
 </style>
 </head>
 <body>
+
 <canvas id="c"></canvas>
+
+<!-- ===== HUD ===== -->
 <div id="hud" style="position:fixed;top:16px;left:0;width:100%;pointer-events:none;font-family:'Share Tech Mono',monospace;padding:0 24px;display:flex;justify-content:space-between;align-items:flex-start;gap:16px;">
+  
   <!-- PLAYER HUD -->
   <div id="hud-player" style="width:220px;">
     <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
-      <span style="font-size:10px;color:#dff4ff;letter-spacing:1px;font-weight:900;background:rgba(5,15,25,.78);padding:2px 6px;border-radius:3px;text-shadow:0 0 6px #5ab8ff;" id="hud-player-name">PLAYER</span>
-      <span id="hud-p-wins" style="font-size:11px;color:#4acc80;letter-spacing:1px;font-weight:bold;"></span>
-      <span id="hud-p-status" style="font-size:9px;color:#ffaa44;"></span>
+      <span class="hud-name" id="hud-player-name" data-i18n="hud.playerLabel"></span>
+      <span class="hud-wins" id="hud-p-wins"></span>
+      <span class="hud-status" id="hud-p-status"></span>
     </div>
-    <div style="background:rgba(0,0,0,0.6);border:2px solid #f0f4ff;border-radius:2px;height:11px;margin-bottom:3px;overflow:hidden;box-shadow:0 0 5px rgba(255,255,255,.35);">
-      <div id="hud-p-hp" style="height:100%;background:#2acc50;width:100%;transition:width 0.08s;"></div>
-    </div>
-    <div style="background:rgba(0,0,0,0.5);border:1px solid #2a2a10;border-radius:2px;height:7px;margin-bottom:3px;overflow:hidden;">
-      <div id="hud-p-stam" style="height:100%;background:#ccaa20;width:100%;transition:width 0.08s;"></div>
-    </div>
-    <div style="background:#1a0808;border:1px solid #5a1010;border-radius:2px;height:5px;margin-bottom:3px;overflow:hidden;">
-      <div id="hud-p-rage" style="height:100%;background:linear-gradient(90deg,#cc2020,#ff5020);width:0%;transition:width 0.12s;"></div>
-    </div>
-    <div style="display:flex;margin-top:2px;font-size:7px;color:#3a6080;">
-      <span>HP</span><span style="flex:1;text-align:center;color:#8a7020;">STAM</span><span style="color:#802020;">RAGE</span>
-    </div>
-    <div id="hud-p-buff" style="font-size:9px;color:#ff4040;margin-top:2px;letter-spacing:1px;"></div>
+    <div data-hud="hud-p-hp,hud-p-stam,hud-p-rage"></div>
+    <div class="hud-buff" id="hud-p-buff"></div>
   </div>
+
   <!-- BOT HUD -->
-  <div id="hud-bot" style="width:220px;text-align:right;opacity:0;transition:opacity 0.3s;">
+  <div id="hud-bot" style="width:220px;text-align:right;opacity:0;transition:opacity .3s;">
     <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
-      <span id="hud-b-phase" style="font-size:9px;letter-spacing:0.5px;"></span>
-      <span id="hud-b-wins" style="font-size:11px;color:#cc4040;letter-spacing:1px;font-weight:bold;"></span>
-      <span id="hud-b-label" style="font-size:10px;color:#dff4ff;letter-spacing:1px;font-weight:900;background:rgba(5,15,25,.78);padding:2px 6px;border-radius:3px;text-shadow:0 0 6px #398cff;">BOT</span>
+      <span class="hud-phase" id="hud-b-phase"></span>
+      <span class="hud-wins-bot" id="hud-b-wins"></span>
+      <span class="hud-name hud-name-bot" id="hud-b-label" data-i18n="hud.botLabel"></span>
     </div>
-    <div style="background:rgba(0,0,0,0.6);border:2px solid #287cff;border-radius:2px;height:11px;margin-bottom:3px;overflow:hidden;box-shadow:0 0 5px rgba(40,124,255,.4);">
-      <div id="hud-b-hp" style="height:100%;background:#cc4040;width:100%;transition:width 0.08s;"></div>
-    </div>
-    <div style="background:rgba(0,0,0,0.5);border:1px solid #2a2a10;border-radius:2px;height:7px;margin-bottom:3px;overflow:hidden;">
-      <div id="hud-b-stam" style="height:100%;background:#cc7020;width:100%;transition:width 0.08s;"></div>
-    </div>
-    <div style="background:#1a0808;border:1px solid #5a1010;border-radius:2px;height:5px;margin-bottom:3px;overflow:hidden;">
-      <div id="hud-b-rage" style="height:100%;background:linear-gradient(90deg,#ff5020,#cc2020);width:0%;transition:width 0.12s;float:right;"></div>
-    </div>
-    <div style="display:flex;margin-top:2px;font-size:7px;color:#5a4040;">
-      <span style="color:#802020;">RAGE</span><span style="flex:1;text-align:center;color:#8a7020;">STAM</span><span>HP</span>
-    </div>
-    <span id="hud-b-status" style="font-size:9px;color:#ffaa44;"></span>
+    <div data-hud="hud-b-hp,hud-b-stam,hud-b-rage"></div>
+    <span class="hud-status" id="hud-b-status"></span>
   </div>
 </div>
 
-<!-- Slots 3-4 are placed at the bottom for future four-player local PvP. -->
+<!-- ===== LOCAL BOTTOM HUD ===== -->
 <div id="hud-local-bottom" style="position:fixed;bottom:16px;left:24px;right:24px;pointer-events:none;font-family:'Share Tech Mono',monospace;display:flex;justify-content:space-between;align-items:flex-end;gap:16px;z-index:20;">
   <div id="hud-player-3" style="display:none;width:220px;">
-    <div style="font-size:10px;color:#eafff0;letter-spacing:1px;font-weight:900;background:rgba(5,15,25,.78);padding:2px 6px;border-radius:3px;margin-bottom:3px;text-shadow:0 0 6px #24d66b;display:inline-block;">PLAYER 3</div>
-    <div style="background:rgba(0,0,0,.6);border:2px solid #24d66b;height:11px;margin-bottom:3px;overflow:hidden;"><div data-hp style="height:100%;background:#2acc50;width:100%;"></div></div>
-    <div style="background:rgba(0,0,0,.5);border:1px solid #2a2a10;height:7px;margin-bottom:3px;overflow:hidden;"><div data-stam style="height:100%;background:#ccaa20;width:100%;"></div></div>
-    <div style="background:#1a0808;border:1px solid #5a1010;height:5px;overflow:hidden;"><div data-rage style="height:100%;background:#2060cc;width:0%;"></div></div>
+    <div style="font-size:10px;color:#eafff0;letter-spacing:1px;font-weight:900;background:rgba(5,15,25,.78);padding:2px 6px;border-radius:3px;margin-bottom:3px;text-shadow:0 0 6px #24d66b;display:inline-block;" data-i18n="hud.player3Label"></div>
+    <div data-hud="hud-3-hp,hud-3-stam,hud-3-rage"></div>
   </div>
   <div id="hud-player-4" style="display:none;width:220px;text-align:right;">
-    <div style="font-size:10px;color:#f4f4f4;letter-spacing:1px;font-weight:900;background:rgba(5,5,5,.82);padding:2px 6px;border-radius:3px;margin-bottom:3px;text-shadow:0 0 5px #888;display:inline-block;">PLAYER 4</div>
-    <div style="background:rgba(0,0,0,.6);border:2px solid #181818;height:11px;margin-bottom:3px;overflow:hidden;box-shadow:0 0 0 1px #555;"><div data-hp style="height:100%;background:#2acc50;width:100%;float:right;"></div></div>
-    <div style="background:rgba(0,0,0,.5);border:1px solid #2a2a10;height:7px;margin-bottom:3px;overflow:hidden;"><div data-stam style="height:100%;background:#ccaa20;width:100%;float:right;"></div></div>
-    <div style="background:#1a0808;border:1px solid #5a1010;height:5px;overflow:hidden;"><div data-rage style="height:100%;background:#2060cc;width:0%;float:right;"></div></div>
+    <div style="font-size:10px;color:#f4f4f4;letter-spacing:1px;font-weight:900;background:rgba(5,5,5,.82);padding:2px 6px;border-radius:3px;margin-bottom:3px;text-shadow:0 0 5px #888;display:inline-block;" data-i18n="hud.player4Label"></div>
+    <div data-hud="hud-4-hp,hud-4-stam,hud-4-rage"></div>
   </div>
 </div>
 
-<div id="adisplay">pivot: (0,0) | angle: 0°</div>
+<div id="adisplay"></div>
 
-<!-- ─── PVP HUD ─────────────────────────────────────────────────────── -->
-<!-- Visible during PvP, shows peer name and ping -->
-<div id="pvp-hud" style="
-  display:none; position:fixed; bottom:14px; left:50%; transform:translateX(-50%);
-  background:rgba(8,14,22,0.9); border:1px solid #1a3a54; border-radius:20px;
-  padding:5px 12px; z-index:200; display:none;
-  align-items:center; gap:10px; font-family:'Share Tech Mono',monospace; font-size:11px;
-">
-  <span id="pvp-peer-name" style="color:#4acc80; letter-spacing:1px;"></span>
-  <span id="pvp-ping" style="color:#4acc80; font-size:10px; opacity:0.7; min-width:38px; text-align:right;">--ms</span>
-
-  <button onclick="openMenu('net-overlay');showNetScreen('net-screen-chat');"
-    style="background:rgba(20,50,80,0.9);border:1px solid #2a6a9a;color:#6ab0d0;
-    padding:4px 10px;border-radius:12px;cursor:pointer;font-family:inherit;font-size:10px;">
-    💬 CHAT
-  </button>
-  <button onclick="NET_SYNC.disconnect();"
-    style="background:rgba(50,10,10,0.9);border:1px solid #6a2020;color:#cc5050;
-    padding:4px 10px;border-radius:12px;cursor:pointer;font-family:inherit;font-size:10px;">
-    ⚡ EXIT
-  </button>
+<!-- ===== PVP HUD ===== -->
+<div id="pvp-hud">
+  <span id="pvp-peer-name" style="color:#4acc80;letter-spacing:1px;"></span>
+  <span id="pvp-ping" style="color:#4acc80;font-size:10px;opacity:.7;min-width:38px;text-align:right;" data-i18n="pvp.ping"></span>
+  <button class="ov-btn small" onclick="openMenu('net-overlay');showNetScreen('net-screen-chat');" style="background:rgba(20,50,80,0.9);border:1px solid #2a6a9a;color:#6ab0d0;padding:4px 10px;border-radius:12px;cursor:pointer;font-family:inherit;font-size:10px;" data-i18n="btn.chat"></button>
+  <button class="ov-btn small" onclick="NET_SYNC.disconnect();" style="background:rgba(50,10,10,0.9);border:1px solid #6a2020;color:#cc5050;padding:4px 10px;border-radius:12px;cursor:pointer;font-family:inherit;font-size:10px;" data-i18n="btn.exit"></button>
 </div>
 
+<!-- ===== PANEL ===== -->
 <div id="panel">
   <div id="ph">
-    <h2>⚙️ SWORD CONTROLS + BODY OFFSET</h2>
-    <p>Live tuning. Change any slider and see the effect immediately.<br>All settings are saved locally.</p>
+    <h2 data-i18n="panel.title"></h2>
+    <p data-i18n="panel.subtitle"></p>
   </div>
-  <!-- ••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
-       MODULE: SETTINGS PANEL  (all sliders and checkboxes)
-       Future: extract to settings-panel.html, load via fetch+innerHTML
-       •••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••• -->
   <div id="controls">
-    <!-- ─── SECTION: GAMEPAD FLICK SETTINGS ─── -->
-    <div class="sec">
-      <div class="sec-title">⚡ GAMEPAD FLICK SETTINGS</div>
-      <div class="row">
-        <div class="row-head"><label>Player glow</label><span class="val" id="vl-playerglow">1.0</span></div>
-        <input type="range" id="sl-playerglow" min="0" max="3" step="0.1" value="1.0">
-      </div>
-      <div class="row">
-        <div class="row-head"><label>Player respawn (legacy)</label><span class="val" id="vl-playerrespawn-legacy">15</span></div>
-        <input type="range" id="sl-playerrespawn-legacy" min="0" max="30" step="1" value="15">
-      </div>
-      <div class="row" style="flex-direction:row;align-items:center;gap:7px;">
-        <input type="checkbox" id="cb-gamepadflickdet-legacy" style="accent-color:#ccaa30;cursor:pointer;" checked>
-        <label for="cb-gamepadflickdet-legacy" style="font-size:8px;color:#8a7020;cursor:pointer;letter-spacing:0.5px;">Gamepad: separate flick detect (legacy)</label>
-      </div>
-      <div class="row">
-        <div class="row-head"><label style="color:#8a7020;">Gamepad flick: window (sec)</label><span class="val" id="vl-gamepadflickwindow-legacy" style="color:#ccaa30;">1</span></div>
-        <input type="range" id="sl-gamepadflickwindow-legacy" min="0.05" max="1.5" step="0.05" value="1" style="accent-color:#ccaa30;">
-      </div>
-      <div class="row">
-        <div class="row-head"><label style="color:#8a7020;">Gamepad flick: min speed</label><span class="val" id="vl-gamepadflickminvel-legacy" style="color:#ccaa30;">3.2</span></div>
-        <input type="range" id="sl-gamepadflickminvel-legacy" min="0.5" max="8.0" step="0.1" value="3.2" style="accent-color:#ccaa30;">
-      </div>
-      <div class="row">
-        <div class="row-head"><label style="color:#8a7020;">Gamepad flick: min amplitude</label><span class="val" id="vl-gamepadflickminamp-legacy" style="color:#ccaa30;">0.4</span></div>
-        <input type="range" id="sl-gamepadflickminamp-legacy" min="0.05" max="2.0" step="0.05" value="0.4" style="accent-color:#ccaa30;">
-      </div>
-      <div class="row">
-        <div class="row-head"><label style="color:#8a7020;">Gamepad flick: swing count</label><span class="val" id="vl-gamepadflickcount-legacy" style="color:#ccaa30;">2</span></div>
-        <input type="range" id="sl-gamepadflickcount-legacy" min="2" max="8" step="1" value="2" style="accent-color:#ccaa30;">
-      </div>
-      <div class="row">
-        <div class="row-head"><label style="color:#8a7020;">Gamepad flick: max amplitude</label><span class="val" id="vl-gamepadflickmaxmult-legacy" style="color:#ccaa30;">5</span></div>
-        <input type="range" id="sl-gamepadflickmaxmult-legacy" min="1.5" max="10" step="0.5" value="5" style="accent-color:#ccaa30;">
-      </div>
-      <div class="row">
-        <div class="row-head"><label style="color:#8a7020;">Gamepad flick: stamina</label><span class="val" id="vl-gamepadstamflick-legacy" style="color:#ccaa30;">25</span></div>
-        <input type="range" id="sl-gamepadstamflick-legacy" min="0" max="60" step="5" value="25" style="accent-color:#ccaa30;">
-      </div>
+    
+    <!-- ⚡ GAMEPAD FLICK SETTINGS -->
+    <div class="sec"><div class="sec-title" data-i18n="sec.gamepadFlick"></div>
+      <div data-slider="playerglow,slider.playerGlow,1,0,3,.1"></div>
+      <div data-slider="playerrespawn-legacy,slider.playerRespawnLegacy,15,0,30,1"></div>
+      <div data-checkbox="gamepadflickdet-legacy,checkbox.gamepadFlickDetectLegacy,true,true"></div>
+      <div data-slider="gamepadflickwindow-legacy,slider.gamepadFlickWindowLegacy,1,.05,1.5,.05,true"></div>
+      <div data-slider="gamepadflickminvel-legacy,slider.gamepadFlickMinVelLegacy,3.2,.5,8,.1,true"></div>
+      <div data-slider="gamepadflickminamp-legacy,slider.gamepadFlickMinAmpLegacy,.4,.05,2,.05,true"></div>
+      <div data-slider="gamepadflickcount-legacy,slider.gamepadFlickCountLegacy,2,2,8,1,true"></div>
+      <div data-slider="gamepadflickmaxmult-legacy,slider.gamepadFlickMaxMultLegacy,5,1.5,10,.5,true"></div>
+      <div data-slider="gamepadstamflick-legacy,slider.gamepadStamFlickLegacy,25,0,60,5,true"></div>
     </div>
 
-    <!-- ─── SECTION: BACKGROUND ─── -->
-    <div class="sec">
-      <div class="sec-title">🎨 BACKGROUND</div>
-      <div class="row">
-        <div class="row-head"><label>Brightness</label><span class="val" id="vl-bgbright">1.8</span></div>
-        <input type="range" id="sl-bgbright" min="0" max="5" step="0.1" value="1.8">
-      </div>
-      <div class="row">
-        <div class="row-head"><label>Grid brightness</label><span class="val" id="vl-gridbright">1</span></div>
-        <input type="range" id="sl-gridbright" min="0" max="3" step="0.05" value="1">
-      </div>
+    <!-- 🎨 BACKGROUND -->
+    <div class="sec"><div class="sec-title" data-i18n="sec.background"></div>
+      <div data-slider="bgbright,slider.bgBright,1.8,0,5,.1"></div>
+      <div data-slider="gridbright,slider.gridBright,1,0,3,.05"></div>
     </div>
 
-    <!-- ─── SECTION: MOVEMENT ─── -->
-    <div class="sec">
-      <div class="sec-title">🏃 MOVEMENT</div>
-      <div class="row">
-        <div class="row-head"><label>Distance</label><span class="val" id="vl-dist">19</span></div>
-        <input type="range" id="sl-dist" min="0" max="120" step="1" value="19">
-      </div>
-      <div class="row">
-        <div class="row-head"><label>Speed</label><span class="val" id="vl-spd">0.09</span></div>
-        <input type="range" id="sl-spd" min="0.01" max="0.5" step="0.01" value="0.09">
-      </div>
-      <div class="row">
-        <div class="row-head"><label>Inertia</label><span class="val" id="vl-inertia">0.95</span></div>
-        <input type="range" id="sl-inertia" min="0.5" max="0.99" step="0.01" value="0.95">
-      </div>
+    <!-- 🏃 MOVEMENT -->
+    <div class="sec"><div class="sec-title" data-i18n="sec.movement"></div>
+      <div data-slider="dist,slider.distance,19,0,120,1"></div>
+      <div data-slider="spd,slider.speed,.09,.01,.5,.01"></div>
+      <div data-slider="inertia,slider.inertia,.95,.5,.99,.01"></div>
     </div>
 
-    <!-- ─── SECTION: SWORD OFFSET ─── -->
-    <div class="sec">
-      <div class="sec-title">⚔️ SWORD OFFSET (body-relative)</div>
-      <div class="row">
-        <div class="row-head"><label>Offset X</label><span class="val" id="vl-ex">21</span></div>
-        <input type="range" id="sl-ex" min="0" max="200" step="1" value="21">
-      </div>
-      <div class="row">
-        <div class="row-head"><label>Offset Y</label><span class="val" id="vl-ey">44</span></div>
-        <input type="range" id="sl-ey" min="0" max="300" step="1" value="44">
-      </div>
-      <div class="row">
-        <div class="row-head"><label>Lerp speed</label><span class="val" id="vl-blk">0.2</span></div>
-        <input type="range" id="sl-blk" min="0.01" max="0.6" step="0.01" value="0.2">
-      </div>
-      <div class="row" style="flex-direction:row;align-items:center;gap:7px;margin-top:2px;">
-        <input type="checkbox" id="cb-adaY" style="accent-color:#3a9acc;cursor:pointer;" checked>
-        <label for="cb-adaY" style="font-size:8px;color:#4a7090;cursor:pointer;letter-spacing:0.5px;">Adapt Y (12 o'clock offset)</label>
-      </div>
-      <div class="row" id="row-adaY" style="display:flex;">
-        <div class="row-head"><label>Adapt Y offset 12</label><span class="val" id="vl-adaY">60</span></div>
-        <input type="range" id="sl-adaY" min="0" max="200" step="1" value="60">
-      </div>
-      <div class="row" style="flex-direction:row;align-items:center;gap:7px;margin-top:2px;">
-        <input type="checkbox" id="cb-adaD" style="accent-color:#3a9acc;cursor:pointer;" checked>
-        <label for="cb-adaD" style="font-size:8px;color:#4a7090;cursor:pointer;letter-spacing:0.5px;">Adapt Y (6 o'clock offset)</label>
-      </div>
-      <div class="row" id="row-adaD" style="display:flex;">
-        <div class="row-head"><label>Adapt Y offset 6</label><span class="val" id="vl-adaD">45</span></div>
-        <input type="range" id="sl-adaD" min="0" max="200" step="1" value="45">
-      </div>
-      <div class="row" style="flex-direction:row;align-items:center;gap:7px;margin-top:2px;">
-        <input type="checkbox" id="cb-adaX" style="accent-color:#3a9acc;cursor:pointer;">
-        <label for="cb-adaX" style="font-size:8px;color:#4a7090;cursor:pointer;letter-spacing:0.5px;">Adapt X (12/6 o'clock, base 5)</label>
-      </div>
-      <div class="row" id="row-adaX" style="display:none;">
-        <div class="row-head"><label>X base (12 o'clock)</label><span class="val" id="vl-adaXb">40</span></div>
-        <input type="range" id="sl-adaXb" min="0" max="100" step="1" value="40">
-      </div>
-      <div class="row" id="row-adaX2" style="display:none;">
-        <div class="row-head"><label>X peak (6/12)</label><span class="val" id="vl-adaXp">73</span></div>
-        <input type="range" id="sl-adaXp" min="0" max="200" step="1" value="73">
-      </div>
-      <div class="row" style="flex-direction:row;align-items:center;gap:7px;margin-top:4px;">
-        <input type="checkbox" id="cb-ada12" style="accent-color:#3a9acc;cursor:pointer;">
-        <label for="cb-ada12" style="font-size:8px;color:#4a7090;cursor:pointer;letter-spacing:0.5px;">Adapt 12 (11-12-1 o'clock offset)</label>
-      </div>
-      <div class="row" id="row-ada12" style="display:none;">
-        <div class="row-head"><label>Adapt 12 offset</label><span class="val" id="vl-ada12">25</span></div>
-        <input type="range" id="sl-ada12" min="0" max="100" step="1" value="25">
-      </div>
+    <!-- ⚔️ SWORD OFFSET -->
+    <div class="sec"><div class="sec-title" data-i18n="sec.swordOffset"></div>
+      <div data-slider="ex,slider.offsetX,21,0,200,1"></div>
+      <div data-slider="ey,slider.offsetY,44,0,300,1"></div>
+      <div data-slider="blk,slider.lerpSpeed,.2,.01,.6,.01"></div>
+      <div data-checkbox="adaY,checkbox.adaptY,true"></div>
+      <div data-slider="adaY,slider.adaY12,60,0,200,1"></div>
+      <div data-checkbox="adaD,checkbox.adaptD,true"></div>
+      <div data-slider="adaD,slider.adaY6,45,0,200,1"></div>
+      <div data-checkbox="adaX,checkbox.adaptX"></div>
+      <div data-slider="adaXb,slider.adaXBase,40,0,100,1"></div>
+      <div data-slider="adaXp,slider.adaXPeak,73,0,200,1"></div>
+      <div data-checkbox="ada12,checkbox.adapt12"></div>
+      <div data-slider="ada12,slider.ada12Offset,25,0,100,1"></div>
     </div>
 
-    <!-- ─── SECTION: SHIELD ─── -->
-    <div class="sec">
-      <div class="sec-title">🛡 SHIELD</div>
-      <div class="row">
-        <div class="row-head"><label>Shield side speed</label><span class="val" id="vl-shieldSideSpd">3.3</span></div>
-        <input type="range" id="sl-shieldSideSpd" min="1" max="20" step="0.1" value="3.3">
-      </div>
+    <!-- 🛡 SHIELD -->
+    <div class="sec"><div class="sec-title" data-i18n="sec.shield"></div>
+      <div data-slider="shieldSideSpd,slider.shieldSideSpeed,3.3,1,20,.1"></div>
     </div>
 
-    <!-- ─── SECTION: COMBO PIVOT ─── -->
-    <div class="sec">
-      <div class="sec-title">🌀 COMBO PIVOT (body-relative)</div>
-      <div class="row">
-        <div class="row-head"><label>Offset X</label><span class="val" id="vl-aex">22</span></div>
-        <input type="range" id="sl-aex" min="0" max="100" step="1" value="22">
-      </div>
-      <div class="row">
-        <div class="row-head"><label>Offset Y</label><span class="val" id="vl-aey">15</span></div>
-        <input type="range" id="sl-aey" min="0" max="100" step="1" value="15">
-      </div>
-      <div class="row">
-        <div class="row-head"><label>Speed</label><span class="val" id="vl-as">0.28</span></div>
-        <input type="range" id="sl-as" min="0.1" max="0.5" step="0.01" value="0.28">
-      </div>
+    <!-- 🌀 COMBO PIVOT -->
+    <div class="sec"><div class="sec-title" data-i18n="sec.comboPivot"></div>
+      <div data-slider="aex,slider.comboOffsetX,22,0,100,1"></div>
+      <div data-slider="aey,slider.comboOffsetY,15,0,100,1"></div>
+      <div data-slider="as,slider.comboSpeed,.28,.1,.5,.01"></div>
     </div>
 
-    <!-- ─── SECTION: SWORD ─── -->
-    <div class="sec">
-      <div class="sec-title">⚔ SWORD SCALE &amp; OFFSET</div>
-      <div class="row">
-        <div class="row-head"><label>Scale without LMB</label><span class="val" id="vl-sc0">0.8</span></div>
-        <input type="range" id="sl-sc0" min="0.3" max="1.5" step="0.01" value="0.8">
-      </div>
-      <div class="row">
-        <div class="row-head"><label>Scale with LMB</label><span class="val" id="vl-sc1">1.0</span></div>
-        <input type="range" id="sl-sc1" min="0.3" max="2.0" step="0.01" value="1.0">
-      </div>
-      <div class="row">
-        <div class="row-head"><label>Lerp speed</label><span class="val" id="vl-scs">0.46</span></div>
-        <input type="range" id="sl-scs" min="0.05" max="1.0" step="0.01" value="0.46">
-      </div>
-      <div class="row">
-        <div class="row-head"><label>Angle offset</label><span class="val" id="vl-srot">0</span></div>
-        <input type="range" id="sl-srot" min="0" max="90" step="1" value="0">
-      </div>
-      <div class="row">
-        <div class="row-head"><label>Pivot offset X</label><span class="val" id="vl-sox">0</span></div>
-        <input type="range" id="sl-sox" min="-60" max="60" step="1" value="0">
-      </div>
-      <div class="row">
-        <div class="row-head"><label>Pivot offset Y</label><span class="val" id="vl-soy">0</span></div>
-        <input type="range" id="sl-soy" min="-60" max="60" step="1" value="0">
-      </div>
+    <!-- ⚔ SWORD SCALE & OFFSET -->
+    <div class="sec"><div class="sec-title" data-i18n="sec.swordScale"></div>
+      <div data-slider="sc0,slider.scaleNoLMB,.8,.3,1.5,.01"></div>
+      <div data-slider="sc1,slider.scaleLMB,1,.3,2,.01"></div>
+      <div data-slider="scs,slider.scaleLerp,.46,.05,1,.01"></div>
+      <div data-slider="srot,slider.angleOffset,0,0,90,1"></div>
+      <div data-slider="sox,slider.pivotOffsetX,0,-60,60,1"></div>
+      <div data-slider="soy,slider.pivotOffsetY,0,-60,60,1"></div>
     </div>
 
-    <!-- ─── SECTION: CHARACTER & WEAPON ─── -->
-    <div class="sec">
-      <div class="sec-title">👤 CHARACTER &amp; WEAPON</div>
-      <div class="row">
-        <div class="row-head"><label>Character scale</label><span class="val" id="vl-cscl">1.4</span></div>
-        <input type="range" id="sl-cscl" min="0.3" max="3.0" step="0.05" value="1.4">
-      </div>
-      <div class="row">
-        <div class="row-head"><label>Weapon length (global)</label><span class="val" id="vl-swlen">1.4</span></div>
-        <input type="range" id="sl-swlen" min="0.2" max="3.0" step="0.05" value="1.4">
-      </div>
-      <div class="row">
-        <div class="row-head"><label>Flail speed multiplier</label><span class="val" id="vl-flailspeedmult">1.5</span></div>
-        <input type="range" id="sl-flailspeedmult" min="0.5" max="3.0" step="0.05" value="1.5">
-      </div>
-      <div class="row">
-        <div class="row-head"><label>Flail sag</label><span class="val" id="vl-flailsag">1.0</span></div>
-        <input type="range" id="sl-flailsag" min="0" max="3.0" step="0.05" value="5.0">
-      </div>
+    <!-- 👤 CHARACTER & WEAPON -->
+    <div class="sec"><div class="sec-title" data-i18n="sec.character"></div>
+      <div data-slider="cscl,slider.charScale,1.4,.3,3,.05"></div>
+      <div data-slider="swlen,slider.weaponLength,1.4,.2,3,.05"></div>
+      <div data-slider="flailspeedmult,slider.flailSpeedMult,1.5,.5,3,.05"></div>
+      <div data-slider="flailsag,slider.flailSag,5,0,3,.05"></div>
     </div>
 
-    <!-- ─── SECTION: DEAD ZONE ─── -->
-    <div class="sec">
-      <div class="sec-title" style="color:#8a2020;">🎯 DEAD ZONE (cursor smoothing)</div>
-      <div class="row">
-        <div class="row-head"><label style="color:#8a3030;">Distance (radius)</label><span class="val" id="vl-dzone" style="color:#cc4040;">0</span></div>
-        <input type="range" id="sl-dzone" min="0" max="300" step="5" value="0" style="accent-color:#cc3030;">
-      </div>
+    <!-- 🎯 DEAD ZONE -->
+    <div class="sec"><div class="sec-title" style="color:#8a2020;" data-i18n="sec.deadZone"></div>
+      <div data-slider="dzone,slider.deadZoneRadius,0,0,300,5,true"></div>
     </div>
 
-
-
-    <!-- ─── SECTION: AI (overrides for testing) ─────────────────── -->
-    <div class="sec">
-      <div class="sec-title" style="color:#4a9a60;">🤖 AI SETTINGS</div>
-      <div class="row">
-        <div class="row-head"><label style="color:#3a7a50;">Bot angle N°</label><span class="val" id="vl-aiang" style="color:#3acc70;">35</span></div>
-        <input type="range" id="sl-aiang" min="5" max="90" step="1" value="35" style="accent-color:#2a9a50;">
-      </div>
-      <div class="row">
-        <div class="row-head"><label style="color:#3a7a50;">Duel Radius (px)</label><span class="val" id="vl-duelrad" style="color:#3acc70;">100</span></div>
-        <input type="range" id="sl-duelrad" min="30" max="300" step="10" value="100" style="accent-color:#2a9a50;">
-      </div>
-      <div class="row">
-        <div class="row-head"><label style="color:#3a7a50;">Circle chance %</label><span class="val" id="vl-circchance" style="color:#3acc70;">35</span></div>
-        <input type="range" id="sl-circchance" min="0" max="100" step="5" value="35" style="accent-color:#2a9a50;">
-      </div>
-      <div class="row">
-        <div class="row-head"><label style="color:#3a7a50;">Probing chance %</label><span class="val" id="vl-probingchance" style="color:#3acc70;">30</span></div>
-        <input type="range" id="sl-probingchance" min="0" max="100" step="1" value="30" style="accent-color:#2a9a50;">
-      </div>
-      <div class="row">
-        <div class="row-head"><label style="color:#3a7a50;">Probing retreat multiplier</label><span class="val" id="vl-probingretreat" style="color:#3acc70;">0.1</span></div>
-        <input type="range" id="sl-probingretreat" min="0.1" max="0.1" step="0.05" value="0.1" style="accent-color:#2a9a50;">
-      </div>
-      <div class="row" style="flex-direction:row;align-items:center;gap:7px;">
-        <input type="checkbox" id="cb-duel" style="accent-color:#3acc70;cursor:pointer;" checked>
-        <label for="cb-duel" style="font-size:8px;color:#3a8a50;cursor:pointer;letter-spacing:0.5px;">Duel Position System</label>
-      </div>
-      <div class="row">
-        <div class="row-head"><label style="color:#3a7a50;">Spin duration (sec)</label><span class="val" id="vl-spindur" style="color:#3acc70;">0.8</span></div>
-        <input type="range" id="sl-spindur" min="0.3" max="3.0" step="0.1" value="0.8" style="accent-color:#2a9a50;">
-      </div>
-      <div class="row" style="flex-direction:row;align-items:center;gap:7px;">
-        <input type="checkbox" id="cb-nospin" style="accent-color:#3acc70;cursor:pointer;">
-        <label for="cb-nospin" style="font-size:8px;color:#3a8a50;cursor:pointer;letter-spacing:0.5px;">Disable spin</label>
-      </div>
-      <div class="row" style="flex-direction:row;align-items:center;gap:7px;">
-        <input type="checkbox" id="cb-alwaysmirror" style="accent-color:#3acc70;cursor:pointer;">
-        <label for="cb-alwaysmirror" style="font-size:8px;color:#3a8a50;cursor:pointer;letter-spacing:0.5px;">Always mirror style</label>
-      </div>
+    <!-- 🤖 AI SETTINGS -->
+    <div class="sec"><div class="sec-title" style="color:#4a9a60;" data-i18n="sec.ai"></div>
+      <div data-slider="aiang,slider.botAngle,35,5,90,1,true"></div>
+      <div data-slider="duelrad,slider.duelRadius,100,30,300,10,true"></div>
+      <div data-slider="circchance,slider.circleChance,35,0,100,5,true"></div>
+      <div data-slider="probingchance,slider.probingChance,30,0,100,1,true"></div>
+      <div data-slider="probingretreat,slider.probingRetreat,.1,.1,.1,.05,true"></div>
+      <div data-checkbox="duel,checkbox.duelSystem,true,true"></div>
+      <div data-slider="spindur,slider.spinDuration,.8,.3,3,.1,true"></div>
+      <div data-checkbox="nospin,checkbox.disableSpin,false,true"></div>
+      <div data-checkbox="alwaysmirror,checkbox.alwaysMirror,false,true"></div>
     </div>
 
-    <!-- ─── SECTION: LOCAL PLAYERS ────────────────────────────────── -->
-    <div class="sec" id="sec-local-players">
-      <div class="sec-title" style="color:#6ab0d0;">👥 LOCAL PLAYER SLOTS</div>
-      <div class="row">
-        <div class="row-head"><label for="gamepad-player-slot">Gamepad 1 controls</label></div>
-        <select id="gamepad-player-slot" style="width:100%;padding:6px;background:#081522;border:1px solid #1a5070;border-radius:3px;color:#8ad8ff;font-family:'Share Tech Mono',monospace;font-size:9px;cursor:pointer;">
-          <option value="0">Player 1 (keyboard + mouse)</option>
-          <option value="1">Player 2</option>
-          <option value="2">Player 3</option>
-          <option value="3">Player 4</option>
-        </select>
-        <div id="gamepad-player-status" style="font-size:8px;line-height:1.45;color:#4f8198;margin-top:6px;"></div>
-      </div>
-      <div class="row">
-        <div class="row-head"><label for="local-faction-mode">Faction &amp; victory</label></div>
-        <select id="local-faction-mode" style="width:100%;padding:6px;background:#081522;border:1px solid #1a5070;border-radius:3px;color:#8ad8ff;font-family:'Share Tech Mono',monospace;font-size:9px;cursor:pointer;">
-          <option value="ffa">Free-for-all</option>
-          <option value="coop">Co-op vs bots</option>
-        </select>
-      </div>
-      <div class="row" style="flex-direction:row;align-items:center;gap:7px;">
-        <input type="checkbox" id="cb-coopdefeatall" style="accent-color:#3a9acc;cursor:pointer;" checked>
-        <label for="cb-coopdefeatall" style="font-size:8px;color:#4a7090;cursor:pointer;letter-spacing:.5px;">Co-op defeat only when all players are dead</label>
-      </div>
-      <div class="row">
-        <div class="row-head"><label>Player respawn (sec)</label><span class="val" id="vl-playerrespawn">15</span></div>
-        <input type="range" id="sl-playerrespawn" min="0" max="30" step="1" value="15">
-      </div>
-      <div class="row" style="flex-direction:row;align-items:center;gap:7px;">
-        <input type="checkbox" id="cb-gamepadflickdet" style="accent-color:#ccaa30;cursor:pointer;" checked>
-        <label for="cb-gamepadflickdet" style="font-size:8px;color:#8a7020;cursor:pointer;letter-spacing:0.5px;">Gamepad: separate flick detect</label>
-      </div>
-      <div class="row">
-        <div class="row-head"><label style="color:#8a7020;">Gamepad flick: window (sec)</label><span class="val" id="vl-gamepadflickwindow" style="color:#ccaa30;">1</span></div>
-        <input type="range" id="sl-gamepadflickwindow" min="0.05" max="1.5" step="0.05" value="1" style="accent-color:#ccaa30;">
-      </div>
-      <div class="row">
-        <div class="row-head"><label style="color:#8a7020;">Gamepad flick: min speed</label><span class="val" id="vl-gamepadflickminvel" style="color:#ccaa30;">3.2</span></div>
-        <input type="range" id="sl-gamepadflickminvel" min="0.5" max="8.0" step="0.1" value="3.2" style="accent-color:#ccaa30;">
-      </div>
-      <div class="row">
-        <div class="row-head"><label style="color:#8a7020;">Gamepad flick: min amplitude</label><span class="val" id="vl-gamepadflickminamp" style="color:#ccaa30;">0.4</span></div>
-        <input type="range" id="sl-gamepadflickminamp" min="0.05" max="2.0" step="0.05" value="0.4" style="accent-color:#ccaa30;">
-      </div>
-      <div class="row">
-        <div class="row-head"><label style="color:#8a7020;">Gamepad flick: swing count</label><span class="val" id="vl-gamepadflickcount" style="color:#ccaa30;">2</span></div>
-        <input type="range" id="sl-gamepadflickcount" min="2" max="8" step="1" value="2" style="accent-color:#ccaa30;">
-      </div>
-      <div class="row">
-        <div class="row-head"><label style="color:#8a7020;">Gamepad flick: max amplitude</label><span class="val" id="vl-gamepadflickmaxmult" style="color:#ccaa30;">5</span></div>
-        <input type="range" id="sl-gamepadflickmaxmult" min="1.5" max="10" step="0.5" value="5" style="accent-color:#ccaa30;">
-      </div>
-      <div class="row">
-        <div class="row-head"><label style="color:#8a7020;">Gamepad flick: stamina</label><span class="val" id="vl-gamepadstamflick" style="color:#ccaa30;">25</span></div>
-        <input type="range" id="sl-gamepadstamflick" min="0" max="60" step="5" value="25" style="accent-color:#ccaa30;">
-      </div>
+    <!-- 👥 LOCAL PLAYER SLOTS -->
+    <div class="sec" id="sec-local-players"><div class="sec-title" style="color:#6ab0d0;" data-i18n="sec.localPlayers"></div>
+      <div data-select="gamepad-player-slot,select.gamepadSlot,0:select.gamepadSlot0;1:select.gamepadSlot1;2:select.gamepadSlot2;3:select.gamepadSlot3,0"></div>
+      <div id="gamepad-player-status" style="font-size:8px;line-height:1.45;color:#4f8198;margin-top:6px;"></div>
+      <div data-select="local-faction-mode,select.factionMode,ffa:select.factionFFA;coop:select.factionCoop,ffa"></div>
+      <div data-checkbox="coopdefeatall,checkbox.coopDefeatAll,true"></div>
+      <div data-slider="playerrespawn,slider.playerRespawn,15,0,30,1"></div>
+      <div data-checkbox="gamepadflickdet,checkbox.gamepadFlickDetect,true,true"></div>
+      <div data-slider="gamepadflickwindow,slider.gamepadFlickWindow,1,.05,1.5,.05,true"></div>
+      <div data-slider="gamepadflickminvel,slider.gamepadFlickMinVel,3.2,.5,8,.1,true"></div>
+      <div data-slider="gamepadflickminamp,slider.gamepadFlickMinAmp,.4,.05,2,.05,true"></div>
+      <div data-slider="gamepadflickcount,slider.gamepadFlickCount,2,2,8,1,true"></div>
+      <div data-slider="gamepadflickmaxmult,slider.gamepadFlickMaxMult,5,1.5,10,.5,true"></div>
+      <div data-slider="gamepadstamflick,slider.gamepadStamFlick,25,0,60,5,true"></div>
     </div>
 
-    <div class="sec" id="sec-mobile-cam">
-      <div class="sec-title">📱 MOBILE &amp; CAMERA</div>
-      <div class="row">
-        <div class="row-head"><label>Game speed (x)</label><span class="val" id="vl-gamespeed">1.0</span></div>
-        <input type="range" id="sl-gamespeed" min="0.1" max="2.0" step="0.05" value="1.0">
-      </div>
-      <div class="row">
-        <div class="row-head"><label>Camera zoom (cells)</label><span class="val" id="vl-camrows">14</span></div>
-        <input type="range" id="sl-camrows" min="6" max="24" step="1" value="14">
-      </div>
-      <div class="row">
-        <div class="row-head"><label>Music volume</label><span class="val" id="vl-musicvol">0.5</span></div>
-        <input type="range" id="sl-musicvol" min="0" max="1" step="0.05" value="0.5">
-      </div>
-      <div class="row">
-        <div class="row-head"><label>Bot count</label><span class="val" id="vl-botcount">1</span></div>
-        <input type="range" id="sl-botcount" min="0" max="10" step="1" value="1">
-      </div>
-      <div class="row" style="flex-direction:row;align-items:center;gap:7px;">
-        <input type="checkbox" id="cb-overheadbars" style="accent-color:#3a9acc;cursor:pointer;" checked>
-        <label for="cb-overheadbars" style="font-size:8px;color:#4a7090;cursor:pointer;letter-spacing:.5px;">Show HP bars above enemies</label>
-      </div>
-    </div>
-    <div class="sec">
-      <div class="sec-title" style="color:#7a5a30;">🤖 BOT SPEED &amp; SCALE</div>
-      <div class="row">
-        <div class="row-head"><label>Bot speed (x player)</label><span class="val" id="vl-botspd">0.7</span></div>
-        <input type="range" id="sl-botspd" min="0.3" max="1.5" step="0.05" value="0.7">
-      </div>
-      <div class="row">
-        <div class="row-head"><label>Bot dodge chance %</label><span class="val" id="vl-botdodgechance">50</span></div>
-        <input type="range" id="sl-botdodgechance" min="0" max="100" step="1" value="50">
-      </div>
-      <div class="row">
-        <div class="row-head"><label>Bot dodge toward %</label><span class="val" id="vl-botdodgetoward">20</span></div>
-        <input type="range" id="sl-botdodgetoward" min="0" max="100" step="1" value="20">
-      </div>
-      <div class="row">
-        <div class="row-head"><label>Bot scale (body)</label><span class="val" id="vl-botscale">1.0</span></div>
-        <input type="range" id="sl-botscale" min="0.5" max="2.0" step="0.05" value="1.0">
-      </div>
-      <div class="row">
-        <div class="row-head"><label>Bot sword scale</label><span class="val" id="vl-botswordscale">1.0</span></div>
-        <input type="range" id="sl-botswordscale" min="0.3" max="2.5" step="0.05" value="1.0">
-      </div>
-      <div class="row">
-        <div class="row-head"><label>Global speed (x)</label><span class="val" id="vl-globalspd">1.0</span></div>
-        <input type="range" id="sl-globalspd" min="0.2" max="2.0" step="0.05" value="1.0">
-      </div>
+    <!-- 📱 MOBILE & CAMERA -->
+    <div class="sec" id="sec-mobile-cam"><div class="sec-title" data-i18n="sec.mobileCam"></div>
+      <div data-slider="gamespeed,slider.gameSpeed,1,.1,2,.05"></div>
+      <div data-slider="camrows,slider.cameraZoom,14,6,24,1"></div>
+      <div data-slider="musicvol,slider.musicVolume,.5,0,1,.05"></div>
+      <div data-slider="botcount,slider.botCount,1,0,10,1"></div>
+      <div data-checkbox="botrandomweapon,checkbox.botRandomWeapon,false"></div>
+      <div data-checkbox="overheadbars,checkbox.overheadBars,true"></div>
     </div>
 
-    <!-- ─── SECTION: COMBAT SETTINGS ─── -->
-    <div class="sec">
-      <div class="sec-title" style="color:#9a7a30;">⚔️ COMBAT SETTINGS</div>
-      <div class="row">
-        <div class="row-head"><label>Threshold for swing</label><span class="val" id="vl-swthresh">1.2</span></div>
-        <input type="range" id="sl-swthresh" min="0.1" max="8" step="0.1" value="1.2">
-      </div>
-      <div class="row">
-        <div class="row-head"><label>Block stamina cost</label><span class="val" id="vl-stamblock">20</span></div>
-        <input type="range" id="sl-stamblock" min="1" max="50" step="1" value="20">
-      </div>
-      <div class="row" style="display:flex;align-items:center;gap:7px;">
-        <input type="checkbox" id="cb-safecounter" style="accent-color:#a040d0;cursor:pointer;" checked>
-        <label for="cb-safecounter" style="font-size:8px;color:#b060dd;cursor:pointer;letter-spacing:0.5px;">Safe counter window (1.5s after block)</label>
-      </div>
-      <div class="row">
-        <div class="row-head"><label>Swing stamina cost</label><span class="val" id="vl-stamswing">17</span></div>
-        <input type="range" id="sl-stamswing" min="0" max="100" step="1" value="17">
-      </div>
-      <div class="row">
-        <div class="row-head"><label>Knockback force</label><span class="val" id="vl-kbforce">20</span></div>
-        <input type="range" id="sl-kbforce" min="0" max="40" step="0.5" value="20">
-      </div>
-
-      <div class="row">
-        <div class="row-head"><label>Disbalance duration (sec)</label><span class="val" id="vl-unbdur">3</span></div>
-        <input type="range" id="sl-unbdur" min="0.5" max="6" step="0.5" value="3">
-      </div>
-      <div class="row">
-        <div class="row-head"><label>Disbalance combo window</label><span class="val" id="vl-unbcombo">2</span></div>
-        <input type="range" id="sl-unbcombo" min="0.5" max="5" step="0.1" value="2">
-      </div>
-      <div class="row" style="display:flex;align-items:center;gap:7px;">
-        <input type="checkbox" id="cb-unbcombodbg" style="accent-color:#ccaa30;cursor:pointer;">
-        <label for="cb-unbcombodbg" style="font-size:8px;color:#8a7020;cursor:pointer;letter-spacing:0.5px;">Debug: disbalance combo steps</label>
-      </div>
-      <div class="row">
-        <div class="row-head"><label>Stamina regen / sec</label><span class="val" id="vl-stamreg">28</span></div>
-        <input type="range" id="sl-stamreg" min="1" max="60" step="1" value="28">
-      </div>
-      <div class="row">
-        <div class="row-head"><label>LMB stamina %</label><span class="val" id="vl-lmbcost">40</span></div>
-        <input type="range" id="sl-lmbcost" min="0" max="80" step="5" value="40">
-      </div>
-      <div class="row">
-        <div class="row-head"><label>LMB damage (x)</label><span class="val" id="vl-lmbdmg">1.5</span></div>
-        <input type="range" id="sl-lmbdmg" min="1" max="3" step="0.1" value="1.5">
-      </div>
+    <!-- 🤖 BOT SPEED & SCALE -->
+    <div class="sec"><div class="sec-title" style="color:#7a5a30;" data-i18n="sec.botSpeed"></div>
+      <div data-slider="botspd,slider.botSpeed,.7,.3,1.5,.05"></div>
+      <div data-slider="botdodgechance,slider.botDodgeChance,50,0,100,1"></div>
+      <div data-slider="botdodgetoward,slider.botDodgeToward,20,0,100,1"></div>
+      <div data-slider="botscale,slider.botScale,1,.5,2,.05"></div>
+      <div data-slider="botswordscale,slider.botSwordScale,1,.3,2.5,.05"></div>
+      <div data-slider="globalspd,slider.globalSpeed,1,.2,2,.05"></div>
     </div>
 
-    <!-- ─── SECTION: RAGE (red bar) ──────────────────────────────── -->
-    <div class="sec" style="border:1px solid #3a1010;padding:8px;border-radius:3px;">
-      <div class="sec-title" style="color:#cc3030;">🔥 RAGE</div>
-      <div class="row">
-        <div class="row-head"><label style="color:#8a3030;">Blocks for 100 rage</label><span class="val" id="vl-rageper" style="color:#cc4040;">10</span></div>
-        <input type="range" id="sl-rageper" min="1" max="30" step="1" value="10" style="accent-color:#cc2020;">
-      </div>
-      <div class="row">
-        <div class="row-head"><label style="color:#8a3030;">Rage buff duration (sec)</label><span class="val" id="vl-ragebuf" style="color:#cc4040;">5</span></div>
-        <input type="range" id="sl-ragebuf" min="2" max="15" step="1" value="5" style="accent-color:#cc2020;">
-      </div>
+    <!-- ⚔️ COMBAT SETTINGS -->
+    <div class="sec"><div class="sec-title" style="color:#9a7a30;" data-i18n="sec.combat"></div>
+      <div data-slider="swthresh,slider.swingThreshold,1.2,.1,8,.1"></div>
+      <div data-slider="stamblock,slider.blockStaminaCost,20,1,50,1"></div>
+      <div data-checkbox="safecounter,checkbox.safeCounter,true,true"></div>
+      <div data-slider="stamswing,slider.swingStaminaCost,17,0,100,1"></div>
+      <div data-slider="kbforce,slider.knockbackForce,20,0,40,.5"></div>
+      <div data-slider="unbdur,slider.disbalanceDuration,3,.5,6,.5"></div>
+      <div data-slider="unbcombo,slider.disbalanceComboWindow,2,.5,5,.1"></div>
+      <div data-checkbox="unbcombodbg,checkbox.debugCombo,false,true"></div>
+      <div data-slider="stamreg,slider.staminaRegen,28,1,60,1"></div>
+      <div data-slider="lmbcost,slider.lmbStaminaPercent,40,0,80,5"></div>
+      <div data-slider="lmbdmg,slider.lmbDamage,1.5,1,3,.1"></div>
     </div>
 
-    <!-- ─── SECTION: EXHAUSTION (yellow bar) ────────────────────── -->
-    <div class="sec" style="border:1px solid #3a1010;padding:8px;border-radius:3px;">
-      <div class="sec-title" style="color:#cc3030;">⚠ EXHAUSTION</div>
-      <div class="row">
-        <div class="row-head"><label style="color:#8a3030;">Duration (sec)</label><span class="val" id="vl-exhdur2">1.7</span></div>
-        <input type="range" id="sl-exhdur2" min="0.5" max="8" step="0.1" value="1.7" style="accent-color:#cc2020;">
-      </div>
-      <div class="row">
-        <div class="row-head"><label style="color:#8a3030;">Speed penalty</label><span class="val" id="vl-exhspd2">0.4</span></div>
-        <input type="range" id="sl-exhspd2" min="0.1" max="1" step="0.05" value="0.5" style="accent-color:#cc2020;">
-      </div>
-      <div class="row">
-        <div class="row-head"><label style="color:#8a3030;">Sword penalty</label><span class="val" id="vl-exhswd2">0.13</span></div>
-        <input type="range" id="sl-exhswd2" min="0.01" max="0.5" step="0.01" value="0.13" style="accent-color:#cc2020;">
-      </div>
+    <!-- 🔥 RAGE -->
+    <div class="sec" style="border:1px solid #3a1010;padding:8px;border-radius:3px;"><div class="sec-title" style="color:#cc3030;" data-i18n="sec.rage"></div>
+      <div data-slider="rageper,slider.rageBlocks,10,1,30,1,true"></div>
+      <div data-slider="ragebuf,slider.rageDuration,5,2,15,1,true"></div>
     </div>
 
-    <!-- ─── SECTION: CLASH / DEFLECTION ──────────────────────────── -->
-    <div class="sec">
-      <div class="sec-title" style="color:#7a6a30;">⚡ CLASH / DEFLECTION</div>
-      <div class="row">
-        <div class="row-head"><label>Weapon restitution</label><span class="val" id="vl-swres">0.85</span></div>
-        <input type="range" id="sl-swres" min="0" max="1" step="0.05" value="0.85">
-      </div>
-      <div class="row">
-        <div class="row-head"><label style="color:#4060cc;">Blade knockback</label><span class="val" id="vl-bladeKB" style="color:#5080ff;">3.5</span></div>
-        <input type="range" id="sl-bladeKB" min="0" max="20" step="0.5" value="3.5" style="accent-color:#3060cc;">
-      </div>
-      <div class="row">
-        <div class="row-head"><label style="color:#9040cc;">Body knockback</label><span class="val" id="vl-bodyKB" style="color:#bb60ff;">1</span></div>
-        <input type="range" id="sl-bodyKB" min="0" max="20" step="0.5" value="1" style="accent-color:#7020aa;">
-      </div>
-      <div class="row">
-        <div class="row-head"><label>Block slow duration (sec)</label><span class="val" id="vl-blockSlowDur">0.4</span></div>
-        <input type="range" id="sl-blockSlowDur" min="0.1" max="2" step="0.1" value="0.4">
-      </div>
-      <div class="row">
-        <div class="row-head"><label>Block slow multiplier</label><span class="val" id="vl-blockSlowMult">0.5</span></div>
-        <input type="range" id="sl-blockSlowMult" min="0.1" max="1" step="0.05" value="0.5">
-      </div>
-      <div class="row">
-        <div class="row-head"><label>Min deflection angle</label><span class="val" id="vl-deflectMin">50</span></div>
-        <input type="range" id="sl-deflectMin" min="0" max="90" step="1" value="50">
-      </div>
-      <div class="row">
-        <div class="row-head"><label>Max deflection angle</label><span class="val" id="vl-deflectMax">100</span></div>
-        <input type="range" id="sl-deflectMax" min="5" max="180" step="1" value="100">
-      </div>
-      <div class="row">
-        <div class="row-head"><label>Sword back multiplier</label><span class="val" id="vl-swordback">0.55</span></div>
-        <input type="range" id="sl-swordback" min="0.3" max="1.0" step="0.05" value="0.4">
-      </div>
-      <div class="row">
-        <div class="row-head"><label style="color:#cc8020;">Block knockback</label><span class="val" id="vl-blockKB" style="color:#cc8020;">5</span></div>
-        <input type="range" id="sl-blockKB" min="0" max="20" step="0.5" value="5" style="accent-color:#cc6010;">
-      </div>
+    <!-- ⚠ EXHAUSTION -->
+    <div class="sec" style="border:1px solid #3a1010;padding:8px;border-radius:3px;"><div class="sec-title" style="color:#cc3030;" data-i18n="sec.exhaustion"></div>
+      <div data-slider="exhdur2,slider.exhaustDuration,1.7,.5,8,.1,true"></div>
+      <div data-slider="exhspd2,slider.exhaustSpeedPenalty,.5,.1,1,.05,true"></div>
+      <div data-slider="exhswd2,slider.exhaustSwordPenalty,.13,.01,.5,.01,true"></div>
     </div>
 
-    <!-- ─── SECTION: FLICK / ORBIT DETECTORS ───────────────────── -->
-    <div class="sec">
-      <div class="sec-title" style="color:#9a6a20;">🌀 FLICK / ORBIT DETECTORS</div>
-      <div class="row">
-        <div class="row-head"><label style="color:#8a7020;">Disarm chance %</label><span class="val" id="vl-disarmchance" style="color:#ccaa30;">30</span></div>
-        <input type="range" id="sl-disarmchance" min="0" max="100" step="1" value="30" style="accent-color:#ccaa30;">
-      </div>
-      <div class="row" style="flex-direction:row;align-items:center;gap:7px;">
-        <input type="checkbox" id="cb-orbitdet" style="accent-color:#cc5020;cursor:pointer;" checked>
-        <label for="cb-orbitdet" style="font-size:8px;color:#8a5020;cursor:pointer;letter-spacing:0.5px;">Detect orbit (continuous rotation)</label>
-      </div>
-      <div class="row">
-        <div class="row-head"><label style="color:#8a5020;">Orbit: window (sec)</label><span class="val" id="vl-orbitwindow" style="color:#cc7040;">1.0</span></div>
-        <input type="range" id="sl-orbitwindow" min="0.3" max="3.0" step="0.1" value="1.0" style="accent-color:#cc5020;">
-      </div>
-      <div class="row">
-        <div class="row-head"><label style="color:#8a5020;">Orbit: turns required</label><span class="val" id="vl-orbitturns" style="color:#cc7040;">1.0</span></div>
-        <input type="range" id="sl-orbitturns" min="0.3" max="3.0" step="0.1" value="1.0" style="accent-color:#cc5020;">
-      </div>
-      <div class="row">
-        <div class="row-head"><label style="color:#8a5020;">Orbit: stamina cost</label><span class="val" id="vl-stamorbit" style="color:#cc7040;">30</span></div>
-        <input type="range" id="sl-stamorbit" min="0" max="60" step="5" value="30" style="accent-color:#cc5020;">
-      </div>
-      <div class="row" style="flex-direction:row;align-items:center;gap:7px;">
-        <input type="checkbox" id="cb-flickdet" style="accent-color:#ccaa30;cursor:pointer;" checked>
-        <label for="cb-flickdet" style="font-size:8px;color:#8a7020;cursor:pointer;letter-spacing:0.5px;">Detect flick (quick direction change)</label>
-      </div>
-      <div class="row">
-        <div class="row-head"><label style="color:#8a7020;">Flick: window (sec)</label><span class="val" id="vl-flickwindow" style="color:#ccaa30;">1</span></div>
-        <input type="range" id="sl-flickwindow" min="0.05" max="1.5" step="0.05" value="1" style="accent-color:#ccaa30;">
-      </div>
-      <div class="row">
-        <div class="row-head"><label style="color:#8a7020;">Flick: min speed (rad/s)</label><span class="val" id="vl-flickminvel" style="color:#ccaa30;">4</span></div>
-        <input type="range" id="sl-flickminvel" min="0.5" max="8.0" step="0.25" value="4" style="accent-color:#ccaa30;">
-      </div>
-      <div class="row">
-        <div class="row-head"><label style="color:#8a7020;">Flick: min amplitude (rad)</label><span class="val" id="vl-flickminamp" style="color:#ccaa30;">0.45</span></div>
-        <input type="range" id="sl-flickminamp" min="0.05" max="2.0" step="0.05" value="0.45" style="accent-color:#ccaa30;">
-      </div>
-      <div class="row">
-        <div class="row-head"><label style="color:#8a7020;">Flick: swing count</label><span class="val" id="vl-flickcount" style="color:#ccaa30;">2</span></div>
-        <input type="range" id="sl-flickcount" min="2" max="8" step="1" value="2" style="accent-color:#ccaa30;">
-      </div>
-      <div class="row">
-        <div class="row-head"><label style="color:#8a7020;">Flick: max amplitude (x min)</label><span class="val" id="vl-flickmaxmult" style="color:#ccaa30;">5</span></div>
-        <input type="range" id="sl-flickmaxmult" min="1.5" max="10" step="0.5" value="5" style="accent-color:#ccaa30;">
-      </div>
-      <div class="row">
-        <div class="row-head"><label style="color:#8a7020;">Flick: stamina cost</label><span class="val" id="vl-stamflick" style="color:#ccaa30;">25</span></div>
-        <input type="range" id="sl-stamflick" min="0" max="60" step="5" value="25" style="accent-color:#ccaa30;">
-      </div>
-      <div class="row" style="flex-direction:row;align-items:center;gap:7px;">
-        <input type="checkbox" id="cb-debugbrowser" style="accent-color:#3acc70;cursor:pointer;">
-        <label for="cb-debugbrowser" style="font-size:8px;color:#4aa070;cursor:pointer;letter-spacing:0.5px;">Debug: unlock browser RMB/keys</label>
-      </div>
+    <!-- ⚡ CLASH / DEFLECTION -->
+    <div class="sec"><div class="sec-title" style="color:#7a6a30;" data-i18n="sec.clash"></div>
+      <div data-slider="swres,slider.weaponRestitution,.85,0,1,.05"></div>
+      <div data-slider="bladeKB,slider.bladeKnockback,3.5,0,20,.5,true"></div>
+      <div data-slider="bodyKB,slider.bodyKnockback,1,0,20,.5,true"></div>
+      <div data-slider="blockSlowDur,slider.blockSlowDuration,.4,.1,2,.1"></div>
+      <div data-slider="blockSlowMult,slider.blockSlowMultiplier,.5,.1,1,.05"></div>
+      <div data-slider="deflectMin,slider.minDeflectionAngle,50,0,90,1"></div>
+      <div data-slider="deflectMax,slider.maxDeflectionAngle,100,5,180,1"></div>
+      <div data-slider="swordback,slider.swordBackMultiplier,.4,.3,1,.05"></div>
+      <div data-slider="blockKB,slider.blockKnockback,5,0,20,.5,true"></div>
     </div>
 
-    <!-- ─── SECTION: DEBUG ────────────────────────────────────────── -->
-    <div class="sec">
-      <div class="sec-title">🐞 DEBUG</div>
-      <div class="row">
-        <div class="row-head"><label>Debug toggle</label><span class="val" id="vl-dbg">OFF</span></div>
-        <input type="range" id="sl-dbg" min="0" max="1" step="1" value="0">
-      </div>
-      <div class="row" style="flex-direction:row;align-items:center;gap:7px;">
-        <input type="checkbox" id="cb-clashdbg" style="accent-color:#cc4090;cursor:pointer;">
-        <label for="cb-clashdbg" style="font-size:8px;color:#8a4070;cursor:pointer;letter-spacing:0.5px;">Debug: log clash data (console)</label>
-      </div>
+    <!-- 🌀 FLICK / ORBIT DETECTORS -->
+    <div class="sec"><div class="sec-title" style="color:#9a6a20;" data-i18n="sec.flickOrbit"></div>
+      <div data-slider="disarmchance,slider.disarmChance,30,0,100,1,true"></div>
+      <div data-checkbox="orbitdet,checkbox.orbitDetect,true,true"></div>
+      <div data-slider="orbitwindow,slider.orbitWindow,1,.3,3,.1,true"></div>
+      <div data-slider="orbitturns,slider.orbitTurns,1,.3,3,.1,true"></div>
+      <div data-slider="stamorbit,slider.orbitStaminaCost,30,0,60,5,true"></div>
+      <div data-checkbox="flickdet,checkbox.flickDetect,true,true"></div>
+      <div data-slider="flickwindow,slider.flickWindow,1,.05,1.5,.05,true"></div>
+      <div data-slider="flickminvel,slider.flickMinSpeed,4,.5,8,.25,true"></div>
+      <div data-slider="flickminamp,slider.flickMinAmplitude,.45,.05,2,.05,true"></div>
+      <div data-slider="flickcount,slider.flickSwingCount,2,2,8,1,true"></div>
+      <div data-slider="flickmaxmult,slider.flickMaxAmplitude,5,1.5,10,.5,true"></div>
+      <div data-slider="stamflick,slider.flickStaminaCost,25,0,60,5,true"></div>
+      <div data-checkbox="debugbrowser,checkbox.debugBrowser,false,true"></div>
     </div>
 
-    <!-- ─── SECTION: CONTROLS ─────────────────────────────────────── -->
-    <div class="sec">
-      <div class="sec-title">🎮 CONTROLS</div>
-      <button id="btn-export" style="width:100%;padding:7px 0;background:#0e2a1e;border:1px solid #1a5a30;border-radius:3px;color:#3acc70;font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:1px;cursor:pointer;margin-bottom:8px;">📤 Export settings to file</button>
-      <button id="dtoggle" style="width:100%;padding:7px 0;background:#1a1a0e;border:1px solid #5a5a1a;border-radius:3px;color:#cccc40;font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:1px;cursor:pointer;margin-bottom:8px;">🤖 Toggle AI: OFF</button>
-      <button id="btn-balls" style="width:100%;padding:7px 0;background:#1a0e0e;border:1px solid #5a1a1a;border-radius:3px;color:#cc4040;font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:1px;cursor:pointer;margin-bottom:8px;">⚾ Toggle Balls: OFF</button>
-      <button id="btn-boxes" style="width:100%;padding:7px 0;background:#100e1a;border:1px solid #3a1a5a;border-radius:3px;color:#9040cc;font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:1px;cursor:pointer;margin-bottom:8px;">📦 Toggle Boxes: ON</button>
-      <button id="btn-blockkb" style="width:100%;padding:7px 0;background:#1a1000;border:1px solid #6a4010;border-radius:3px;color:#cc8020;font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:1px;cursor:pointer;margin-bottom:8px;">🛡 Toggle Block-KB: OFF</button>
-      <button id="musicToggleBtn" style="width:100%;padding:7px 0;background:#0e1a0e;border:1px solid #2a5a2a;border-radius:3px;color:#4acc70;font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:1px;cursor:pointer;">🎵 Toggle Music: OFF</button>
+    <!-- 🐞 DEBUG -->
+    <div class="sec"><div class="sec-title" data-i18n="sec.debug"></div>
+      <div data-slider="dbg,slider.debugToggle,0,0,1,1"></div>
+      <div data-checkbox="clashdbg,checkbox.debugClash,false,true"></div>
     </div>
 
-    <!-- ─── KEYBOARD SHORTCUTS ────────────────────────────────────── -->
-    <div class="sec">
-      <div class="sec-title">⌨️ KEYBOARD SHORTCUTS</div>
+    <!-- 🎮 CONTROLS -->
+    <div class="sec"><div class="sec-title" data-i18n="sec.controls"></div>
+      <button id="btn-export" class="menu-btn mb-export" data-i18n="btn.export"></button>
+      <button id="dtoggle" class="menu-btn mb-ai" data-i18n="btn.toggleAI"></button>
+      <button id="btn-balls" class="menu-btn mb-balls" data-i18n="btn.toggleBalls"></button>
+      <button id="btn-boxes" class="menu-btn mb-boxes" data-i18n="btn.toggleBoxes"></button>
+      <button id="btn-blockkb" class="menu-btn mb-block" data-i18n="btn.toggleBlockKB"></button>
+      <button id="musicToggleBtn" class="menu-btn mb-music" data-i18n="btn.toggleMusic"></button>
+    </div>
+
+    <!-- ⌨️ KEYBOARD SHORTCUTS -->
+    <div class="sec"><div class="sec-title" data-i18n="sec.shortcuts"></div>
       <div class="keys">
-        <span class="key">WASD — movement</span>
-        <span class="key">Mouse — cursor / aim</span>
-        <span class="key">LMB — hold sword in position (attack)</span>
-        <span class="key">Shift — dodge (with momentum)</span>
-        <span class="key">T — toggle AI on/off</span>
-        <span class="key">Y — spawn bot</span>
-        <span class="key">E — pick up weapon</span>
-        <span class="key">1 — throw weapon</span>
-        <span class="key">R — toggle sword style</span>
-        <span class="key">Q — flip shield side</span>
-        <span class="key">C — cycle player weapon</span>
-        <span class="key">V — cycle bot weapon</span>
-        <span class="key">Z — cycle player shield</span>
-        <span class="key">X — cycle bot shield</span>
-        <span class="key">G — force exhaustion</span>
-        <span class="key">H — add rage</span>
-        <span class="key">U — apply disbalance to player</span>
-        <span class="key">I — apply disbalance to bot</span>
-        <span class="key">O — toggle arena zone</span>
-        <span class="key">Enter — open/close menu</span>
-        <span class="key">Escape — close menu</span>
+        <span class="key" data-i18n="shortcut.wasd"></span>
+        <span class="key" data-i18n="shortcut.mouse"></span>
+        <span class="key" data-i18n="shortcut.lmb"></span>
+        <span class="key" data-i18n="shortcut.shift"></span>
+        <span class="key" data-i18n="shortcut.t"></span>
+        <span class="key" data-i18n="shortcut.y"></span>
+        <span class="key" data-i18n="shortcut.e"></span>
+        <span class="key" data-i18n="shortcut.one"></span>
+        <span class="key" data-i18n="shortcut.r"></span>
+        <span class="key" data-i18n="shortcut.q"></span>
+        <span class="key" data-i18n="shortcut.c"></span>
+        <span class="key" data-i18n="shortcut.v"></span>
+        <span class="key" data-i18n="shortcut.z"></span>
+        <span class="key" data-i18n="shortcut.x"></span>
+        <span class="key" data-i18n="shortcut.g"></span>
+        <span class="key" data-i18n="shortcut.h"></span>
+        <span class="key" data-i18n="shortcut.u"></span>
+        <span class="key" data-i18n="shortcut.i"></span>
+        <span class="key" data-i18n="shortcut.o"></span>
+        <span class="key" data-i18n="shortcut.enter"></span>
+        <span class="key" data-i18n="shortcut.escape"></span>
       </div>
     </div>
   </div>
-  <!-- ••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
-       END MODULE: SETTINGS PANEL
-       •••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••• -->
-
+  
   <div id="infobar">
-    <div class="ir"><span>🧭 Root</span><span class="iv" id="inf-root">0,0</span></div>
-    <div class="ir"><span>⚔️ Body offset</span><span class="iv" id="inf-boff">0,0</span></div>
+    <div class="ir"><span data-i18n="infobar.root"></span><span class="iv" id="inf-root">0,0</span></div>
+    <div class="ir"><span data-i18n="infobar.bodyOffset"></span><span class="iv" id="inf-boff">0,0</span></div>
   </div>
 </div>
 
-<div id="hint">WASD movement · T toggle AI · Mouse aims · LMB attacks · Enter menu</div>
+<div id="hint" data-i18n="hint.text"></div>
 
-<script charset="utf-8" src="src/core/engine.js"></script>
-<script charset="utf-8" src="src/core/math.js"></script>
-<script charset="utf-8" src="src/core/entity.js"></script>
-<script charset="utf-8" src="src/core/i18n.js"></script>
-<script charset="utf-8" src="src/core/debug-config.js"></script>
-<script charset="utf-8" src="src/core/settings.js"></script>
-<script charset="utf-8" src="src/systems/fx.js"></script>
-<script charset="utf-8" src="src/systems/buff.js"></script>
-<script charset="utf-8" src="src/systems/audio.js"></script>
-<script charset="utf-8" src="src/systems/sprites.js"></script>
-<script charset="utf-8" src="src/combat/weapons.js"></script>
-<script charset="utf-8" src="src/combat/flail.js"></script>
-<script charset="utf-8" src="src/combat/ranged.js"></script>
-<script charset="utf-8" src="src/combat/debug-balls.js"></script>
-<script charset="utf-8" src="src/combat/combat.js"></script>
-<script charset="utf-8" src="src/combat/factions.js"></script>
-<script charset="utf-8" src="src/ai/ai.js"></script>
-<script charset="utf-8" src="src/input/keyboard-layout.js"></script>
-<script charset="utf-8" src="src/input/player-controls.js"></script>
-<script charset="utf-8" src="src/arena/arena.js"></script>
-<script charset="utf-8" src="src/ui/hud.js"></script>
-<script charset="utf-8" src="src/main.js"></script>
+<!-- ===== MOBILE ===== -->
+<div id="rotate-prompt"><div class="icon">↻</div><div class="txt" data-i18n="mobile.rotate"></div></div>
 
-<style id="mobile-style">
-/* ─── MOBILE OVERRIDES ────────────────────────────────────────────── */
-body.is-mobile #panel { display: none !important; }
-/* When mobile start screen is active — hide everything else */
-body.is-mobile.mob-pregame canvas,
-body.is-mobile.mob-pregame #hud,
-body.is-mobile.mob-pregame #mobile-ctrl,
-body.is-mobile.mob-pregame #adisplay,
-body.is-mobile.mob-pregame #hint,
-body.is-mobile.mob-pregame #dtoggle { visibility: hidden !important; }
-body.is-mobile canvas { width: 100vw !important; height: 100vh !important; }
-body.is-mobile #hud { width: 100% !important; }
-body.is-mobile #adisplay { display: none !important; }
-body.is-mobile #hint { display: none !important; }
-body.is-mobile #dtoggle { display: none !important; }
-
-/* ─── ROTATE PROMPT ────────────────────────────────────────────────── */
-#rotate-prompt {
-  display: none;
-  position: fixed; inset: 0; z-index: 999; pointer-events: all;
-  background: #060a0e;
-  flex-direction: column; align-items: center; justify-content: center;
-  color: #6ab0d0; font-family: 'Share Tech Mono', monospace; text-align: center;
-}
-body.is-mobile.is-portrait #rotate-prompt { display: flex; }
-body.is-mobile.is-portrait #mobile-ctrl,
-body.is-mobile.is-portrait canvas,
-body.is-mobile.is-portrait #hud { visibility: hidden; }
-#rotate-prompt .icon { font-size: 56px; margin-bottom: 16px; animation: rotateHint 1.6s ease-in-out infinite; }
-@keyframes rotateHint { 0%,100%{transform:rotate(0deg);} 50%{transform:rotate(90deg);} }
-#rotate-prompt .txt { font-size: 13px; letter-spacing: 2px; opacity: 0.8; }
-
-/* ─── MOBILE CONTROLS (visible on mobile) ────────────────────────── */
-#mobile-ctrl {
-  display: none;
-  position: fixed; inset: 0;
-  pointer-events: none;
-  z-index: 100;
-}
-body.is-mobile:not(.is-portrait) #mobile-ctrl { display: block; }
-body.is-mobile:not(.is-portrait) #mob-dodge-btn { display: flex; }
-/* Buttons need to be above sticks and clickable */
-#mob-spawn-btn, #mob-menu-btn, #mob-dodge-btn, #mob-music-btn, #mob-zone-btn, #mob-style-btn, #mob-shield-flip-btn, #mob-bot-shield-btn {
-  z-index: 1000;
-  pointer-events: auto !important;
-  position: absolute;
-}
-.touch-zone { z-index: 100; }
-
-/* Touch zones — invisible but capture input */
-.touch-zone {
-  position: absolute; top: 0; bottom: 0;
-  pointer-events: all; touch-action: none;
-}
-#zone-move  { left: 0;  width: 45%; top: 90px; }
-#zone-sword { right: 0; width: 55%; top: 90px; }
-
-/* Joystick bases — appear on touch */
-.stick-base {
-  position: absolute;
-  border-radius: 50%;
-  background: rgba(255,255,255,0.07);
-  border: 2px solid rgba(255,255,255,0.18);
-  transform: translate(-50%,-50%);
-  opacity: 0; transition: opacity 0.1s;
-  pointer-events: none;
-}
-.stick-base.active { opacity: 1; visibility: visible; }
-.stick-knob {
-  position: absolute;
-  border-radius: 50%;
-  transform: translate(-50%,-50%);
-  pointer-events: none;
-  visibility: hidden;
-}
-.stick-base.active ~ .stick-knob,
-.stick-base.active + .stick-knob { visibility: visible; }
-#move-base  { width: 110px; height: 110px; }
-#move-knob  { width: 50px;  height: 50px;
-  background: rgba(200,200,200,0.25);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-  border: 1.5px solid rgba(255,255,255,0.3); }
-
-#sword-base { width: 150px; height: 150px; }
-#sword-knob { width: 68px;  height: 68px;
-  background: rgba(200,200,200,0.25);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-  border: 1.5px solid rgba(255,255,255,0.3);
-  transition: background 0.1s, box-shadow 0.1s; }
-#sword-knob.lmb-active {
-  background: rgba(255,80,80,0.45);
-  box-shadow: 0 4px 16px rgba(255,0,0,0.6);
-  border-color: rgba(255,120,120,0.6);
-}
-
-/* ─── MODE 2: FIXED STICK (alternative control scheme) ──────────── */
-#fixed-stick-base {
-  position: absolute;
-  width: 130px; height: 130px;
-  border-radius: 50%;
-  background: rgba(255,255,255,0.06);
-  border: 2px solid rgba(255,255,255,0.2);
-  display: none; /* Enabled via body.fixed-stick-mode */
-  pointer-events: none;
-  z-index: 90;
-}
-body.fixed-stick-mode #fixed-stick-base { display: block; }
-body.fixed-stick-mode #zone-sword .stick-base,
-body.fixed-stick-mode #zone-sword .stick-knob { display: none; } /* Hide floating stick */
-
-#fixed-stick-knob {
-  position: absolute; top: 50%; left: 50%;
-  width: 56px; height: 56px;
-  border-radius: 50%;
-  background: rgba(200,200,200,0.2);
-  border: 1.5px solid rgba(255,255,255,0.25);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-  transform: translate(-50%,-50%);
-  transition: background 0.1s, box-shadow 0.1s;
-}
-#fixed-stick-knob.lmb-active {
-  background: rgba(255,80,80,0.4);
-  box-shadow: 0 4px 16px rgba(255,0,0,0.5);
-  border-color: rgba(255,120,120,0.6);
-}
-
-/* Reticle — shows aim direction */
-#fixed-stick-reticle {
-  position: absolute; top: 50%; left: 50%;
-  width: 22px; height: 22px;
-  margin: -11px 0 0 -11px;
-  border: 2px solid #ffcc40;
-  border-radius: 50%;
-  box-shadow: 0 0 8px rgba(255,200,60,0.7);
-  pointer-events: none;
-  transition: transform 0.05s linear;
-}
-#fixed-stick-reticle::after {
-  content:''; position:absolute; top:50%; left:50%;
-  width:6px; height:6px; margin:-3px 0 0 -3px;
-  background:#ffcc40; border-radius:50%;
-}
-
-/* ─── MOBILE BUTTONS ──────────────────────────────────────────────── */
-#mob-spawn-btn {
-  position: absolute; top: 14px; left: calc(50% - 53px);
-  background: rgba(10,30,20,0.9); border: 1px solid #2a6a40; border-radius: 50%;
-  width: 50px; height: 50px; color: #4acc70; font-size: 18px;
-  display: flex; align-items: center; justify-content: center;
-  pointer-events: auto !important; touch-action: none;
-  z-index: 1000;
-}
-/* Bot shield cycle button — next to spawn */
-#mob-bot-shield-btn {
-  position: absolute; top: 14px; left: calc(50% - 109px);
-  background: rgba(10,30,20,0.9); border: 1px solid #2a6a40; border-radius: 50%;
-  width: 50px; height: 50px; color: #4acc70; font-size: 18px;
-  display: flex; align-items: center; justify-content: center;
-  pointer-events: auto !important; touch-action: none;
-  z-index: 1000;
-}
-/* Bot weapon cycle button */
-#mob-bot-weapon-btn {
-  position: absolute; top: 14px; left: calc(50% - 165px);
-  background: rgba(10,30,20,0.9); border: 1px solid #2a6a40; border-radius: 50%;
-  width: 50px; height: 50px; color: #4acc70; font-size: 18px;
-  display: flex; align-items: center; justify-content: center;
-  pointer-events: auto !important; touch-action: none;
-  z-index: 1000;
-}
-
-/* Menu button (pause) — right side */
-#mob-menu-btn {
-  position: absolute; top: 14px; left: calc(50% + 59px);
-  background: rgba(10,20,30,0.9); border: 1px solid #1a4060; border-radius: 50%;
-  width: 50px; height: 50px; color: #6ab0d0; font-size: 20px;
-  display: flex; align-items: center; justify-content: center;
-  pointer-events: auto !important; touch-action: none;
-}
-#mob-music-btn {
-  position: absolute; top: 14px; left: calc(50% + 3px);
-  background: rgba(10,20,30,0.9); border: 1px solid #1a4060; border-radius: 50%;
-  width: 50px; height: 50px; color: #4acc70; font-size: 20px;
-  display: flex; align-items: center; justify-content: center;
-  pointer-events: auto !important; touch-action: none;
-  z-index: 1000;
-}
-#mob-zone-btn {
-  position: absolute; top: 14px; left: calc(50% + 115px);
-  background: rgba(10,20,30,0.9); border: 1px solid #3a3010; border-radius: 50%;
-  width: 50px; height: 50px; color: #ccaa30; font-size: 20px;
-  display: flex; align-items: center; justify-content: center;
-  pointer-events: auto !important; touch-action: none;
-  z-index: 1000;
-}
-#mob-zone-btn.active { border-color:#cc6010; color:#ff8020; background:rgba(40,20,5,0.9); }
-#mob-style-btn {
-  position: absolute; top: 100px; left: 126px;
-  background: rgba(10,20,30,0.9); border: 1px solid #3a5a8a; border-radius: 50%;
-  width: 50px; height: 50px; color: #7ab0e0; font-size: 18px;
-  display: flex; align-items: center; justify-content: center;
-  pointer-events: auto !important; touch-action: none;
-  z-index: 1000;
-}
-#mob-shield-flip-btn {
-  position: absolute; top: 100px; left: 14px;
-  background: rgba(10,20,30,0.9); border: 1px solid #2a4a7a; border-radius: 50%;
-  width: 50px; height: 50px; color: #88ccff; font-size: 20px;
-  display: flex; align-items: center; justify-content: center;
-  pointer-events: auto !important; touch-action: none; z-index: 1000;
-}
-body.is-mobile:not(.is-portrait) #mob-shield-flip-btn { display: flex; }
-/* Player weapon cycle button */
-#mob-weapon-btn {
-  position: absolute; top: 100px; left: 70px;
-  background: rgba(10,20,30,0.9); border: 1px solid #2a4a7a; border-radius: 50%;
-  width: 50px; height: 50px; color: #88ccff; font-size: 20px;
-  display: flex; align-items: center; justify-content: center;
-  pointer-events: auto !important; touch-action: none; z-index: 1000;
-}
-body.is-mobile:not(.is-portrait) #mob-weapon-btn { display: flex; }
-/* Throw weapon button — on the right side */
-#mob-throw-btn {
-  position: absolute; top: 90px; right: 72px;
-  background: rgba(10,20,30,0.9); border: 1px solid #7a4a2a; border-radius: 50%;
-  width: 50px; height: 50px; color: #ffaa66; font-size: 20px;
-  display: flex; align-items: center; justify-content: center;
-  pointer-events: auto !important; touch-action: none; z-index: 1000;
-}
-body.is-mobile:not(.is-portrait) #mob-throw-btn { display: flex; }
-#mob-dodge-btn {
-  position: absolute; top: 90px; right: 14px;
-  background: rgba(10,20,30,0.9); border: 1px solid #2a5a3a; border-radius: 50%;
-  width: 50px; height: 50px; color: #4acc80; font-size: 18px;
-  display: flex; align-items: center; justify-content: center;
-  pointer-events: auto !important; touch-action: none;
-  z-index: 1000;
-}
-#mob-dodge-btn:active { background: rgba(20,60,30,0.95); }
-
-/* Mobile menu overlay — pause/restart/settings */
-#mob-menu-overlay {
-  display: none;
-  position: fixed; inset: 0; z-index: 500;
-  background: rgba(5,8,12,0.92);
-  flex-direction: column; align-items: center; justify-content: center;
-  gap: 10px; pointer-events: all;
-  overflow-y: auto; padding: 16px 0;
-}
-#mob-menu-overlay.open { display: flex; }
-.mob-net-group {
-  display:flex; gap:0; width:220px; flex-shrink:0;
-}
-.mob-net-half {
-  flex:1; margin:0 !important; padding:10px 2px !important;
-  font-size:9px !important; letter-spacing:0.5px !important;
-  min-width:0 !important;
-}
-.mob-net-half.left  { border-radius:22px 0 0 22px !important; border-right:1px solid #0a2040 !important; }
-.mob-net-half.right { border-radius:0 22px 22px 0 !important; }
-.menu-btn {
-  font-family: 'Share Tech Mono', monospace; font-size: 13px; letter-spacing: 2px;
-  padding: 10px 32px; border-radius: 22px; cursor: pointer;
-  background: rgba(20,30,45,0.9); color: #6ab0d0; border: 1px solid #2a5a80;
-  min-width: 220px; flex-shrink: 0; transition: background 0.15s, border-color 0.15s;
-}
-@media (hover: hover) {
-  .menu-btn:hover { background: rgba(30,50,75,0.95); border-color: #4a8ab0; color: #8ad0f0; }
-  .ov-btn:hover { filter: brightness(1.2); }
-}
-.menu-btn:active { background: rgba(40,70,100,0.95); }
-.mob-menu-embed { max-height: 60vh; overflow-y: auto; width: 90%; }
-</style>
-<!-- ─── ROTATE PROMPT ────────────────────────────────────────────── -->
-<div id="rotate-prompt">
-  <div class="icon">↻</div>
-  <div class="txt">Please rotate your device<br>to landscape mode</div>
-</div>
-
-<!-- ─── MOBILE CONTROLS (visible on mobile) ────────────────────── -->
 <div id="mobile-ctrl">
-  <button id="mob-bot-shield-btn" title="Bot shield cycle">🛡️</button>
-  <button id="mob-bot-weapon-btn" title="Bot weapon cycle">⚔️</button>
-  <button id="mob-spawn-btn">🤖</button>
-  <button id="mob-menu-btn">☰</button>
-  <button id="mob-style-btn">⚔</button>
-  <button id="mob-shield-flip-btn">🛡</button>
-  <button id="mob-weapon-btn" title="Cycle weapon">⚔</button>
-  <button id="mob-throw-btn" title="Throw weapon">⬇</button>
-  <button id="mob-dodge-btn">💨</button>
-  <button id="mob-music-btn">🎵</button>
-  <button id="mob-zone-btn" title="Toggle zone">⏺</button>
-
-  <div id="zone-move" class="touch-zone">
-    <div id="move-base" class="stick-base"></div><div id="move-knob" class="stick-knob"></div>
-  </div>
-  <div id="zone-sword" class="touch-zone">
-    <div id="sword-base" class="stick-base"><div id="sword-knob" class="stick-knob"></div></div>
-  </div>
-
-  <!-- Fixed stick (mode 2) — positioned via JS, overlays the right zone -->
-  <div id="fixed-stick-base">
-    <div id="fixed-stick-knob"></div>
-    <div id="fixed-stick-reticle"></div>
-  </div>
+  <button id="mob-bot-shield-btn" data-i18n-title="mobile.controls.shield">🛡️</button>
+  <button id="mob-bot-weapon-btn" data-i18n-title="mobile.controls.weapon">⚔️</button>
+  <button id="mob-spawn-btn" data-i18n-title="mobile.controls.spawn">🤖</button>
+  <button id="mob-menu-btn" data-i18n-title="mobile.controls.menu">☰</button>
+  <button id="mob-style-btn" data-i18n-title="mobile.controls.style">⚔</button>
+  <button id="mob-shield-flip-btn" data-i18n-title="mobile.controls.shieldFlip">🛡</button>
+  <button id="mob-weapon-btn" data-i18n-title="mobile.controls.weapon">⚔</button>
+  <button id="mob-throw-btn" data-i18n-title="mobile.controls.throw">⬇</button>
+  <button id="mob-dodge-btn" data-i18n-title="mobile.controls.dodge">💨</button>
+  <button id="mob-music-btn" data-i18n-title="mobile.controls.music">🎵</button>
+  <button id="mob-zone-btn" data-i18n-title="mobile.controls.zone">⏺</button>
+  <div id="zone-move" class="touch-zone"><div id="move-base" class="stick-base"></div><div id="move-knob" class="stick-knob"></div></div>
+  <div id="zone-sword" class="touch-zone"><div id="sword-base" class="stick-base"><div id="sword-knob" class="stick-knob"></div></div></div>
+  <div id="fixed-stick-base"><div id="fixed-stick-knob"></div><div id="fixed-stick-reticle"></div></div>
 </div>
 
-<!-- ─── MOBILE MENU OVERLAY (pause/restart/settings) ────────────── -->
 <div id="mob-menu-overlay">
-  <button id="mob-resume" class="menu-btn">▶ RESUME</button>
-  <button id="mob-profile-btn" class="menu-btn">👤 PROFILE</button>
-  <!-- Quick match / network buttons grouped together -->
+  <button id="mob-resume" class="menu-btn-mob" data-i18n="btn.resume"></button>
+  <button id="mob-profile-btn" class="menu-btn-mob" data-i18n="btn.profile"></button>
   <div class="mob-net-group">
-    <button id="mob-quickmatch-btn" class="menu-btn mob-net-half left">⚡ QUICK</button>
-    <button id="mob-net-btn" class="menu-btn mob-net-half right">🌐 NET</button>
+    <button id="mob-quickmatch-btn" class="menu-btn-mob mob-net-half left" data-i18n="btn.quickMatch"></button>
+    <button id="mob-net-btn" class="menu-btn-mob mob-net-half right" data-i18n="btn.network"></button>
   </div>
-  <button id="mob-control-mode-btn" class="menu-btn">🎮 CONTROL MODE</button>
-  <button id="mob-toggle-settings" class="menu-btn">⚙️ SETTINGS</button>
-  <button id="mob-restart" class="menu-btn" style="margin-top:8px;">🔄 RESTART</button>
+  <button id="mob-control-mode-btn" class="menu-btn-mob" data-i18n="btn.controlMode"></button>
+  <button id="mob-toggle-settings" class="menu-btn-mob" data-i18n="btn.settings"></button>
+  <button id="mob-restart" class="menu-btn-mob" style="margin-top:8px;" data-i18n="btn.restart"></button>
 </div>
 
-<!-- ─── SETTINGS OVERLAY (mobile fullscreen) ────────────────────── -->
-<div id="mob-settings-overlay" style="
-  display:none; position:fixed; inset:0; z-index:600;
-  background:rgba(5,8,12,0.96);
-  flex-direction:column; align-items:center; justify-content:center;
-  overflow-y:auto; padding:20px 16px;
-">
-  <div style="font-family:'Share Tech Mono',monospace;font-size:13px;color:#6ab0d0;letter-spacing:2px;margin-bottom:16px;">⚙️ SETTINGS</div>
+<div id="mob-settings-overlay">
+  <div style="font-family:'Share Tech Mono',monospace;font-size:13px;color:#6ab0d0;letter-spacing:2px;margin-bottom:16px;" data-i18n="mobile.settingsTitle"></div>
   <div id="mob-settings-embed" style="width:100%;max-width:400px;"></div>
-  <button id="mob-settings-close" style="
-    margin-top:20px;font-family:'Share Tech Mono',monospace;font-size:13px;
-    padding:10px 32px;border-radius:22px;background:rgba(20,30,45,0.9);
-    color:#6ab0d0;border:1px solid #2a5a80;cursor:pointer;
-  ">✕ CLOSE</button>
+  <button id="mob-settings-close" class="menu-btn-mob" style="margin-top:20px;" data-i18n="mobile.settingsClose"></button>
 </div>
 
-<script charset="utf-8" src="src/ui/mobile.js"></script>
-
-<!-- ─── OVERLAY: NAME INPUT ───────────────────────────────────────── -->
+<!-- ===== OVERLAYS ===== -->
 <div id="name-overlay" class="game-overlay">
-  <p class="ov-sub">Enter your name</p>
-  <h2 class="ov-title">WELCOME TO THE ARENA</h2>
-  <input type="text" id="name-input" class="ov-input" maxlength="16" placeholder="YOUR NAME" autocomplete="off" spellcheck="false">
-
-  <!-- ─── SHIELD SELECTION ─────────────────────────────────────── -->
+  <p class="ov-sub" data-i18n="overlay.enterName"></p>
+  <h2 class="ov-title" data-i18n="overlay.welcome"></h2>
+  <input type="text" id="name-input" class="ov-input" maxlength="16" autocomplete="off" spellcheck="false" data-i18n-placeholder="overlay.namePlaceholder">
   <div class="ov-card" style="max-width:340px;width:100%;margin-top:12px;">
-    <h3 style="margin:0 0 10px;font-size:10px;color:#2a6a8a;letter-spacing:1px;">🛡 SHIELD</h3>
+    <h3 style="margin:0 0 10px;font-size:10px;color:#2a6a8a;letter-spacing:1px;" data-i18n="overlay.shieldTitle"></h3>
     <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
-      <button class="ov-btn small shield-pick" data-shield="0" style="flex:1;min-width:60px;" onclick="pickShield(0)">
-        ✖ None
-      </button>
-      <button class="ov-btn small shield-pick" data-shield="1" style="flex:1;min-width:60px;" onclick="pickShield(1)">
-        🛡 Small
-      </button>
-      <button class="ov-btn small shield-pick" data-shield="2" style="flex:1;min-width:60px;" onclick="pickShield(2)">
-        🛡 Large
-      </button>
-      <button class="ov-btn small shield-pick" data-shield="3" style="flex:1;min-width:60px;" onclick="pickShield(3)">
-        🛡 Tower
-      </button>
+      <button class="ov-btn small shield-pick" data-shield="0" style="flex:1;min-width:60px;" onclick="pickShield(0)" data-i18n="overlay.shieldNone"></button>
+      <button class="ov-btn small shield-pick" data-shield="1" style="flex:1;min-width:60px;" onclick="pickShield(1)" data-i18n="overlay.shieldSmall"></button>
+      <button class="ov-btn small shield-pick" data-shield="2" style="flex:1;min-width:60px;" onclick="pickShield(2)" data-i18n="overlay.shieldLarge"></button>
+      <button class="ov-btn small shield-pick" data-shield="3" style="flex:1;min-width:60px;" onclick="pickShield(3)" data-i18n="overlay.shieldTower"></button>
     </div>
-    
-    <!-- Spiked shields row -->
     <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:4px;">
-      <button class="ov-btn small shield-pick" data-shield="4" style="flex:1;min-width:60px;" onclick="pickShield(4)">
-        🔥 Small
-      </button>
-      <button class="ov-btn small shield-pick" data-shield="5" style="flex:1;min-width:60px;" onclick="pickShield(5)">
-        🔥 Medium
-      </button>
-      <button class="ov-btn small shield-pick" data-shield="6" style="flex:1;min-width:60px;" onclick="pickShield(6)">
-        🔥 Large
-      </button>
+      <button class="ov-btn small shield-pick" data-shield="4" style="flex:1;min-width:60px;" onclick="pickShield(4)" data-i18n="overlay.shieldSpikedSmall"></button>
+      <button class="ov-btn small shield-pick" data-shield="5" style="flex:1;min-width:60px;" onclick="pickShield(5)" data-i18n="overlay.shieldSpikedMedium"></button>
+      <button class="ov-btn small shield-pick" data-shield="6" style="flex:1;min-width:60px;" onclick="pickShield(6)" data-i18n="overlay.shieldSpikedLarge"></button>
     </div>
-    
-    <div style="font-size:9px;color:#1a4a5a;margin-top:8px;text-align:center;" id="shield-info">No shield</div>
+    <div style="font-size:9px;color:#1a4a5a;margin-top:8px;text-align:center;" id="shield-info" data-i18n="overlay.shieldInfo"></div>
   </div>
-
-  <button id="name-confirm" class="ov-btn accent" style="margin-top:12px;">✅ CONFIRM</button>
+  <button id="name-confirm" class="ov-btn accent" style="margin-top:12px;" data-i18n="btn.confirm"></button>
 </div>
 
-<!-- ─── OVERLAY: NETWORK MENU ─────────────────────────────────────── -->
 <div id="net-overlay" class="game-overlay">
-
-  <!-- ─── MAIN SCREEN ─────────────────────────────────────────────── -->
   <div id="net-screen-main" class="net-screen">
-    <h2 class="ov-title">🌐 NETWORK</h2>
+    <h2 class="ov-title" data-i18n="net.title"></h2>
     <div class="ov-card" style="max-width:380px;">
       <div class="ov-row" style="margin-bottom:0;">
-        <span class="ov-label">Player:</span>
-        <span class="ov-val" id="net-myname">—</span>
+        <span class="ov-label" data-i18n="net.player"></span>
+        <span class="ov-val" id="net-myname"></span>
         <span class="ov-val" id="net-myid" style="font-size:9px;color:#2a7a50;flex:none;"></span>
-        <button class="ov-btn small" id="net-rename">✏</button>
-        <button class="ov-btn small" id="net-copyid">📋</button>
+        <button class="ov-btn small" id="net-rename" data-i18n="btn.rename"></button>
+        <button class="ov-btn small" id="net-copyid" data-i18n="btn.copy"></button>
       </div>
     </div>
-
-    <!-- Server selection — two options (main/backup) -->
     <div class="ov-card" style="max-width:380px;" id="net-server-select">
-      <h3 style="margin:0 0 8px;font-size:10px;color:#2a6a8a;">🔌 SIGNALING SERVER</h3>
+      <h3 style="margin:0 0 8px;font-size:10px;color:#2a6a8a;" data-i18n="net.signaling"></h3>
       <div style="display:flex;gap:8px;">
-        <button class="ov-btn small" id="net-srv-main" style="flex:1;" onclick="chooseServer(0)">
-          🌐 Main
-        </button>
-        <button class="ov-btn small" id="net-srv-alt" style="flex:1;" onclick="chooseServer(1)">
-          🔄 Backup
-        </button>
+        <button class="ov-btn small" id="net-srv-main" style="flex:1;" onclick="chooseServer(0)" data-i18n="btn.serverMain"></button>
+        <button class="ov-btn small" id="net-srv-alt" style="flex:1;" onclick="chooseServer(1)" data-i18n="btn.serverBackup"></button>
       </div>
-      <div style="font-size:9px;color:#1a4a5a;margin-top:6px;line-height:1.5;">
-        If "Main" doesn't connect — try "Backup" (may be slower).
-      </div>
+      <div style="font-size:9px;color:#1a4a5a;margin-top:6px;line-height:1.5;" data-i18n="net.serverInfo"></div>
     </div>
-
     <div id="net-log" style="max-width:380px;width:100%;min-height:32px;padding:0 4px;"></div>
-    <button class="ov-btn" onclick="showNetScreen('net-screen-friends')" style="max-width:380px;width:100%;">
-      📇 FRIENDS / ID BOOK
-    </button>
-    <button class="ov-btn back" id="net-close-btn">✕ CLOSE</button>
+    <button class="ov-btn" onclick="showNetScreen('net-screen-friends')" style="max-width:380px;width:100%;" data-i18n="btn.friends"></button>
+    <button class="ov-btn back" id="net-close-btn" data-i18n="btn.close"></button>
   </div>
-
-  <!-- ─── FRIENDS SCREEN ───────────────────────────────────────────── -->
   <div id="net-screen-friends" class="net-screen" style="display:none;">
-    <h2 class="ov-title">📇 FRIENDS / ID BOOK</h2>
+    <h2 class="ov-title" data-i18n="net.friendsTitle"></h2>
     <div class="ov-card" style="max-width:380px;">
-      <h3>Contacts <span id="net-friends-count" style="color:#2a7a50;">(0/30)</span></h3>
+      <h3 data-i18n="net.contacts"> <span id="net-friends-count" style="color:#2a7a50;" data-i18n="net.friendsCount"></span></h3>
       <div class="ov-row">
-        <input type="text" id="net-friend-name" class="ov-input wide" placeholder="Name" maxlength="16" style="flex:1;">
-        <input type="text" id="net-friend-id" class="ov-input wide" placeholder="ID (from clipboard)" maxlength="20" style="flex:1.5;">
-        <button class="ov-btn accent small" id="net-add-friend">+</button>
+        <input type="text" id="net-friend-name" class="ov-input wide" maxlength="16" style="flex:1;" data-i18n-placeholder="net.friendName">
+        <input type="text" id="net-friend-id" class="ov-input wide" maxlength="20" style="flex:1.5;" data-i18n-placeholder="net.friendId">
+        <button class="ov-btn accent small" id="net-add-friend" data-i18n="btn.addFriend"></button>
       </div>
       <div id="net-friends-list" style="max-height:200px;overflow-y:auto;margin-top:4px;"></div>
     </div>
-    <button class="ov-btn back" onclick="showNetScreen('net-screen-main')">← BACK</button>
+    <button class="ov-btn back" onclick="showNetScreen('net-screen-main')" data-i18n="btn.back"></button>
   </div>
-
-  <!-- ─── LOBBY SCREEN ─────────────────────────────────────────────── -->
   <div id="net-screen-lobby" class="net-screen" style="display:none;">
-    <h2 class="ov-title">🔍 LOBBY SEARCH</h2>
+    <h2 class="ov-title" data-i18n="lobby.title"></h2>
     <div class="ov-card" style="max-width:380px;text-align:center;">
-      <div id="lobby-status" style="font-size:12px;color:#2a7a9a;margin-bottom:12px;">Searching for players...</div>
+      <div id="lobby-status" style="font-size:12px;color:#2a7a9a;margin-bottom:12px;" data-i18n="net.searching"></div>
       <div id="lobby-list" style="max-height:200px;overflow-y:auto;margin-bottom:10px;"></div>
-      <div style="font-size:10px;color:#1a4a5a;margin-top:8px;">
-        Everyone sees the same list. Click a player to connect.
-        <br><b style="color:#cc8040;">⚠️ A bot only fights if you press PLAY in chat!</b>
-      </div>
+      <div style="font-size:10px;color:#1a4a5a;margin-top:8px;" data-i18n="net.lobbyInfo"></div>
     </div>
-    <button class="ov-btn back" onclick="stopLobby();showNetScreen('net-screen-main');">← BACK</button>
+    <button class="ov-btn back" onclick="stopLobby();showNetScreen('net-screen-main')" data-i18n="btn.back"></button>
   </div>
-
-  <!-- ─── CHAT SCREEN ──────────────────────────────────────────────── -->
   <div id="net-screen-chat" class="net-screen" style="display:none;width:100%;max-width:480px;">
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;max-width:480px;width:100%;">
-      <span class="ov-title" style="margin:0;">💬</span>
+      <span class="ov-title" style="margin:0;" data-i18n="net.chatPeer"></span>
       <span id="net-chat-peer" style="color:#4acc80;font-size:14px;flex:1;"></span>
-      <button class="ov-btn accent small" id="net-chat-play">▶ PLAY</button>
-      <button class="ov-btn danger small" id="net-chat-disconnect">⚡ EXIT</button>
+      <button class="ov-btn accent small" id="net-chat-play" data-i18n="btn.play"></button>
+      <button class="ov-btn danger small" id="net-chat-disconnect" data-i18n="btn.exit"></button>
     </div>
     <div class="ov-card" style="max-width:480px;width:100%;">
       <div id="net-chat-msgs" style="height:220px;overflow-y:auto;display:flex;flex-direction:column;gap:5px;margin-bottom:8px;"></div>
       <div style="display:flex;gap:8px;">
-        <input type="text" id="net-chat-input" class="ov-input wide" placeholder="Type a message..." maxlength="200" autocomplete="off" style="flex:1;max-width:none;">
-        <button class="ov-btn accent small" id="net-chat-send">➤</button>
+        <input type="text" id="net-chat-input" class="ov-input wide" maxlength="200" autocomplete="off" style="flex:1;max-width:none;" data-i18n-placeholder="net.chatPlaceholder">
+        <button class="ov-btn accent small" id="net-chat-send" data-i18n="btn.send"></button>
       </div>
     </div>
   </div>
-
 </div>
+
+<!-- ===== СКРИПТЫ ===== -->
+<script>
+// ================================================================
+// 1. МАКРОСЫ (ДО ВСЕХ ОСТАЛЬНЫХ СКРИПТОВ)
+// ================================================================
+(function() {
+  'use strict';
+
+  // ─── РЕНДЕРЕР СЛАЙДЕРОВ ───
+  document.querySelectorAll('[data-slider]').forEach(el => {
+    const parts = el.dataset.slider.split(',');
+    const [id, labelKey, val, min, max, step] = parts;
+    const hasColor = parts.length > 6 && parts[6] === 'true';
+    const color = hasColor ? '#ccaa30' : '#3a9acc';
+    let labelText = (window.i18n && typeof window.i18n.t === 'function') ? window.i18n.t(labelKey) : labelKey;
+    if (document.getElementById('sl-' + id)) return;
+    el.innerHTML = `
+      <div class="row">
+        <div class="row-head"><label style="${hasColor ? 'color:'+color : ''}">${labelText}</label><span class="val" style="${hasColor ? 'color:'+color : ''}" id="vl-${id}">${val}</span></div>
+        <input type="range" id="sl-${id}" min="${min}" max="${max}" step="${step}" value="${val}" style="accent-color:${color};">
+      </div>
+    `;
+  });
+
+  // ─── РЕНДЕРЕР ЧЕКБОКСОВ ───
+  document.querySelectorAll('[data-checkbox]').forEach(el => {
+    const parts = el.dataset.checkbox.split(',');
+    const [id, labelKey] = parts;
+    const checked = parts.length > 2 && parts[2] === 'true' ? 'checked' : '';
+    const hasColor = parts.length > 3 && parts[3] === 'true';
+    const color = hasColor ? '#3acc70' : '#ccaa30';
+    let labelText = (window.i18n && typeof window.i18n.t === 'function') ? window.i18n.t(labelKey) : labelKey;
+    if(labelKey === 'checkbox.botRandomWeapon' && labelText === labelKey) labelText = '&#1057;&#1083;&#1091;&#1095;&#1072;&#1081;&#1085;&#1086;&#1077; &#1086;&#1088;&#1091;&#1078;&#1080;&#1077; &#1073;&#1086;&#1090;&#1086;&#1074;';
+    if (document.getElementById('cb-' + id)) return;
+    el.innerHTML = `
+      <div class="row" style="flex-direction:row;align-items:center;gap:7px;">
+        <input type="checkbox" id="cb-${id}" style="accent-color:${color};cursor:pointer;" ${checked}>
+        <label for="cb-${id}" style="font-size:8px;${hasColor ? 'color:'+color : ''};cursor:pointer;letter-spacing:0.5px;">${labelText}</label>
+      </div>
+    `;
+  });
+
+  // ─── РЕНДЕРЕР СЕЛЕКТОВ ───
+  document.querySelectorAll('[data-select]').forEach(el => {
+    const parts = el.dataset.select.split(',');
+    const [id, labelKey, opts, defVal] = parts;
+    const options = opts.split(';').map(o => {
+      const [val, textKey] = o.split(':');
+      const text = (window.i18n && typeof window.i18n.t === 'function') ? window.i18n.t(textKey) : textKey;
+      return {val, text};
+    });
+    const val = defVal || options[0].val;
+    const labelText = (window.i18n && typeof window.i18n.t === 'function') ? window.i18n.t(labelKey) : labelKey;
+    if (document.getElementById(id)) return;
+    el.innerHTML = `
+      <div class="row">
+        <div class="row-head"><label>${labelText}</label></div>
+        <select id="${id}" style="width:100%;padding:6px;background:#081522;border:1px solid #1a5070;border-radius:3px;color:#8ad8ff;font-family:'Share Tech Mono',monospace;font-size:9px;cursor:pointer;">
+          ${options.map(o => `<option value="${o.val}" ${o.val==val?'selected':''}>${o.text}</option>`).join('')}
+        </select>
+      </div>
+    `;
+  });
+
+  // ─── РЕНДЕРЕР HUD ПОЛОСОК ───
+  document.querySelectorAll('[data-hud]').forEach(el => {
+    const ids = el.dataset.hud.split(',');
+    const [hp, stam, rage] = ids;
+    if (document.getElementById(hp)) return;
+    el.innerHTML = `
+      <div class="hp-bar"><div class="fill" id="${hp}"></div></div>
+      <div class="stam-bar"><div class="fill" id="${stam}"></div></div>
+      <div class="rage-bar"><div class="fill" id="${rage}"></div></div>
+      <div class="hud-labels">
+        <span class="hp" data-i18n="hud.hp"></span>
+        <span class="stam" data-i18n="hud.stam"></span>
+        <span class="rage" data-i18n="hud.rage"></span>
+      </div>
+    `;
+  });
+
+  // ─── ЗАГЛУШКИ ДЛЯ НЕДОСТАЮЩИХ ID ───
+  function createMissingElements() {
+    const neededIds = [
+      'sl-playerglow','vl-playerglow','sl-playerrespawn-legacy','vl-playerrespawn-legacy',
+      'sl-bgbright','vl-bgbright','sl-gridbright','vl-gridbright',
+      'sl-dist','vl-dist','sl-spd','vl-spd','sl-inertia','vl-inertia',
+      'sl-ex','vl-ex','sl-ey','vl-ey','sl-blk','vl-blk',
+      'sl-aex','vl-aex','sl-aey','vl-aey','sl-as','vl-as',
+      'sl-sc0','vl-sc0','sl-sc1','vl-sc1','sl-scs','vl-scs',
+      'sl-srot','vl-srot','sl-sox','vl-sox','sl-soy','vl-soy',
+      'sl-cscl','vl-cscl','sl-swlen','vl-swlen','sl-flailspeedmult','vl-flailspeedmult',
+      'sl-flailsag','vl-flailsag','sl-dzone','vl-dzone',
+      'sl-aiang','vl-aiang','sl-duelrad','vl-duelrad','sl-circchance','vl-circchance',
+      'sl-probingchance','vl-probingchance','sl-probingretreat','vl-probingretreat',
+      'sl-spindur','vl-spindur','sl-playerrespawn','vl-playerrespawn',
+      'sl-gamepadflickwindow','vl-gamepadflickwindow','sl-gamepadflickminvel','vl-gamepadflickminvel',
+      'sl-gamepadflickminamp','vl-gamepadflickminamp','sl-gamepadflickcount','vl-gamepadflickcount',
+      'sl-gamepadflickmaxmult','vl-gamepadflickmaxmult','sl-gamepadstamflick','vl-gamepadstamflick',
+      'sl-gamespeed','vl-gamespeed','sl-camrows','vl-camrows','sl-musicvol','vl-musicvol',
+      'sl-botcount','vl-botcount','sl-botspd','vl-botspd','sl-botdodgechance','vl-botdodgechance',
+      'sl-botdodgetoward','vl-botdodgetoward','sl-botscale','vl-botscale','sl-botswordscale','vl-botswordscale',
+      'sl-globalspd','vl-globalspd','sl-swthresh','vl-swthresh','sl-stamblock','vl-stamblock',
+      'sl-stamswing','vl-stamswing','sl-kbforce','vl-kbforce','sl-unbdur','vl-unbdur',
+      'sl-unbcombo','vl-unbcombo','sl-stamreg','vl-stamreg','sl-lmbcost','vl-lmbcost',
+      'sl-lmbdmg','vl-lmbdmg','sl-rageper','vl-rageper','sl-ragebuf','vl-ragebuf',
+      'sl-exhdur2','vl-exhdur2','sl-exhspd2','vl-exhspd2','sl-exhswd2','vl-exhswd2',
+      'sl-swres','vl-swres','sl-bladeKB','vl-bladeKB','sl-bodyKB','vl-bodyKB',
+      'sl-blockSlowDur','vl-blockSlowDur','sl-blockSlowMult','vl-blockSlowMult',
+      'sl-deflectMin','vl-deflectMin','sl-deflectMax','vl-deflectMax',
+      'sl-swordback','vl-swordback','sl-blockKB','vl-blockKB',
+      'sl-disarmchance','vl-disarmchance','sl-orbitwindow','vl-orbitwindow',
+      'sl-orbitturns','vl-orbitturns','sl-stamorbit','vl-stamorbit',
+      'sl-flickwindow','vl-flickwindow','sl-flickminvel','vl-flickminvel',
+      'sl-flickminamp','vl-flickminamp','sl-flickcount','vl-flickcount',
+      'sl-flickmaxmult','vl-flickmaxmult','sl-stamflick','vl-stamflick',
+      'sl-dbg','vl-dbg'
+    ];
+    neededIds.forEach(id => { if (!document.getElementById(id)) { const el = document.createElement('div'); el.id = id; el.style.display = 'none'; document.body.appendChild(el); } });
+  }
+
+  // ─── СИНХРОНИЗАЦИЯ СЛАЙДЕРОВ ───
+  function syncSliders() {
+    document.querySelectorAll('.row input[type=range]').forEach(input => {
+      const id = input.id.replace('sl-', '');
+      const val = document.getElementById('vl-' + id);
+      if (val) val.textContent = input.value;
+    });
+  }
+
+  createMissingElements();
+  document.addEventListener('input', e => { if (e.target.closest('.row input[type=range]')) syncSliders(); });
+  window.syncSliders = syncSliders;
+  console.log('✅ Макросы инициализированы');
+})();
+</script>
+
+<!-- ===== i18n ===== -->
+<script src="src/core/i18n.js"></script>
+
+<!-- ===== ОСНОВНЫЕ СКРИПТЫ ===== -->
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
-<script charset="utf-8" src="src/network/net-ui.js"></script>
-<script charset="utf-8" src="src/network/net-core.js"></script>
-<script charset="utf-8" src="src/network/net-sync.js"></script>
-<script charset="utf-8" src="src/network/net-lobby.js"></script>
-<script charset="utf-8" src="src/network/net-effects.js"></script>
-<script charset="utf-8" src="src/input/gamepad-adapter.js"></script>
-<script charset="utf-8" src="src/input/gamepad-controls.js"></script>
+<script src="src/core/engine.js"></script>
+<script src="src/core/math.js"></script>
+<script src="src/core/entity.js"></script>
+<script src="src/core/debug-config.js"></script>
+<script src="src/core/settings.js"></script>
+<script src="src/systems/fx.js"></script>
+<script src="src/systems/buff.js"></script>
+<script src="src/systems/audio.js"></script>
+<script src="src/systems/sprites.js"></script>
+<script src="src/combat/weapons.js"></script>
+<script src="src/combat/flail.js"></script>
+<script src="src/combat/ranged.js"></script>
+<script src="src/combat/debug-balls.js"></script>
+<script src="src/combat/combat.js"></script>
+<script src="src/combat/factions.js"></script>
+<script src="src/ai/ai.js"></script>
+<script src="src/input/keyboard-layout.js"></script>
+<script src="src/input/player-controls.js"></script>
+<script src="src/arena/arena.js"></script>
+<script src="src/ui/hud.js"></script>
+<script src="src/main.js"></script>
+<script src="src/ui/mobile.js"></script>
+<script src="src/network/net-ui.js"></script>
+<script src="src/network/net-core.js"></script>
+<script src="src/network/net-sync.js"></script>
+<script src="src/network/net-lobby.js"></script>
+<script src="src/network/net-effects.js"></script>
+<script src="src/input/gamepad-adapter.js"></script>
+<script src="src/input/gamepad-controls.js"></script>
+
 </body>
 </html>

@@ -144,22 +144,31 @@ botUpdateExhaustion(bot, dt);
   bot.y = $.M.clamp(bot.y+bot.vy*step, 40, H-40);
   resolveBoxCollision(bot);
 
-  bot.prevAngle = bot.angle;
-  bot.angle = angToPlayer;
-
   bot._atkCD = (bot._atkCD||0) - dt;
-  if(canEngage && dist < engageDist*1.3 && bot._atkCD<=0 && bot.stamina>20 && bot.exhausted<=0){
-    bot._atkCD = rf(0.6,0.8);
-    const swingTarget = (Math.random()<0.5?1:-1) * (sv('swthresh')*1.6);
-    if($.IS(bot, 'flail')){
-      updateFlailSwing(bot, angToPlayer, dt);
-    } else {
-      bot.vel = swingTarget;
-    }
+  bot.prevAngle = bot.angle;
+  if(!bot._lwSpinUntil) bot._lwSpinUntil = -1;
+  if(!bot._lwSpinCD) bot._lwSpinCD = GameTime + rf(1.0, 2.0);
+  if(canEngage && bot._atkCD<=0 && GameTime >= bot._lwSpinCD && bot.stamina>20 && bot.exhausted<=0 && !isRangedWeapon(bot)){
+    const dur = Math.max(0.25, sv('spindur') || 0.65);
+    bot._atkCD = rf(1.2, 1.0);
+    bot._lwSpinUntil = GameTime + dur;
+    bot._lwSpinSpeed = (Math.PI * 2 / dur) * (Math.random()<0.5 ? 1 : -1);
+    bot._lwSpinCD = GameTime + rf(3.0, 4.0);
+  }
+  if(GameTime < bot._lwSpinUntil){
+    bot.angle += bot._lwSpinSpeed * dt;
+    bot.vel = bot._lwSpinSpeed;
   } else if($.IS(bot, 'flail') && bot._flailSwingTarget){
     bot.vel = $.M.lerpDT(bot.vel, bot._flailSwingTarget, 0.18, dt);
     if(Math.abs(bot.vel - bot._flailSwingTarget) < 0.05) bot._flailSwingTarget = 0;
+  } else if(!isRangedWeapon(bot)){
+    const rel = $.M.angDiff(P.angle, angToPlayer);
+    const mirrorAng = angToPlayer - $.M.clamp(rel, -Math.PI/4, Math.PI/4);
+    const diff = $.M.angDiff(mirrorAng, bot.angle);
+    bot.vel = $.M.decay(bot.vel, 0.88, dt) + diff * 0.45 * weaponSwingSpeedMult(bot);
+    bot.angle = $.M.angLerpDT(bot.angle, mirrorAng, 0.24, dt);
   } else {
+    bot.angle = $.M.angLerpDT(bot.angle, angToPlayer, 0.24, dt);
     bot.vel = $.M.decay(bot.vel, 0.85, dt);
   }
 
@@ -1040,8 +1049,9 @@ function drawShield(ent, cursorX){
   const _maxTilt = 15*Math.PI/180;
   const shieldAngle = $.M.clamp(_rawTilt, -_maxTilt, _maxTilt);
 
+  const aiState = ent && ent._aiState;
   const lmbActive = (ent===P) ? $.A.meleeHold(ent, mDown)
-    : (typeof AI!=='undefined' && $.A.meleeHold(ent, AI._fakeMDown));
+    : (aiState && $.A.meleeHold(ent, aiState._fakeMDown));
   const _shDisabled = $.E.shieldOff(ent);
   ent._shieldAlpha = lmbActive ? 0.25 : (_shDisabled ? 0.3 : 1.0);
 
@@ -1186,68 +1196,68 @@ function drawOverheadHealthBar(ent, cscl){
   ctx.fillRect(x,y,width*Math.max(0,Math.min(100,ent.hp))/100,height);
   ctx.restore();
 }
-function drawDummy(){
+function drawDummy(bot = D){
   if(!dummyOn) return;
-  if(!D || D._defeated || D.hp <= 0 || D._awaitingReveal) return;
-  const drc = {x: D.x+5, y: D.y-8};
-  const dpivX = drc.x + D.pvX, dpivY = drc.y + D.pvY;
+  if(!bot || bot._defeated || bot.hp <= 0 || bot._awaitingReveal) return;
+  const drc = {x: bot.x+5, y: bot.y-8};
+  const dpivX = drc.x + bot.pvX, dpivY = drc.y + bot.pvY;
  
 
 function _drawDummySword(){
-  const weaponKey = weaponDefFor(D).key;
-  const dAlpha = getDebuffAlpha(D);
+  const weaponKey = weaponDefFor(bot).key;
+  const dAlpha = getDebuffAlpha(bot);
   
   // 🔥 ДЛЯ ЛУКА — ИСПОЛЬЗУЕМ СПЕЦИАЛЬНУЮ ФУНКЦИЮ
   if(weaponKey === 'bow'){
     ctx.save();
     ctx.globalAlpha = dAlpha;
-    drawWeaponWithShake(D, dpivX, dpivY);
+    drawWeaponWithShake(bot, dpivX, dpivY);
     ctx.restore();
     return;
   }
   
   // 🔥 ЕДИНАЯ ТРЯСКА ДЛЯ ЖЕЗЛА И МАГИЧЕСКОГО ПОСОХА БОТА
   let shakeX = 0, shakeY = 0, shakeAngle = 0;
-  if($.E.chargeShake(D)){
-    shakeX = D._chargeShakeX || 0;
-    shakeY = D._chargeShakeY || 0;
-    shakeAngle = D._chargeShakeAngle || 0;
+  if($.E.chargeShake(bot)){
+    shakeX = bot._chargeShakeX || 0;
+    shakeY = bot._chargeShakeY || 0;
+    shakeAngle = bot._chargeShakeAngle || 0;
   }
   
   ctx.save();
   ctx.globalAlpha = dAlpha;
   ctx.translate(dpivX + shakeX, dpivY + shakeY);
-  ctx.rotate(D.angle + Math.PI/2 + shakeAngle);
-  const dSw = effSwordScale(D) * sv('swlen') * sv('botswordscale');
+  ctx.rotate(bot.angle + Math.PI/2 + shakeAngle);
+  const dSw = effSwordScale(bot) * sv('swlen') * sv('botswordscale');
   ctx.scale(dSw, dSw);
-  const spd2 = Math.abs(D.vel);
+  const spd2 = Math.abs(bot.vel);
   let dGlowColor = null, dGlowBlur = 0;
-  if(D.rageBuffEnd > GameTime){
+  if(bot.rageBuffEnd > GameTime){
     dGlowColor = 'rgba(255,20,0,1.0)';
     dGlowBlur = 30 + spd2 * 20;
   }
-  const dImg = D._weaponImg;
+  const dImg = bot._weaponImg;
   if(weaponKey === 'flail'){
-    drawFlailSprite(ctx, D, weaponLenFor(D), dGlowColor, dGlowBlur);
+    drawFlailSprite(ctx, bot, weaponLenFor(bot), dGlowColor, dGlowBlur);
   } else if(dImg && dImg.complete && dImg.naturalWidth > 0){
-    drawSwordSprite(ctx, dImg, weaponLenFor(D), dGlowColor, dGlowBlur, 
-      CENTER_GRIP_CATEGORIES.includes(weaponDefFor(D).category), weaponKey);
+    drawSwordSprite(ctx, dImg, weaponLenFor(bot), dGlowColor, dGlowBlur, 
+      CENTER_GRIP_CATEGORIES.includes(weaponDefFor(bot).category), weaponKey);
   }
   ctx.restore();
 }
 
   // Если щит в той же руке что меч — рисуем меч ЗА телом
-  const _dSwordBehind = shieldDef(D) && shieldSameSideAsSword(D);
+  const _dSwordBehind = shieldDef(bot) && shieldSameSideAsSword(bot);
   if(_dSwordBehind) _drawDummySword();
-  drawChar(D, sv('cscl') * sv('botscale'), '#4a1a10', '#6a2a18');
+  drawChar(bot, sv('cscl') * sv('botscale'), '#4a1a10', '#6a2a18');
   if(!_dSwordBehind) _drawDummySword();
 
   // 🔥 РИСУЕМ СТРЕЛУ НА ЛУКЕ БОТА (поверх всего)
-  drawBowArrow(D);
+  drawBowArrow(bot);
 
   // хит-флеш бота
-  if(dummyOn && D.hitFlash > GameTime){
-    const flashAlphaD = Math.min(0.25, (D.hitFlash - GameTime) / 0.25 * 0.25);
+  if(dummyOn && bot.hitFlash > GameTime){
+    const flashAlphaD = Math.min(0.25, (bot.hitFlash - GameTime) / 0.25 * 0.25);
     ctx.fillStyle=`rgba(255,40,40,${flashAlphaD})`;
     ctx.fillRect(0,0,W,H);
   }

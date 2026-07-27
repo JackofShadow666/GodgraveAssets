@@ -1,4 +1,4 @@
-﻿// === src/core/settings.js ===
+// === src/core/settings.js ===
 // Extracted from Build.html; loaded as a classic script to preserve shared runtime state.
 // LAYER: SETTINGS — панель настроек (sv/cb/bindSlider), слайдеры
 // Module file: settings.js
@@ -113,6 +113,10 @@ document.getElementById('sl-botcount')?.addEventListener('input', function(){
   const count=Math.max(0,Number(this.value)||0);
   if(count>0) window._localBotSpawnPreset=count;
   if(typeof applyBotCount==='function') applyBotCount();
+});
+document.getElementById('cb-botrandomweapon')?.addEventListener('change', function(){
+  if(!this.checked || typeof ALL_BOTS === 'undefined' || typeof maybeSetRandomBotWeapon !== 'function') return;
+  for(const bot of ALL_BOTS) maybeSetRandomBotWeapon(bot, true);
 });
 
 document.getElementById('sl-musicvol')?.addEventListener('input', function(){
