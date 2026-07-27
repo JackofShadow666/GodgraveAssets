@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -17,9 +19,9 @@ canvas{display:block;position:fixed;top:0;left:0;cursor:none;}
 #ph{padding:14px 16px 10px;border-bottom:1px solid #1a2e44;flex-shrink:0;}
 #ph h2{font-family:'Oswald',sans-serif;font-size:14px;letter-spacing:3px;color:#6ab0d0;text-transform:uppercase;}
 #ph p{font-size:8px;color:#3a5a70;margin-top:3px;letter-spacing:1px;line-height:1.6;}
-#controls{flex:1;overflow-y:auto;padding:10px 12px;scrollbar-width:thin;scrollbar-color:#1e3050 transparent;}
-#controls::-webkit-scrollbar{width:3px;}
-#controls::-webkit-scrollbar-thumb{background:#1e3050;}
+#controls{flex:1;overflow-y:auto;padding:10px 12px;scrollbar-width:auto;scrollbar-color:#2c4f78 transparent;}
+#controls::-webkit-scrollbar{width:10px;}
+#controls::-webkit-scrollbar-thumb{background:#2c4f78;border-radius:8px;border:2px solid #0a0e14;}
 #infobar{padding:8px 12px;border-top:1px solid #162030;font-size:8px;color:#304858;line-height:1.9;background:#060a0e;flex-shrink:0;}
 .ir{display:flex;justify-content:space-between;}
 .iv{color:#5a8898;}
@@ -83,7 +85,7 @@ canvas{display:block;position:fixed;top:0;left:0;cursor:none;}
 .game-overlay{display:none;position:fixed;inset:0;z-index:5000;background:rgba(5,8,12,0.97);flex-direction:column;align-items:center;justify-content:flex-start;gap:10px;padding:16px 12px 30px;overflow-y:auto;overflow-x:hidden;font-family:'Share Tech Mono',monospace;cursor:default;pointer-events:all;-webkit-user-select:text;user-select:text;box-sizing:border-box;}
 @media(min-height:600px){#name-overlay.open{justify-content:center;}}
 .game-overlay.open{display:flex;}
-body.menu-open canvas,body.menu-open #hud,body.menu-open #pvp-hud,body.menu-open #badge,body.menu-open #adisplay,body.menu-open #hint,body.menu-open #panel,body.menu-open #dtoggle,body.menu-open #mobile-ctrl,body.menu-open #mob-spawn-btn,body.menu-open #mob-menu-btn,body.menu-open #mob-dodge-btn,body.menu-open #mob-style-btn,body.menu-open #mob-shield-flip-btn,body.menu-open #mob-weapon-btn,body.menu-open #mob-throw-btn,body.menu-open #mob-bot-weapon-btn,body.menu-open #mob-music-btn,body.menu-open #mob-zone-btn{visibility:hidden !important;}
+body.menu-open canvas,body.menu-open #hud,body.menu-open #pvp-hud,body.menu-open #badge,body.menu-open #adisplay,body.menu-open #hint,body.menu-open #panel,body.menu-open #dtoggle,body.menu-open #mobile-ctrl,body.menu-open #mob-spawn-btn,body.menu-open #mob-menu-btn,body.menu-open #mob-dodge-btn,body.menu-open #mob-style-btn,body.menu-open #mob-shield-flip-btn,body.menu-open #mob-weapon-btn,body.menu-open #mob-throw-btn,body.menu-open #mob-bot-shield-btn,body.menu-open #mob-bot-weapon-btn,body.menu-open #mob-music-btn,body.menu-open #mob-zone-btn{visibility:hidden !important;}
 
 .ov-title{color:#6ab0d0;font-size:15px;letter-spacing:4px;text-transform:uppercase;margin:0 0 4px;}
 .ov-sub{color:#2a5a70;font-size:10px;letter-spacing:2px;margin:0;}
@@ -161,7 +163,8 @@ body.fixed-stick-mode #zone-sword .stick-base,body.fixed-stick-mode #zone-sword 
 #mob-zone-btn{top:14px;left:calc(50% + 115px);background:rgba(10,20,30,0.9);border:1px solid #3a3010;border-radius:50%;width:50px;height:50px;color:#ccaa30;font-size:20px;display:flex;align-items:center;justify-content:center;touch-action:none;z-index:1000;}
 #mob-zone-btn.active{border-color:#cc6010;color:#ff8020;background:rgba(40,20,5,0.9);}
 #mob-style-btn{top:100px;left:126px;background:rgba(10,20,30,0.9);border:1px solid #3a5a8a;border-radius:50%;width:50px;height:50px;color:#7ab0e0;font-size:18px;display:flex;align-items:center;justify-content:center;touch-action:none;}
-#mob-shield-flip-btn{top:100px;left:14px;background:rgba(10,20,30,0.9);border:1px solid #2a4a7a;border-radius:50%;width:50px;height:50px;color:#88ccff;font-size:20px;display:flex;align-items:center;justify-content:center;touch-action:none;z-index:1000;}
+#mob-shield-flip-btn{right:160px;bottom:22px;background:rgba(10,20,30,0.9);border:1px solid #2a4a7a;border-radius:50%;width:50px;height:50px;color:#88ccff;font-size:20px;display:flex;align-items:center;justify-content:center;touch-action:none;z-index:1000;}
+#mob-shield-flip-btn.active{background:rgba(20,45,70,0.96);border-color:#88ccff;box-shadow:0 0 14px rgba(120,190,255,0.45);}
 body.is-mobile:not(.is-portrait) #mob-shield-flip-btn{display:flex;}
 #mob-weapon-btn{top:100px;left:70px;background:rgba(10,20,30,0.9);border:1px solid #2a4a7a;border-radius:50%;width:50px;height:50px;color:#88ccff;font-size:20px;display:flex;align-items:center;justify-content:center;touch-action:none;z-index:1000;}
 body.is-mobile:not(.is-portrait) #mob-weapon-btn{display:flex;}
@@ -169,7 +172,9 @@ body.is-mobile:not(.is-portrait) #mob-weapon-btn{display:flex;}
 body.is-mobile:not(.is-portrait) #mob-throw-btn{display:flex;}
 #mob-dodge-btn{top:90px;right:14px;background:rgba(10,20,30,0.9);border:1px solid #2a5a3a;border-radius:50%;width:50px;height:50px;color:#4acc80;font-size:18px;display:flex;align-items:center;justify-content:center;touch-action:none;z-index:1000;}
 #mob-dodge-btn:active{background:rgba(20,60,30,0.95);}
-#mob-menu-overlay{display:none;position:fixed;inset:0;z-index:500;background:rgba(5,8,12,0.92);flex-direction:column;align-items:center;justify-content:center;gap:10px;pointer-events:all;overflow-y:auto;padding:16px 0;}
+#mob-menu-overlay{display:none;position:fixed;inset:0;z-index:500;background:rgba(5,8,12,0.92);flex-direction:column;align-items:center;justify-content:flex-start;gap:10px;pointer-events:all;overflow-y:auto;overflow-x:hidden;padding:22px 0 32px;scrollbar-width:auto;scrollbar-color:#2c4f78 transparent;}
+#mob-menu-overlay::-webkit-scrollbar,.mob-menu-embed::-webkit-scrollbar,#mob-settings-overlay::-webkit-scrollbar{width:12px;}
+#mob-menu-overlay::-webkit-scrollbar-thumb,.mob-menu-embed::-webkit-scrollbar-thumb,#mob-settings-overlay::-webkit-scrollbar-thumb{background:#2c4f78;border-radius:8px;border:2px solid rgba(5,8,12,0.92);}
 #mob-menu-overlay.open{display:flex;}
 .mob-net-group{display:flex;gap:0;width:220px;flex-shrink:0;}
 .mob-net-half{flex:1;margin:0 !important;padding:10px 2px !important;font-size:9px !important;letter-spacing:0.5px !important;min-width:0 !important;}
@@ -423,7 +428,7 @@ body.is-mobile:not(.is-portrait) #mob-throw-btn{display:flex;}
       <div data-slider="flickwindow,slider.flickWindow,1,.05,1.5,.05,true"></div>
       <div data-slider="flickminvel,slider.flickMinSpeed,4,.5,8,.25,true"></div>
       <div data-slider="flickminamp,slider.flickMinAmplitude,.45,.05,2,.05,true"></div>
-      <div data-slider="flickcount,slider.flickSwingCount,2,2,8,1,true"></div>
+      <div data-slider="flickcount,slider.flickSwingCount,3,3,8,1,true"></div>
       <div data-slider="flickmaxmult,slider.flickMaxAmplitude,5,1.5,10,.5,true"></div>
       <div data-slider="stamflick,slider.flickStaminaCost,25,0,60,5,true"></div>
       <div data-checkbox="debugbrowser,checkbox.debugBrowser,false,true"></div>
@@ -490,9 +495,9 @@ body.is-mobile:not(.is-portrait) #mob-throw-btn{display:flex;}
   <button id="mob-spawn-btn" data-i18n-title="mobile.controls.spawn">🤖</button>
   <button id="mob-menu-btn" data-i18n-title="mobile.controls.menu">☰</button>
   <button id="mob-style-btn" data-i18n-title="mobile.controls.style">⚔</button>
-  <button id="mob-shield-flip-btn" data-i18n-title="mobile.controls.shieldFlip">🛡</button>
-  <button id="mob-weapon-btn" data-i18n-title="mobile.controls.weapon">⚔</button>
-  <button id="mob-throw-btn" data-i18n-title="mobile.controls.throw">⬇</button>
+  <button id="mob-shield-flip-btn" data-i18n-title="mobile.controls.shieldFlip">&#128737;</button>
+  <button id="mob-weapon-btn" data-i18n-title="mobile.controls.weapon">&#128481;</button>
+  <button id="mob-throw-btn" data-i18n-title="mobile.controls.throw">&#127919;</button>
   <button id="mob-dodge-btn" data-i18n-title="mobile.controls.dodge">💨</button>
   <button id="mob-music-btn" data-i18n-title="mobile.controls.music">🎵</button>
   <button id="mob-zone-btn" data-i18n-title="mobile.controls.zone">⏺</button>
@@ -943,7 +948,7 @@ body.is-mobile:not(.is-portrait) #mob-throw-btn{display:flex;}
 'shortcut.e': 'E — подобрать оружие',
 'shortcut.one': '1 — бросить оружие',
 'shortcut.r': 'R — переключить стиль меча',
-'shortcut.q': 'Q — сменить сторону щита',
+'shortcut.q': 'Q — не используется',
 'shortcut.c': 'C — сменить оружие игрока',
 'shortcut.v': 'V — сменить оружие бота',
 'shortcut.z': 'Z — сменить щит игрока',
@@ -1080,7 +1085,7 @@ body.is-mobile:not(.is-portrait) #mob-throw-btn{display:flex;}
     'main.botRage': '🔥 ЯРОСТЬ БОТА',
     'main.aiOn': '▶ ИИ ВКЛ',
     'main.aiPause': '⏸ ИИ ПАУЗА',
-    'main.spikedBash': '🗡🛡 УДАР ЩИТОМ С ШИПАМИ!',
+    'main.spikedBash': '🗡🛡 БАШ!',
     'main.bash': '🛡 УДАР ЩИТОМ!',
     'main.orbit': '🌀 ОРБИТА',
     'main.flick': '⚡ ФЛИК',
@@ -1519,7 +1524,7 @@ body.is-mobile:not(.is-portrait) #mob-throw-btn{display:flex;}
         fxRage: 'ЯРОСТЬ!',
         fxThrow: 'БРОСОК!',
         fxPickup: 'ПОДОБРАН',
-        fxShieldBash: 'УДАР ЩИТОМ С ШИПАМИ!',
+        fxShieldBash: 'БАШ!',
         fxBash: 'УДАР ЩИТОМ!',
         gamepadUnavailable: 'Gamepad API недоступен в этом браузере',
         gamepadPressAny: 'Нажмите любую кнопку на геймпаде\n(getGamepads() всё ещё пуст)',
@@ -3964,8 +3969,21 @@ function isShieldSuppressed(ent){
   return $.E.charging(ent);
 }
 
+function shieldHeld(ent){
+  const def = shieldDef(ent);
+  if(!def || isShieldSuppressed(ent)) return false;
+  const isPlayer = typeof P !== 'undefined' && ent===P;
+  if(!isPlayer) return true;
+  if(typeof mDown !== 'undefined' && mDown) return false;
+  return !!ent._shieldHeld;
+}
+
 // Щит на той же стороне что меч (курсор) = флип активен
-function shieldSameSideAsSword(ent){ return !!ent._shieldFlipped; }
+function shieldSameSideAsSword(ent){
+  const isPlayer = typeof P !== 'undefined' && ent === P;
+  if(isPlayer) return typeof shieldHeld === 'function' && shieldHeld(ent);
+  return !!ent._shieldFlipped;
+}
 // Эффективный масштаб меча: -40% размера, если щит держат в той же руке, что и меч
 function effSwordScale(ent){
   const _shp = shieldDef(ent) && shieldSameSideAsSword(ent);
@@ -3984,6 +4002,7 @@ function drawShield(ent, cursorX){
   const shW = shH * aspectRatio;
   ent._shieldW = shW; ent._shieldH = shH; ent._shieldType = ent.shield;
 
+  const held = shieldHeld(ent);
   const sc = shieldCenter(ent, cursorX); // ← теперь shieldCenter уже содержит коррекцию
   if(!sc) return;
   
@@ -3998,13 +4017,12 @@ function drawShield(ent, cursorX){
   const _maxTilt = 15*Math.PI/180;
   const shieldAngle = $.M.clamp(_rawTilt, -_maxTilt, _maxTilt);
 
-  const lmbActive = (ent===P) ? $.A.meleeHold(ent, mDown)
-    : (typeof AI!=='undefined' && $.A.meleeHold(ent, AI._fakeMDown));
   const _shDisabled = $.E.shieldOff(ent);
-  ent._shieldAlpha = lmbActive ? 0.25 : (_shDisabled ? 0.3 : 1.0);
+  ent._shieldAlpha = held ? (_shDisabled ? 0.3 : 1.0) : 0.25;
 
-  const _shWf = shW * _shExhMult;
-  const _shHf = shH * _shExhMult;
+  const _shBackMult = held ? 1.0 : 0.85;
+  const _shWf = shW * _shExhMult * _shBackMult;
+  const _shHf = shH * _shExhMult * _shBackMult;
   ctx.save();
   ctx.globalAlpha = ent._shieldAlpha;
   ctx.translate(sc.x, sc.y + _shExhOffY);
@@ -4791,7 +4809,7 @@ if(bounced){
         }
 
         // Щит
-        if(!deflected && shieldDef(ent) && !isShieldSuppressed(ent) && ent._shieldSide !== undefined){
+        if(!deflected && typeof shieldHeld === 'function' && shieldHeld(ent) && ent._shieldSide !== undefined){
           const shc = $.POS.body(ent);
           const shVertOff = Math.sin(ent.angle) * 14;
           const scx = shc.x + ent._shieldSide * 20 * 0.9;
@@ -7027,7 +7045,7 @@ function updateProjectiles(dt){
       }
       
       // ─── SHIELD BLOCK ──────────────────────────────────────────────────
-      if(shieldDef(ent) && !isShieldSuppressed(ent) && ent._shieldSide !== undefined){
+      if(typeof shieldHeld === 'function' && shieldHeld(ent) && ent._shieldSide !== undefined){
         const shc = $.POS.body(ent);
         const scx = shc.x + ent._shieldSide*20*0.9, scy = shc.y + Math.sin(ent.angle)*14;
         const halfW=(ent._shieldW||20)/2, halfH=(ent._shieldH||30)/2;
@@ -8412,7 +8430,7 @@ function checkBladeVsBody(attacker, defender, pivX, pivY, tipX2, tipY2) {
     // ------------------------------------------------------------
     // SHIELD BLOCK
     // ------------------------------------------------------------
-    if (shieldDef(defender) && !isShieldSuppressed(defender)) {
+    if (typeof shieldHeld === 'function' && shieldHeld(defender)) {
       const _shSc = shieldCenter(defender, attacker === P ? mX : (typeof P !== 'undefined' ? P.x : W / 2));
       if (_shSc) {
         const _shW2 = defender._shieldW || 20,
@@ -8424,8 +8442,7 @@ function checkBladeVsBody(attacker, defender, pivX, pivY, tipX2, tipY2) {
         if (tipX_adj >= _shL && tipX_adj <= _shR && tipY_adj >= _shT && tipY_adj <= _shB) {
           const _mx2 = (bC.x + tipX_adj) / 2,
                 _my2 = (bC.y + tipY_adj) / 2;
-          const lmbActive = (defender === P) ? mDown : false;
-          if (!lmbActive && (defender._shieldAlpha || 1) > 0.4) {
+          if ((defender._shieldAlpha || 1) > 0.4) {
             applyShieldBlockFX(_mx2, _my2, attacker, defender);
             const _bvx = (tipX_adj - bC.x),
                   _bvy = (tipY_adj - bC.y),
@@ -8667,7 +8684,7 @@ if (defender === D && attacker === P && typeof AI !== 'undefined' && AI.enabled 
   // ─── SHIELD BLOCK ──────────────────────────────────────────────
   if (defender._hitCD === undefined) defender._hitCD = -1;
   if (defender._hitCD < GameTime) {
-    if (shieldDef(defender) && !isShieldSuppressed(defender)) {
+    if (typeof shieldHeld === 'function' && shieldHeld(defender)) {
       const _shSc = shieldCenter(defender, attacker === P ? mX : (typeof P !== 'undefined' ? P.x : W / 2));
       if (_shSc) {
         const _shW2 = defender._shieldW || 20,
@@ -8679,8 +8696,7 @@ if (defender === D && attacker === P && typeof AI !== 'undefined' && AI.enabled 
         if (nearX >= _shL && nearX <= _shR && nearY >= _shT && nearY <= _shB) {
           const _mx2 = (bC.x + nearX) / 2,
                 _my2 = (bC.y + nearY) / 2;
-          const lmbActive = (defender === P) ? mDown : false;
-          if (!lmbActive && (defender._shieldAlpha || 1) > 0.4) {
+          if ((defender._shieldAlpha || 1) > 0.4) {
             applyShieldBlockFX(_mx2, _my2, attacker, defender);
             const _bvx = (nearX - bC.x),
                   _bvy = (nearY - bC.y),
@@ -9552,7 +9568,8 @@ function shieldCenter(ent, cursorX){
   const def = shieldDef(ent);
   if(!def) return null;
   const _autoSide = (cursorX < c.x) ? 1 : -1;
-  const targetSide = (ent._shieldFlipped) ? -_autoSide : _autoSide;
+  const held = typeof shieldHeld === 'function' && shieldHeld(ent);
+  const targetSide = held ? -_autoSide : _autoSide;
   if(ent._shieldSide===undefined) ent._shieldSide = targetSide;
   const spd = typeof sv==='function' ? (sv('shieldSideSpd')||3.3) : 3.3;
   ent._shieldSide += (targetSide - ent._shieldSide) * Math.min(1, rawDt * spd);
@@ -9571,8 +9588,7 @@ function checkShieldVsBlade(attacker, defender, bx1,by1, tx1,ty1){
 
   // ─── LMB ACTIVE ──────────────────────────────────────────────────
   // Shield doesn't block if LMB is held (weapon is active)
-  const lmbActive = (defender===P) ? (mDown && !isRangedWeapon(defender) && weaponKeyOf(defender) !== 'flail') : false;
-  if(lmbActive) return false;
+  if(!(typeof shieldHeld === 'function' && shieldHeld(defender))) return false;
   if(defender._shieldAlpha < 0.5) return false;
 
   const curX = (defender===P) ? (typeof mX!=='undefined'?mX:W/2)
@@ -9785,11 +9801,41 @@ function updateFlickDetect(realAngVel, rawDt) {
 
   function canFight(a, b){ return canDamage(a, b) || canDamage(b, a); }
 
-  function contact(a, b){
-    const aPlayer = isPlayer(a);
-    const bPlayer = isPlayer(b);
-    if(!aPlayer && bPlayer){ a._lastPlayerTarget = b; a._lastPlayerContactAt = GameTime; }
-    if(!bPlayer && aPlayer){ b._lastPlayerTarget = a; b._lastPlayerContactAt = GameTime; }
+function contact(a, b){
+  if(!a || !b) return;
+  const aPlayer = isPlayer(a);
+  const bPlayer = isPlayer(b);
+  if(!aPlayer && bPlayer){ a._lastPlayerTarget = b; a._lastPlayerContactAt = GameTime; }
+  if(!bPlayer && aPlayer){ b._lastPlayerTarget = a; b._lastPlayerContactAt = GameTime; }
+}
+
+  function proximityTarget(bot, alive, currentTarget){
+    if(!bot || GameTime < (bot._nextProximityTargetCheck || 0)) return null;
+    bot._nextProximityTargetCheck = GameTime + 0.8 + Math.random() * 0.4;
+
+    const scale = typeof sv === 'function' ? sv('cscl') : 1;
+    const radius = 300 * scale;
+    const hysteresis = 70 * scale;
+    const bc = typeof $ !== 'undefined' && $.POS ? $.POS.body(bot) : bot;
+    let nearest = null;
+    let nearestD = Infinity;
+
+    for(const player of alive){
+      const pc = typeof $ !== 'undefined' && $.POS ? $.POS.body(player) : player;
+      const d = Math.hypot(pc.x - bc.x, pc.y - bc.y);
+      if(d < nearestD){
+        nearest = player;
+        nearestD = d;
+      }
+    }
+
+    if(!nearest || nearestD > radius) return null;
+    if(currentTarget && alive.includes(currentTarget)){
+      const tc = typeof $ !== 'undefined' && $.POS ? $.POS.body(currentTarget) : currentTarget;
+      const currentD = Math.hypot(tc.x - bc.x, tc.y - bc.y);
+      if(nearest !== currentTarget && nearestD + hysteresis >= currentD) return null;
+    }
+    return nearest;
   }
 
   function getBotTarget(bot){
@@ -9803,6 +9849,14 @@ function updateFlickDetect(realAngVel, rawDt) {
     const recentContact = bot._lastPlayerTarget && alive.includes(bot._lastPlayerTarget) &&
       GameTime - (bot._lastPlayerContactAt || 0) < 4;
     if(recentContact) return bot._lastPlayerTarget;
+
+    const currentTarget = alive.includes(bot._randomPlayerTarget) ? bot._randomPlayerTarget : null;
+    const nearbyTarget = proximityTarget(bot, alive, currentTarget);
+    if(nearbyTarget){
+      bot._lastPlayerTarget = nearbyTarget;
+      bot._lastPlayerContactAt = GameTime;
+      return nearbyTarget;
+    }
 
     if(botIndex < mainCount){
       const assigned = players()[botIndex];
@@ -10531,7 +10585,8 @@ function aiUpdateProbing(ai, bot, k, bBodyC, pBodyC, distToPlayer, cscl){
     const approachAim = ang + Math.sin(GameTime * 7) * 0.36 + ai._probingAngleJitter;
     aiPointMouse(bBodyC,
       bBodyC.x + Math.cos(approachAim) * 150 * cscl,
-      bBodyC.y + Math.sin(approachAim) * 150 * cscl);
+      bBodyC.y + Math.sin(approachAim) * 150 * cscl,
+      false, ai);
     return true;
   }
 
@@ -10548,7 +10603,8 @@ function aiUpdateProbing(ai, bot, k, bBodyC, pBodyC, distToPlayer, cscl){
         $.M.angDiff(mirroredBlockAng, frontAng), -maxFrontMirror, maxFrontMirror);
       aiPointMouse(bBodyC,
         botWeaponPivot.x + Math.cos(blockAng) * 150 * cscl,
-        botWeaponPivot.y + Math.sin(blockAng) * 150 * cscl);
+        botWeaponPivot.y + Math.sin(blockAng) * 150 * cscl,
+        false, ai);
       ai._fakeMDown = false;
     } else {
       // 70%: hold the weapon pointed directly at the player. No side swing
@@ -10556,7 +10612,8 @@ function aiUpdateProbing(ai, bot, k, bBodyC, pBodyC, distToPlayer, cscl){
       const pointAng = Math.atan2(pBodyC.y - botWeaponPivot.y, pBodyC.x - botWeaponPivot.x);
       aiPointMouse(bBodyC,
         botWeaponPivot.x + Math.cos(pointAng) * 150 * cscl,
-        botWeaponPivot.y + Math.sin(pointAng) * 150 * cscl);
+        botWeaponPivot.y + Math.sin(pointAng) * 150 * cscl,
+        false, ai);
       ai._fakeMDown = false;
     }
     if(GameTime >= ai._probingEnd){
@@ -10587,7 +10644,7 @@ function aiUpdateProbing(ai, bot, k, bBodyC, pBodyC, distToPlayer, cscl){
     aiPointMouse(bBodyC,
       botWeaponPivot.x + Math.cos(bot.angle) * 150 * cscl,
       botWeaponPivot.y + Math.sin(bot.angle) * 150 * cscl,
-      true);
+      true, ai);
     aiMoveAway(k, bBodyC, pBodyC, retreatDist, cscl);
     if(distToPlayer >= retreatDist || GameTime >= ai._probingEnd){
       k.w=k.a=k.s=k.d=false;
@@ -10614,7 +10671,7 @@ function aiUpdateProbing(ai, bot, k, bBodyC, pBodyC, distToPlayer, cscl){
 
   // Rare breather: half are 0.2-0.4s, the rest are 1-1.5s.
   k.w=k.a=k.s=k.d=false;
-  aiPointMouse(bBodyC, playerWeaponCenter.x, playerWeaponCenter.y);
+  aiPointMouse(bBodyC, playerWeaponCenter.x, playerWeaponCenter.y, false, ai);
   if(GameTime >= ai._probingEnd){
     if(GameTime < ai._probingModeEnd){
       // The mode is locked for 7-15 seconds: start another probing exchange.
@@ -10636,18 +10693,19 @@ function aiUpdateProbing(ai, bot, k, bBodyC, pBodyC, distToPlayer, cscl){
   return true;
 }
 
-function aiPointMouse(dBodyC, targetX, targetY, instant, _dt){
-  if(!AI._smoothInited || instant){
-    AI._smoothMX = targetX;
-    AI._smoothMY = targetY;
-    AI._smoothInited = true;
+function aiPointMouse(dBodyC, targetX, targetY, instant, state){
+  const aim = state || AI;
+  if(!aim._smoothInited || instant){
+    aim._smoothMX = targetX;
+    aim._smoothMY = targetY;
+    aim._smoothInited = true;
   }
   // Плавный lerp к целевой точке
   const lerpSpd = 0.18;
-  AI._smoothMX += (targetX - AI._smoothMX) * lerpSpd;
-  AI._smoothMY += (targetY - AI._smoothMY) * lerpSpd;
-  AI._fakeMX = AI._smoothMX;
-  AI._fakeMY = AI._smoothMY;
+  aim._smoothMX += (targetX - aim._smoothMX) * lerpSpd;
+  aim._smoothMY += (targetY - aim._smoothMY) * lerpSpd;
+  aim._fakeMX = aim._smoothMX;
+  aim._fakeMY = aim._smoothMY;
 }
 
 // ── DUEL POSITION SYSTEM ────────────────────────────────────────────────────
@@ -11006,6 +11064,51 @@ if(!ai._isMain){
   ai._decisionTimer -= dt;
   
   // ── РОЛЬ: ТРУС (80%) ─────────────────────────────
+  if(ai._supportStrikeState === undefined) ai._supportStrikeState = 'idle';
+  if(ai._supportStrikeCD === undefined) ai._supportStrikeCD = 0;
+
+  const supportStrikeRange = 115 * cscl;
+  const supportRetreatDist = 190 * cscl;
+  const supportStrikeReady = GameTime >= ai._supportStrikeCD &&
+    bot.hasWeapon !== false && bot.exhausted <= 0 && !hasMod(bot, 'weaponRecoil');
+
+  if(ai._supportStrikeState === 'idle' && supportStrikeReady && distToPlayer < supportStrikeRange){
+    ai._supportStrikeState = 'strike';
+    ai._supportStrikeEnd = GameTime + 0.55;
+    ai._supportStrikeDir = Math.random() < 0.5 ? 1 : -1;
+    ai._supportStrikeCD = GameTime + 2.0 + Math.random() * 1.2;
+  }
+
+  if(ai._supportStrikeState === 'strike'){
+    aiMoveToward(k, bBodyC, pBodyC, 25 * cscl, cscl);
+    const strikeProgress = 1 - Math.max(0, ai._supportStrikeEnd - GameTime) / 0.55;
+    const strikeSweep = (strikeProgress - 0.5) * 1.4 * (ai._supportStrikeDir || 1);
+    const strikeAng = angToPlayer + strikeSweep;
+    aiPointMouse(bBodyC,
+      pBodyC.x + Math.cos(strikeAng) * 80 * cscl,
+      pBodyC.y + Math.sin(strikeAng) * 80 * cscl,
+      false, ai);
+    ai._fakeMDown = true;
+    bot.vel = $.M.decay(bot.vel, 0.95, dt);
+    if(GameTime >= ai._supportStrikeEnd){
+      ai._supportStrikeState = 'retreat';
+      ai._supportRetreatEnd = GameTime + 0.75;
+      ai._fakeMDown = false;
+    }
+    return;
+  }
+
+  if(ai._supportStrikeState === 'retreat'){
+    aiMoveAway(k, bBodyC, pBodyC, supportRetreatDist, cscl);
+    aiPointMouse(bBodyC, pBodyC.x, pBodyC.y, false, ai);
+    ai._fakeMDown = false;
+    bot.vel = $.M.decay(bot.vel, 0.95, dt);
+    if(distToPlayer >= supportRetreatDist || GameTime >= ai._supportRetreatEnd){
+      ai._supportStrikeState = 'idle';
+    }
+    return;
+  }
+
   if(role === 'coward'){
     const maxDist = 330 * cscl;
     const minDist = 200 * cscl;
@@ -11461,7 +11564,7 @@ if(ai._contactCD > 0 && ai.phase === 'attack' && ai._contactCD <= GameTime){
     }
   }
   if(ai._pokeDodgeActive){
-    aiPointMouse(bBodyC, pBodyC.x, pBodyC.y);
+    aiPointMouse(bBodyC, pBodyC.x, pBodyC.y, false, ai);
     ai._fakeMDown = true;
     k.w=k.a=k.s=k.d=false;
     if(GameTime >= ai._pokeDodgeEnd){
@@ -11488,7 +11591,7 @@ if(ai._contactCD > 0 && ai.phase === 'attack' && ai._contactCD <= GameTime){
       const ax = Math.cos(angToPlayer)*dir, ay = Math.sin(angToPlayer)*dir;
       k.a = ax<-0.3; k.d = ax>0.3; k.w = ay<-0.3; k.s = ay>0.3;
       if(ai._lungePhase === 'lunge'){
-        aiPointMouse(bBodyC, pBodyC.x, pBodyC.y);
+        aiPointMouse(bBodyC, pBodyC.x, pBodyC.y, false, ai);
         ai._fakeMDown = true;
       }
     }
@@ -11520,7 +11623,7 @@ if(ai._contactCD > 0 && ai.phase === 'attack' && ai._contactCD <= GameTime){
   if(bot.exhausted > 0 || hasMod(bot, 'weaponRecoil')){
     k.w=k.a=k.s=k.d=false;
     ai._fakeMDown=false;
-    aiPointMouse(bBodyC, pBodyC.x, pBodyC.y);
+    aiPointMouse(bBodyC, pBodyC.x, pBodyC.y, false, ai);
     return;
   }
 
@@ -11530,7 +11633,7 @@ if(ai._contactCD > 0 && ai.phase === 'attack' && ai._contactCD <= GameTime){
     const hp = ai._harassPhase;
     if(hp === 'approach'){
       if(!ai._feintActive) aiMoveToward(k, bBodyC, pBodyC, 65*cscl, cscl);
-      if(!ai._spinActive) aiPointMouse(bBodyC, pBodyC.x, pBodyC.y);
+      if(!ai._spinActive) aiPointMouse(bBodyC, pBodyC.x, pBodyC.y, false, ai);
       if(distToPlayer < 90*cscl){
         ai._harassPhase = 'strike';
         ai._harassStrikes = Math.floor(Math.random()*2) + 1;
@@ -11539,7 +11642,7 @@ if(ai._contactCD > 0 && ai.phase === 'attack' && ai._contactCD <= GameTime){
       }
     } else if(hp === 'strike'){
       k.w=k.a=k.s=k.d=false;
-      aiPointMouse(bBodyC, pBodyC.x, pBodyC.y);
+      aiPointMouse(bBodyC, pBodyC.x, pBodyC.y, false, ai);
       ai._fakeMDown = true;
       if(GameTime >= ai._harassTimer){
         ai._harassStrikes--;
@@ -11571,7 +11674,7 @@ if(ai._contactCD > 0 && ai.phase === 'attack' && ai._contactCD <= GameTime){
       const ty = $.M.clamp(pBodyC.y + Math.sin(ai._harassOrbitAng)*orbitR, 60, H-60);
       k.a=(tx-bBodyC.x)<-5; k.d=(tx-bBodyC.x)>5;
       k.w=(ty-bBodyC.y)<-5; k.s=(ty-bBodyC.y)>5;
-      if(!ai._spinActive) aiPointMouse(bBodyC, pBodyC.x, pBodyC.y);
+      if(!ai._spinActive) aiPointMouse(bBodyC, pBodyC.x, pBodyC.y, false, ai);
       if(GameTime >= ai._harassTimer) ai._harassPhase = 'approach';
     }
   } else
@@ -11595,7 +11698,7 @@ if(!ai._feintActive){
       }
       const offsets = [0, sv('aiang')*Math.PI/180, -sv('aiang')*Math.PI/180];
       const aimAng = angToPlayer + offsets[ai._posIdx];
-      aiPointMouse(bBodyC, bBodyC.x + Math.cos(aimAng)*150*cscl, bBodyC.y + Math.sin(aimAng)*150*cscl);
+      aiPointMouse(bBodyC, bBodyC.x + Math.cos(aimAng)*150*cscl, bBodyC.y + Math.sin(aimAng)*150*cscl, false, ai);
     }
     ai._fakeMDown = false;
 
@@ -11643,7 +11746,7 @@ if(!ai._feintActive){
       }
       const offs2 = [0, sv('aiang')*Math.PI/180, -sv('aiang')*Math.PI/180];
       const blockAng = angToPlayer + offs2[ai._posIdx];
-      aiPointMouse(bBodyC, bBodyC.x + Math.cos(blockAng)*120*cscl, bBodyC.y + Math.sin(blockAng)*120*cscl);
+      aiPointMouse(bBodyC, bBodyC.x + Math.cos(blockAng)*120*cscl, bBodyC.y + Math.sin(blockAng)*120*cscl, false, ai);
     }
     ai._fakeMDown = false;
 
@@ -11693,7 +11796,7 @@ if(!ai._feintActive){
       }
       if(!ai._feintActive) k.w=k.a=k.s=k.d=false;
     }
-    aiPointMouse(bBodyC, pBodyC.x, pBodyC.y);
+    aiPointMouse(bBodyC, pBodyC.x, pBodyC.y, false, ai);
     ai._fakeMDown = false;
   }
 
@@ -11732,7 +11835,8 @@ if(!ai._feintActive){
     const mirrorDist = 140 * cscl;
     aiPointMouse(bBodyC,
       dpiv2.x + Math.cos(targetAng)*mirrorDist,
-      dpiv2.y + Math.sin(targetAng)*mirrorDist);
+      dpiv2.y + Math.sin(targetAng)*mirrorDist,
+      false, ai);
     ai._duelistBlocking = false;
   }
 
@@ -11746,10 +11850,10 @@ if(!ai._feintActive){
       const blockAng = targetPlayer.angle + Math.PI/2 + (targetPlayer.vel > 0 ? -0.3 : 0.3);
       const dpiv = $.POS.pivot(bot);
       const bDist = 140 * cscl;
-      aiPointMouse(bBodyC, dpiv.x + Math.cos(blockAng)*bDist, dpiv.y + Math.sin(blockAng)*bDist);
+      aiPointMouse(bBodyC, dpiv.x + Math.cos(blockAng)*bDist, dpiv.y + Math.sin(blockAng)*bDist, false, ai);
       ai._duelistBlocking = true;
     } else {
-      aiPointMouse(bBodyC, pBodyC.x, pBodyC.y);
+      aiPointMouse(bBodyC, pBodyC.x, pBodyC.y, false, ai);
       ai._duelistBlocking = false;
     }
   }
@@ -13408,7 +13512,7 @@ function drawShield(ent, cursorX){
   const shW = shH * aspectRatio;
   ent._shieldW = shW; ent._shieldH = shH; ent._shieldType = ent.shield;
 
-  // 🔥 ВОТ ЭТО БЫЛО ПРОПУЩЕНО!
+  const held = typeof shieldHeld === 'function' && shieldHeld(ent);
   const sc = shieldCenter(ent, cursorX);
   if(!sc) return;
   
@@ -13423,14 +13527,12 @@ function drawShield(ent, cursorX){
   const _maxTilt = 15*Math.PI/180;
   const shieldAngle = $.M.clamp(_rawTilt, -_maxTilt, _maxTilt);
 
-  const aiState = ent && ent._aiState;
-  const lmbActive = (ent===P) ? $.A.meleeHold(ent, mDown)
-    : (aiState && $.A.meleeHold(ent, aiState._fakeMDown));
   const _shDisabled = $.E.shieldOff(ent);
-  ent._shieldAlpha = lmbActive ? 0.25 : (_shDisabled ? 0.3 : 1.0);
+  ent._shieldAlpha = held ? (_shDisabled ? 0.3 : 1.0) : 0.25;
 
-  const _shWf = shW * _shExhMult;
-  const _shHf = shH * _shExhMult;
+  const _shBackMult = held ? 1.0 : 0.85;
+  const _shWf = shW * _shExhMult * _shBackMult;
+  const _shHf = shH * _shExhMult * _shBackMult;
   ctx.save();
   ctx.globalAlpha = ent._shieldAlpha;
   ctx.translate(sc.x, sc.y + _shExhOffY);
@@ -13804,7 +13906,9 @@ function drawFX(){
       updateMainHudEntity('hud-b', D, {
         statusSelector: '#hud-b-status'
       });
-      setTextIfPresent('#hud-b-phase', botPhaseText(D));
+      const manualSlot = D._manualControl && Number.isInteger(D._playerSlot) ? D._playerSlot : -1;
+      setTextIfPresent('#hud-b-label', manualSlot >= 0 ? `PLAYER ${manualSlot + 1}` : t('hud.botLabel', 'BOT'));
+      setTextIfPresent('#hud-b-phase', manualSlot >= 0 ? '' : botPhaseText(D));
     }
 
     const localPvp = typeof LocalPlayerControls !== 'undefined' && LocalPlayerControls.isLocalPvP();
@@ -13825,6 +13929,7 @@ function drawFX(){
 // Module section: update tick.
 // =======================================================================================
 
+
 function update(dt){
   if(DEATH.pDead) return; // dead — no update
   const step = $.M.step(dt);
@@ -13843,7 +13948,17 @@ function update(dt){
   if(mx||my){ const l=Math.hypot(mx,my); mx/=l; my/=l; }
   
 // Stamina regeneration
-regenStamina(P, dt, mDown);
+if(window.IS_MOBILE && GameTime < (P._shieldHeldUntil || 0) && P.shield>0 && !isExhausted(P) && P.stamina>0) P._shieldHeld = true;
+if(mDown && !(window.IS_MOBILE && GameTime < (P._shieldHeldUntil || 0))) P._shieldHeld = false;
+const shieldDrainActive = typeof shieldHeld === 'function' && shieldHeld(P);
+regenStamina(P, dt, mDown || shieldDrainActive);
+if(shieldDrainActive){
+  drainStamina(P, 2 * dt);
+  if(P.stamina <= 0){
+    P._shieldHeld = false;
+    if(!isExhausted(P)) applyExhaust(P);
+  }
+}
   
   // -- MULTIHIT PROTECTION UPDATE ------------------------------
   if(P._multiHitProtection){
@@ -13994,6 +14109,7 @@ const exhMult = getMod(P, 'moveSlow', 1);
   if(P._dvx||P._dvy){
     const impulseStep = decayingImpulseStep(dt);
     if(P.shield>0 && typeof shieldDef==='function' && shieldDef(P)
+       && typeof shieldHeld==='function' && shieldHeld(P)
        && typeof D!=='undefined' && dummyOn){
       const _dodgeDist = Math.hypot(D.x-P.x, D.y-P.y);
       const _dvLen = Math.hypot(P._dvx||0, P._dvy||0)||1;
@@ -14660,8 +14776,17 @@ if(dummyOn&&isUnbalanced(D)) drawUnbalancedStars(D);
 
 // -- INPUT --------------------------------------------------------------------------
 canvas.addEventListener('mousemove', e=>{ const r=canvas.getBoundingClientRect(); mX=e.clientX-r.left; mY=e.clientY-r.top; });
-canvas.addEventListener('mousedown', e=>{ if(e.button!==0)return; mDown=true; });
-canvas.addEventListener('mouseup',   e=>{ if(e.button!==0)return; mDown=false; });
+canvas.addEventListener('mousedown', e=>{
+  if(e.button===0){ mDown=true; P._shieldHeld=false; return; }
+  if(e.button===2 && !window.IS_MOBILE){
+    e.preventDefault();
+    if(P.shield>0 && !isExhausted(P) && P.stamina>0) P._shieldHeld=true;
+  }
+});
+canvas.addEventListener('mouseup',   e=>{
+  if(e.button===0){ mDown=false; return; }
+  if(e.button===2) P._shieldHeld=false;
+});
 function browserInputLocked(){
   const cfgUnlock = !!(window.GG_DEBUG_CONFIG && window.GG_DEBUG_CONFIG.unlockBrowserInput);
   const queryUnlock = typeof URLSearchParams !== 'undefined' &&
@@ -14675,13 +14800,52 @@ function browserInputLocked(){
 }
 // RMB is intentionally unused: block browser context menus and any future
 // accidental right-button gameplay bindings.
-window.addEventListener('contextmenu', e=>{ if(browserInputLocked()) e.preventDefault(); });
-window.addEventListener('mousedown', e=>{ if(e.button===2 && browserInputLocked()){ e.preventDefault(); e.stopImmediatePropagation(); } }, true);
+function blockRmbBrowserEvent(e){
+  if(!browserInputLocked()) return false;
+  e.preventDefault();
+  e.stopPropagation();
+  e.stopImmediatePropagation();
+  return false;
+}
+
+
+
+
+function isRmbBrowserEvent(e){
+  return e.button===2 || (typeof e.buttons === 'number' && (e.buttons & 2) !== 0);
+}
+
+window.addEventListener('contextmenu', e=>{ blockRmbBrowserEvent(e); }, true);
+window.addEventListener('pointerdown', e=>{
+  if(isRmbBrowserEvent(e) && browserInputLocked()){
+    if(!window.IS_MOBILE && P.shield>0 && !isExhausted(P) && P.stamina>0) P._shieldHeld=true;
+    blockRmbBrowserEvent(e);
+  }
+}, true);
+window.addEventListener('pointerup', e=>{
+  if(isRmbBrowserEvent(e) && browserInputLocked()){
+    P._shieldHeld=false;
+    blockRmbBrowserEvent(e);
+  }
+}, true);
+window.addEventListener('mousedown', e=>{
+  if(isRmbBrowserEvent(e) && browserInputLocked()){
+    if(!window.IS_MOBILE && P.shield>0 && !isExhausted(P) && P.stamina>0) P._shieldHeld=true;
+    blockRmbBrowserEvent(e);
+  }
+}, true);
+window.addEventListener('mouseup', e=>{
+  if(isRmbBrowserEvent(e) && browserInputLocked()){
+    P._shieldHeld=false;
+    blockRmbBrowserEvent(e);
+  }
+}, true);
+window.addEventListener('auxclick', e=>{ if(isRmbBrowserEvent(e)) blockRmbBrowserEvent(e); }, true);
 // Global handlers: if LMB released outside canvas/window, or window loses focus (alt-tab, tab switch) — reset mDown so
 // the game doesn't "stick" in held-button mode.
-window.addEventListener('mouseup', e=>{ if(e.button===0) mDown=false; });
-window.addEventListener('blur', ()=>{ mDown=false; });
-document.addEventListener('mouseleave', ()=>{ mDown=false; });
+window.addEventListener('mouseup', e=>{ if(e.button===0) mDown=false; if(e.button===2) P._shieldHeld=false; });
+window.addEventListener('blur', ()=>{ mDown=false; P._shieldHeld=false; });
+document.addEventListener('mouseleave', ()=>{ mDown=false; P._shieldHeld=false; });
 const FALLBACK_KEYBOARD_CODE_ALIASES = {
   KeyW: ['w', 'ц'],
   KeyA: ['a', 'ф'],
@@ -14703,6 +14867,7 @@ const FALLBACK_KEYBOARD_CODE_ALIASES = {
   KeyJ: ['j', 'о'],
   KeyO: ['o', 'щ'],
   Digit1: ['1'],
+  Space: [' '],
   Enter: ['enter'],
   Escape: ['escape']
 };
@@ -14770,13 +14935,13 @@ window.addEventListener('keydown', e=>{
     return;
   }
   setKeyState(e, true);
+  if(e.code==='Space' && !e.repeat && typeof window.doDodge==='function'){
+    window.doDodge(true);
+  }
   if(k==='t'||k==='т'||k==='е') toggleDummy();  // T/т/е (rus. "е" is same physical key as T) = PAUSE
   if(k==='e'||k==='у'){ if(typeof tryManualPickup==='function') tryManualPickup(P); } // E/у = PICK UP WEAPON
   // Debug shields
   if(k==='r'||k==='к'){ window.toggleSwordStyle(); }
-  if(k==='q'||k==='й'){
-    P._shieldFlipped = !P._shieldFlipped;
-  }
   if(k==='y'||k==='н'){ toggleAI(); } // Y/н (same physical key as Y) = SPAWN BOT
   if(k==='z'||k==='я'){
     P.shield=(P.shield+1)%SHIELD_TYPES.length; setShield(P,P.shield);
@@ -15100,6 +15265,82 @@ requestAnimationFrame(loop);
   }, {passive: false});
 
   // ── MENU (pause/restart/settings) ──────────────────────────────────────
+  const shieldHoldBtn = document.getElementById('mob-shield-flip-btn');
+  let shieldTouchId = null;
+  let shieldSwordUnlockAt = 0;
+  let shieldReleaseTimer = null;
+  function setPlayerShieldHeld(held){
+    if(typeof P==='undefined') return;
+    P._shieldHeld = !!(held && P.shield>0 && !isExhausted(P) && P.stamina>0);
+    if(P._shieldHeld) P._shieldHeldUntil = 0;
+    shieldHoldBtn?.classList.toggle('active', P._shieldHeld);
+  }
+  function holdPlayerShieldUntil(until){
+    if(typeof P==='undefined') return;
+    P._shieldHeldUntil = Math.max(P._shieldHeldUntil || 0, until);
+    P._shieldHeld = !!(P.shield>0 && !isExhausted(P) && P.stamina>0);
+    shieldHoldBtn?.classList.toggle('active', P._shieldHeld);
+  }
+  function releasePlayerShieldDelayed(){
+    if(shieldReleaseTimer) clearTimeout(shieldReleaseTimer);
+    holdPlayerShieldUntil(GameTime + 0.5);
+    const finishShieldRelease = () => {
+      if(typeof P!=='undefined' && GameTime < (P._shieldHeldUntil || 0)){
+        holdPlayerShieldUntil(P._shieldHeldUntil || 0);
+        shieldReleaseTimer = setTimeout(finishShieldRelease, Math.max(16, ((P._shieldHeldUntil || 0) - GameTime) * 1000));
+        return;
+      }
+      shieldReleaseTimer = null;
+      setPlayerShieldHeld(false);
+    };
+    shieldReleaseTimer = setTimeout(finishShieldRelease, 500);
+  }
+  shieldHoldBtn?.addEventListener('touchstart', e => {
+    e.preventDefault();
+    if(shieldReleaseTimer){
+      clearTimeout(shieldReleaseTimer);
+      shieldReleaseTimer = null;
+    }
+    const t = e.changedTouches && e.changedTouches[0];
+    if(t){
+      shieldTouchId = t.identifier;
+      shieldSwordUnlockAt = Date.now() + 300;
+    }
+    setPlayerShieldHeld(true);
+  }, {passive:false});
+  shieldHoldBtn?.addEventListener('touchend', e => {
+    e.preventDefault();
+    for(const t of e.changedTouches){
+      if(t.identifier !== shieldTouchId) continue;
+      if(t.identifier === swordId) endSwordTouch();
+      shieldTouchId = null;
+      shieldSwordUnlockAt = 0;
+    }
+    releasePlayerShieldDelayed();
+  }, {passive:false});
+  shieldHoldBtn?.addEventListener('touchcancel', e => {
+    e.preventDefault();
+    for(const t of e.changedTouches){
+      if(t.identifier !== shieldTouchId) continue;
+      if(t.identifier === swordId) endSwordTouch();
+      shieldTouchId = null;
+      shieldSwordUnlockAt = 0;
+    }
+    releasePlayerShieldDelayed();
+  }, {passive:false});
+  shieldHoldBtn?.addEventListener('touchmove', e => {
+    e.preventDefault();
+    for(const t of e.changedTouches){
+      if(t.identifier !== shieldTouchId) continue;
+      if(t.identifier === swordId){
+        if(controlMode==='fixed') updateSwordFixed(t.clientX, t.clientY);
+        else updateSword(t.clientX, t.clientY);
+      } else if(Date.now() >= shieldSwordUnlockAt && pointInElement(t.clientX, t.clientY, zoneSword)){
+        startSwordTouchFromShield(t);
+      }
+    }
+  }, {passive:false});
+
   const menuBtn = document.getElementById('mob-menu-btn');
   const menuOverlay = document.getElementById('mob-menu-overlay');
   const settingsEmbed = document.getElementById('mob-settings-embed');
@@ -15217,6 +15458,9 @@ window.doRestart=function(){
     P._dvy=(dy/len)*force;
     // "Active dodge" window — during it, swings don't cost stamina
     P._dodgeActiveUntil = GameTime + 0.3;
+    if((typeof shieldHeld === 'function' && shieldHeld(P)) || GameTime < (P._shieldHeldUntil || 0)){
+      holdPlayerShieldUntil(P._dodgeActiveUntil + 0.5);
+    }
     // Dodge cooldown: if shield is on the same side as sword — cooldown is 3x longer
     const _dodgeSameSide = typeof shieldDef==='function' && shieldDef(P) && shieldSameSideAsSword(P);
     window._dodgeCooldownMob = _dodgeSameSide ? 0.8*3 : 0.8;
@@ -15229,7 +15473,7 @@ window.doRestart=function(){
     if(typeof hitFX!=='undefined') $.FX.hit({x:P.x,y:P.y-30,t:(window.I18N ? window.I18N.t('common.dodge') : 'DODGE'),life:35,big:false,col:'rgba(200,200,200,0.6)'});
     // Dodge with shield in the correct hand → bladeblind + knockback
     // Only if moving TOWARD the target (not running away)
-    if(typeof shieldDef==='function' && shieldDef(P) && !shieldSameSideAsSword(P)){
+    if(typeof shieldDef==='function' && shieldDef(P) && typeof shieldHeld==='function' && shieldHeld(P)){
       const _dt2=(typeof D!=='undefined'&&dummyOn)?D:null;
       if(_dt2){
         const _ax=_dt2.x-P.x, _ay=_dt2.y-P.y;
@@ -15328,6 +15572,49 @@ if(_spiked2 && typeof GameTime!=='undefined'){
   let lastSwordTap = 0;
   let doubleTapLMB = false;
   let _crossbowTapPending = false; // crossbow tap — shot happens on touchend
+
+  function pointInElement(x, y, el){
+    if(!el) return false;
+    const r = el.getBoundingClientRect();
+    return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
+  }
+
+  function startSwordTouchFromShield(t){
+    if(!t || swordId !== null) return;
+    enableAudioSystem();
+    swordId = t.identifier;
+    if(controlMode==='fixed'){
+      updateSwordFixed(t.clientX, t.clientY);
+    } else {
+      swordOrigin = {x: t.clientX, y: t.clientY};
+      swordBase.style.left = swordOrigin.x+'px';
+      swordBase.style.top  = swordOrigin.y+'px';
+      swordBase.classList.add('active');
+      updateSword(t.clientX, t.clientY);
+    }
+  }
+
+  function endSwordTouch(){
+    swordId = null;
+    if(controlMode==='fixed'){
+      fixedStickKnob.style.left='65px'; fixedStickKnob.style.top='65px';
+    } else {
+      swordBase.classList.remove('active');
+      updateSwordKnob(0,0);
+    }
+    if(_crossbowTapPending){
+      _crossbowTapPending = false;
+      mDown = true;
+      requestAnimationFrame(() => { mDown = false; });
+    }
+    const _wk2 = typeof weaponKeyOf==='function' && typeof P!=='undefined' ? weaponKeyOf(P) : null;
+    if(doubleTapLMB || _wk2 === 'bow'){
+      doubleTapLMB = false;
+      mDown = false;
+      swordKnob.classList.remove('lmb-active');
+      fixedStickKnob.classList.remove('lmb-active');
+    }
+  }
 
   // ── LEFT — movement ──────────────────────────────────────────────────────
   // Get zone offset relative to screen (once)
@@ -15554,29 +15841,7 @@ if(_spiked2 && typeof GameTime!=='undefined'){
     e.preventDefault();
     for(const t of e.changedTouches){
       if(t.identifier !== swordId) continue;
-      swordId = null;
-      if(controlMode==='fixed'){
-        fixedStickKnob.style.left='65px'; fixedStickKnob.style.top='65px';
-      } else {
-        swordBase.classList.remove('active');
-        updateSwordKnob(0,0);
-      }
-      // Crossbow: shot happens right now, on touch release —
-      // enable mDown for one frame so updateRangedWeaponFire sees
-      // fireHeld=true and fires, then immediately disable.
-      if(_crossbowTapPending){
-        _crossbowTapPending = false;
-        mDown = true;
-        requestAnimationFrame(() => { mDown = false; });
-      }
-      // Finger released — LMB always released (bow/melee with double tap)
-      const _wk2 = typeof weaponKeyOf==='function' && typeof P!=='undefined' ? weaponKeyOf(P) : null;
-      if(doubleTapLMB || _wk2 === 'bow'){
-        doubleTapLMB = false;
-        mDown = false;
-        swordKnob.classList.remove('lmb-active');
-        fixedStickKnob.classList.remove('lmb-active');
-      }
+      endSwordTouch();
     }
   }, {passive:false});
 
@@ -15930,11 +16195,22 @@ const SHIELD_INFO_TEXT = [
 
   const shieldFlipBtn=document.getElementById('mob-shield-flip-btn');
   if(shieldFlipBtn){
+    const setShieldHold = held => {
+      if(typeof P==='undefined') return;
+      P._shieldHeld = !!(held && P.shield>0 && !isExhausted(P) && P.stamina>0);
+      shieldFlipBtn.classList.toggle('active', P._shieldHeld);
+    };
     shieldFlipBtn.addEventListener('touchstart', e=>{
-      e.preventDefault(); e.stopPropagation();
-      if(typeof P!=='undefined'){
-        P._shieldFlipped = !P._shieldFlipped;
-      }
+      e.preventDefault();
+      setShieldHold(true);
+    },{passive:false});
+    shieldFlipBtn.addEventListener('touchend', e=>{
+      e.preventDefault();
+      setShieldHold(false);
+    },{passive:false});
+    shieldFlipBtn.addEventListener('touchcancel', e=>{
+      e.preventDefault();
+      setShieldHold(false);
     },{passive:false});
   }
 
@@ -16035,6 +16311,7 @@ const SHIELD_INFO_TEXT = [
 // ══ BLOCK 6: PeerJS CONNECTION ════════════════════════════════════════════════
 // PeerJS initialization, incoming/outgoing connections
 // ════════════════════════════════════════════════════════════════════════════
+
 </script>
 <script>
 // === bundled: src/network/net-core.js ===
@@ -18777,6 +19054,22 @@ function onPvpReset(msg){
     reloadConfig: loadGamepadTable,
     getConfig: () => CFG,
   };
+
+// Полная блокировка ПКМ на всём документе
+document.addEventListener('contextmenu', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    return false;
+}, false);
+
+// Также блокируем событие mousedown (ПКМ), чтобы предотвратить любые действия
+document.addEventListener('mousedown', function(e) {
+    if (e.button === 2) {
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+    }
+}, false);
 
 })();
 

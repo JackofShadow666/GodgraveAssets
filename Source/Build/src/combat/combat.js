@@ -550,7 +550,7 @@ function checkBladeVsBody(attacker, defender, pivX, pivY, tipX2, tipY2) {
     // ------------------------------------------------------------
     // SHIELD BLOCK
     // ------------------------------------------------------------
-    if (shieldDef(defender) && !isShieldSuppressed(defender)) {
+    if (typeof shieldHeld === 'function' && shieldHeld(defender)) {
       const _shSc = shieldCenter(defender, attacker === P ? mX : (typeof P !== 'undefined' ? P.x : W / 2));
       if (_shSc) {
         const _shW2 = defender._shieldW || 20,
@@ -562,8 +562,7 @@ function checkBladeVsBody(attacker, defender, pivX, pivY, tipX2, tipY2) {
         if (tipX_adj >= _shL && tipX_adj <= _shR && tipY_adj >= _shT && tipY_adj <= _shB) {
           const _mx2 = (bC.x + tipX_adj) / 2,
                 _my2 = (bC.y + tipY_adj) / 2;
-          const lmbActive = (defender === P) ? mDown : false;
-          if (!lmbActive && (defender._shieldAlpha || 1) > 0.4) {
+          if ((defender._shieldAlpha || 1) > 0.4) {
             applyShieldBlockFX(_mx2, _my2, attacker, defender);
             const _bvx = (tipX_adj - bC.x),
                   _bvy = (tipY_adj - bC.y),
@@ -805,7 +804,7 @@ if (defender === D && attacker === P && typeof AI !== 'undefined' && AI.enabled 
   // ─── SHIELD BLOCK ──────────────────────────────────────────────
   if (defender._hitCD === undefined) defender._hitCD = -1;
   if (defender._hitCD < GameTime) {
-    if (shieldDef(defender) && !isShieldSuppressed(defender)) {
+    if (typeof shieldHeld === 'function' && shieldHeld(defender)) {
       const _shSc = shieldCenter(defender, attacker === P ? mX : (typeof P !== 'undefined' ? P.x : W / 2));
       if (_shSc) {
         const _shW2 = defender._shieldW || 20,
@@ -817,8 +816,7 @@ if (defender === D && attacker === P && typeof AI !== 'undefined' && AI.enabled 
         if (nearX >= _shL && nearX <= _shR && nearY >= _shT && nearY <= _shB) {
           const _mx2 = (bC.x + nearX) / 2,
                 _my2 = (bC.y + nearY) / 2;
-          const lmbActive = (defender === P) ? mDown : false;
-          if (!lmbActive && (defender._shieldAlpha || 1) > 0.4) {
+          if ((defender._shieldAlpha || 1) > 0.4) {
             applyShieldBlockFX(_mx2, _my2, attacker, defender);
             const _bvx = (nearX - bC.x),
                   _bvy = (nearY - bC.y),
@@ -1690,7 +1688,8 @@ function shieldCenter(ent, cursorX){
   const def = shieldDef(ent);
   if(!def) return null;
   const _autoSide = (cursorX < c.x) ? 1 : -1;
-  const targetSide = (ent._shieldFlipped) ? -_autoSide : _autoSide;
+  const held = typeof shieldHeld === 'function' && shieldHeld(ent);
+  const targetSide = held ? -_autoSide : _autoSide;
   if(ent._shieldSide===undefined) ent._shieldSide = targetSide;
   const spd = typeof sv==='function' ? (sv('shieldSideSpd')||3.3) : 3.3;
   ent._shieldSide += (targetSide - ent._shieldSide) * Math.min(1, rawDt * spd);
@@ -1709,8 +1708,7 @@ function checkShieldVsBlade(attacker, defender, bx1,by1, tx1,ty1){
 
   // ─── LMB ACTIVE ──────────────────────────────────────────────────
   // Shield doesn't block if LMB is held (weapon is active)
-  const lmbActive = (defender===P) ? (mDown && !isRangedWeapon(defender) && weaponKeyOf(defender) !== 'flail') : false;
-  if(lmbActive) return false;
+  if(!(typeof shieldHeld === 'function' && shieldHeld(defender))) return false;
   if(defender._shieldAlpha < 0.5) return false;
 
   const curX = (defender===P) ? (typeof mX!=='undefined'?mX:W/2)

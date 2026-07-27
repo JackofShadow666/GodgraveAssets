@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -17,9 +19,9 @@ canvas{display:block;position:fixed;top:0;left:0;cursor:none;}
 #ph{padding:14px 16px 10px;border-bottom:1px solid #1a2e44;flex-shrink:0;}
 #ph h2{font-family:'Oswald',sans-serif;font-size:14px;letter-spacing:3px;color:#6ab0d0;text-transform:uppercase;}
 #ph p{font-size:8px;color:#3a5a70;margin-top:3px;letter-spacing:1px;line-height:1.6;}
-#controls{flex:1;overflow-y:auto;padding:10px 12px;scrollbar-width:thin;scrollbar-color:#1e3050 transparent;}
-#controls::-webkit-scrollbar{width:3px;}
-#controls::-webkit-scrollbar-thumb{background:#1e3050;}
+#controls{flex:1;overflow-y:auto;padding:10px 12px;scrollbar-width:auto;scrollbar-color:#2c4f78 transparent;}
+#controls::-webkit-scrollbar{width:10px;}
+#controls::-webkit-scrollbar-thumb{background:#2c4f78;border-radius:8px;border:2px solid #0a0e14;}
 #infobar{padding:8px 12px;border-top:1px solid #162030;font-size:8px;color:#304858;line-height:1.9;background:#060a0e;flex-shrink:0;}
 .ir{display:flex;justify-content:space-between;}
 .iv{color:#5a8898;}
@@ -83,7 +85,7 @@ canvas{display:block;position:fixed;top:0;left:0;cursor:none;}
 .game-overlay{display:none;position:fixed;inset:0;z-index:5000;background:rgba(5,8,12,0.97);flex-direction:column;align-items:center;justify-content:flex-start;gap:10px;padding:16px 12px 30px;overflow-y:auto;overflow-x:hidden;font-family:'Share Tech Mono',monospace;cursor:default;pointer-events:all;-webkit-user-select:text;user-select:text;box-sizing:border-box;}
 @media(min-height:600px){#name-overlay.open{justify-content:center;}}
 .game-overlay.open{display:flex;}
-body.menu-open canvas,body.menu-open #hud,body.menu-open #pvp-hud,body.menu-open #badge,body.menu-open #adisplay,body.menu-open #hint,body.menu-open #panel,body.menu-open #dtoggle,body.menu-open #mobile-ctrl,body.menu-open #mob-spawn-btn,body.menu-open #mob-menu-btn,body.menu-open #mob-dodge-btn,body.menu-open #mob-style-btn,body.menu-open #mob-shield-flip-btn,body.menu-open #mob-weapon-btn,body.menu-open #mob-throw-btn,body.menu-open #mob-bot-weapon-btn,body.menu-open #mob-music-btn,body.menu-open #mob-zone-btn{visibility:hidden !important;}
+body.menu-open canvas,body.menu-open #hud,body.menu-open #pvp-hud,body.menu-open #badge,body.menu-open #adisplay,body.menu-open #hint,body.menu-open #panel,body.menu-open #dtoggle,body.menu-open #mobile-ctrl,body.menu-open #mob-spawn-btn,body.menu-open #mob-menu-btn,body.menu-open #mob-dodge-btn,body.menu-open #mob-style-btn,body.menu-open #mob-shield-flip-btn,body.menu-open #mob-weapon-btn,body.menu-open #mob-throw-btn,body.menu-open #mob-bot-shield-btn,body.menu-open #mob-bot-weapon-btn,body.menu-open #mob-music-btn,body.menu-open #mob-zone-btn{visibility:hidden !important;}
 
 .ov-title{color:#6ab0d0;font-size:15px;letter-spacing:4px;text-transform:uppercase;margin:0 0 4px;}
 .ov-sub{color:#2a5a70;font-size:10px;letter-spacing:2px;margin:0;}
@@ -161,7 +163,8 @@ body.fixed-stick-mode #zone-sword .stick-base,body.fixed-stick-mode #zone-sword 
 #mob-zone-btn{top:14px;left:calc(50% + 115px);background:rgba(10,20,30,0.9);border:1px solid #3a3010;border-radius:50%;width:50px;height:50px;color:#ccaa30;font-size:20px;display:flex;align-items:center;justify-content:center;touch-action:none;z-index:1000;}
 #mob-zone-btn.active{border-color:#cc6010;color:#ff8020;background:rgba(40,20,5,0.9);}
 #mob-style-btn{top:100px;left:126px;background:rgba(10,20,30,0.9);border:1px solid #3a5a8a;border-radius:50%;width:50px;height:50px;color:#7ab0e0;font-size:18px;display:flex;align-items:center;justify-content:center;touch-action:none;}
-#mob-shield-flip-btn{top:100px;left:14px;background:rgba(10,20,30,0.9);border:1px solid #2a4a7a;border-radius:50%;width:50px;height:50px;color:#88ccff;font-size:20px;display:flex;align-items:center;justify-content:center;touch-action:none;z-index:1000;}
+#mob-shield-flip-btn{right:160px;bottom:22px;background:rgba(10,20,30,0.9);border:1px solid #2a4a7a;border-radius:50%;width:50px;height:50px;color:#88ccff;font-size:20px;display:flex;align-items:center;justify-content:center;touch-action:none;z-index:1000;}
+#mob-shield-flip-btn.active{background:rgba(20,45,70,0.96);border-color:#88ccff;box-shadow:0 0 14px rgba(120,190,255,0.45);}
 body.is-mobile:not(.is-portrait) #mob-shield-flip-btn{display:flex;}
 #mob-weapon-btn{top:100px;left:70px;background:rgba(10,20,30,0.9);border:1px solid #2a4a7a;border-radius:50%;width:50px;height:50px;color:#88ccff;font-size:20px;display:flex;align-items:center;justify-content:center;touch-action:none;z-index:1000;}
 body.is-mobile:not(.is-portrait) #mob-weapon-btn{display:flex;}
@@ -169,7 +172,9 @@ body.is-mobile:not(.is-portrait) #mob-weapon-btn{display:flex;}
 body.is-mobile:not(.is-portrait) #mob-throw-btn{display:flex;}
 #mob-dodge-btn{top:90px;right:14px;background:rgba(10,20,30,0.9);border:1px solid #2a5a3a;border-radius:50%;width:50px;height:50px;color:#4acc80;font-size:18px;display:flex;align-items:center;justify-content:center;touch-action:none;z-index:1000;}
 #mob-dodge-btn:active{background:rgba(20,60,30,0.95);}
-#mob-menu-overlay{display:none;position:fixed;inset:0;z-index:500;background:rgba(5,8,12,0.92);flex-direction:column;align-items:center;justify-content:center;gap:10px;pointer-events:all;overflow-y:auto;padding:16px 0;}
+#mob-menu-overlay{display:none;position:fixed;inset:0;z-index:500;background:rgba(5,8,12,0.92);flex-direction:column;align-items:center;justify-content:flex-start;gap:10px;pointer-events:all;overflow-y:auto;overflow-x:hidden;padding:22px 0 32px;scrollbar-width:auto;scrollbar-color:#2c4f78 transparent;}
+#mob-menu-overlay::-webkit-scrollbar,.mob-menu-embed::-webkit-scrollbar,#mob-settings-overlay::-webkit-scrollbar{width:12px;}
+#mob-menu-overlay::-webkit-scrollbar-thumb,.mob-menu-embed::-webkit-scrollbar-thumb,#mob-settings-overlay::-webkit-scrollbar-thumb{background:#2c4f78;border-radius:8px;border:2px solid rgba(5,8,12,0.92);}
 #mob-menu-overlay.open{display:flex;}
 .mob-net-group{display:flex;gap:0;width:220px;flex-shrink:0;}
 .mob-net-half{flex:1;margin:0 !important;padding:10px 2px !important;font-size:9px !important;letter-spacing:0.5px !important;min-width:0 !important;}
@@ -423,7 +428,7 @@ body.is-mobile:not(.is-portrait) #mob-throw-btn{display:flex;}
       <div data-slider="flickwindow,slider.flickWindow,1,.05,1.5,.05,true"></div>
       <div data-slider="flickminvel,slider.flickMinSpeed,4,.5,8,.25,true"></div>
       <div data-slider="flickminamp,slider.flickMinAmplitude,.45,.05,2,.05,true"></div>
-      <div data-slider="flickcount,slider.flickSwingCount,2,2,8,1,true"></div>
+      <div data-slider="flickcount,slider.flickSwingCount,3,3,8,1,true"></div>
       <div data-slider="flickmaxmult,slider.flickMaxAmplitude,5,1.5,10,.5,true"></div>
       <div data-slider="stamflick,slider.flickStaminaCost,25,0,60,5,true"></div>
       <div data-checkbox="debugbrowser,checkbox.debugBrowser,false,true"></div>
@@ -490,9 +495,9 @@ body.is-mobile:not(.is-portrait) #mob-throw-btn{display:flex;}
   <button id="mob-spawn-btn" data-i18n-title="mobile.controls.spawn">🤖</button>
   <button id="mob-menu-btn" data-i18n-title="mobile.controls.menu">☰</button>
   <button id="mob-style-btn" data-i18n-title="mobile.controls.style">⚔</button>
-  <button id="mob-shield-flip-btn" data-i18n-title="mobile.controls.shieldFlip">🛡</button>
-  <button id="mob-weapon-btn" data-i18n-title="mobile.controls.weapon">⚔</button>
-  <button id="mob-throw-btn" data-i18n-title="mobile.controls.throw">⬇</button>
+  <button id="mob-shield-flip-btn" data-i18n-title="mobile.controls.shieldFlip">&#128737;</button>
+  <button id="mob-weapon-btn" data-i18n-title="mobile.controls.weapon">&#128481;</button>
+  <button id="mob-throw-btn" data-i18n-title="mobile.controls.throw">&#127919;</button>
   <button id="mob-dodge-btn" data-i18n-title="mobile.controls.dodge">💨</button>
   <button id="mob-music-btn" data-i18n-title="mobile.controls.music">🎵</button>
   <button id="mob-zone-btn" data-i18n-title="mobile.controls.zone">⏺</button>

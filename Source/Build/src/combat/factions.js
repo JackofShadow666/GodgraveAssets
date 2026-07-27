@@ -43,12 +43,13 @@
 
   function canFight(a, b){ return canDamage(a, b) || canDamage(b, a); }
 
-  function contact(a, b){
-    const aPlayer = isPlayer(a);
-    const bPlayer = isPlayer(b);
-    if(!aPlayer && bPlayer){ a._lastPlayerTarget = b; a._lastPlayerContactAt = GameTime; }
-    if(!bPlayer && aPlayer){ b._lastPlayerTarget = a; b._lastPlayerContactAt = GameTime; }
-  }
+function contact(a, b){
+  if(!a || !b) return;
+  const aPlayer = isPlayer(a);
+  const bPlayer = isPlayer(b);
+  if(!aPlayer && bPlayer){ a._lastPlayerTarget = b; a._lastPlayerContactAt = GameTime; }
+  if(!bPlayer && aPlayer){ b._lastPlayerTarget = a; b._lastPlayerContactAt = GameTime; }
+}
 
   function proximityTarget(bot, alive, currentTarget){
     if(!bot || GameTime < (bot._nextProximityTargetCheck || 0)) return null;

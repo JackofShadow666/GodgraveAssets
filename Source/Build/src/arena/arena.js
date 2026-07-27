@@ -1034,7 +1034,7 @@ function drawShield(ent, cursorX){
   const shW = shH * aspectRatio;
   ent._shieldW = shW; ent._shieldH = shH; ent._shieldType = ent.shield;
 
-  // 🔥 ВОТ ЭТО БЫЛО ПРОПУЩЕНО!
+  const held = typeof shieldHeld === 'function' && shieldHeld(ent);
   const sc = shieldCenter(ent, cursorX);
   if(!sc) return;
   
@@ -1049,19 +1049,34 @@ function drawShield(ent, cursorX){
   const _maxTilt = 15*Math.PI/180;
   const shieldAngle = $.M.clamp(_rawTilt, -_maxTilt, _maxTilt);
 
-  const aiState = ent && ent._aiState;
-  const lmbActive = (ent===P) ? $.A.meleeHold(ent, mDown)
-    : (aiState && $.A.meleeHold(ent, aiState._fakeMDown));
   const _shDisabled = $.E.shieldOff(ent);
-  ent._shieldAlpha = lmbActive ? 0.25 : (_shDisabled ? 0.3 : 1.0);
+  ent._shieldAlpha = held ? (_shDisabled ? 0.3 : 1.0) : 0.25;
 
-  const _shWf = shW * _shExhMult;
-  const _shHf = shH * _shExhMult;
+  const _shBackMult = held ? 1.0 : 0.85;
+  const _shWf = shW * _shExhMult * _shBackMult;
+  const _shHf = shH * _shExhMult * _shBackMult;
+  const _dashCharging = ent._shieldDashCharging && held;
+  const _dashChargePower = Math.max(0, Math.min(1, ent._shieldDashChargePower || 0));
   ctx.save();
   ctx.globalAlpha = ent._shieldAlpha;
   ctx.translate(sc.x, sc.y + _shExhOffY);
   ctx.rotate(shieldAngle);
+  if(_dashCharging){
+    const pulse = 0.65 + Math.sin(GameTime * 18) * 0.25;
+    ctx.save();
+    ctx.globalAlpha = (0.35 + _dashChargePower * 0.45) * pulse;
+    ctx.shadowColor = '#60ccff';
+    ctx.shadowBlur = 18 + _dashChargePower * 28;
+    ctx.strokeStyle = '#a8f4ff';
+    ctx.lineWidth = 2 + _dashChargePower * 3;
+    ctx.strokeRect(-_shWf/2 - 4, -_shHf/2 - 4, _shWf + 8, _shHf + 8);
+    ctx.restore();
+  }
   if(imgReady){
+    if(_dashCharging){
+      ctx.shadowColor = '#60ccff';
+      ctx.shadowBlur = 12 + _dashChargePower * 28;
+    }
     ctx.drawImage(img, -_shWf/2, -_shHf/2, _shWf, _shHf);
   } else {
     ctx.fillStyle = 'rgba(100,180,255,0.5)';

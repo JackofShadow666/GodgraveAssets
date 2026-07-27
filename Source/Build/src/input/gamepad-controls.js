@@ -1368,4 +1368,20 @@
     getConfig: () => CFG,
   };
 
+// Полная блокировка ПКМ на всём документе
+document.addEventListener('contextmenu', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    return false;
+}, false);
+
+// Также блокируем событие mousedown (ПКМ), чтобы предотвратить любые действия
+document.addEventListener('mousedown', function(e) {
+    if (e.button === 2) {
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+    }
+}, false);
+
 })();

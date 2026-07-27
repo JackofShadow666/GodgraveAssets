@@ -144,8 +144,21 @@ function isShieldSuppressed(ent){
   return $.E.charging(ent);
 }
 
+function shieldHeld(ent){
+  const def = shieldDef(ent);
+  if(!def || isShieldSuppressed(ent)) return false;
+  const isPlayer = typeof P !== 'undefined' && ent===P;
+  if(!isPlayer) return true;
+  if(typeof mDown !== 'undefined' && mDown) return false;
+  return !!ent._shieldHeld;
+}
+
 // Щит на той же стороне что меч (курсор) = флип активен
-function shieldSameSideAsSword(ent){ return !!ent._shieldFlipped; }
+function shieldSameSideAsSword(ent){
+  const isPlayer = typeof P !== 'undefined' && ent === P;
+  if(isPlayer) return typeof shieldHeld === 'function' && shieldHeld(ent);
+  return !!ent._shieldFlipped;
+}
 // Эффективный масштаб меча: -40% размера, если щит держат в той же руке, что и меч
 function effSwordScale(ent){
   const _shp = shieldDef(ent) && shieldSameSideAsSword(ent);
@@ -164,6 +177,7 @@ function drawShield(ent, cursorX){
   const shW = shH * aspectRatio;
   ent._shieldW = shW; ent._shieldH = shH; ent._shieldType = ent.shield;
 
+  const held = shieldHeld(ent);
   const sc = shieldCenter(ent, cursorX); // ← теперь shieldCenter уже содержит коррекцию
   if(!sc) return;
   
@@ -178,13 +192,12 @@ function drawShield(ent, cursorX){
   const _maxTilt = 15*Math.PI/180;
   const shieldAngle = $.M.clamp(_rawTilt, -_maxTilt, _maxTilt);
 
-  const lmbActive = (ent===P) ? $.A.meleeHold(ent, mDown)
-    : (typeof AI!=='undefined' && $.A.meleeHold(ent, AI._fakeMDown));
   const _shDisabled = $.E.shieldOff(ent);
-  ent._shieldAlpha = lmbActive ? 0.25 : (_shDisabled ? 0.3 : 1.0);
+  ent._shieldAlpha = held ? (_shDisabled ? 0.3 : 1.0) : 0.25;
 
-  const _shWf = shW * _shExhMult;
-  const _shHf = shH * _shExhMult;
+  const _shBackMult = held ? 1.0 : 0.85;
+  const _shWf = shW * _shExhMult * _shBackMult;
+  const _shHf = shH * _shExhMult * _shBackMult;
   ctx.save();
   ctx.globalAlpha = ent._shieldAlpha;
   ctx.translate(sc.x, sc.y + _shExhOffY);

@@ -2,18 +2,80 @@
 
 (function(){
   let _pcDodgeCooldown = 0;
+  const CHARGE_MAX = 3.0;
+  const CHARGE_MIN = 0.18;
+
+  function dodgeVector(){
+    let dvx=0, dvy=0;
+    const kd=keys['d']||keys['D']||keys['РІ']||keys['Р’'];
+    const ka=keys['a']||keys['A']||keys['С„']||keys['Р¤'];
+    const ks=keys['s']||keys['S']||keys['С‹']||keys['Р«']||keys['С–'];
+    const kw=keys['w']||keys['W']||keys['С†']||keys['Р¦'];
+    if(kd) dvx=1; else if(ka) dvx=-1;
+    if(ks) dvy=1; else if(kw) dvy=-1;
+    if(dvx===0&&dvy===0 && typeof P!=='undefined'){
+      const pivX=(typeof rootCenter==='function'?$.POS.root().x:P.x)+P.pvX;
+      const pivY=(typeof rootCenter==='function'?$.POS.root().y:P.y)+P.pvY;
+      dvx=mX-pivX; dvy=mY-pivY;
+    }
+    return {x:dvx, y:dvy};
+  }
+
+  function canChargeShieldDash(){
+    return typeof P!=='undefined' && P.shield>0 && !isExhausted(P) &&
+      typeof shieldHeld==='function' && shieldHeld(P) && P.stamina>0;
+  }
+
+  window.beginDodgePress = function(source){
+    if(typeof gamePaused !== 'undefined' && gamePaused) return;
+    if(_pcDodgeCooldown > 0) return;
+    if(canChargeShieldDash()){
+      P._shieldDashCharging = true;
+      P._shieldDashChargeStart = GameTime;
+      P._shieldDashChargeSource = source || 'dodge';
+      P._shieldDashChargeMax = CHARGE_MAX;
+      P._shieldDashBashActiveUntil = 0;
+      return;
+    }
+    _pcDodgeCooldown = 0.8;
+    if(typeof window.doDodge === 'function') window.doDodge(true);
+  };
+
+  window.endDodgePress = function(source){
+    if(typeof P==='undefined') return;
+    if(!P._shieldDashCharging || (source && P._shieldDashChargeSource !== source)) return;
+    const held = Math.max(0, Math.min(CHARGE_MAX, GameTime - (P._shieldDashChargeStart || GameTime)));
+    const charge = held >= CHARGE_MIN ? held / CHARGE_MAX : 0;
+    P._shieldDashCharging = false;
+    P._shieldDashChargeStart = 0;
+    P._shieldDashChargeSource = null;
+    _pcDodgeCooldown = 0.8;
+    const dir = dodgeVector();
+    if(typeof window.fireDodge === 'function') window.fireDodge(dir.x, dir.y, true, charge);
+  };
 
   window.addEventListener('keydown', e => {
     if(e.key !== 'Shift') return;
     if(e.repeat) return;
-    if(typeof gamePaused !== 'undefined' && gamePaused) return;
-    if(_pcDodgeCooldown > 0) return;
-    _pcDodgeCooldown = 0.8;
-    if(typeof window.doDodge === 'function') window.doDodge(true);
+    window.beginDodgePress('Shift');
+  });
+
+  window.addEventListener('keyup', e => {
+    if(e.key !== 'Shift') return;
+    window.endDodgePress('Shift');
   });
 
   window._dodgeTick = function(rawDt){
     if(_pcDodgeCooldown > 0) _pcDodgeCooldown -= rawDt;
+    if(typeof P !== 'undefined' && P._shieldDashCharging){
+      if(!canChargeShieldDash()){
+        P._shieldDashCharging = false;
+      } else {
+        const held = Math.max(0, Math.min(CHARGE_MAX, GameTime - (P._shieldDashChargeStart || GameTime)));
+        P._shieldDashChargePower = held / CHARGE_MAX;
+        P.vx = 0; P.vy = 0;
+      }
+    }
     if(typeof window._dodgeCooldownMob !== 'undefined' && window._dodgeCooldownMob > 0){
       window._dodgeCooldownMob -= rawDt;
     }

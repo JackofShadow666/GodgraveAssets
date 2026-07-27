@@ -594,7 +594,7 @@ if(bounced){
         }
 
         // Щит
-        if(!deflected && shieldDef(ent) && !isShieldSuppressed(ent) && ent._shieldSide !== undefined){
+        if(!deflected && typeof shieldHeld === 'function' && shieldHeld(ent) && ent._shieldSide !== undefined){
           const shc = $.POS.body(ent);
           const shVertOff = Math.sin(ent.angle) * 14;
           const scx = shc.x + ent._shieldSide * 20 * 0.9;

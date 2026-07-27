@@ -4,6 +4,7 @@
 // Module section: update tick.
 // =======================================================================================
 
+
 function update(dt){
   if(DEATH.pDead) return; // dead — no update
   const step = $.M.step(dt);
@@ -20,9 +21,23 @@ function update(dt){
   if(keys['a']||keys['ф']) mx=-1; if(keys['d']||keys['в']) mx=1;
   if(keys['w']||keys['ц']) my=-1; if(keys['s']||keys['ы']) my=1;
   if(mx||my){ const l=Math.hypot(mx,my); mx/=l; my/=l; }
+  if(P._shieldDashCharging){
+    mx = 0; my = 0;
+    P.vx = 0; P.vy = 0;
+  }
   
 // Stamina regeneration
-regenStamina(P, dt, mDown);
+if(window.IS_MOBILE && GameTime < (P._shieldHeldUntil || 0) && P.shield>0 && !isExhausted(P) && P.stamina>0) P._shieldHeld = true;
+if(mDown && !(window.IS_MOBILE && GameTime < (P._shieldHeldUntil || 0))) P._shieldHeld = false;
+const shieldDrainActive = typeof shieldHeld === 'function' && shieldHeld(P);
+regenStamina(P, dt, mDown || shieldDrainActive);
+if(shieldDrainActive){
+  drainStamina(P, 2 * dt);
+  if(P.stamina <= 0){
+    P._shieldHeld = false;
+    if(!isExhausted(P)) applyExhaust(P);
+  }
+}
   
   // -- MULTIHIT PROTECTION UPDATE ------------------------------
   if(P._multiHitProtection){
@@ -172,7 +187,8 @@ const exhMult = getMod(P, 'moveSlow', 1);
   
   if(P._dvx||P._dvy){
     const impulseStep = decayingImpulseStep(dt);
-    if(P.shield>0 && typeof shieldDef==='function' && shieldDef(P)
+    if(P.shield>0 && (P._shieldDashBashActiveUntil||0) > GameTime && typeof shieldDef==='function' && shieldDef(P)
+       && typeof shieldHeld==='function' && shieldHeld(P)
        && typeof D!=='undefined' && dummyOn){
       const _dodgeDist = Math.hypot(D.x-P.x, D.y-P.y);
       const _dvLen = Math.hypot(P._dvx||0, P._dvy||0)||1;
@@ -183,8 +199,10 @@ const exhMult = getMod(P, 'moveSlow', 1);
       const _toward = _movDir_x*_toD_x + _movDir_y*_toD_y;
       if(_dodgeDist < 70 && _toward > 0.3 && !(P._shieldBodyHitCD > GameTime)){
         P._shieldBodyHitCD = GameTime + 0.5;
-        D.vx += _toD_x*5; D.vy += _toD_y*5;
+        const _chargePower = Math.max(0, Math.min(1, P._shieldDashChargePower || 0));
+        D.vx += _toD_x*(5 + _chargePower*5); D.vy += _toD_y*(5 + _chargePower*5);
         if(!isUnbalanced(D)) applyDisbalance(D, P);
+        P._shieldDashBashActiveUntil = 0;
         P.rage = Math.max(0, (P.rage||0) - 20);
         
         const _shDefBash = shieldDef(P);
@@ -208,6 +226,7 @@ const exhMult = getMod(P, 'moveSlow', 1);
           if(D.hp<=0 && typeof handleCombatDeath==='function') handleCombatDeath(D);
         }
         $.FX.hit({x:D.x,y:D.y-30,t: _spiked?(window.I18N?window.I18N.t('main.spikedBash'):'???? SPIKE BASH!'):(window.I18N?window.I18N.t('main.bash'):'?? BASH!'),life:45,big:true,col:'#60ccff'});
+        if(typeof FX_EFFECTS!=='undefined') FX_EFFECTS.push({type:'shieldwave', x:D.x, y:D.y, t:0, duration:22, angle:Math.atan2(_toD_y, _toD_x), followEntity:null});
         playSound?.('shieldblock');
         if(typeof triggerHitstop==='function') triggerHitstop(3,3);
       }
@@ -839,8 +858,17 @@ if(dummyOn&&isUnbalanced(D)) drawUnbalancedStars(D);
 
 // -- INPUT --------------------------------------------------------------------------
 canvas.addEventListener('mousemove', e=>{ const r=canvas.getBoundingClientRect(); mX=e.clientX-r.left; mY=e.clientY-r.top; });
-canvas.addEventListener('mousedown', e=>{ if(e.button!==0)return; mDown=true; });
-canvas.addEventListener('mouseup',   e=>{ if(e.button!==0)return; mDown=false; });
+canvas.addEventListener('mousedown', e=>{
+  if(e.button===0){ mDown=true; P._shieldHeld=false; return; }
+  if(e.button===2 && !window.IS_MOBILE){
+    e.preventDefault();
+    if(P.shield>0 && !isExhausted(P) && P.stamina>0) P._shieldHeld=true;
+  }
+});
+canvas.addEventListener('mouseup',   e=>{
+  if(e.button===0){ mDown=false; return; }
+  if(e.button===2) P._shieldHeld=false;
+});
 function browserInputLocked(){
   const cfgUnlock = !!(window.GG_DEBUG_CONFIG && window.GG_DEBUG_CONFIG.unlockBrowserInput);
   const queryUnlock = typeof URLSearchParams !== 'undefined' &&
@@ -854,13 +882,52 @@ function browserInputLocked(){
 }
 // RMB is intentionally unused: block browser context menus and any future
 // accidental right-button gameplay bindings.
-window.addEventListener('contextmenu', e=>{ if(browserInputLocked()) e.preventDefault(); });
-window.addEventListener('mousedown', e=>{ if(e.button===2 && browserInputLocked()){ e.preventDefault(); e.stopImmediatePropagation(); } }, true);
+function blockRmbBrowserEvent(e){
+  if(!browserInputLocked()) return false;
+  e.preventDefault();
+  e.stopPropagation();
+  e.stopImmediatePropagation();
+  return false;
+}
+
+
+
+
+function isRmbBrowserEvent(e){
+  return e.button===2 || (typeof e.buttons === 'number' && (e.buttons & 2) !== 0);
+}
+
+window.addEventListener('contextmenu', e=>{ blockRmbBrowserEvent(e); }, true);
+window.addEventListener('pointerdown', e=>{
+  if(isRmbBrowserEvent(e) && browserInputLocked()){
+    if(!window.IS_MOBILE && P.shield>0 && !isExhausted(P) && P.stamina>0) P._shieldHeld=true;
+    blockRmbBrowserEvent(e);
+  }
+}, true);
+window.addEventListener('pointerup', e=>{
+  if(isRmbBrowserEvent(e) && browserInputLocked()){
+    P._shieldHeld=false;
+    blockRmbBrowserEvent(e);
+  }
+}, true);
+window.addEventListener('mousedown', e=>{
+  if(isRmbBrowserEvent(e) && browserInputLocked()){
+    if(!window.IS_MOBILE && P.shield>0 && !isExhausted(P) && P.stamina>0) P._shieldHeld=true;
+    blockRmbBrowserEvent(e);
+  }
+}, true);
+window.addEventListener('mouseup', e=>{
+  if(isRmbBrowserEvent(e) && browserInputLocked()){
+    P._shieldHeld=false;
+    blockRmbBrowserEvent(e);
+  }
+}, true);
+window.addEventListener('auxclick', e=>{ if(isRmbBrowserEvent(e)) blockRmbBrowserEvent(e); }, true);
 // Global handlers: if LMB released outside canvas/window, or window loses focus (alt-tab, tab switch) — reset mDown so
 // the game doesn't "stick" in held-button mode.
-window.addEventListener('mouseup', e=>{ if(e.button===0) mDown=false; });
-window.addEventListener('blur', ()=>{ mDown=false; });
-document.addEventListener('mouseleave', ()=>{ mDown=false; });
+window.addEventListener('mouseup', e=>{ if(e.button===0) mDown=false; if(e.button===2) P._shieldHeld=false; });
+window.addEventListener('blur', ()=>{ mDown=false; P._shieldHeld=false; });
+document.addEventListener('mouseleave', ()=>{ mDown=false; P._shieldHeld=false; });
 const FALLBACK_KEYBOARD_CODE_ALIASES = {
   KeyW: ['w', 'ц'],
   KeyA: ['a', 'ф'],
@@ -882,6 +949,7 @@ const FALLBACK_KEYBOARD_CODE_ALIASES = {
   KeyJ: ['j', 'о'],
   KeyO: ['o', 'щ'],
   Digit1: ['1'],
+  Space: [' '],
   Enter: ['enter'],
   Escape: ['escape']
 };
@@ -949,13 +1017,14 @@ window.addEventListener('keydown', e=>{
     return;
   }
   setKeyState(e, true);
+  if(e.code==='Space' && !e.repeat){
+    if(typeof window.beginDodgePress==='function') window.beginDodgePress('Space');
+    else if(typeof window.doDodge==='function') window.doDodge(true);
+  }
   if(k==='t'||k==='т'||k==='е') toggleDummy();  // T/т/е (rus. "е" is same physical key as T) = PAUSE
   if(k==='e'||k==='у'){ if(typeof tryManualPickup==='function') tryManualPickup(P); } // E/у = PICK UP WEAPON
   // Debug shields
   if(k==='r'||k==='к'){ window.toggleSwordStyle(); }
-  if(k==='q'||k==='й'){
-    P._shieldFlipped = !P._shieldFlipped;
-  }
   if(k==='y'||k==='н'){ toggleAI(); } // Y/н (same physical key as Y) = SPAWN BOT
   if(k==='z'||k==='я'){
     P.shield=(P.shield+1)%SHIELD_TYPES.length; setShield(P,P.shield);
@@ -1012,7 +1081,10 @@ if(k==='v'||k==='м'){ // bot weapon switch
   }
   if(lockBrowserKeys) e.preventDefault();
 });
-window.addEventListener('keyup',   e=>{ setKeyState(e, false); });
+window.addEventListener('keyup',   e=>{
+  setKeyState(e, false);
+  if(e.code==='Space' && typeof window.endDodgePress==='function') window.endDodgePress('Space');
+});
 window.addEventListener('resize',  ()=>{
   W=canvas.width = window.innerWidth;
   H=canvas.height = window.innerHeight;

@@ -1600,7 +1600,7 @@ function updateProjectiles(dt){
       }
       
       // ─── SHIELD BLOCK ──────────────────────────────────────────────────
-      if(shieldDef(ent) && !isShieldSuppressed(ent) && ent._shieldSide !== undefined){
+      if(typeof shieldHeld === 'function' && shieldHeld(ent) && ent._shieldSide !== undefined){
         const shc = $.POS.body(ent);
         const scx = shc.x + ent._shieldSide*20*0.9, scy = shc.y + Math.sin(ent.angle)*14;
         const halfW=(ent._shieldW||20)/2, halfH=(ent._shieldH||30)/2;

@@ -315,11 +315,22 @@ const SHIELD_INFO_TEXT = [
 
   const shieldFlipBtn=document.getElementById('mob-shield-flip-btn');
   if(shieldFlipBtn){
+    const setShieldHold = held => {
+      if(typeof P==='undefined') return;
+      P._shieldHeld = !!(held && P.shield>0 && !isExhausted(P) && P.stamina>0);
+      shieldFlipBtn.classList.toggle('active', P._shieldHeld);
+    };
     shieldFlipBtn.addEventListener('touchstart', e=>{
-      e.preventDefault(); e.stopPropagation();
-      if(typeof P!=='undefined'){
-        P._shieldFlipped = !P._shieldFlipped;
-      }
+      e.preventDefault();
+      setShieldHold(true);
+    },{passive:false});
+    shieldFlipBtn.addEventListener('touchend', e=>{
+      e.preventDefault();
+      setShieldHold(false);
+    },{passive:false});
+    shieldFlipBtn.addEventListener('touchcancel', e=>{
+      e.preventDefault();
+      setShieldHold(false);
     },{passive:false});
   }
 

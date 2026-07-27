@@ -138,6 +138,82 @@
   }, {passive: false});
 
   // ── MENU (pause/restart/settings) ──────────────────────────────────────
+  const shieldHoldBtn = document.getElementById('mob-shield-flip-btn');
+  let shieldTouchId = null;
+  let shieldSwordUnlockAt = 0;
+  let shieldReleaseTimer = null;
+  function setPlayerShieldHeld(held){
+    if(typeof P==='undefined') return;
+    P._shieldHeld = !!(held && P.shield>0 && !isExhausted(P) && P.stamina>0);
+    if(P._shieldHeld) P._shieldHeldUntil = 0;
+    shieldHoldBtn?.classList.toggle('active', P._shieldHeld);
+  }
+  function holdPlayerShieldUntil(until){
+    if(typeof P==='undefined') return;
+    P._shieldHeldUntil = Math.max(P._shieldHeldUntil || 0, until);
+    P._shieldHeld = !!(P.shield>0 && !isExhausted(P) && P.stamina>0);
+    shieldHoldBtn?.classList.toggle('active', P._shieldHeld);
+  }
+  function releasePlayerShieldDelayed(){
+    if(shieldReleaseTimer) clearTimeout(shieldReleaseTimer);
+    holdPlayerShieldUntil(GameTime + 0.5);
+    const finishShieldRelease = () => {
+      if(typeof P!=='undefined' && GameTime < (P._shieldHeldUntil || 0)){
+        holdPlayerShieldUntil(P._shieldHeldUntil || 0);
+        shieldReleaseTimer = setTimeout(finishShieldRelease, Math.max(16, ((P._shieldHeldUntil || 0) - GameTime) * 1000));
+        return;
+      }
+      shieldReleaseTimer = null;
+      setPlayerShieldHeld(false);
+    };
+    shieldReleaseTimer = setTimeout(finishShieldRelease, 500);
+  }
+  shieldHoldBtn?.addEventListener('touchstart', e => {
+    e.preventDefault();
+    if(shieldReleaseTimer){
+      clearTimeout(shieldReleaseTimer);
+      shieldReleaseTimer = null;
+    }
+    const t = e.changedTouches && e.changedTouches[0];
+    if(t){
+      shieldTouchId = t.identifier;
+      shieldSwordUnlockAt = Date.now() + 300;
+    }
+    setPlayerShieldHeld(true);
+  }, {passive:false});
+  shieldHoldBtn?.addEventListener('touchend', e => {
+    e.preventDefault();
+    for(const t of e.changedTouches){
+      if(t.identifier !== shieldTouchId) continue;
+      if(t.identifier === swordId) endSwordTouch();
+      shieldTouchId = null;
+      shieldSwordUnlockAt = 0;
+    }
+    releasePlayerShieldDelayed();
+  }, {passive:false});
+  shieldHoldBtn?.addEventListener('touchcancel', e => {
+    e.preventDefault();
+    for(const t of e.changedTouches){
+      if(t.identifier !== shieldTouchId) continue;
+      if(t.identifier === swordId) endSwordTouch();
+      shieldTouchId = null;
+      shieldSwordUnlockAt = 0;
+    }
+    releasePlayerShieldDelayed();
+  }, {passive:false});
+  shieldHoldBtn?.addEventListener('touchmove', e => {
+    e.preventDefault();
+    for(const t of e.changedTouches){
+      if(t.identifier !== shieldTouchId) continue;
+      if(t.identifier === swordId){
+        if(controlMode==='fixed') updateSwordFixed(t.clientX, t.clientY);
+        else updateSword(t.clientX, t.clientY);
+      } else if(Date.now() >= shieldSwordUnlockAt && pointInElement(t.clientX, t.clientY, zoneSword)){
+        startSwordTouchFromShield(t);
+      }
+    }
+  }, {passive:false});
+
   const menuBtn = document.getElementById('mob-menu-btn');
   const menuOverlay = document.getElementById('mob-menu-overlay');
   const settingsEmbed = document.getElementById('mob-settings-embed');
@@ -246,28 +322,42 @@ window.doRestart=function(){
 
 
   // fireDodge — works on all devices (PC + mobile)
-  window.fireDodge=function(dx, dy, bypassCooldown){
+  window.fireDodge=function(dx, dy, bypassCooldown, chargedPower){
     if(typeof P==='undefined') return;
     if(!bypassCooldown&&window._dodgeCooldownMob>0) return;
     const len=Math.hypot(dx,dy)||1;
-    const force=8;
+    const charge = Math.max(0, Math.min(1, chargedPower || 0));
+    const force=8 + charge * 7;
     P._dvx=(dx/len)*force;
     P._dvy=(dy/len)*force;
     // "Active dodge" window — during it, swings don't cost stamina
-    P._dodgeActiveUntil = GameTime + 0.3;
+    P._dodgeActiveUntil = GameTime + 0.3 + charge * 0.12;
+    if(charge > 0){
+      P._shieldDashBashActiveUntil = P._dodgeActiveUntil + 0.15;
+      P._shieldDashChargePower = charge;
+      P._shieldDashDirX = dx / len;
+      P._shieldDashDirY = dy / len;
+    }
+    if((typeof shieldHeld === 'function' && shieldHeld(P)) || GameTime < (P._shieldHeldUntil || 0)){
+      holdPlayerShieldUntil(P._dodgeActiveUntil + 0.5);
+    }
     // Dodge cooldown: if shield is on the same side as sword — cooldown is 3x longer
     const _dodgeSameSide = typeof shieldDef==='function' && shieldDef(P) && shieldSameSideAsSword(P);
     window._dodgeCooldownMob = _dodgeSameSide ? 0.8*3 : 0.8;
-    if(P.stamina!==undefined) drainStamina(P, 30);
+    if(P.stamina!==undefined) drainStamina(P, 30 + charge * 15);
     if(typeof spawnDust==='function')
-      for(let i=0;i<8;i++) spawnDust(P.x+Math.random()*24-12,P.y+Math.random()*12,-dx/len*8,-dy/len*8);
+      for(let i=0;i<8 + Math.round(charge * 10);i++) spawnDust(P.x+Math.random()*24-12,P.y+Math.random()*12,-dx/len*(8 + charge*5),-dy/len*(8 + charge*5));
     $.S.play('dodgeSound');
     if(typeof DODGE_TRAIL==='undefined') window.DODGE_TRAIL=[];
-    window._dodgeTrailFrames=12;
-    if(typeof hitFX!=='undefined') $.FX.hit({x:P.x,y:P.y-30,t:(window.I18N ? window.I18N.t('common.dodge') : 'DODGE'),life:35,big:false,col:'rgba(200,200,200,0.6)'});
+    window._dodgeTrailFrames=12 + Math.round(charge * 12);
+    if(typeof hitFX!=='undefined') $.FX.hit({x:P.x,y:P.y-30,t:charge>0?'SHIELD DASH':(window.I18N ? window.I18N.t('common.dodge') : 'DODGE'),life:35,big:charge>0,col:charge>0?'#60ccff':'rgba(200,200,200,0.6)'});
+    if(charge > 0 && typeof FX_EFFECTS!=='undefined'){
+      FX_EFFECTS.push({type:'shieldwave', x:P.x, y:P.y, t:0, duration:24, angle:Math.atan2(dy, dx), followEntity:null});
+      FX_EFFECTS.push({type:'shieldwave', x:P.x, y:P.y, t:0, duration:18, angle:Math.atan2(dy, dx), followEntity:P});
+    }
     // Dodge with shield in the correct hand → bladeblind + knockback
     // Only if moving TOWARD the target (not running away)
-    if(typeof shieldDef==='function' && shieldDef(P) && !shieldSameSideAsSword(P)){
+    if(false && typeof shieldDef==='function' && shieldDef(P) && typeof shieldHeld==='function' && shieldHeld(P)){
       const _dt2=(typeof D!=='undefined'&&dummyOn)?D:null;
       if(_dt2){
         const _ax=_dt2.x-P.x, _ay=_dt2.y-P.y;
@@ -366,6 +456,49 @@ if(_spiked2 && typeof GameTime!=='undefined'){
   let lastSwordTap = 0;
   let doubleTapLMB = false;
   let _crossbowTapPending = false; // crossbow tap — shot happens on touchend
+
+  function pointInElement(x, y, el){
+    if(!el) return false;
+    const r = el.getBoundingClientRect();
+    return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
+  }
+
+  function startSwordTouchFromShield(t){
+    if(!t || swordId !== null) return;
+    enableAudioSystem();
+    swordId = t.identifier;
+    if(controlMode==='fixed'){
+      updateSwordFixed(t.clientX, t.clientY);
+    } else {
+      swordOrigin = {x: t.clientX, y: t.clientY};
+      swordBase.style.left = swordOrigin.x+'px';
+      swordBase.style.top  = swordOrigin.y+'px';
+      swordBase.classList.add('active');
+      updateSword(t.clientX, t.clientY);
+    }
+  }
+
+  function endSwordTouch(){
+    swordId = null;
+    if(controlMode==='fixed'){
+      fixedStickKnob.style.left='65px'; fixedStickKnob.style.top='65px';
+    } else {
+      swordBase.classList.remove('active');
+      updateSwordKnob(0,0);
+    }
+    if(_crossbowTapPending){
+      _crossbowTapPending = false;
+      mDown = true;
+      requestAnimationFrame(() => { mDown = false; });
+    }
+    const _wk2 = typeof weaponKeyOf==='function' && typeof P!=='undefined' ? weaponKeyOf(P) : null;
+    if(doubleTapLMB || _wk2 === 'bow'){
+      doubleTapLMB = false;
+      mDown = false;
+      swordKnob.classList.remove('lmb-active');
+      fixedStickKnob.classList.remove('lmb-active');
+    }
+  }
 
   // ── LEFT — movement ──────────────────────────────────────────────────────
   // Get zone offset relative to screen (once)
@@ -592,29 +725,7 @@ if(_spiked2 && typeof GameTime!=='undefined'){
     e.preventDefault();
     for(const t of e.changedTouches){
       if(t.identifier !== swordId) continue;
-      swordId = null;
-      if(controlMode==='fixed'){
-        fixedStickKnob.style.left='65px'; fixedStickKnob.style.top='65px';
-      } else {
-        swordBase.classList.remove('active');
-        updateSwordKnob(0,0);
-      }
-      // Crossbow: shot happens right now, on touch release —
-      // enable mDown for one frame so updateRangedWeaponFire sees
-      // fireHeld=true and fires, then immediately disable.
-      if(_crossbowTapPending){
-        _crossbowTapPending = false;
-        mDown = true;
-        requestAnimationFrame(() => { mDown = false; });
-      }
-      // Finger released — LMB always released (bow/melee with double tap)
-      const _wk2 = typeof weaponKeyOf==='function' && typeof P!=='undefined' ? weaponKeyOf(P) : null;
-      if(doubleTapLMB || _wk2 === 'bow'){
-        doubleTapLMB = false;
-        mDown = false;
-        swordKnob.classList.remove('lmb-active');
-        fixedStickKnob.classList.remove('lmb-active');
-      }
+      endSwordTouch();
     }
   }, {passive:false});
 
