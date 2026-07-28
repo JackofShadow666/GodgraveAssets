@@ -195,7 +195,7 @@ function openSafeCounterWindow(defender){
     defender._safeCounterUntil = GameTime + SAFE_COUNTER_WINDOW;
   }
 }
-function blockStaminaCost(attacker, ignoreLmbExemption = false){
+function blockStaminaCost(attacker, ignoreLmbExemption = false, blockType = 'weapon'){
   // A successful block gives its defender 1.5 seconds to make a counterattack.
   // If that counterattack is blocked too, it costs no stamina.
   if(attacker && cb('safecounter') && (attacker._safeCounterUntil || 0) >= GameTime){
@@ -204,7 +204,8 @@ function blockStaminaCost(attacker, ignoreLmbExemption = false){
   }
   // Default cost: 2/3 of stamblock, scaled for bots.
   if(!ignoreLmbExemption && attacker === P && mDown) return 0;
-  return sv('stamblock') * (2 / 3) * (isBot(attacker) ? 1.2 : 1);
+  const shieldPlayerMult = blockType === 'shield' && attacker === P ? (1 / 3) : 1;
+  return sv('stamblock') * (2 / 3) * (isBot(attacker) ? 1.2 : 1) * shieldPlayerMult;
 }
 function disbalanceComboDebug(ent, text, col = '#ffcc44'){
   if(!cb('unbcombodbg') || ent !== P) return;
@@ -823,7 +824,7 @@ if (defender === D && attacker === P && typeof AI !== 'undefined' && AI.enabled 
                   _bl = Math.hypot(_bvx, _bvy) || 1;
             attacker.vx -= _bvx / _bl * 3;
             attacker.vy -= _bvy / _bl * 3;
-            const blockCost = blockStaminaCost(attacker);
+            const blockCost = blockStaminaCost(attacker, false, 'shield');
             drainStamina(attacker, blockCost);
             if(attacker.stamina <= 0 && !isExhausted(attacker)){
               applyExhaust(attacker);

@@ -507,6 +507,11 @@ function updateChargeShake(ent, dt){
     chargeStart = ent._bowChargeStart || 0;
     chargeTime = BOW_RELOAD;
     intensityMult = 0.8;
+  } else if(ent._shieldDashCharging) {
+    isCharging = true;
+    chargeStart = ent._shieldDashChargeStart || 0;
+    chargeTime = ent._shieldDashChargeMax || 3.0;
+    intensityMult = 1.6;
   }
   
   if(isCharging && chargeTime > 0) {
@@ -1060,23 +1065,21 @@ function drawShield(ent, cursorX){
   ctx.save();
   ctx.globalAlpha = ent._shieldAlpha;
   ctx.translate(sc.x, sc.y + _shExhOffY);
-  ctx.rotate(shieldAngle);
   if(_dashCharging){
-    const pulse = 0.65 + Math.sin(GameTime * 18) * 0.25;
-    ctx.save();
-    ctx.globalAlpha = (0.35 + _dashChargePower * 0.45) * pulse;
-    ctx.shadowColor = '#60ccff';
-    ctx.shadowBlur = 18 + _dashChargePower * 28;
-    ctx.strokeStyle = '#a8f4ff';
-    ctx.lineWidth = 2 + _dashChargePower * 3;
-    ctx.strokeRect(-_shWf/2 - 4, -_shHf/2 - 4, _shWf + 8, _shHf + 8);
-    ctx.restore();
+    const shake = (1 + _dashChargePower * 2.5);
+    ctx.translate(
+      (ent._chargeShakeX || 0) * shake,
+      (ent._chargeShakeY || 0) * shake
+    );
+    ctx.rotate((ent._chargeShakeAngle || 0) * 1.5);
   }
+  ctx.rotate(shieldAngle);
   if(imgReady){
     if(_dashCharging){
       ctx.shadowColor = '#60ccff';
-      ctx.shadowBlur = 12 + _dashChargePower * 28;
+      ctx.shadowBlur = _dashChargePower * 50;
     }
+    if(_dashCharging) ctx.globalAlpha = ent._shieldAlpha * (0.45 + _dashChargePower * 0.55);
     ctx.drawImage(img, -_shWf/2, -_shHf/2, _shWf, _shHf);
   } else {
     ctx.fillStyle = 'rgba(100,180,255,0.5)';

@@ -44,7 +44,10 @@
   // а не через синтетическую клавишу (для них либо нет отдельной клавиши,
   // либо публичная функция — самый прямой и стабильный путь).
   const PUBLIC_API_ACTIONS = {
-    dodge:       () => window.doDodge && window.doDodge(),
+    dodge:       () => {
+      if (window.beginDodgePress) window.beginDodgePress('GamepadDodge');
+      else if (window.doDodge) window.doDodge(true);
+    },
     zoneToggle:  () => window.toggleZone && window.toggleZone(),
     spawnBot:    () => window.toggleAI && window.toggleAI(),
     musicToggle: () => window.toggleMusic && window.toggleMusic(),
@@ -57,7 +60,7 @@
     axes: { move: { x: 0, y: 1 }, aim: { x: 2, y: 3 } },
     buttons: {
       attack:      { index: 7,  type: 'trigger', action: 'attack' },
-      shieldFlip:  { index: 6,  type: 'trigger', action: 'shieldFlip' },
+      shield:      { index: 6,  type: 'trigger', action: 'shield' },
       dodge:       { index: 0,  action: 'dodge' },
       spawnBot:    { index: 1,  action: 'spawnBot' },
       musicToggle: { index: 2,  action: 'musicToggle' },
@@ -85,6 +88,7 @@
   let prevButtonState = {};
   let audioActivated = false;
   let canvasEl = null;
+  let dodgeHeld = false;
 
   function getCanvas() {
     if (canvasEl && document.body.contains(canvasEl)) return canvasEl;
@@ -797,6 +801,9 @@
       dispatchMouseButton('mouseup', lastAimClientX, lastAimClientY);
       attackHeld = false;
     }
+    if (shieldHeld) {
+      setGamepadShieldHeld(false);
+    }
     if (isVirtualKeyboardOpen()) {
       closeVirtualKeyboard(false);
     }
@@ -857,7 +864,7 @@
       };
 
       const KNOWN_ACTIONS = new Set([
-        'attack','dodge','swapWeapon','shieldFlip','shieldType','swordStyle',
+        'attack','dodge','swapWeapon','shield','shieldFlip','shieldType','swordStyle',
         'throwWeapon','zoneToggle','spawnBot','musicToggle','pause'
       ]);
 
@@ -879,6 +886,11 @@
             parsed.buttons[key] = { index, type, action: key };
           }
         }
+      }
+
+      if (!parsed.buttons.shield && parsed.buttons.shieldFlip && parsed.buttons.shieldFlip.index === 6) {
+        parsed.buttons.shield = { index: 6, type: parsed.buttons.shieldFlip.type || 'trigger', action: 'shield' };
+        delete parsed.buttons.shieldFlip;
       }
 
       if (Object.keys(parsed.buttons).length) {
@@ -973,8 +985,22 @@
   let lastAimClientX = window.innerWidth / 2;
   let lastAimClientY = window.innerHeight / 2;
   let attackHeld = false;
+  let shieldHeld = false;
   let _lastPollT = performance.now();
   let _menuStickSmoothX = 0, _menuStickSmoothY = 0;
+
+  function setGamepadShieldHeld(held) {
+    shieldHeld = held;
+    if (typeof P === 'undefined') return;
+    if (!held) {
+      P._shieldHeld = false;
+      return;
+    }
+    const exhausted = typeof isExhausted === 'function' && isExhausted(P);
+    if (!isAnyMenuOpen() && P.shield > 0 && !exhausted && P.stamina > 0) {
+      P._shieldHeld = true;
+    }
+  }
 
   // ── ОСНОВНОЙ ЦИКЛ ─────────────────────────────────────────────────────
   function pollGamepad() {
@@ -990,6 +1016,7 @@
     if (!gp) return;
 
     const menuOpen = isAnyMenuOpen();
+    if (menuOpen && shieldHeld) setGamepadShieldHeld(false);
 
     // ── РЕЖИМ ВИРТУАЛЬНОЙ КЛАВИАТУРЫ ─────────────────────────────────────
     // Отдельная ветка: пока клавиатура открыта, геймпад полностью
@@ -1243,6 +1270,14 @@
       const pressed = btn.pressed || btn.value > 0.5;
       const wasPressed = !!prevButtonState[key];
 
+      if (def.type === 'trigger' && def.action === 'shield' && !pressed && shieldHeld) {
+        setGamepadShieldHeld(false);
+      }
+      if (def.action === 'dodge' && !pressed && dodgeHeld) {
+        dodgeHeld = false;
+        if (window.endDodgePress) window.endDodgePress('GamepadDodge');
+      }
+
       if (!inputSuppressed) {
         if (def.type === 'trigger') {
           if (def.action === 'attack') {
@@ -1254,7 +1289,20 @@
               dispatchMouseButton('mouseup', lastAimClientX, lastAimClientY);
               attackHeld = false;
             }
+          } else if (def.action === 'shield') {
+            if (pressed !== wasPressed) {
+              setGamepadShieldHeld(pressed);
+              if (pressed) activateAudio();
+            } else if (pressed && shieldHeld) {
+              setGamepadShieldHeld(true);
+            }
           } else if (pressed && !wasPressed) {
+            ACTIONS[def.action] && ACTIONS[def.action]();
+            activateAudio();
+          }
+        } else if (def.action === 'dodge') {
+          if (pressed && !wasPressed) {
+            dodgeHeld = true;
             ACTIONS[def.action] && ACTIONS[def.action]();
             activateAudio();
           }

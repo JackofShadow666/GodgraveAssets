@@ -35,6 +35,9 @@
       P._shieldDashChargeSource = source || 'dodge';
       P._shieldDashChargeMax = CHARGE_MAX;
       P._shieldDashBashActiveUntil = 0;
+      if(!P._shieldDashChargeSound && typeof playControllableSound === 'function'){
+        P._shieldDashChargeSound = playControllableSound('shieldPush');
+      }
       return;
     }
     _pcDodgeCooldown = 0.8;
@@ -49,6 +52,8 @@
     P._shieldDashCharging = false;
     P._shieldDashChargeStart = 0;
     P._shieldDashChargeSource = null;
+    if(typeof fadeOutSound === 'function') fadeOutSound(P._shieldDashChargeSound, 0.18);
+    P._shieldDashChargeSound = null;
     _pcDodgeCooldown = 0.8;
     const dir = dodgeVector();
     if(typeof window.fireDodge === 'function') window.fireDodge(dir.x, dir.y, true, charge);
@@ -70,10 +75,19 @@
     if(typeof P !== 'undefined' && P._shieldDashCharging){
       if(!canChargeShieldDash()){
         P._shieldDashCharging = false;
+        if(typeof fadeOutSound === 'function') fadeOutSound(P._shieldDashChargeSound, 0.18);
+        P._shieldDashChargeSound = null;
       } else {
         const held = Math.max(0, Math.min(CHARGE_MAX, GameTime - (P._shieldDashChargeStart || GameTime)));
         P._shieldDashChargePower = held / CHARGE_MAX;
+        const rc = typeof rootCenter==='function' ? $.POS.root() : {x:P.x, y:P.y};
+        const awayX = rc.x - mX;
+        const awayY = rc.y - mY;
+        const awayLen = Math.hypot(awayX, awayY) || 1;
+        const retreat = (9 + P._shieldDashChargePower * 15) * rawDt;
         P.vx = 0; P.vy = 0;
+        P.x = $.M.clamp(P.x + awayX / awayLen * retreat, 40, W-80);
+        P.y = $.M.clamp(P.y + awayY / awayLen * retreat, 40, H-40);
       }
     }
     if(typeof window._dodgeCooldownMob !== 'undefined' && window._dodgeCooldownMob > 0){

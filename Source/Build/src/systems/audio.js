@@ -39,6 +39,7 @@ const SFX_FOLDERS = {
   rage:           'Source/Sound/Rage/',
   bladeblind:     'Source/Sound/Shield/',
   shieldblock:    'Source/Sound/Shield/',
+  shieldPush:     'Source/Sound/ShieldPush/',
   uiHover:        'Source/Sound/Ui/',   // фильтр: Hover
   uiTap:          'Source/Sound/Ui/',   // фильтр: без Hover/Note/Death/Win/Pickup
   uiNote:         'Source/Sound/Ui/',   // фильтр: Note
@@ -82,7 +83,7 @@ let audioDBReady = false;
 // ?? КЛЮЧ ДЛЯ localStorage
 // ====================================================================
 const ASSETS_CACHE_KEY = 'godgrave_assets_list_v1';
-const ASSETS_VERSION = '1.0';
+const ASSETS_VERSION = '1.1';
 
 async function loadAudioDB() {
   // ====================================================================
@@ -330,6 +331,7 @@ $.S = $.S || {
   clashHard(){ return window['playSound']('clashHard'); },
   rage(){ return window['playSound']('rage'); },
   block(){ return window['playSound']('shieldblock'); },
+  shieldPush(){ return window['playSound']('shieldPush'); },
   dodge(){ return window['playSound']('dodgeSound'); },
   death(){ return window['playSound']('death'); },
   victory(){ return window['playSound']('victory'); },

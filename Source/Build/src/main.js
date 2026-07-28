@@ -226,7 +226,7 @@ const exhMult = getMod(P, 'moveSlow', 1);
           if(D.hp<=0 && typeof handleCombatDeath==='function') handleCombatDeath(D);
         }
         $.FX.hit({x:D.x,y:D.y-30,t: _spiked?(window.I18N?window.I18N.t('main.spikedBash'):'???? SPIKE BASH!'):(window.I18N?window.I18N.t('main.bash'):'?? BASH!'),life:45,big:true,col:'#60ccff'});
-        if(typeof FX_EFFECTS!=='undefined') FX_EFFECTS.push({type:'shieldwave', x:D.x, y:D.y, t:0, duration:22, angle:Math.atan2(_toD_y, _toD_x), followEntity:null});
+        if(typeof FX_EFFECTS!=='undefined') FX_EFFECTS.push({type:'shieldwave', x:P.x, y:P.y, t:0, duration:22, angle:Math.atan2(_toD_y, _toD_x), followEntity:P, followShield:true, cursorX:mX});
         playSound?.('shieldblock');
         if(typeof triggerHitstop==='function') triggerHitstop(3,3);
       }
@@ -550,10 +550,15 @@ if (hasMod(P, 'weaponRecoil')) {
   const _flickPrevAngle = P._flickPrevAngle;
   P._realAngVel = _flickPrevAngle === undefined ? 0 : $.M.angDiff(_flickAimAngle, _flickPrevAngle) / Math.max(dt, 0.001);
   P._flickPrevAngle = _flickAimAngle;
+  const orbitSwingPenaltyReady = () => GameTime - (P._lastOrbitSwingPenaltyTime || -99) >= 1.3;
+  const markOrbitSwingPenalty = () => { P._lastOrbitSwingPenaltyTime = GameTime; };
   const _orbitDetected1 = updateOrbitDetect(P.angle, dt);
   if(_orbitDetected1 && !isExhausted(P) && $.NOT(P, 'flail')){
-    drainStamina(P, sv('stamorbit'));
-    if(P.stamina <= 0 && !isExhausted(P)) applyExhaust(P);
+    if(orbitSwingPenaltyReady()){
+      drainStamina(P, sv('stamorbit'));
+      markOrbitSwingPenalty();
+      if(P.stamina <= 0 && !isExhausted(P)) applyExhaust(P);
+    }
     $.FX.hit({x: rc.x + P.pvX, y: rc.y + P.pvY - 30, t:(window.I18N ? window.I18N.t('main.orbit') : 'ORBIT'), life:35,big:false,col:'#ff8840'});
     $.S.play('whoosh');
   }
@@ -593,8 +598,11 @@ if (hasMod(P, 'weaponRecoil')) {
               const costMult = Math.max(0.3, 1 / (1 + (botCount - 1) * 0.25));
               staminaCost = staminaCost * costMult;
             }
-            drainStamina(P, staminaCost*0.8);
-            if(P.stamina <= 0 && !isExhausted(P)) applyExhaust(P);
+            if(orbitSwingPenaltyReady()){
+              drainStamina(P, staminaCost*0.8);
+              markOrbitSwingPenalty();
+              if(P.stamina <= 0 && !isExhausted(P)) applyExhaust(P);
+            }
           }
           P._swingCD = GameTime + 1.0;
         }

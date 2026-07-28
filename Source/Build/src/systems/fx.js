@@ -354,6 +354,15 @@ function drawFXEffects(){
     if(fx.followEntity){
       const piv = $.POS.pivot(fx.followEntity);
       fx_x = piv.x; fx_y = piv.y;
+      if(fx.followShield && typeof shieldCenter === 'function'){
+        const cursorX = fx.cursorX !== undefined ? fx.cursorX : (typeof mX !== 'undefined' ? mX : piv.x);
+        const sc = shieldCenter(fx.followEntity, cursorX);
+        if(sc){
+          fx_x = sc.x; fx_y = sc.y;
+          if(fx.followEntity.shield===3) fx_x += sc.side * (fx.followEntity._shieldW || 0) * 0.2;
+          if(fx.followEntity.shield===2) fx_x += sc.side * (fx.followEntity._shieldW || 0) * 0.2;
+        }
+      }
     }
     if(fx.type === 'blood'){
       fxDrawBlood(ctx,p,fx_x,fx_y,fx.angle);
