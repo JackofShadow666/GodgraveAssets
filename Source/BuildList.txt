@@ -1,5 +1,5 @@
 ; Список файлов из папок Music и Sound
-; Создано: 27.07.2026 22:28:29
+; Создано: 28.07.2026 20:11:49
 ; Корневая папка: F:\Jack\Project\Godgrave\Public\Godgrave\Source
 
 === Папка: Music ===
@@ -84,8 +84,19 @@ Source\Sound\Magic\SFX_MagicHit_02.mp3
 Source\Sound\Magic\SFX_MagicPush_01.mp3
 Source\Sound\Magic\SFX_MagicPush_02.mp3
 Source\Sound\Magic\SFX_MagicPush_03.mp3
+Source\Sound\Other\SFX_Heartbit_01.mp3
 Source\Sound\Other\teleport.mp3
 Source\Sound\Rage\SFX_Rage_01.mp3
+Source\Sound\Ref\bleedingA.mp3
+Source\Sound\Ref\bleedingB.mp3
+Source\Sound\Ref\bleedingC.mp3
+Source\Sound\Ref\chainig.mp3
+Source\Sound\Ref\DarkMagic.mp3
+Source\Sound\Ref\Gate.mp3
+Source\Sound\Ref\openchest.mp3
+Source\Sound\Ref\step.mp3
+Source\Sound\Ref\takeswordA.mp3
+Source\Sound\Ref\takeswordB.mp3
 Source\Sound\Rock\kling_20260710_Text_to_Audio_fantasy_wa_1677_0.mp3
 Source\Sound\Rock\kling_20260710_Text_to_Audio_fantasy_wa_1677_1.mp3
 Source\Sound\Rock\kling_20260710_Text_to_Audio_fantasy_wa_1677_2.mp3
@@ -151,6 +162,13 @@ Source\Character\Knight\T_Character_13.png
 Source\Character\Knight\T_Character_14.png
 Source\Character\Knight\Untitled-1_02.png
 Source\Character\Knight\.mayaSwatches\T_Character_02.png_hcm.swatch
+Source\Character\Test\T_CharTest_01.png
+Source\Character\Test\T_CharTest_02.png
+Source\Character\Test\T_CharTest_03.png
+Source\Character\Test\T_CharTest_04.png
+Source\Character\Test\T_CharTest_05.png
+Source\Character\Test\T_CharTest_06.png
+Source\Character\Test\T_CharTest_07.png
 
 === Папка: Weapon ===
 Source\Weapon\Arrow\T_Arrow_01.png
