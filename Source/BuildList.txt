@@ -1,5 +1,5 @@
 ; Список файлов из папок Music и Sound
-; Создано: 28.07.2026 22:42:08
+; Создано: 28.07.2026 23:24:06
 ; Корневая папка: F:\Jack\Project\Godgrave\Public\Godgrave\Source
 
 === Папка: Music ===
@@ -309,6 +309,8 @@ Source\Font\index.html
 Source\Font\MedievalSharp-Regular.ttf
 
 === Папка: Env ===
+Source\Env\Terrain\TerrainAtlas.png
+Source\Env\Terrain\TerrainAtlas.psd
 Source\Env\Terrain\T_GroundClay_01.png
 Source\Env\Terrain\T_GroundDarkDirt_01.png
 Source\Env\Terrain\T_GroundGrassDark_01.png
