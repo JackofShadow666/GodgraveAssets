@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Godgrave World Map Generator</title>
+<style>
+:root{
+  color-scheme:dark;
+  --bg:#050607;
+  --panel:#12161b;
+  --panel2:#1a2027;
+  --line:#303943;
+  --text:#edf2ea;
+  --muted:#9da8b2;
+  --accent:#2f78d4;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,sans-serif}
+.app{height:100%;display:grid;grid-template-columns:330px 1fr}
+aside{overflow:auto;padding:10px;background:var(--panel);border-right:1px solid var(--line)}
+main{position:relative;overflow:hidden;background:#000}
+h1{font-size:18px;line-height:1.2;margin:0 0 8px}
+.section{margin-top:8px;padding:8px;border:1px solid rgba(255,255,255,.08);border-radius:4px;background:rgba(255,255,255,.025)}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+label{display:block;margin:8px 0 4px;font-size:12px;color:var(--muted)}
+input,button,select{font:inherit}
+input[type=number],input[type=text],select{
+  width:100%;padding:8px;border:1px solid var(--line);border-radius:4px;background:#0e1216;color:var(--text)
+}
+input[type=range]{width:100%}
+button{
+  width:100%;padding:9px;margin-top:7px;border:1px solid var(--line);border-radius:4px;
+  background:#252c34;color:var(--text);cursor:pointer
+}
+button:hover{filter:brightness(1.12)}
+button.primary{background:var(--accent);border-color:#5594df}
+.check{display:flex;align-items:center;gap:7px;color:var(--text)}
+.check input{width:auto}
+.hint{font-size:11px;line-height:1.35;color:var(--muted)}
+#map{position:absolute;inset:0;width:100%;height:100%;image-rendering:auto}
+#status{
+  position:absolute;left:12px;bottom:12px;padding:7px 10px;border-radius:4px;
+  background:rgba(0,0,0,.72);font-size:12px;color:#dce8da;pointer-events:none
+}
+.palette{display:grid;grid-template-columns:repeat(6,1fr);gap:5px}
+.swatch{height:24px;border:1px solid rgba(255,255,255,.18);border-radius:3px}
+@media(max-width:760px){
+  .app{grid-template-columns:1fr;grid-template-rows:auto 1fr}
+  aside{max-height:46vh;border-right:0;border-bottom:1px solid var(--line)}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside>
+    <h1>Генератор карты мира</h1>
+
+    <div class="section">
+      <label>Seed</label>
+      <input id="seed" type="text" value="godgrave">
+      <button id="randomSeed" class="primary">Новый seed</button>
+      <button id="generate">Сгенерировать</button>
+      <button id="exportPng">Экспорт PNG</button>
+    </div>
+
+    <div class="section">
+      <div class="row">
+        <div>
+          <label>Ширина</label>
+          <input id="mapW" type="number" min="320" max="2400" step="80" value="1600">
+        </div>
+        <div>
+          <label>Высота</label>
+          <input id="mapH" type="number" min="240" max="1600" step="60" value="1100">
+        </div>
+      </div>
+      <label>Зоны: <span id="zoneCountValue">14</span></label>
+      <input id="zoneCount" type="range" min="4" max="28" value="14">
+      <label>Размер зон: <span id="zoneRadiusValue">210</span></label>
+      <input id="zoneRadius" type="range" min="90" max="360" value="210">
+      <label>Разветвление: <span id="branchValue">70%</span></label>
+      <input id="branch" type="range" min="0" max="100" value="70">
+      <label>Мосты между зонами: <span id="bridgeValue">55%</span></label>
+      <input id="bridge" type="range" min="0" max="100" value="55">
+    </div>
+
+    <div class="section">
+      <label>Пустоты внутри зон: <span id="holeValue">42%</span></label>
+      <input id="hole" type="range" min="0" max="100" value="42">
+      <label>Рваный край: <span id="edgeNoiseValue">64%</span></label>
+      <input id="edgeNoise" type="range" min="0" max="100" value="64">
+      <label>Черный зазор между зонами: <span id="zoneGapValue">2</span> кл.</label>
+      <input id="zoneGap" type="range" min="0" max="6" value="2">
+      <label>Плотность точек: <span id="speckleValue">78%</span></label>
+      <input id="speckle" type="range" min="0" max="100" value="78">
+      <label>Сетка пикселя: <span id="cellValue">5</span> px</label>
+      <input id="cell" type="range" min="2" max="9" value="5">
+      <label class="check"><input id="drawOutlines" type="checkbox" checked> Контуры зон</label>
+    </div>
+
+    <div class="section">
+      <label>Палитра</label>
+      <div id="palette" class="palette"></div>
+      <div class="hint">Форма строится из шумовых пятен на сетке, затем режутся внутренние пустоты и добавляются соединительные проходы.</div>
+    </div>
+  </aside>
+  <main>
+    <canvas id="map"></canvas>
+    <div id="status"></div>
+  </main>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const canvas = $('map');
+const ctx = canvas.getContext('2d');
+const controls = ['seed','mapW','mapH','zoneCount','zoneRadius','branch','bridge','hole','edgeNoise','zoneGap','speckle','cell','drawOutlines'];
+const palette = [
+  '#285d64','#6b3f76','#6c7250','#8a5427','#223f72','#4c5961','#66721f',
+  '#146575','#315c35','#7b3f33','#4b557c','#86621e','#526b28','#2f7564'
+];
+
+function xmur3(str){
+  let h = 1779033703 ^ str.length;
+  for(let i = 0; i < str.length; i++){
+    h = Math.imul(h ^ str.charCodeAt(i), 3432918353);
+    h = h << 13 | h >>> 19;
+  }
+  return function(){
+    h = Math.imul(h ^ h >>> 16, 2246822507);
+    h = Math.imul(h ^ h >>> 13, 3266489909);
+    return (h ^= h >>> 16) >>> 0;
+  };
+}
+function mulberry32(a){
+  return function(){
+    let t = a += 0x6D2B79F5;
+    t = Math.imul(t ^ t >>> 15, t | 1);
+    t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+function rngFromSeed(seed){ return mulberry32(xmur3(seed)()); }
+function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
+function lerp(a,b,t){ return a + (b - a) * t; }
+function hexToRgb(hex){
+  const n = parseInt(hex.slice(1), 16);
+  return [n >> 16 & 255, n >> 8 & 255, n & 255];
+}
+function shade(hex, k){
+  const [r,g,b] = hexToRgb(hex);
+  return `rgb(${clamp(Math.round(r*k),0,255)},${clamp(Math.round(g*k),0,255)},${clamp(Math.round(b*k),0,255)})`;
+}
+function distToSegment(px, py, ax, ay, bx, by){
+  const vx = bx - ax, vy = by - ay;
+  const wx = px - ax, wy = py - ay;
+  const c1 = vx * wx + vy * wy;
+  if(c1 <= 0) return Math.hypot(px - ax, py - ay);
+  const c2 = vx * vx + vy * vy;
+  if(c2 <= c1) return Math.hypot(px - bx, py - by);
+  const t = c1 / c2;
+  return Math.hypot(px - (ax + t * vx), py - (ay + t * vy));
+}
+
+function makeBlobs(rng, w, h, count, radius, branch){
+  const blobs = [];
+  const cols = Math.ceil(Math.sqrt(count * w / h));
+  const rows = Math.ceil(count / cols);
+  for(let i = 0; i < count; i++){
+    const col = i % cols;
+    const row = Math.floor(i / cols);
+    const cx = (col + .5 + (rng() - .5) * .65) * w / cols;
+    const cy = (row + .5 + (rng() - .5) * .65) * h / rows;
+    const lumps = [];
+    const lumpCount = 11 + Math.floor(rng() * 12 + branch * 10);
+    let angle = rng() * Math.PI * 2;
+    for(let j = 0; j < lumpCount; j++){
+      angle += (rng() - .5) * 1.8;
+      const arm = Math.pow(rng(), .72) * radius * lerp(.25, 1.25, branch);
+      const lx = cx + Math.cos(angle) * arm + (rng() - .5) * radius * .55;
+      const ly = cy + Math.sin(angle) * arm + (rng() - .5) * radius * .55;
+      lumps.push({x:lx, y:ly, r:radius * lerp(.20, .46, rng())});
+    }
+    const holes = [];
+    const holeCount = Math.floor(2 + rng() * 5);
+    for(let j = 0; j < holeCount; j++){
+      holes.push({
+        x: cx + (rng() - .5) * radius * 1.25,
+        y: cy + (rng() - .5) * radius * 1.25,
+        r: radius * lerp(.10, .24, rng())
+      });
+    }
+    blobs.push({cx, cy, color: palette[i % palette.length], lumps, holes});
+  }
+  return blobs;
+}
+
+function generate(){
+  const seed = $('seed').value || 'godgrave';
+  const rng = rngFromSeed(seed);
+  const w = clamp(parseInt($('mapW').value,10) || 1600, 320, 2400);
+  const h = clamp(parseInt($('mapH').value,10) || 1100, 240, 1600);
+  const cell = parseInt($('cell').value,10);
+  const zoneCount = parseInt($('zoneCount').value,10);
+  const radius = parseInt($('zoneRadius').value,10);
+  const branch = parseInt($('branch').value,10) / 100;
+  const bridge = parseInt($('bridge').value,10) / 100;
+  const hole = parseInt($('hole').value,10) / 100;
+  const edgeNoise = parseInt($('edgeNoise').value,10) / 100;
+  const zoneGap = parseInt($('zoneGap').value,10);
+  const speckle = parseInt($('speckle').value,10) / 100;
+  const outlines = $('drawOutlines').checked;
+
+  canvas.width = w;
+  canvas.height = h;
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, w, h);
+
+  const blobs = makeBlobs(rng, w, h, zoneCount, radius, branch);
+  const bridges = [];
+  for(let i = 1; i < blobs.length; i++){
+    if(rng() < bridge){
+      const a = blobs[i - 1], b = blobs[i];
+      bridges.push({a, b, r: radius * lerp(.08, .16, rng())});
+    }
+  }
+  for(let i = 0; i < blobs.length; i += 3){
+    const a = blobs[i], b = blobs[(i + 4) % blobs.length];
+    if(a && b && rng() < bridge * .65) bridges.push({a, b, r: radius * lerp(.06, .12, rng())});
+  }
+
+  const cols = Math.ceil(w / cell);
+  const rows = Math.ceil(h / cell);
+  const grid = new Int16Array(cols * rows).fill(-1);
+  const alpha = new Float32Array(cols * rows);
+
+  for(let gy = 0; gy < rows; gy++){
+    for(let gx = 0; gx < cols; gx++){
+      const x = gx * cell + cell * .5;
+      const y = gy * cell + cell * .5;
+      let best = -1;
+      let bestScore = 0;
+      for(let i = 0; i < blobs.length; i++){
+        let score = 0;
+        const blob = blobs[i];
+        for(const l of blob.lumps){
+          const d = Math.hypot(x - l.x, y - l.y) / l.r;
+          score = Math.max(score, 1 - d);
+        }
+        for(const br of bridges){
+          if(br.a === blob || br.b === blob){
+            const d = distToSegment(x, y, br.a.cx, br.a.cy, br.b.cx, br.b.cy) / br.r;
+            score = Math.max(score, (1 - d) * .75);
+          }
+        }
+        for(const ho of blob.holes){
+          const d = Math.hypot(x - ho.x, y - ho.y) / ho.r;
+          if(d < 1) score -= (1 - d) * (1.4 * hole);
+        }
+        score += (rng() - .5) * .42 * edgeNoise;
+        if(score > bestScore){ bestScore = score; best = i; }
+      }
+      if(bestScore > .06){
+        const idx = gy * cols + gx;
+        grid[idx] = best;
+        alpha[idx] = clamp(bestScore, .08, 1);
+      }
+    }
+  }
+
+  const gap = new Uint8Array(cols * rows);
+  if(zoneGap > 0){
+    for(let gy = 0; gy < rows; gy++){
+      for(let gx = 0; gx < cols; gx++){
+        const idx = gy * cols + gx;
+        const z = grid[idx];
+        if(z < 0) continue;
+        let nearOtherZone = false;
+        for(let oy = -zoneGap; oy <= zoneGap && !nearOtherZone; oy++){
+          for(let ox = -zoneGap; ox <= zoneGap; ox++){
+            if(ox === 0 && oy === 0) continue;
+            if(Math.abs(ox) + Math.abs(oy) > zoneGap + 1) continue;
+            const nx = gx + ox;
+            const ny = gy + oy;
+            if(nx < 0 || ny < 0 || nx >= cols || ny >= rows) continue;
+            const nz = grid[ny * cols + nx];
+            if(nz >= 0 && nz !== z){
+              nearOtherZone = true;
+              break;
+            }
+          }
+        }
+        if(nearOtherZone) gap[idx] = 1;
+      }
+    }
+  }
+
+  for(let gy = 0; gy < rows; gy++){
+    for(let gx = 0; gx < cols; gx++){
+      const idx = gy * cols + gx;
+      const z = grid[idx];
+      if(z < 0 || gap[idx]) continue;
+      const left = gx > 0 ? grid[idx - 1] : -1;
+      const right = gx < cols - 1 ? grid[idx + 1] : -1;
+      const top = gy > 0 ? grid[idx - cols] : -1;
+      const bottom = gy < rows - 1 ? grid[idx + cols] : -1;
+      const edge =
+        gx === 0 || gy === 0 || gx === cols - 1 || gy === rows - 1 ||
+        left !== z || right !== z || top !== z || bottom !== z;
+      const noise = .66 + rng() * .62;
+      ctx.fillStyle = shade(blobs[z].color, edge && outlines ? noise * .72 : noise);
+      ctx.fillRect(gx * cell, gy * cell, cell + 1, cell + 1);
+      if(rng() < speckle){
+        ctx.fillStyle = rng() < .55 ? 'rgba(255,255,255,.14)' : 'rgba(0,0,0,.22)';
+        ctx.fillRect(gx * cell + rng() * cell, gy * cell + rng() * cell, 1, 1);
+      }
+      if(edge && outlines){
+        ctx.fillStyle = 'rgba(255,255,255,.10)';
+        ctx.fillRect(gx * cell, gy * cell, cell, 1);
+      }
+    }
+  }
+
+  $('status').textContent = `${w}x${h}, зоны: ${zoneCount}, seed: ${seed}`;
+}
+
+function refreshLabels(){
+  $('zoneCountValue').textContent = $('zoneCount').value;
+  $('zoneRadiusValue').textContent = $('zoneRadius').value;
+  $('branchValue').textContent = `${$('branch').value}%`;
+  $('bridgeValue').textContent = `${$('bridge').value}%`;
+  $('holeValue').textContent = `${$('hole').value}%`;
+  $('edgeNoiseValue').textContent = `${$('edgeNoise').value}%`;
+  $('zoneGapValue').textContent = $('zoneGap').value;
+  $('speckleValue').textContent = `${$('speckle').value}%`;
+  $('cellValue').textContent = $('cell').value;
+}
+
+function exportPng(){
+  const a = document.createElement('a');
+  a.download = `world-map-${$('seed').value || 'seed'}.png`;
+  a.href = canvas.toDataURL('image/png');
+  a.click();
+}
+
+for(const color of palette){
+  const swatch = document.createElement('div');
+  swatch.className = 'swatch';
+  swatch.style.background = color;
+  $('palette').appendChild(swatch);
+}
+for(const id of controls){
+  $(id).addEventListener('input', () => { refreshLabels(); generate(); });
+  $(id).addEventListener('change', () => { refreshLabels(); generate(); });
+}
+$('generate').addEventListener('click', generate);
+$('randomSeed').addEventListener('click', () => {
+  $('seed').value = Math.random().toString(36).slice(2, 10);
+  generate();
+});
+$('exportPng').addEventListener('click', exportPng);
+refreshLabels();
+generate();
+</script>
+</body>
+</html>
