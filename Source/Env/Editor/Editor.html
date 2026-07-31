@@ -2491,7 +2491,9 @@ body.game-mode #status{
         const x = sum - y;
         const p = tilePos(x, y);
         if (p.x + TILE_W < minX || p.x > minX + width || p.y + TILE_H < minY || p.y > minY + height) continue;
-        drawTileFast(gameTerrainViewportCacheCtx, x, y, map[y][x]);
+        const cell = map[y] && map[y][x];
+        if (!cell) continue;
+        drawTileFast(gameTerrainViewportCacheCtx, x, y, cell);
       }
     }
 

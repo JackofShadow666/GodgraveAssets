@@ -1,5 +1,5 @@
 ; Список файлов из папок Music и Sound
-; Создано: 30.07.2026 20:04:42
+; Создано: 31.07.2026 4:55:25
 ; Корневая папка: F:\Jack\Project\Godgrave\Public\Godgrave\Source
 
 === Папка: Music ===
@@ -313,6 +313,31 @@ Source\Env\Editor\AGENTS.md
 Source\Env\Editor\Editor.html
 Source\Env\Editor\MAP.md
 Source\Env\Editor\WorldMapGenerator.html
+Source\Env\Foliadge\T_Env_Bush_01.png
+Source\Env\Foliadge\T_Env_Bush_02.png
+Source\Env\Foliadge\T_Env_Bush_03.png
+Source\Env\Foliadge\T_Env_Bush_04.png
+Source\Env\Foliadge\T_Env_Rock_01.png
+Source\Env\Foliadge\T_Env_Rock_02.png
+Source\Env\Foliadge\T_Env_Rock_03.png
+Source\Env\Foliadge\T_Env_Rock_04.png
+Source\Env\Foliadge\T_Env_Rock_05.png
+Source\Env\Foliadge\T_Env_Rock_06.png
+Source\Env\Foliadge\T_Env_Rock_07.png
+Source\Env\Foliadge\T_Env_Rock_08.png
+Source\Env\Foliadge\T_Env_Rock_09.png
+Source\Env\Foliadge\T_Env_Stone_01.png
+Source\Env\Foliadge\T_Env_Stone_02.png
+Source\Env\Foliadge\T_Env_Stone_03.png
+Source\Env\Foliadge\T_Env_Stone_04.png
+Source\Env\Foliadge\T_Env_TreeDead_01.png
+Source\Env\Foliadge\T_Env_TreeDead_02.png
+Source\Env\Foliadge\T_Env_TreeLeaf_01.png
+Source\Env\Foliadge\T_Env_TreeLeaf_02.png
+Source\Env\Foliadge\T_Env_TreePine_01.png
+Source\Env\Foliadge\T_Env_TreePine_02.png
+Source\Env\Foliadge\T_Env_TreePine_03.png
+Source\Env\Foliadge\T_Env_TreePine_04.png
 Source\Env\Terrain\TerrainAtlas.png
 Source\Env\Terrain\TerrainAtlas.psd
 Source\Env\Terrain\TerrainAtlasB.png

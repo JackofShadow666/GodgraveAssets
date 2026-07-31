@@ -1,367 +1,1686 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="ru">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Godgrave World Map Generator</title>
+<title>Godgrave Multi-Algorithm Cave Generator v7.6</title>
 <style>
-:root{
-  color-scheme:dark;
-  --bg:#050607;
-  --panel:#12161b;
-  --panel2:#1a2027;
-  --line:#303943;
-  --text:#edf2ea;
-  --muted:#9da8b2;
-  --accent:#2f78d4;
-}
-*{box-sizing:border-box}
-html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,sans-serif}
-.app{height:100%;display:grid;grid-template-columns:330px 1fr}
-aside{overflow:auto;padding:10px;background:var(--panel);border-right:1px solid var(--line)}
-main{position:relative;overflow:hidden;background:#000}
-h1{font-size:18px;line-height:1.2;margin:0 0 8px}
-.section{margin-top:8px;padding:8px;border:1px solid rgba(255,255,255,.08);border-radius:4px;background:rgba(255,255,255,.025)}
-.row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-label{display:block;margin:8px 0 4px;font-size:12px;color:var(--muted)}
-input,button,select{font:inherit}
-input[type=number],input[type=text],select{
-  width:100%;padding:8px;border:1px solid var(--line);border-radius:4px;background:#0e1216;color:var(--text)
-}
-input[type=range]{width:100%}
-button{
-  width:100%;padding:9px;margin-top:7px;border:1px solid var(--line);border-radius:4px;
-  background:#252c34;color:var(--text);cursor:pointer
-}
-button:hover{filter:brightness(1.12)}
-button.primary{background:var(--accent);border-color:#5594df}
-.check{display:flex;align-items:center;gap:7px;color:var(--text)}
-.check input{width:auto}
-.hint{font-size:11px;line-height:1.35;color:var(--muted)}
-#map{position:absolute;inset:0;width:100%;height:100%;image-rendering:auto}
-#status{
-  position:absolute;left:12px;bottom:12px;padding:7px 10px;border-radius:4px;
-  background:rgba(0,0,0,.72);font-size:12px;color:#dce8da;pointer-events:none
-}
-.palette{display:grid;grid-template-columns:repeat(6,1fr);gap:5px}
-.swatch{height:24px;border:1px solid rgba(255,255,255,.18);border-radius:3px}
-@media(max-width:760px){
-  .app{grid-template-columns:1fr;grid-template-rows:auto 1fr}
-  aside{max-height:46vh;border-right:0;border-bottom:1px solid var(--line)}
-}
+:root{--bg:#090c0f;--panel:#12171c;--panel2:#151b21;--line:#29323a;--text:#e7ecef;--muted:#919ca5;--accent:#6c8fd8;--accent2:#8d6bc5;--radius:9px}
+*{box-sizing:border-box}html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font-family:Inter,system-ui,Segoe UI,Arial,sans-serif}body{overflow:hidden}
+.app{height:100%;display:grid;grid-template-columns:340px 1fr;grid-template-rows:auto 1fr}.top{grid-column:1/3;display:flex;align-items:center;align-content:center;flex-wrap:wrap;gap:6px;padding:6px 10px;background:#0a0f13;border-bottom:1px solid var(--line);min-height:52px;max-height:116px;overflow-y:auto}.top>button{padding:6px 8px;white-space:nowrap;font-size:12px}.top>.check{font-size:11px}.top .detailTop{padding:2px 5px}.top .detailTop span{font-size:10px}.brand{font-size:13px}
+.brand{font-weight:850;letter-spacing:.05em;margin-right:auto}.detailTop{display:flex;align-items:center;gap:5px;padding:3px 7px;border:1px solid #34424f;border-radius:6px;background:#101820}.detailTop span{font-size:11px;color:#aeb8c1;white-space:nowrap}.detailTop b{min-width:18px;text-align:center;font-size:13px}.detailTop button{width:27px;height:27px;padding:0;font-size:17px;line-height:1}.autoDetail{display:flex;align-items:center;gap:4px;font-size:10px;color:#b7c1ca;white-space:nowrap;margin-left:3px}.autoDetail input{margin:0}.side{padding:10px;overflow:auto;background:#0d1115;border-right:1px solid var(--line);scrollbar-width:thin}.panel{padding:12px;margin-bottom:8px;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);box-shadow:0 1px 0 rgba(255,255,255,.025) inset}.panel h3{font-size:10px;letter-spacing:.12em;color:#9eabb5;margin:0 0 10px}.row{display:grid;grid-template-columns:1fr 108px;gap:8px;align-items:center;margin:8px 0}.row label{font-size:12px;color:#c1c9d0}.pair{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+input,button{font:inherit}input[type=number],select{width:100%;padding:7px;background:#0a1015;color:var(--text);border:1px solid #33414d;border-radius:5px}input[type=range]{width:100%;accent-color:#4779d8}button{border:1px solid #34424f;border-radius:5px;padding:8px 11px;color:#eaf0f5;background:#17212a;cursor:pointer}button:hover{background:#202c36}.primary{background:linear-gradient(180deg,#396ed6,#2858b8);border-color:#4a80eb}.random{background:linear-gradient(180deg,#713bbb,#552690);border-color:#8b55cf}.wide{width:100%}.check{display:flex;gap:7px;align-items:center;font-size:12px;color:#bac4cc;margin:7px 0}.small{font-size:11px;color:var(--muted);line-height:1.45}
+.workspace{position:relative;overflow:hidden;background:#020304}.workspace canvas{position:absolute;inset:0;width:100%;height:100%;display:block}.workspace #routeOverlay{image-rendering:pixelated}.workspace #map{cursor:grab}.workspace #map.drag{cursor:grabbing}.workspace #routeOverlay{pointer-events:none;z-index:2}.hud{position:absolute;left:12px;top:12px;min-width:190px;padding:9px 11px;background:rgba(8,12,15,.9);border:1px solid var(--line);border-radius:6px;font-size:12px;line-height:1.55}.hud.hidden{display:none}.loading{position:absolute;inset:0;z-index:4;display:flex;align-items:center;justify-content:center;background:rgba(2,3,4,.64);pointer-events:none}.loading.hidden{display:none}.loadingBox{min-width:260px;padding:13px 15px;background:rgba(8,12,15,.94);border:1px solid #3c4b58;border-radius:6px;box-shadow:0 16px 40px rgba(0,0,0,.36)}.loadingTitle{font-size:12px;font-weight:800;letter-spacing:.06em;margin-bottom:8px}.loadingStage{font-size:12px;color:#d4dce3;margin-bottom:9px}.loadingBar{height:5px;overflow:hidden;background:#101820;border-radius:4px}.loadingBar i{display:block;width:42%;height:100%;background:#4a80eb;animation:loadPulse 1s ease-in-out infinite}@keyframes loadPulse{0%{transform:translateX(-105%)}100%{transform:translateX(245%)}}.hint{position:absolute;left:12px;bottom:12px;padding:7px 9px;background:rgba(8,12,15,.88);border:1px solid var(--line);border-radius:5px;color:#95a0aa;font-size:11px}.zoom{position:absolute;right:13px;bottom:13px;display:grid;gap:4px}.zoom button{width:36px;height:36px;padding:0;font-size:20px}.legend{display:grid;grid-template-columns:repeat(4,minmax(150px,1fr));gap:7px;position:absolute;left:12px;right:58px;bottom:49px;padding:8px;background:rgba(8,12,15,.92);border:1px solid var(--line);border-radius:6px}.legend div{font-size:10px;color:#aeb7bf}.legend b{display:block;font-size:11px;margin-bottom:2px}.dot{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:5px}
+.tileInspector{position:absolute;z-index:12;display:none;min-width:280px;max-width:360px;padding:10px 12px;background:rgba(7,11,14,.96);border:1px solid #50606d;border-radius:7px;font-size:12px;line-height:1.5;pointer-events:none;box-shadow:0 12px 34px rgba(0,0,0,.5)}.tileInspector .muted{margin-top:5px;color:#8f9aa4;font-size:10px}.modalBackdrop{position:fixed;inset:0;z-index:40;background:rgba(0,0,0,.76);display:none;align-items:center;justify-content:center;padding:24px}.modalBackdrop.visible{display:flex}.tileModal{width:min(1150px,96vw);max-height:94vh;overflow:auto;background:#0d141a;border:1px solid #40515f;border-radius:10px;padding:16px;box-shadow:0 20px 70px rgba(0,0,0,.65)}.tileModalHead{display:flex;gap:10px;align-items:center;margin-bottom:12px}.tileModalHead h2{margin:0 auto 0 0;font-size:16px}.tileTools{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px}.tileTools label{display:flex;align-items:center;gap:5px;font-size:12px;color:#b8c3cc}.tileTools input[type=number]{width:78px}.atlasStage{overflow:auto;max-height:68vh;padding:10px;background:repeating-conic-gradient(#1a2229 0 25%,#11181e 0 50%) 50%/16px 16px;border:1px solid #33414d;border-radius:7px}.atlasStage canvas{display:block;max-width:none;image-rendering:pixelated;margin-bottom:16px}.modalNote{font-size:11px;color:#8f9aa4;margin-top:9px}
+.top{gap:6px;padding:7px 9px;background:rgba(13,17,21,.96);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}.top button,.top select,.top input{min-height:29px}.top button{min-width:104px}.top .check{padding:5px 7px;border:1px solid transparent;border-radius:7px;background:#11171c;min-width:92px}.top .check:hover{border-color:#34404a}.top .active{outline:1px solid #6c8fd8;background:#1d2b39}.brand{font-size:11px;color:#cfd7dd}.row{margin:7px 0}.row input,.row select,button{border-radius:7px}.legend{gap:5px;padding:7px 8px;background:rgba(13,17,21,.9);backdrop-filter:blur(8px);border-radius:9px}.legend div{padding:4px 6px;border-radius:6px;background:rgba(255,255,255,.025)}.hud,.hint,.tileInspector{backdrop-filter:blur(9px)}.tileInspector b{font-size:12px}.tileInspector .muted{line-height:1.45}.workspace #map{image-rendering:auto}.workspace{background:radial-gradient(circle at 50% 45%,#11171b,#050708 72%)}.atlasRoleLabels{display:grid;gap:0;margin:7px 0 3px;font:11px ui-monospace,monospace;color:#dce7ef}.atlasRoleLabels span{padding:3px 6px;text-align:center;background:#16202a;border:1px solid #33414d;border-left:0}.atlasRoleLabels span:first-child{border-left:1px solid #33414d;border-radius:5px 0 0 5px}.atlasRoleLabels span:last-child{border-radius:0 5px 5px 0}
+@media(max-width:900px){.app{grid-template-columns:280px 1fr}.legend{grid-template-columns:repeat(2,minmax(120px,1fr))}}
 </style>
 </head>
 <body>
 <div class="app">
-  <aside>
-    <h1>Генератор карты мира</h1>
-
-    <div class="section">
-      <label>Seed</label>
-      <input id="seed" type="text" value="godgrave">
-      <button id="randomSeed" class="primary">Новый seed</button>
-      <button id="generate">Сгенерировать</button>
-      <button id="exportPng">Экспорт PNG</button>
-    </div>
-
-    <div class="section">
-      <div class="row">
-        <div>
-          <label>Ширина</label>
-          <input id="mapW" type="number" min="320" max="2400" step="80" value="1600">
-        </div>
-        <div>
-          <label>Высота</label>
-          <input id="mapH" type="number" min="240" max="1600" step="60" value="1100">
-        </div>
-      </div>
-      <label>Зоны: <span id="zoneCountValue">14</span></label>
-      <input id="zoneCount" type="range" min="4" max="28" value="14">
-      <label>Размер зон: <span id="zoneRadiusValue">210</span></label>
-      <input id="zoneRadius" type="range" min="90" max="360" value="210">
-      <label>Разветвление: <span id="branchValue">70%</span></label>
-      <input id="branch" type="range" min="0" max="100" value="70">
-      <label>Мосты между зонами: <span id="bridgeValue">55%</span></label>
-      <input id="bridge" type="range" min="0" max="100" value="55">
-    </div>
-
-    <div class="section">
-      <label>Пустоты внутри зон: <span id="holeValue">42%</span></label>
-      <input id="hole" type="range" min="0" max="100" value="42">
-      <label>Рваный край: <span id="edgeNoiseValue">64%</span></label>
-      <input id="edgeNoise" type="range" min="0" max="100" value="64">
-      <label>Черный зазор между зонами: <span id="zoneGapValue">2</span> кл.</label>
-      <input id="zoneGap" type="range" min="0" max="6" value="2">
-      <label>Плотность точек: <span id="speckleValue">78%</span></label>
-      <input id="speckle" type="range" min="0" max="100" value="78">
-      <label>Сетка пикселя: <span id="cellValue">5</span> px</label>
-      <input id="cell" type="range" min="2" max="9" value="5">
-      <label class="check"><input id="drawOutlines" type="checkbox" checked> Контуры зон</label>
-    </div>
-
-    <div class="section">
-      <label>Палитра</label>
-      <div id="palette" class="palette"></div>
-      <div class="hint">Форма строится из шумовых пятен на сетке, затем режутся внутренние пустоты и добавляются соединительные проходы.</div>
-    </div>
-  </aside>
-  <main>
-    <canvas id="map"></canvas>
-    <div id="status"></div>
-  </main>
+<header class="top"><div class="brand">GODGRAVE — WORLD ISO v2.0</div><button id="gen" class="primary">Сгенерировать (E / У)</button><button id="rand" class="random">Случайный seed (R / К)</button><input id="detail" type="hidden" value="8"><button id="routes">Проложить маршруты</button><button id="tiles">Показать тайлы земли</button><label class="check" style="margin:0" title="Включено: цвет текстуры и местности. Выключено: тип генератора. 1 текстуры, 2 автоцвет подробно, 3 автоцвет обычно, 4 техразметка, 5 скрыть землю."><input id="terrainGroundMode" type="checkbox" checked> Материалы</label><label class="check" style="margin:0" title="Исходный тайл переводится в ЧБ и окрашивается в цвет биома и материала"><input id="recolorMissingTiles" type="checkbox"> Автоцвет</label><button id="tileGenerator">Атласы</button><label class="check" style="margin:0"><input id="hideFog" type="checkbox"> Без тумана</label><label class="check" style="margin:0"><input id="hideGround" type="checkbox"> Без земли</label><label class="check" style="margin:0"><input id="hideBiomes" type="checkbox"> Без окружения</label><div class="detailTop" title="Насколько внешнее окружение темнее проходимой земли"><span>Темнее окружение</span><input id="environmentDarkness" type="range" min="0" max="60" value="20" style="width:90px"><b id="environmentDarknessValue">20%</b></div><div class="detailTop" title="Прозрачность тёмной обводки по краю проходимой земли"><span>Обводка земли</span><input id="groundOutlineOpacity" type="range" min="0" max="100" value="55" style="width:82px"><b id="groundOutlineOpacityValue">55%</b></div><input id="groundTileThreshold" type="hidden" value="22"><label class="check" style="margin:0"><input id="showInfo" type="checkbox" checked> Информация</label><button id="settings">Настройки</button><button id="png">PNG</button><button id="center">Центр</button></header>
+<aside class="side">
+<section class="panel"><h3>ГЕНЕРАЦИЯ</h3><div class="row"><label>Seed</label><input id="seed" type="number" value="928374"></div><div class="pair"><button id="gen2" class="primary">Сгенерировать</button><button id="rand2" class="random">Случайный</button></div></section>
+<section class="panel"><h3>КАРТА</h3><div class="row"><label>Ширина, клеток</label><input id="cols" type="number" min="90" max="260" value="256"></div><div class="row"><label>Высота, клеток</label><input id="rows" type="number" min="64" max="256" value="256"></div><div class="row"><label>Размер клетки</label><input id="cell" type="number" min="1" max="12" value="2"></div></section>
+<section class="panel"><h3>РЕГИОНЫ</h3><div class="row"><label>Минимум</label><input id="regionsMin" type="number" min="10" max="55" value="33"></div><div class="row"><label>Максимум</label><input id="regionsMax" type="number" min="10" max="55" value="33"></div><div class="row"><label>Мин. размер</label><input id="regionMin" type="number" min="5" max="30" value="11"></div><div class="row"><label>Размер регионов min / max</label><div class="pair"><input id="regionSizeMin" type="number" min="6" max="55" value="10"><input id="regionSizeMax" type="number" min="10" max="80" value="55"></div></div><label class="check"><input id="mix" type="checkbox" checked> Разные алгоритмы по регионам</label><label class="check"><input id="boundaries" type="checkbox"> Показывать границы регионов</label><label class="check"><input id="debugTileFill" type="checkbox"> Debug tile fill</label></section>
+<section class="panel"><h3>ВНЕШНЯЯ ЗОНА</h3><div class="row"><label>Распределение биомов</label><select id="outerBiomeMode"><option value="auto" selected>Общий климатический рисунок</option><option value="sectors">Более крупные пояса</option><option value="mixed">Более перемешанные зоны</option></select></div><div class="small">Лес получает повышенный приоритет и занимает примерно втрое больше площади. Туман состоит из отдельных крупных облачных масс и покрывает около 25% карты. Около 30% внешней зоны занимает снежный пояс. Текстуры обязательны и загружаются только из RAW GitHub-репозитория <code>GodgraveAssets/Source/Env/Terrain/T_BiomTIle.png</code> по сетке 3×3.</div></section>
+<input id="scaleBalance" type="hidden" value="100"><span id="scaleBalanceValue" hidden>100</span><input id="fill" type="hidden" value="45"><input id="smooth" type="hidden" value="4"><input id="passageMin" type="hidden" value="2"><input id="passageMax" type="hidden" value="12"><input id="floorDots" type="checkbox" hidden><input id="regionTint" type="checkbox" hidden><select id="single" hidden><option value="ca" selected></option></select>
+<section class="panel"><h3>УПРАВЛЕНИЕ</h3><div class="small">ЛКМ — перемещение<br>Колесо — масштаб<br>C — центрировать<br>E / У — текущий seed<br>R / К — случайный seed<br>Пробел — общая информация</div></section>
+</aside>
+<main class="workspace"><canvas id="map"></canvas><canvas id="routeOverlay"></canvas><div class="tileInspector" id="tileInspector"></div><div class="hud" id="infoHud"><b>Информация и производительность</b><div id="stats"></div></div><div class="loading hidden" id="loading"><div class="loadingBox"><div class="loadingTitle">ГЕНЕРАЦИЯ КАРТЫ</div><div class="loadingStage" id="loadingStage">Подготовка</div><div class="loadingBar"><i></i></div></div></div><div class="hint">Тонкие волнистые тупики ответвляются от тоннелей, лабиринтов и цепочек камер.</div><div class="legend" id="legend"></div><div class="zoom"><button id="plus">+</button><button id="minus">−</button><button id="fit">⌾</button></div></main>
 </div>
 
+<div class="modalBackdrop" id="tileGeneratorModal"><div class="tileModal"><div class="tileModalHead"><h2>Генератор атласов текущей карты</h2><button id="closeTileGenerator">Закрыть</button></div><div class="tileTools"><label>Ширина тайла <input id="generatedTileW" type="number" min="16" max="512" value="128"></label><label>Высота тайла <input id="generatedTileH" type="number" min="8" max="256" value="64"></label><button id="generateTileAtlas" class="primary">Пересобрать листы</button><button id="exportTileAtlas">Экспортировать все PNG</button></div><div class="atlasStage" id="generatedAtlasSheets"></div><div class="modalNote">Создаются отдельные прозрачные листы для всех биомов текущей карты. Колонки: земля, трава, камень, глина, болото, дорога. Каждый климат обязательно содержит землю, траву и камень. Строки: 11 вариантов.</div></div></div>
 <script>
-const $ = id => document.getElementById(id);
-const canvas = $('map');
-const ctx = canvas.getContext('2d');
-const controls = ['seed','mapW','mapH','zoneCount','zoneRadius','branch','bridge','hole','edgeNoise','zoneGap','speckle','cell','drawOutlines'];
-const palette = [
-  '#285d64','#6b3f76','#6c7250','#8a5427','#223f72','#4c5961','#66721f',
-  '#146575','#315c35','#7b3f33','#4b557c','#86621e','#526b28','#2f7564'
-];
-
-function xmur3(str){
-  let h = 1779033703 ^ str.length;
-  for(let i = 0; i < str.length; i++){
-    h = Math.imul(h ^ str.charCodeAt(i), 3432918353);
-    h = h << 13 | h >>> 19;
+'use strict';
+const canvas=document.getElementById('map'),ctx=canvas.getContext('2d',{alpha:false}),routeCanvas=document.getElementById('routeOverlay'),routeCtx=routeCanvas.getContext('2d');
+const S={world:null,zoom:1,panX:0,panY:0,drag:false,lx:0,ly:0,routes:null,routesVisible:false,tileView:true,lastPerformance:null,loading:false,loadingStarted:0};
+const $=id=>document.getElementById(id),num=id=>Number($(id).value),chk=id=>$(id).checked;
+function cleanupStaticUi(){
+ document.querySelectorAll('.top .detailTop').forEach(el=>{if(el.querySelector('#detail')){el.insertAdjacentHTML('afterend','<input id="detail" type="hidden" value="8">');el.remove()}});
+ document.querySelectorAll('.panel h3').forEach(h=>{if(/СТИЛЬ|ПЕЩЕР|АЛГОРИТМЫ/.test(h.textContent))h.closest('.panel')?.remove()});
+ if(!$('scaleBalance'))document.querySelector('.side')?.insertAdjacentHTML('beforeend','<input id="scaleBalance" type="hidden" value="100"><span id="scaleBalanceValue" hidden>100</span><input id="fill" type="hidden" value="45"><input id="smooth" type="hidden" value="4"><input id="passageMin" type="hidden" value="2"><input id="passageMax" type="hidden" value="12"><input id="floorDots" type="checkbox" hidden><input id="regionTint" type="checkbox" hidden><select id="single" hidden><option value="ca" selected></option></select>');
+}
+cleanupStaticUi();
+function setLoading(active,stage='Подготовка'){
+ if(active)S.loadingStarted=S.loadingStarted||performance.now();
+ S.loading=active;
+ const box=$('loading'),text=$('loadingStage');
+ if(text)text.textContent=stage;
+ if(!box)return;
+ if(active){box.classList.remove('hidden');return}
+ const delay=Math.max(0,650-(performance.now()-S.loadingStarted));
+ setTimeout(()=>{S.loadingStarted=0;box.classList.add('hidden')},delay);
+}
+function requestGenerate(preserveCamera=false){
+ S.loadingStarted=performance.now();
+ setLoading(true,'Подготовка');
+ requestAnimationFrame(()=>setTimeout(()=>generate(preserveCamera),0));
+}
+function rng32(seed){return function(){let t=seed+=0x6D2B79F5;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296}}
+const ir=(a,b,r)=>{a=Math.round(a);b=Math.round(b);if(a>b)[a,b]=[b,a];return a+Math.floor(r()*(b-a+1))};
+const range=(a,b,r)=>{if(a>b)[a,b]=[b,a];return a+(b-a)*r()};
+const algos=[
+ {id:'ca',name:'Клеточный автомат — 3 масштаба',desc:'компактная группа малых, средних и широких камер без длинного сплошного массива',color:'#6e9f4a'},
+ {id:'walk',name:'Цепочка овальных камер',desc:'небольшие неправильные овалы, узкие переходы и 0–2 волнистых тупика',color:'#b36a4e'},
+ {id:'rooms',name:'Компактные овальные комнаты',desc:'не вытянутые овальные залы разных размеров; иногда с неровными отверстиями внутри',color:'#4d889e'},
+ {id:'maze',name:'Компактный органический лабиринт',desc:'малый фрагмент DFS-лабиринта, переменная ширина и 0–4 волнистых тупика',color:'#5969c1'},
+ {id:'radial',name:'Радиальные соединители',desc:'только небольшие переходные узлы между регионами',color:'#74a64d'},
+ {id:'bsp',name:'Сглаженные BSP-комнаты — 3 масштаба',desc:'малые, средние и крупные скруглённые помещения с мягкими переходами',color:'#9b50a5'},
+ {id:'cross',name:'Органическая узловая сеть',desc:'неправильные узлы и изогнутые связи без прямых внешних краёв',color:'#6f8291'}];
+const key=(x,y)=>x+','+y;
+let ACTIVE_DEAD_MASK=null;
+function disk(mask,cx,cy,r,val=1){for(let y=Math.floor(cy-r);y<=Math.ceil(cy+r);y++)for(let x=Math.floor(cx-r);x<=Math.ceil(cx+r);x++)if(y>=0&&x>=0&&y<mask.length&&x<mask[0].length&&(x-cx)**2+(y-cy)**2<=r*r)mask[y][x]=val}
+function line(mask,a,b,w=1){const n=Math.max(1,Math.ceil(Math.hypot(b.x-a.x,b.y-a.y)*2));for(let i=0;i<=n;i++){const t=i/n;disk(mask,a.x+(b.x-a.x)*t,a.y+(b.y-a.y)*t,w,1)}}
+function boundaryStart(mask,r){
+  const cells=[];
+  for(let y=2;y<mask.length-2;y++)for(let x=2;x<mask[0].length-2;x++)if(mask[y][x]){
+    let wx=0,wy=0,walls=0;
+    for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1],[1,1],[-1,1],[1,-1],[-1,-1]])if(!mask[y+dy][x+dx]){wx+=dx;wy+=dy;walls++}
+    if(walls>=2&&Math.hypot(wx,wy)>.1)cells.push({x,y,angle:Math.atan2(wy,wx)});
   }
-  return function(){
-    h = Math.imul(h ^ h >>> 16, 2246822507);
-    h = Math.imul(h ^ h >>> 13, 3266489909);
-    return (h ^= h >>> 16) >>> 0;
+  return cells.length?cells[ir(0,cells.length-1,r)]:null;
+}
+function carveWavyArm(mask,start,angle,length,r,markMask=null,allowFork=true){
+  let x=start.x,y=start.y,a=angle,turn=range(-.10,.10,r),radius=range(.55,.92,r);
+  const made=[];
+  for(let i=0;i<length;i++){
+    turn+=(range(-.10,.10,r)-turn)*.28;
+    a+=turn+Math.sin(i*range(.55,.9,r)+r()*2)*range(.025,.075,r);
+    const step=range(.72,1.08,r);x+=Math.cos(a)*step;y+=Math.sin(a)*step;
+    if(x<2||y<2||x>mask[0].length-3||y>mask.length-3)break;
+    radius+=(range(.5,.98,r)-radius)*.2;
+    const rr=Math.max(.48,radius+range(-.12,.12,r));disk(mask,x,y,rr,1);if(markMask)disk(markMask,x,y,rr,1);
+    made.push({x,y,a});
+  }
+  if(allowFork&&made.length>6&&r()<.58){
+    const q=made[ir(Math.floor(made.length*.45),Math.max(Math.floor(made.length*.45),made.length-3),r)];
+    const forkCount=r()<.3?2:1;
+    for(let f=0;f<forkCount;f++)carveWavyArm(mask,q,q.a+(f?1:-1)*range(.55,1.05,r),ir(3,Math.max(4,Math.floor(length*.52)),r),r,markMask,false);
+  }
+  return made.length;
+}
+function addDeadEndBranches(mask,minCount,maxCount,r,markMask=null){
+  markMask=markMask||ACTIVE_DEAD_MASK;
+  const count=ir(minCount,maxCount,r);let made=0;
+  for(let i=0;i<count;i++){
+    const start=boundaryStart(mask,r);if(!start)continue;
+    const wanted=ir(5,18,r),trial=mask.map(row=>row.slice()),trialMark=Array.from({length:mask.length},()=>Array(mask[0].length).fill(0));
+    const length=carveWavyArm(trial,start,start.angle+range(-.35,.35,r),wanted,r,trialMark,true);
+    // Не оставляем оборванный короткий обрубок: ветка принимается только при достаточном месте.
+    if(length<Math.max(4,Math.floor(wanted*.72)))continue;
+    for(let y=0;y<mask.length;y++)for(let x=0;x<mask[0].length;x++)if(trialMark[y][x]){mask[y][x]=trial[y][x];if(markMask)markMask[y][x]=1}
+    // В 30% случаев тупик завершается компактной овальной камерой.
+    if(r()<.30){
+      let tip=start,bd=-1;
+      for(let y=0;y<trialMark.length;y++)for(let x=0;x<trialMark[0].length;x++)if(trialMark[y][x]){const d=(x-start.x)**2+(y-start.y)**2;if(d>bd){bd=d;tip={x,y}}}
+      const rr=range(2.2,4.2,r),aspect=range(.84,1.16,r);
+      organicEllipse(mask,tip.x,tip.y,rr*aspect,rr/aspect,r,1);
+      if(markMask)organicEllipse(markMask,tip.x,tip.y,rr*aspect,rr/aspect,r,1);
+    }
+    made++;
+  }
+  return made;
+}
+function ellipse(mask,cx,cy,rx,ry,val=1){for(let y=Math.floor(cy-ry);y<=Math.ceil(cy+ry);y++)for(let x=Math.floor(cx-rx);x<=Math.ceil(cx+rx);x++)if(y>=0&&x>=0&&y<mask.length&&x<mask[0].length&&((x-cx)/rx)**2+((y-cy)/ry)**2<=1)mask[y][x]=val}
+
+function organicEllipse(mask,cx,cy,rx,ry,r,val=1){
+  const lobes=ir(5,9,r),phase=r()*Math.PI*2,amp=range(.12,.28,r),rot=range(-.45,.45,r);
+  const cr=Math.cos(rot),sr=Math.sin(rot);
+  for(let y=Math.floor(cy-ry*1.45);y<=Math.ceil(cy+ry*1.45);y++)for(let x=Math.floor(cx-rx*1.45);x<=Math.ceil(cx+rx*1.45);x++){
+    if(y<0||x<0||y>=mask.length||x>=mask[0].length)continue;
+    const dx=x-cx,dy=y-cy,u=(dx*cr+dy*sr)/rx,v=(-dx*sr+dy*cr)/ry;
+    const a=Math.atan2(v,u),rad=Math.hypot(u,v),edge=1+amp*Math.sin(a*lobes+phase)+amp*.45*Math.sin(a*(lobes+3)-phase*.7);
+    if(rad<=edge)mask[y][x]=val;
+  }
+}
+function curvedLink(mask,a,b,width,r){
+  const mx=(a.x+b.x)/2+(r()-.5)*Math.abs(b.y-a.y)*.45;
+  const my=(a.y+b.y)/2+(r()-.5)*Math.abs(b.x-a.x)*.45;
+  const n=Math.max(8,Math.ceil(Math.hypot(b.x-a.x,b.y-a.y)*2)),w0=Math.max(1,width*range(.7,1.05,r)),w1=Math.max(1,width*range(.7,1.05,r));
+  for(let i=0;i<=n;i++){
+    const t=i/n,q=1-t,x=q*q*a.x+2*q*t*mx+t*t*b.x,y=q*q*a.y+2*q*t*my+t*t*b.y;
+    const ww=w0+(w1-w0)*t+Math.sin(t*Math.PI*2+r()*0.2)*width*.08;
+    disk(mask,x,y,Math.max(1,ww));
+  }
+}
+function connectorCurve(mask,connector,a,b,r){
+  const balance=Math.max(0,Math.min(100,num('scaleBalance')||0))/100;
+  // Цепочка смещённых кругляшей. На длинных участках появляются компактные
+  // овальные расширения, немного шире самого тоннеля.
+  const dx=b.x-a.x,dy=b.y-a.y,len=Math.hypot(dx,dy)||1,nx=-dy/len,ny=dx/len;
+  const bend=range(-Math.min(10,len*.28),Math.min(10,len*.28),r);
+  const c1={x:a.x+dx*.30+nx*bend,y:a.y+dy*.30+ny*bend};
+  const c2={x:a.x+dx*.70-nx*bend*.45,y:a.y+dy*.70-ny*bend*.45};
+  const beads=Math.max(4,Math.ceil(len/range(1.45,2.15,r))),centers=[];
+  let lateral=range(-.7,.7,r),targetLateral=range(-1.35,1.35,r);
+  let radius=range(.85,1.35,r)*(1+balance*.18),targetRadius=range(.85,1.85,r)*(1+balance*.18);
+  for(let i=0;i<=beads;i++){
+    const t=i/beads,q=1-t;
+    if(i%ir(2,4,r)===0){targetLateral=range(-1.45,1.45,r);targetRadius=range(.8,1.95,r)}
+    lateral+=(targetLateral-lateral)*range(.20,.42,r);radius+=(targetRadius-radius)*range(.18,.35,r);
+    const bx=q*q*q*a.x+3*q*q*t*c1.x+3*q*t*t*c2.x+t*t*t*b.x;
+    const by=q*q*q*a.y+3*q*q*t*c1.y+3*q*t*t*c2.y+t*t*t*b.y;
+    const jitter=(r()-.5)*.75,x=bx+nx*(lateral+jitter),y=by+ny*(lateral+jitter),rr=Math.max(.72,radius+range(-.22,.22,r));
+    centers.push({x,y,t});disk(mask,x,y,rr,1);disk(connector,x,y,rr,1);
+    if(r()<.16){const side=r()<.5?-1:1,off=rr*range(.55,1.05,r),sr=rr*range(.48,.72,r);disk(mask,x+nx*off*side,y+ny*off*side,sr,1);disk(connector,x+nx*off*side,y+ny*off*side,sr,1)}
+  }
+  // Один зал примерно посередине либо несколько через нерегулярный интервал.
+  const roomThreshold=30-balance*16;
+  if(len>roomThreshold){
+    const interval=range(28-balance*14,34-balance*16,r),count=Math.max(1,Math.floor(len/Math.max(10,interval)));
+    for(let k=1;k<=count;k++){
+      const target=(k/(count+1))+range(-.07,.07,r),p=centers.reduce((best,q)=>Math.abs(q.t-target)<Math.abs(best.t-target)?q:best,centers[0]);
+      const rr=range(2.0,3.8,r),aspect=range(.82,1.18,r);
+      organicEllipse(mask,p.x+range(-.7,.7,r),p.y+range(-.7,.7,r),rr*aspect,rr/aspect,r,1);
+      organicEllipse(connector,p.x+range(-.35,.35,r),p.y+range(-.35,.35,r),rr*aspect,rr/aspect,r,1);
+    }
+  }
+  return {length:len,centers};
+}
+function hashNoise(x,y,seed=0){
+  let h=(Math.imul(x|0,374761393)+Math.imul(y|0,668265263)+Math.imul(seed|0,1442695041))|0;
+  h=(h^(h>>>13));h=Math.imul(h,1274126177);return ((h^(h>>>16))>>>0)/4294967295;
+}
+function loopConnectorCurve(mask,loopMask,avoidMask,a,b,r,startTangent=null,endTangent=null){
+  const h=mask.length,w=mask[0].length;
+  const dx=b.x-a.x,dy=b.y-a.y,len=Math.hypot(dx,dy)||1;
+  const direct={x:dx/len,y:dy/len},ta=startTangent||direct;
+  const tl=Math.hypot(ta.x,ta.y)||1,tangent={x:ta.x/tl,y:ta.y/tl};
+  const normals=[{x:-tangent.y,y:tangent.x},{x:tangent.y,y:-tangent.x}];
+  const clearance=n=>{let score=0;for(let d=3;d<=16;d++)for(let o=-2;o<=2;o++){
+    const x=Math.round(a.x+n.x*d+tangent.x*o),y=Math.round(a.y+n.y*d+tangent.y*o);
+    if(x<2||y<2||x>=w-2||y>=h-2)score-=10;else score+=mask[y][x]?-4:1;
+  }return score};
+  const normal=clearance(normals[0])>=clearance(normals[1])?normals[0]:normals[1];
+  const stem=Math.min(16,Math.max(8,len*.24)),stemEnd={x:a.x+normal.x*stem,y:a.y+normal.y*stem};
+  const side=r()<.5?-1:1,bend=Math.min(34,Math.max(11,len*.38));
+  const c1={x:stemEnd.x+normal.x*Math.min(9,len*.15)+tangent.x*bend*range(-.16,.16,r),y:stemEnd.y+normal.y*Math.min(9,len*.15)+tangent.y*bend*range(-.16,.16,r)};
+  const c2={x:b.x-direct.x*len*.17-direct.y*bend*side,y:b.y-direct.y*len*.17+direct.x*bend*side};
+  const points=[];
+  const addPoint=(x,y)=>{const p={x:Math.round(x),y:Math.round(y)};if(!points.length||points.at(-1).x!==p.x||points.at(-1).y!==p.y)points.push(p)};
+  for(let i=0,n=Math.max(14,Math.ceil(stem*3));i<=n;i++){const t=i/n;addPoint(a.x+normal.x*stem*t,a.y+normal.y*stem*t)}
+  for(let i=1,n=Math.max(24,Math.ceil(len*1.8));i<=n;i++){
+    const t=i/n,q=1-t;
+    let x=q*q*q*stemEnd.x+3*q*q*t*c1.x+3*q*t*t*c2.x+t*t*t*b.x;
+    let y=q*q*q*stemEnd.y+3*q*q*t*c1.y+3*q*t*t*c2.y+t*t*t*b.y;
+    const wave=Math.sin(t*Math.PI*range(2.3,4.4,r)+range(-.25,.25,r))*range(.3,.9,r);
+    addPoint(x+normal.x*wave,y+normal.y*wave);
+  }
+  // Превращаем кривую в строго 4-связный маршрут: между каждой парой точек
+  // прокладывается ортогональная цепочка, поэтому диагональных разрывов быть не может.
+  const route=[];const push=(x,y)=>{if(x<1||y<1||x>=w-1||y>=h-1)return false;const p=route.at(-1);if(!p||p.x!==x||p.y!==y)route.push({x,y});return true};
+  for(let i=0;i<points.length-1;i++){
+    let x=points[i].x,y=points[i].y,tx=points[i+1].x,ty=points[i+1].y;push(x,y);
+    while(x!==tx||y!==ty){
+      const hx=x!==tx,hy=y!==ty;
+      if(hx&&hy){if(((x*73856093)^(y*19349663)^i)&1)x+=Math.sign(tx-x);else y+=Math.sign(ty-y)}
+      else if(hx)x+=Math.sign(tx-x);else y+=Math.sign(ty-y);
+      if(!push(x,y))break;
+    }
+  }
+  const carved=[],seen=new Set();let travelled=0,connected=false,contact=null;
+  const addNew=(x,y)=>{if(x<1||y<1||x>=w-1||y>=h-1||mask[y][x])return;const k=x+','+y;if(!seen.has(k)){seen.add(k);carved.push({x,y})}};
+  for(let i=0;i<route.length;i++){
+    const p=route[i];if(i)travelled+=Math.abs(p.x-route[i-1].x)+Math.abs(p.y-route[i-1].y);
+    const radius=i<stem*2?1:((i%7===0&&r()<.38)?1:0);
+    addNew(p.x,p.y);
+    if(radius)for(const [ox,oy] of [[1,0],[-1,0],[0,1],[0,-1]])if(r()<.72)addNew(p.x+ox,p.y+oy);
+    if(travelled<stem*.9)continue;
+    // Завершение только при реальном контакте общей стороной. Контактная клетка
+    // существующей пещеры не перекрашивается, но последняя новая клетка сохраняется.
+    for(const [ox,oy] of [[1,0],[-1,0],[0,1],[0,-1]]){
+      const xx=p.x+ox,yy=p.y+oy;
+      if(xx<0||yy<0||xx>=w||yy>=h)continue;
+      const nearStart=(xx-a.x)**2+(yy-a.y)**2<(stem*.58)**2;
+      if(mask[yy][xx]&&!nearStart){connected=true;contact={x:xx,y:yy};break}
+    }
+    if(connected)break;
+  }
+  if(!connected||travelled<stem+5||carved.length<10)return false;
+  // Перед фиксацией проверяем всю новую цепочку и закрываем возможные единичные
+  // ортогональные промежутки, возникшие из-за округления ширины.
+  for(let i=1;i<carved.length;i++){
+    const p=carved[i-1],q=carved[i],md=Math.abs(p.x-q.x)+Math.abs(p.y-q.y);
+    if(md===2&&p.x!==q.x&&p.y!==q.y)addNew(q.x,p.y);
+  }
+  for(const c of carved){mask[c.y][c.x]=1;loopMask[c.y][c.x]=1}
+  return true;
+}
+function nearestOpenPair(aCells,bCells){
+  if(!aCells.length||!bCells.length)return null;
+  const sa=Math.max(1,Math.floor(aCells.length/180)),sb=Math.max(1,Math.floor(bCells.length/180));
+  let best=null,bd=Infinity;
+  for(let i=0;i<aCells.length;i+=sa){const a=aCells[i];for(let j=0;j<bCells.length;j+=sb){const b=bCells[j],d=(a.x-b.x)**2+(a.y-b.y)**2;if(d<bd){bd=d;best=[a,b]}}}
+  return best;
+}
+function passageRange(r){const a=Math.max(2,Math.min(12,num('passageMin')|0)),b=Math.max(2,Math.min(12,num('passageMax')|0));return ir(Math.min(a,b),Math.max(a,b),r)}
+function roundedRoom(mask,x,y,w,h,radius,val=1){
+  radius=Math.max(1,Math.min(radius,Math.floor(Math.min(w,h)/2)));
+  for(let yy=y;yy<y+h;yy++)for(let xx=x;xx<x+w;xx++){
+    const qx=Math.max(x+radius,Math.min(xx,x+w-radius-1));
+    const qy=Math.max(y+radius,Math.min(yy,y+h-radius-1));
+    if((xx-qx)**2+(yy-qy)**2<=radius*radius&&yy>=0&&xx>=0&&yy<mask.length&&xx<mask[0].length)mask[yy][xx]=val;
+  }
+}
+function smoothMask(mask,steps=1){
+  let g=mask;
+  for(let s=0;s<steps;s++){
+    const h=g.length,w=g[0].length,n=g.map(a=>a.slice());
+    for(let y=1;y<h-1;y++)for(let x=1;x<w-1;x++){
+      let c=0;for(let yy=y-1;yy<=y+1;yy++)for(let xx=x-1;xx<=x+1;xx++)c+=g[yy][xx];
+      n[y][x]=c>=5?1:0;
+    }
+    g=n;
+  }
+  return g;
+}
+function openRatio(mask){let n=0;for(const row of mask)for(const v of row)n+=v;return n/(mask.length*mask[0].length)}
+function limitOpenSpace(mask,r,maxRatio=.44){
+  const h=mask.length,w=mask[0].length;
+  let ratio=openRatio(mask),guard=0;
+  while(ratio>maxRatio&&guard++<10){
+    const next=mask.map(row=>row.slice());
+    for(let y=2;y<h-2;y++)for(let x=2;x<w-2;x++)if(mask[y][x]&&r()<Math.min(.34,(ratio-maxRatio)*1.8)){
+      let near=0;for(let yy=y-1;yy<=y+1;yy++)for(let xx=x-1;xx<=x+1;xx++)near+=mask[yy][xx];
+      if(near>=7)next[y][x]=0;
+    }
+    for(let y=0;y<h;y++){next[y][0]=next[y][w-1]=0}for(let x=0;x<w;x++){next[0][x]=next[h-1][x]=0}
+    for(let y=0;y<h;y++)mask[y]=next[y];ratio=openRatio(mask);
+  }
+  return mask;
+}
+function softenHugeRooms(mask,r){
+  const h=mask.length,w=mask[0].length;
+  for(let y=3;y<h-3;y++)for(let x=3;x<w-3;x++)if(mask[y][x]){
+    let open=0;for(let yy=y-3;yy<=y+3;yy++)for(let xx=x-3;xx<=x+3;xx++)open+=mask[yy][xx];
+    if(open>43&&r()<.085){const rx=range(.8,2.8,r),ry=range(.7,2.5,r);organicEllipse(mask,x+range(-.8,.8,r),y+range(-.8,.8,r),rx,ry,r,0)}
+  }
+  return mask;
+}
+function finalizeRegion(mask,algo,r){
+  const caps={ca:.46,walk:.32,rooms:.38,maze:.34,radial:.36,bsp:.43,cross:.38};
+  if(['ca','bsp','cross'].includes(algo))softenHugeRooms(mask,r);
+  return limitOpenSpace(mask,r,caps[algo]||.4);
+}
+
+function cellularPatch(dst,cx,cy,pw,ph,r,wide=false){
+  pw=Math.max(7,Math.min(dst[0].length-2,Math.round(pw)));ph=Math.max(7,Math.min(dst.length-2,Math.round(ph)));
+  let g=Array.from({length:ph},(_,y)=>Array.from({length:pw},(_,x)=>x<2||y<2||x>pw-3||y>ph-3?0:(r()<range(.48,.58,r)?1:0)));
+  const rounds=wide?ir(3,5,r):ir(2,4,r);
+  for(let k=0;k<rounds;k++){
+    const n=g.map(row=>row.slice());
+    for(let y=1;y<ph-1;y++)for(let x=1;x<pw-1;x++){
+      let c=0;for(let yy=y-1;yy<=y+1;yy++)for(let xx=x-1;xx<=x+1;xx++)if(xx!==x||yy!==y)c+=g[yy][xx];
+      n[y][x]=c>=4?1:0;
+    }
+    g=n;
+  }
+  const rx=pw*range(.40,.49,r),ry=ph*range(.39,.49,r),rot=range(-.55,.55,r),cr=Math.cos(rot),sr=Math.sin(rot);
+  for(let y=1;y<ph-1;y++)for(let x=1;x<pw-1;x++)if(g[y][x]){
+    const ux=(x-pw/2),uy=(y-ph/2),ex=(ux*cr+uy*sr)/rx,ey=(-ux*sr+uy*cr)/ry;
+    const edge=1+Math.sin(Math.atan2(ey,ex)*ir(4,8,r)+r()*2)*range(.05,.14,r);
+    if(ex*ex+ey*ey<=edge){const gx=Math.round(cx-pw/2+x),gy=Math.round(cy-ph/2+y);if(gy>0&&gx>0&&gy<dst.length-1&&gx<dst[0].length-1)dst[gy][gx]=1}
+  }
+}
+function organicBspRoom(mask,room,r){
+  const cx=room.x+room.w/2,cy=room.y+room.h/2;
+  const pieces=ir(3,6,r);
+  for(let i=0;i<pieces;i++){
+    const px=room.x+range(0,Math.max(0,room.w*.22),r),py=room.y+range(0,Math.max(0,room.h*.22),r);
+    const pw=Math.max(3,room.w-range(0,room.w*.28,r)),ph=Math.max(3,room.h-range(0,room.h*.28,r));
+    roundedRoom(mask,Math.round(px),Math.round(py),Math.round(pw),Math.round(ph),ir(2,Math.max(2,Math.floor(Math.min(pw,ph)/2)),r));
+  }
+  organicEllipse(mask,cx+range(-room.w*.12,room.w*.12,r),cy+range(-room.h*.12,room.h*.12,r),Math.max(2,room.w*.38),Math.max(2,room.h*.38),r,1);
+  // Несколько нерегулярных выкусов ломают длинные прямые внешние стены.
+  const bites=ir(1,Math.max(2,Math.floor((room.w+room.h)/10)),r);
+  for(let i=0;i<bites;i++){
+    const side=ir(0,3,r);let x=cx,y=cy;
+    if(side===0){x=room.x+range(0,room.w,r);y=room.y+range(-.5,1.2,r)}
+    if(side===1){x=room.x+room.w+range(-1.2,.5,r);y=room.y+range(0,room.h,r)}
+    if(side===2){x=room.x+range(0,room.w,r);y=room.y+room.h+range(-1.2,.5,r)}
+    if(side===3){x=room.x+range(-.5,1.2,r);y=room.y+range(0,room.h,r)}
+    organicEllipse(mask,x,y,range(.8,2.2,r),range(.7,2.0,r),r,0);
+  }
+}
+function scaleLocalGeneration(mask,deadMask,scale){
+  if(Math.abs(scale-1)<.01)return {mask,deadMask};
+  const h=mask.length,w=mask[0].length,cx=(w-1)/2,cy=(h-1)/2;
+  const out=Array.from({length:h},()=>Array(w).fill(0));
+  const dead=Array.from({length:h},()=>Array(w).fill(0));
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+    const sx=Math.round(cx+(x-cx)/scale),sy=Math.round(cy+(y-cy)/scale);
+    if(sx>=0&&sy>=0&&sx<w&&sy<h){out[y][x]=mask[sy][sx]?1:0;dead[y][x]=deadMask?.[sy]?.[sx]?1:0}
+  }
+  return {mask:out,deadMask:dead};
+}
+function makeRegionMask(w,h,algo,r){const m=Array.from({length:h},()=>Array(w).fill(0));ACTIVE_DEAD_MASK=Array.from({length:h},()=>Array(w).fill(0));const cx=w/2,cy=h/2;
+ if(algo==='ca'){
+  // Три масштаба камер: малая, средняя и одна более широкая. Все сгруппированы компактно.
+  const scales=[range(.18,.25,r),range(.28,.37,r),range(.42,.54,r)];
+  const order=[0,1,2].sort(()=>r()-.5),centers=[];
+  let anchor={x:cx+range(-w*.06,w*.06,r),y:cy+range(-h*.06,h*.06,r)};
+  for(let j=0;j<3;j++){
+    const f=scales[order[j]],pw=w*f,ph=h*f*range(.72,1.12,r);
+    const ang=r()*Math.PI*2,dist=j===0?0:range(Math.min(w,h)*.08,Math.min(w,h)*.18,r);
+    const p={x:Math.max(pw*.55,Math.min(w-pw*.55,anchor.x+Math.cos(ang)*dist)),y:Math.max(ph*.55,Math.min(h-ph*.55,anchor.y+Math.sin(ang)*dist))};
+    cellularPatch(m,p.x,p.y,pw,ph,r,order[j]===2);centers.push(p);
+    if(j>0)curvedLink(m,centers[j-1],p,range(.8,1.45,r),r);
+    anchor=p;
+  }
+  // Иногда один маленький спутник, но без длинного продолжения региона.
+  if(r()<.42){const base=centers[ir(0,centers.length-1,r)],a=r()*Math.PI*2,d=range(5,10,r),p={x:base.x+Math.cos(a)*d,y:base.y+Math.sin(a)*d};cellularPatch(m,p.x,p.y,w*range(.12,.18,r),h*range(.10,.16,r),r,false);curvedLink(m,base,p,range(.75,1.1,r),r)}
+  return finalizeRegion(smoothMask(m,1),algo,r)
+ }
+ if(algo==='walk'){
+  // Вместо равномерного блуждания — цепочка небольших овальных камер.
+  const chains=ir(1,3,r),maxRx=Math.max(3,Math.min(7,Math.floor(w*.13))),maxRy=Math.max(3,Math.min(6,Math.floor(h*.12)));
+  for(let c=0;c<chains;c++){
+    const count=ir(3,7,r),angle=r()*Math.PI*2;
+    let prev={x:cx+range(-w*.12,w*.12,r),y:cy+range(-h*.12,h*.12,r)};
+    for(let i=0;i<count;i++){
+      const step=range(5,10,r),turn=range(-.75,.75,r),a=angle+turn+i*range(-.18,.18,r);
+      const p={x:Math.max(4,Math.min(w-5,prev.x+Math.cos(a)*step)),y:Math.max(4,Math.min(h-5,prev.y+Math.sin(a)*step))};
+      const rx=range(2.5,maxRx,r),ry=range(2.2,maxRy,r);
+      organicEllipse(m,p.x,p.y,rx,ry,r);
+      curvedLink(m,prev,p,Math.max(1,range(num('passageMin'),Math.min(num('passageMax'),5),r)/2),r);
+      if(r()<.28)organicEllipse(m,p.x+range(-2,2,r),p.y+range(-2,2,r),rx*.55,ry*.55,r);
+      prev=p;
+    }
+  }
+  addDeadEndBranches(m,0,4,r);
+  return finalizeRegion(smoothMask(m,1),algo,r)
+ }
+ if(algo==='rooms'){
+  // Новый тип: компактные овальные комнаты без сильного вытягивания.
+  const roomCount=ir(2,5,r),centers=[];
+  let prev={x:cx+range(-w*.08,w*.08,r),y:cy+range(-h*.08,h*.08,r)};
+  for(let i=0;i<roomCount;i++){
+    const ang=r()*Math.PI*2,dist=i===0?0:range(4,Math.max(6,Math.min(w,h)*.14),r);
+    const p={x:Math.max(5,Math.min(w-6,prev.x+Math.cos(ang)*dist)),y:Math.max(5,Math.min(h-6,prev.y+Math.sin(ang)*dist))};
+    const base=range(3.0,Math.min(6.5,Math.max(3.5,Math.min(w,h)*.11)),r);
+    const rx=base*range(.88,1.12,r),ry=base*range(.88,1.12,r); // почти круглые, но не идеальные
+    organicEllipse(m,p.x,p.y,rx,ry,r,1);
+    if(i>0)curvedLink(m,prev,p,range(.65,1.15,r),r);
+    centers.push({p,rx,ry});prev=p;
+  }
+  // Отверстия встречаются не всегда и имеют разные неправильные формы.
+  for(const q of centers)if(r()<.48){
+    const holes=ir(1,r()<.22?2:1,r);
+    for(let hidx=0;hidx<holes;hidx++){
+      const hx=q.p.x+range(-q.rx*.28,q.rx*.28,r),hy=q.p.y+range(-q.ry*.28,q.ry*.28,r);
+      const hr=q.rx*range(.18,.38,r);
+      organicEllipse(m,hx,hy,Math.max(1.1,hr*range(.78,1.18,r)),Math.max(1.0,hr*range(.65,1.12,r)),r,0);
+    }
+  }
+  return finalizeRegion(smoothMask(m,1),algo,r)
+ }
+ if(algo==='maze'){
+  // Лабиринт занимает только часть региона, поэтому не превращается в огромный равномерный блок.
+  const margin=ir(3,6,r),usableW=Math.max(10,w-margin*2),usableH=Math.max(10,h-margin*2);
+  const mazeW=Math.max(8,Math.floor(usableW*range(.30,.50,r))),mazeH=Math.max(8,Math.floor(usableH*range(.30,.50,r)));
+  const ox=margin+ir(0,Math.max(0,usableW-mazeW),r),oy=margin+ir(0,Math.max(0,usableH-mazeH),r);
+  const scale=ir(5,8,r),mw=Math.max(3,Math.floor((mazeW-2)/scale)),mh=Math.max(3,Math.floor((mazeH-2)/scale));
+  const seen=Array.from({length:mh},()=>Array(mw).fill(0));
+  const start=[ir(0,mw-1,r),ir(0,mh-1,r)],stack=[start];seen[start[1]][start[0]]=1;
+  let currentWidth=range(num('passageMin'),num('passageMax'),r);
+  const visitLimit=Math.max(5,Math.floor(mw*mh*range(.42,.68,r)));let visited=1;
+  while(stack.length&&visited<visitLimit){
+    const [x,y]=stack.at(-1),dirs=[[1,0],[-1,0],[0,1],[0,-1]].sort(()=>r()-.5);
+    const opts=dirs.map(d=>[x+d[0],y+d[1]]).filter(([nx,ny])=>nx>=0&&ny>=0&&nx<mw&&ny<mh&&!seen[ny][nx]);
+    if(!opts.length){stack.pop();continue}
+    if(r()<.12&&stack.length>2){stack.pop();continue}
+    const [nx,ny]=opts[0];seen[ny][nx]=1;visited++;
+    currentWidth+=(range(num('passageMin'),num('passageMax'),r)-currentWidth)*range(.12,.32,r);
+    const pw=Math.max(1,currentWidth/2),jitter=scale*.16;
+    const a={x:ox+1+x*scale+(r()-.5)*jitter,y:oy+1+y*scale+(r()-.5)*jitter};
+    const b={x:ox+1+nx*scale+(r()-.5)*jitter,y:oy+1+ny*scale+(r()-.5)*jitter};
+    line(m,a,b,pw);if(r()<.18)disk(m,b.x,b.y,range(pw,pw*1.55,r));stack.push([nx,ny]);
+  }
+  addDeadEndBranches(m,0,8,r);
+  return finalizeRegion(smoothMask(m,1),algo,r)
+}
+ if(algo==='radial'){disk(m,cx,cy,ir(2,4,r));const rays=ir(3,6,r);for(let i=0;i<rays;i++){const a=i/rays*Math.PI*2+r()*.25,len=ir(4,Math.max(5,Math.min(10,Math.floor(Math.min(w,h)/3))),r),end={x:cx+Math.cos(a)*len,y:cy+Math.sin(a)*len};line(m,{x:cx,y:cy},end,Math.max(1,Math.min(2,passageRange(r)/2)));disk(m,end.x,end.y,ir(1,3,r))}return finalizeRegion(m,algo,r)}
+ if(algo==='bsp'){
+  const rooms=[];
+  const scaleProfiles=[
+    {min:4,max:7,pad:[2,4]},
+    {min:7,max:11,pad:[2,4]},
+    {min:11,max:16,pad:[2,3]}
+  ];
+  function addRoom(x,y,ww,hh){
+    const profile=scaleProfiles[ir(0,scaleProfiles.length-1,r)],pad=ir(profile.pad[0],profile.pad[1],r);
+    const maxW=Math.max(profile.min,Math.min(profile.max,ww-pad*2));
+    const maxH=Math.max(profile.min,Math.min(profile.max,hh-pad*2));
+    const rw=ir(Math.min(profile.min,maxW),maxW,r),rh=ir(Math.min(profile.min,maxH),maxH,r);
+    const room={x:x+pad+ir(0,Math.max(0,ww-pad*2-rw),r),y:y+pad+ir(0,Math.max(0,hh-pad*2-rh),r),w:rw,h:rh};
+    rooms.push(room);organicBspRoom(m,room,r);
+  }
+  function split(x,y,ww,hh,d){
+    if(d>4||ww<15||hh<15){addRoom(x,y,ww,hh);return}
+    if((ww>hh&&ww>19)||hh<19){const lo=Math.max(6,Math.floor(ww*.35)),hi=Math.min(ww-6,Math.floor(ww*.65));if(lo>=hi){addRoom(x,y,ww,hh);return}const q=ir(lo,hi,r);split(x,y,q,hh,d+1);split(x+q,y,ww-q,hh,d+1)}
+    else{const lo=Math.max(6,Math.floor(hh*.35)),hi=Math.min(hh-6,Math.floor(hh*.65));if(lo>=hi){addRoom(x,y,ww,hh);return}const q=ir(lo,hi,r);split(x,y,ww,q,d+1);split(x,y+q,ww,hh-q,d+1)}
+  }
+  split(1,1,w-2,h-2,0);
+  for(let i=1;i<rooms.length;i++){
+    const a=rooms[i-1],b=rooms[i];
+    curvedLink(m,{x:a.x+a.w/2,y:a.y+a.h/2},{x:b.x+b.w/2,y:b.y+b.h/2},range(.75,1.35,r),r);
+  }
+  return finalizeRegion(smoothMask(m,2),algo,r)
+ }
+ const nodes=[],nodeCount=ir(4,8,r);
+ const core={x:cx+range(-w*.08,w*.08,r),y:cy+range(-h*.08,h*.08,r)};
+ organicEllipse(m,core.x,core.y,range(3,6,r),range(3,6,r),r);nodes.push(core);
+ for(let i=1;i<nodeCount;i++){
+   const parent=nodes[ir(0,nodes.length-1,r)],a=r()*Math.PI*2,dist=range(6,Math.max(8,Math.min(w,h)*.22),r);
+   const p={x:Math.max(4,Math.min(w-5,parent.x+Math.cos(a)*dist)),y:Math.max(4,Math.min(h-5,parent.y+Math.sin(a)*dist))};
+   curvedLink(m,parent,p,Math.max(1,range(num('passageMin'),Math.min(6,num('passageMax')),r)/2),r);
+   organicEllipse(m,p.x,p.y,range(2.5,6.5,r),range(2.5,6.5,r),r);nodes.push(p);
+ }
+ // Лёгкая эрозия ломает слишком ровные наружные контуры.
+ for(let y=2;y<h-2;y++)for(let x=2;x<w-2;x++)if(m[y][x]){
+   let n=0;for(let yy=y-1;yy<=y+1;yy++)for(let xx=x-1;xx<=x+1;xx++)n+=m[yy][xx];
+   if(n<=4&&r()<.45)m[y][x]=0;
+ }
+ return finalizeRegion(smoothMask(m,1),algo,r)}
+function removeDisconnectedDeadEnds(floor,deadEnds){
+  const h=floor.length,w=floor[0].length,seen=Array.from({length:h},()=>Array(w).fill(0));
+  const dirs=[[1,0],[-1,0],[0,1],[0,-1]];
+  for(let sy=0;sy<h;sy++)for(let sx=0;sx<w;sx++)if(deadEnds[sy][sx]&&!seen[sy][sx]){
+    const q=[[sx,sy]],cells=[];seen[sy][sx]=1;let touchesFloor=false;
+    for(let qi=0;qi<q.length;qi++){
+      const [x,y]=q[qi];cells.push([x,y]);
+      for(const [dx,dy] of dirs){
+        const nx=x+dx,ny=y+dy;if(nx<0||ny<0||nx>=w||ny>=h)continue;
+        if(deadEnds[ny][nx]&&!seen[ny][nx]){seen[ny][nx]=1;q.push([nx,ny])}
+        else if(floor[ny][nx]&&!deadEnds[ny][nx])touchesFloor=true;
+      }
+    }
+    if(!touchesFloor)for(const [x,y] of cells){deadEnds[y][x]=0;floor[y][x]=0}
+  }
+}
+function floorComponents(floor){
+  const h=floor.length,w=floor[0].length,seen=Array.from({length:h},()=>Array(w).fill(0)),dirs=[[1,0],[-1,0],[0,1],[0,-1]],out=[];
+  for(let sy=0;sy<h;sy++)for(let sx=0;sx<w;sx++)if(floor[sy][sx]&&!seen[sy][sx]){
+    const q=[[sx,sy]],cells=[];seen[sy][sx]=1;
+    for(let qi=0;qi<q.length;qi++){
+      const [x,y]=q[qi];cells.push({x,y});
+      for(const [dx,dy] of dirs){const nx=x+dx,ny=y+dy;if(nx>=0&&ny>=0&&nx<w&&ny<h&&floor[ny][nx]&&!seen[ny][nx]){seen[ny][nx]=1;q.push([nx,ny])}}
+    }
+    out.push(cells);
+  }
+  return out.sort((a,b)=>b.length-a.length);
+}
+function ensureSingleConnectedFloor(floor,connector,r){
+  let added=0,guard=0;
+  while(guard++<64){
+    const comps=floorComponents(floor);if(comps.length<=1)break;
+    const main=comps[0];let bestPair=null,bestD=Infinity,bestIndex=1;
+    for(let i=1;i<comps.length;i++){
+      const pair=nearestOpenPair(main,comps[i]);if(!pair)continue;
+      const d=(pair[0].x-pair[1].x)**2+(pair[0].y-pair[1].y)**2;
+      if(d<bestD){bestD=d;bestPair=pair;bestIndex=i}
+    }
+    if(!bestPair)break;
+    connectorCurve(floor,connector,bestPair[0],bestPair[1],r);added++;
+  }
+  return added;
+}
+function upscaleGrid(src,factor,fill=-1){
+  const h=src.length,w=src[0].length,out=Array.from({length:h*factor},()=>Array(w*factor).fill(fill));
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++)for(let yy=0;yy<factor;yy++)for(let xx=0;xx<factor;xx++)out[y*factor+yy][x*factor+xx]=src[y][x];
+  return out;
+}
+
+function clearMapBorder(floor,connector,loopConnector,deadEnds,owner,margin){
+  const h=floor.length,w=floor[0].length,m=Math.max(8,margin|0);
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++)if(x<m||y<m||x>=w-m||y>=h-m){
+    floor[y][x]=0;connector[y][x]=0;loopConnector[y][x]=0;deadEnds[y][x]=0;owner[y][x]=-1;
+  }
+}
+
+function buildOrganicRegionEnvelope(owner,seeds,mapMargin,seed){
+  const h=owner.length,w=owner[0].length;
+  const env=Array.from({length:h},()=>Array(w).fill(0));
+  // Расстояние до границы Voronoi или рамки. Это превращает квадратную
+  // ячейку Voronoi в отступивший неровный многоугольник.
+  const dist=Array.from({length:h},()=>Array(w).fill(9999)),q=[];
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+    const o=owner[y][x];
+    if(x<mapMargin||y<mapMargin||x>=w-mapMargin||y>=h-mapMargin||owner[y]?.[x-1]!==o||owner[y]?.[x+1]!==o||owner[y-1]?.[x]!==o||owner[y+1]?.[x]!==o){dist[y][x]=0;q.push([x,y])}
+  }
+  for(let qi=0;qi<q.length;qi++){
+    const [x,y]=q[qi],nd=dist[y][x]+1;
+    for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){const xx=x+dx,yy=y+dy;if(xx>=0&&yy>=0&&xx<w&&yy<h&&owner[yy][xx]===owner[y][x]&&nd<dist[yy][xx]){dist[yy][xx]=nd;q.push([xx,yy])}}
+  }
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+    const o=owner[y][x];if(o<0)continue;
+    const n1=hashNoise(Math.floor(x/3),Math.floor(y/3),seed^Math.imul(o+1,7919));
+    const n2=hashNoise(Math.floor(x/7),Math.floor(y/7),seed^Math.imul(o+1,104729));
+    const inset=2.2+n1*2.2+n2*1.5;
+    if(dist[y][x]>=inset&&x>=mapMargin&&y>=mapMargin&&x<w-mapMargin&&y<h-mapMargin)env[y][x]=1;
+  }
+  return env;
+}
+function nearestMaskPoint(mask,p,maxR=18){
+  let best=null,bd=Infinity;
+  const x0=Math.max(1,Math.floor(p.x-maxR)),x1=Math.min(mask[0].length-2,Math.ceil(p.x+maxR));
+  const y0=Math.max(1,Math.floor(p.y-maxR)),y1=Math.min(mask.length-2,Math.ceil(p.y+maxR));
+  for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++)if(mask[y][x]){const d=(x-p.x)**2+(y-p.y)**2;if(d<bd){bd=d;best={x,y}}}
+  return best;
+}
+function maskTangent(mask,p){
+  let xx=0,xy=0,yy=0,n=0;
+  for(let y=Math.max(0,p.y-4);y<=Math.min(mask.length-1,p.y+4);y++)for(let x=Math.max(0,p.x-4);x<=Math.min(mask[0].length-1,p.x+4);x++)if(mask[y][x]){const dx=x-p.x,dy=y-p.y;xx+=dx*dx;xy+=dx*dy;yy+=dy*dy;n++}
+  if(n<2)return {x:1,y:0};
+  const a=.5*Math.atan2(2*xy,xx-yy);return{x:Math.cos(a),y:Math.sin(a)};
+}
+function fillAccidentalHighResHoles(mask,base,factor){
+  const h=mask.length,w=mask[0].length,seen=Array.from({length:h},()=>Array(w).fill(0)),q=[];
+  for(let x=0;x<w;x++){if(!mask[0][x]){seen[0][x]=1;q.push([x,0])}if(!mask[h-1][x]){seen[h-1][x]=1;q.push([x,h-1])}}
+  for(let y=0;y<h;y++){if(!mask[y][0]){seen[y][0]=1;q.push([0,y])}if(!mask[y][w-1]){seen[y][w-1]=1;q.push([w-1,y])}}
+  for(let i=0;i<q.length;i++){const [x,y]=q[i];for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){const xx=x+dx,yy=y+dy;if(xx>=0&&yy>=0&&xx<w&&yy<h&&!mask[yy][xx]&&!seen[yy][xx]){seen[yy][xx]=1;q.push([xx,yy])}}}
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++)if(!mask[y][x]&&!seen[y][x]&&base[Math.min(base.length-1,Math.floor(y/factor))][Math.min(base[0].length-1,Math.floor(x/factor))])mask[y][x]=1;
+}
+function resampleGrid(src,targetFactor,maxFactor,fill=0){
+  const baseH=Math.round(src.length/maxFactor),baseW=Math.round(src[0].length/maxFactor),h=baseH*targetFactor,w=baseW*targetFactor;
+  const out=Array.from({length:h},()=>Array(w).fill(fill));
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+    const ax=x/targetFactor*maxFactor,bx=(x+1)/targetFactor*maxFactor,ay=y/targetFactor*maxFactor,by=(y+1)/targetFactor*maxFactor;
+    let counts=new Map(),total=0;
+    for(let yy=Math.floor(ay);yy<Math.ceil(by);yy++)for(let xx=Math.floor(ax);xx<Math.ceil(bx);xx++)if(yy>=0&&xx>=0&&yy<src.length&&xx<src[0].length){const v=src[yy][xx];counts.set(v,(counts.get(v)||0)+1);total++}
+    let best=fill,bc=-1;for(const [v,c] of counts)if(c>bc){bc=c;best=v}out[y][x]=best;
+  }
+  return out;
+}
+function copyRegionWithFeather(local,localDead,floor,deadEnds,owner,envelope,regionId,b,margin,r){
+  const h=local.length,w=local[0].length,cells=[];let sx=0,sy=0;
+  for(let yy=0;yy<h;yy++)for(let xx=0;xx<w;xx++)if(local[yy][xx]){
+    const gx=b.x1+margin+xx,gy=b.y1+margin+yy;
+    if(gy<0||gx<0||gy>=floor.length||gx>=floor[0].length)continue;
+    // Основная форма остаётся внутри своего региона. На самой границе допускается
+    // только редкое органическое перетекание на 1 клетку, чтобы не было прямого среза.
+    const own=owner[gy][gx]===regionId&&envelope[gy][gx];
+    if(!own)continue;
+    if(!floor[gy][gx]){floor[gy][gx]=1;if(localDead?.[yy]?.[xx])deadEnds[gy][gx]=1;cells.push({x:gx,y:gy});sx+=gx;sy+=gy}
+  }
+  return {cells,sx,sy};
+}
+function resolveDiagonalTouches(mask,...typedMasks){
+  const h=mask.length,w=mask[0].length;
+  // В каждом блоке 2×2 запрещаем конфигурацию, где открыты только две диагонали.
+  // Вместо удаления пола добавляем один детерминированный ортогональный мостик.
+  for(let pass=0;pass<2;pass++)for(let y=0;y<h-1;y++)for(let x=0;x<w-1;x++){
+    const a=!!mask[y][x],b=!!mask[y][x+1],c=!!mask[y+1][x],d=!!mask[y+1][x+1];
+    if(a&&d&&!b&&!c){
+      const choose=((x*73856093)^(y*19349663)^pass)&1;
+      if(choose){mask[y][x+1]=1}else{mask[y+1][x]=1}
+    }else if(b&&c&&!a&&!d){
+      const choose=((x*83492791)^(y*2971215073)^pass)&1;
+      if(choose){mask[y][x]=1}else{mask[y+1][x+1]=1}
+    }
+  }
+  // Типовые маски не расширяем: добавленный мостик остаётся обычной землёй.
+  return mask;
+}
+function refineWorld(floor,connector,loopConnector,deadEnds,owner,level,seed){
+  const factor=Math.max(1,Math.min(12,level|0)),MAX=12;
+  if(factor===1)return {floor,connector,loopConnector,deadEnds,owner,factor,detail:1};
+  const hf=upscaleGrid(floor,MAX,0),hc=upscaleGrid(connector,MAX,0),hl=upscaleGrid(loopConnector,MAX,0),hd=upscaleGrid(deadEnds,MAX,0),ho=upscaleGrid(owner,MAX,-1);
+  const h=hf.length,w=hf[0].length;
+  const edgeWave=(u,v,o)=>{
+    const a=Math.sin((u+seed*.013+o*7.1)*.73),b=Math.sin((u*1.91+v*.27+seed*.003)*1.17),c=hashNoise(Math.floor(u/2),Math.floor(v/3),seed^Math.imul(o+3,2654435761));
+    return a*.42+b*.28+(c-.5)*.60;
   };
-}
-function mulberry32(a){
-  return function(){
-    let t = a += 0x6D2B79F5;
-    t = Math.imul(t ^ t >>> 15, t | 1);
-    t ^= t + Math.imul(t ^ t >>> 7, t | 61);
-    return ((t ^ t >>> 14) >>> 0) / 4294967296;
-  };
-}
-function rngFromSeed(seed){ return mulberry32(xmur3(seed)()); }
-function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
-function lerp(a,b,t){ return a + (b - a) * t; }
-function hexToRgb(hex){
-  const n = parseInt(hex.slice(1), 16);
-  return [n >> 16 & 255, n >> 8 & 255, n & 255];
-}
-function shade(hex, k){
-  const [r,g,b] = hexToRgb(hex);
-  return `rgb(${clamp(Math.round(r*k),0,255)},${clamp(Math.round(g*k),0,255)},${clamp(Math.round(b*k),0,255)})`;
-}
-function distToSegment(px, py, ax, ay, bx, by){
-  const vx = bx - ax, vy = by - ay;
-  const wx = px - ax, wy = py - ay;
-  const c1 = vx * wx + vy * wy;
-  if(c1 <= 0) return Math.hypot(px - ax, py - ay);
-  const c2 = vx * vx + vy * vy;
-  if(c2 <= c1) return Math.hypot(px - bx, py - by);
-  const t = c1 / c2;
-  return Math.hypot(px - (ax + t * vx), py - (ay + t * vy));
-}
-
-function makeBlobs(rng, w, h, count, radius, branch){
-  const blobs = [];
-  const cols = Math.ceil(Math.sqrt(count * w / h));
-  const rows = Math.ceil(count / cols);
-  for(let i = 0; i < count; i++){
-    const col = i % cols;
-    const row = Math.floor(i / cols);
-    const cx = (col + .5 + (rng() - .5) * .65) * w / cols;
-    const cy = (row + .5 + (rng() - .5) * .65) * h / rows;
-    const lumps = [];
-    const lumpCount = 11 + Math.floor(rng() * 12 + branch * 10);
-    let angle = rng() * Math.PI * 2;
-    for(let j = 0; j < lumpCount; j++){
-      angle += (rng() - .5) * 1.8;
-      const arm = Math.pow(rng(), .72) * radius * lerp(.25, 1.25, branch);
-      const lx = cx + Math.cos(angle) * arm + (rng() - .5) * radius * .55;
-      const ly = cy + Math.sin(angle) * arm + (rng() - .5) * radius * .55;
-      lumps.push({x:lx, y:ly, r:radius * lerp(.20, .46, rng())});
+  for(let by=1;by<floor.length-1;by++)for(let bx=1;bx<floor[0].length-1;bx++)if(floor[by][bx]){
+    const ex={l:!floor[by][bx-1],r:!floor[by][bx+1],u:!floor[by-1][bx],d:!floor[by+1][bx]};if(!(ex.l||ex.r||ex.u||ex.d))continue;
+    const protectedCell=connector[by][bx]||loopConnector[by][bx]||deadEnds[by][bx],o=owner[by][bx];
+    for(let sy=0;sy<MAX;sy++)for(let sx=0;sx<MAX;sx++){
+      const x=bx*MAX+sx,y=by*MAX+sy;
+      // Профиль зависит от координаты вдоль границы, поэтому длинная прямая
+      // превращается в устойчивый неровный контур, уточняемый на каждом LOD.
+      const wl=edgeWave(by*MAX+sy,bx*MAX,o),wr=edgeWave(by*MAX+sy,bx*MAX+11,o),wu=edgeWave(bx*MAX+sx,by*MAX,o),wd=edgeWave(bx*MAX+sx,by*MAX+11,o);
+      const dl=Math.max(1,Math.min(5,Math.round(2.5+wl*2.2))),dr=Math.max(1,Math.min(5,Math.round(2.5+wr*2.2))),du=Math.max(1,Math.min(5,Math.round(2.5+wu*2.2))),dd=Math.max(1,Math.min(5,Math.round(2.5+wd*2.2)));
+      const cut=(ex.l&&sx<dl)||(ex.r&&sx>=MAX-dr)||(ex.u&&sy<du)||(ex.d&&sy>=MAX-dd);
+      if(!protectedCell&&cut){hf[y][x]=0;ho[y][x]=-1}
     }
-    const holes = [];
-    const holeCount = Math.floor(2 + rng() * 5);
-    for(let j = 0; j < holeCount; j++){
-      holes.push({
-        x: cx + (rng() - .5) * radius * 1.25,
-        y: cy + (rng() - .5) * radius * 1.25,
-        r: radius * lerp(.10, .24, rng())
-      });
-    }
-    blobs.push({cx, cy, color: palette[i % palette.length], lumps, holes});
-  }
-  return blobs;
-}
-
-function generate(){
-  const seed = $('seed').value || 'godgrave';
-  const rng = rngFromSeed(seed);
-  const w = clamp(parseInt($('mapW').value,10) || 1600, 320, 2400);
-  const h = clamp(parseInt($('mapH').value,10) || 1100, 240, 1600);
-  const cell = parseInt($('cell').value,10);
-  const zoneCount = parseInt($('zoneCount').value,10);
-  const radius = parseInt($('zoneRadius').value,10);
-  const branch = parseInt($('branch').value,10) / 100;
-  const bridge = parseInt($('bridge').value,10) / 100;
-  const hole = parseInt($('hole').value,10) / 100;
-  const edgeNoise = parseInt($('edgeNoise').value,10) / 100;
-  const zoneGap = parseInt($('zoneGap').value,10);
-  const speckle = parseInt($('speckle').value,10) / 100;
-  const outlines = $('drawOutlines').checked;
-
-  canvas.width = w;
-  canvas.height = h;
-  ctx.fillStyle = '#000';
-  ctx.fillRect(0, 0, w, h);
-
-  const blobs = makeBlobs(rng, w, h, zoneCount, radius, branch);
-  const bridges = [];
-  for(let i = 1; i < blobs.length; i++){
-    if(rng() < bridge){
-      const a = blobs[i - 1], b = blobs[i];
-      bridges.push({a, b, r: radius * lerp(.08, .16, rng())});
+    // Наружные выступы с тем же стабильным профилем.
+    for(let t=0;t<MAX;t++){
+      const profiles=[[ex.l,-1,0,by*MAX+t,bx*MAX],[ex.r,1,0,by*MAX+t,bx*MAX+11],[ex.u,0,-1,bx*MAX+t,by*MAX],[ex.d,0,1,bx*MAX+t,by*MAX+11]];
+      for(const [on,dx,dy,u,v] of profiles)if(on){const wave=edgeWave(u,v,o),out=wave>.18?1+(wave>.55?1:0):0;if(!out)continue;const bxh=bx*MAX+(dx<0?0:dx>0?MAX-1:t),byh=by*MAX+(dy<0?0:dy>0?MAX-1:t);for(let k=1;k<=out;k++){const xx=bxh+dx*k,yy=byh+dy*k;if(xx>2&&yy>2&&xx<w-3&&yy<h-3){hf[yy][xx]=1;ho[yy][xx]=o}}}
     }
   }
-  for(let i = 0; i < blobs.length; i += 3){
-    const a = blobs[i], b = blobs[(i + 4) % blobs.length];
-    if(a && b && rng() < bridge * .65) bridges.push({a, b, r: radius * lerp(.06, .12, rng())});
-  }
-
-  const cols = Math.ceil(w / cell);
-  const rows = Math.ceil(h / cell);
-  const grid = new Int16Array(cols * rows).fill(-1);
-  const alpha = new Float32Array(cols * rows);
-
-  for(let gy = 0; gy < rows; gy++){
-    for(let gx = 0; gx < cols; gx++){
-      const x = gx * cell + cell * .5;
-      const y = gy * cell + cell * .5;
-      let best = -1;
-      let bestScore = 0;
-      for(let i = 0; i < blobs.length; i++){
-        let score = 0;
-        const blob = blobs[i];
-        for(const l of blob.lumps){
-          const d = Math.hypot(x - l.x, y - l.y) / l.r;
-          score = Math.max(score, 1 - d);
-        }
-        for(const br of bridges){
-          if(br.a === blob || br.b === blob){
-            const d = distToSegment(x, y, br.a.cx, br.a.cy, br.b.cx, br.b.cy) / br.r;
-            score = Math.max(score, (1 - d) * .75);
-          }
-        }
-        for(const ho of blob.holes){
-          const d = Math.hypot(x - ho.x, y - ho.y) / ho.r;
-          if(d < 1) score -= (1 - d) * (1.4 * hole);
-        }
-        score += (rng() - .5) * .42 * edgeNoise;
-        if(score > bestScore){ bestScore = score; best = i; }
-      }
-      if(bestScore > .06){
-        const idx = gy * cols + gx;
-        grid[idx] = best;
-        alpha[idx] = clamp(bestScore, .08, 1);
-      }
-    }
-  }
-
-  const gap = new Uint8Array(cols * rows);
-  if(zoneGap > 0){
-    for(let gy = 0; gy < rows; gy++){
-      for(let gx = 0; gx < cols; gx++){
-        const idx = gy * cols + gx;
-        const z = grid[idx];
-        if(z < 0) continue;
-        let nearOtherZone = false;
-        for(let oy = -zoneGap; oy <= zoneGap && !nearOtherZone; oy++){
-          for(let ox = -zoneGap; ox <= zoneGap; ox++){
-            if(ox === 0 && oy === 0) continue;
-            if(Math.abs(ox) + Math.abs(oy) > zoneGap + 1) continue;
-            const nx = gx + ox;
-            const ny = gy + oy;
-            if(nx < 0 || ny < 0 || nx >= cols || ny >= rows) continue;
-            const nz = grid[ny * cols + nx];
-            if(nz >= 0 && nz !== z){
-              nearOtherZone = true;
-              break;
-            }
-          }
-        }
-        if(nearOtherZone) gap[idx] = 1;
-      }
-    }
-  }
-
-  for(let gy = 0; gy < rows; gy++){
-    for(let gx = 0; gx < cols; gx++){
-      const idx = gy * cols + gx;
-      const z = grid[idx];
-      if(z < 0 || gap[idx]) continue;
-      const left = gx > 0 ? grid[idx - 1] : -1;
-      const right = gx < cols - 1 ? grid[idx + 1] : -1;
-      const top = gy > 0 ? grid[idx - cols] : -1;
-      const bottom = gy < rows - 1 ? grid[idx + cols] : -1;
-      const edge =
-        gx === 0 || gy === 0 || gx === cols - 1 || gy === rows - 1 ||
-        left !== z || right !== z || top !== z || bottom !== z;
-      const noise = .66 + rng() * .62;
-      ctx.fillStyle = shade(blobs[z].color, edge && outlines ? noise * .72 : noise);
-      ctx.fillRect(gx * cell, gy * cell, cell + 1, cell + 1);
-      if(rng() < speckle){
-        ctx.fillStyle = rng() < .55 ? 'rgba(255,255,255,.14)' : 'rgba(0,0,0,.22)';
-        ctx.fillRect(gx * cell + rng() * cell, gy * cell + rng() * cell, 1, 1);
-      }
-      if(edge && outlines){
-        ctx.fillStyle = 'rgba(255,255,255,.10)';
-        ctx.fillRect(gx * cell, gy * cell, cell, 1);
-      }
-    }
-  }
-
-  $('status').textContent = `${w}x${h}, зоны: ${zoneCount}, seed: ${seed}`;
+  fillAccidentalHighResHoles(hf,floor,MAX);
+  const nf=resampleGrid(hf,factor,MAX,0),nc=resampleGrid(hc,factor,MAX,0),nl=resampleGrid(hl,factor,MAX,0),nd=resampleGrid(hd,factor,MAX,0),no=resampleGrid(ho,factor,MAX,-1);
+  for(let y=0;y<nf.length;y++)for(let x=0;x<nf[0].length;x++)if(nc[y][x]||nl[y][x]||nd[y][x])nf[y][x]=1;
+  return {floor:nf,connector:nc,loopConnector:nl,deadEnds:nd,owner:no,factor,detail:factor};
 }
 
-function refreshLabels(){
-  $('zoneCountValue').textContent = $('zoneCount').value;
-  $('zoneRadiusValue').textContent = $('zoneRadius').value;
-  $('branchValue').textContent = `${$('branch').value}%`;
-  $('bridgeValue').textContent = `${$('bridge').value}%`;
-  $('holeValue').textContent = `${$('hole').value}%`;
-  $('edgeNoiseValue').textContent = `${$('edgeNoise').value}%`;
-  $('zoneGapValue').textContent = $('zoneGap').value;
-  $('speckleValue').textContent = `${$('speckle').value}%`;
-  $('cellValue').textContent = $('cell').value;
+// Каскад LOD строится только один раз: 1 → 2 → 3 → 8.
+// Все промежуточные отображения затем являются nearest-neighbor рескейлом
+// одного сохранённого финального слоя 8× — никакой повторной генерации при зуме.
+function flatFromGrid(grid){
+ const h=grid.length,w=grid[0].length,a=new Uint8Array(w*h);
+ for(let y=0;y<h;y++)for(let x=0;x<w;x++)a[y*w+x]=grid[y][x]?1:0;
+ return {data:a,w,h,factor:1};
+}
+function cascadeStage(prev,newFactor,seed,baseConnector,baseLoop,baseDead,baseW,baseH){
+ const w=baseW*newFactor,h=baseH*newFactor,out=new Uint8Array(w*h),pf=prev.factor;
+ const at=(x,y)=>x>=0&&y>=0&&x<prev.w&&y<prev.h?prev.data[y*prev.w+x]:0;
+ // Сначала строгий nearest-neighbor upscale предыдущего уровня.
+ for(let y=0;y<h;y++){
+   const py=Math.min(prev.h-1,Math.floor(y*pf/newFactor));
+   for(let x=0;x<w;x++){
+     const px=Math.min(prev.w-1,Math.floor(x*pf/newFactor));
+     out[y*w+x]=prev.data[py*prev.w+px];
+   }
+ }
+ const copy=out.slice();
+ const oat=(x,y)=>x>=0&&y>=0&&x<w&&y<h?copy[y*w+x]:0;
+ // Только новый, более мелкий масштаб получает дополнительную неровность.
+ // Решения детерминированы и после построения больше никогда не пересчитываются.
+ for(let y=1;y<h-1;y++)for(let x=1;x<w-1;x++){
+   const i=y*w+x;if(!copy[i])continue;
+   const edge=!oat(x-1,y)||!oat(x+1,y)||!oat(x,y-1)||!oat(x,y+1);if(!edge)continue;
+   const bx=Math.min(baseW-1,Math.floor(x/newFactor)),by=Math.min(baseH-1,Math.floor(y/newFactor));
+   const protectedCell=baseConnector[by]?.[bx]||baseLoop[by]?.[bx]||baseDead[by]?.[bx];
+   const fx=(x%newFactor+.5)/newFactor,fy=(y%newFactor+.5)/newFactor;
+   const centerProtected=protectedCell&&(Math.abs(fx-.5)<.24||Math.abs(fy-.5)<.24);
+   const n=hashNoise(x,y,seed^Math.imul(newFactor,0x9e3779b1));
+   const wave=Math.sin((x*.47+y*.19+seed*.0017)*1.31)*.18+Math.sin((x*.13-y*.61+seed*.0041))*.12;
+   if(!centerProtected && n+wave<.22)out[i]=0;
+ }
+ // Небольшие наружные выступы. Они рождаются из границы уже предыдущего уровня.
+ for(let y=1;y<h-1;y++)for(let x=1;x<w-1;x++)if(!copy[y*w+x]){
+   const neighbours=oat(x-1,y)+oat(x+1,y)+oat(x,y-1)+oat(x,y+1);
+   if(neighbours!==1)continue;
+   const n=hashNoise(x,y,seed^Math.imul(newFactor+17,0x85ebca6b));
+   if(n>.83)out[y*w+x]=1;
+ }
+ // Запрещаем чисто диагональные контакты на каждом построенном уровне.
+ for(let pass=0;pass<2;pass++)for(let y=0;y<h-1;y++)for(let x=0;x<w-1;x++){
+   const a=out[y*w+x],b=out[y*w+x+1],c=out[(y+1)*w+x],d=out[(y+1)*w+x+1];
+   if(a&&d&&!b&&!c){if(((x*73856093)^(y*19349663)^seed)&1)out[y*w+x+1]=1;else out[(y+1)*w+x]=1}
+   else if(b&&c&&!a&&!d){if(((x*83492791)^(y*2971215073)^seed)&1)out[y*w+x]=1;else out[(y+1)*w+x+1]=1}
+ }
+ return {data:out,w,h,factor:newFactor};
+}
+function buildCascadeLOD(w){
+ const l1=flatFromGrid(w.floor);
+ const l2=cascadeStage(l1,2,w.seed,w.connector,w.loopConnector,w.deadEnds,w.baseCols,w.baseRows);
+ const l3=cascadeStage(l2,3,w.seed,w.connector,w.loopConnector,w.deadEnds,w.baseCols,w.baseRows);
+ const l8=cascadeStage(l3,8,w.seed,w.connector,w.loopConnector,w.deadEnds,w.baseCols,w.baseRows);
+ w.lodCascade={1:l1,2:l2,3:l3,8:l8};
+ buildLodCanvases(w);
+}
+function buildTypedHighMask(baseMask,w,seedSalt){
+ // Каждый тип тоннеля проходит тот же сохранённый каскад 1 → 2 → 3 → 8,
+ // что и общий пол. Центральная полоса защищена, но края получают шум.
+ const empty=Array.from({length:w.baseRows},()=>Array(w.baseCols).fill(0));
+ const l1=flatFromGrid(baseMask);
+ const l2=cascadeStage(l1,2,w.seed^seedSalt,baseMask,empty,empty,w.baseCols,w.baseRows);
+ const l3=cascadeStage(l2,3,w.seed^seedSalt,baseMask,empty,empty,w.baseCols,w.baseRows);
+ const l8=cascadeStage(l3,8,w.seed^seedSalt,baseMask,empty,empty,w.baseCols,w.baseRows);
+ return l8.data;
+}
+function outerHash(x,y,seed){
+ let h=Math.imul((x|0)^0x9e3779b9,0x85ebca6b)^Math.imul((y|0)^0xc2b2ae35,0x27d4eb2f)^(seed|0);
+ h^=h>>>15;h=Math.imul(h,0x2c1b3c6d);h^=h>>>12;h=Math.imul(h,0x297a2d39);h^=h>>>15;
+ return (h>>>0)/4294967295;
+}
+function smoothOuterNoise(x,y,seed,scale){
+ const gx=x/scale,gy=y/scale,x0=Math.floor(gx),y0=Math.floor(gy),tx=gx-x0,ty=gy-y0;
+ const sm=t=>t*t*(3-2*t),sx=sm(tx),sy=sm(ty);
+ const a=outerHash(x0,y0,seed),b=outerHash(x0+1,y0,seed),c=outerHash(x0,y0+1,seed),d=outerHash(x0+1,y0+1,seed);
+ return (a+(b-a)*sx)+((c+(d-c)*sx)-(a+(b-a)*sx))*sy;
+}
+function outerFbm(x,y,seed,baseScale){
+ let sum=0,amp=.58,norm=0,scale=baseScale;
+ for(let o=0;o<4;o++){
+   sum+=smoothOuterNoise(x,y,seed+o*0x9e37,scale)*amp;
+   norm+=amp;amp*=.5;scale*=.5;
+ }
+ return sum/norm;
+}
+function outerWarp(x,y,seed,strength,scale){
+ const qx=outerFbm(x+37,y-19,seed^0x51a7,scale)-.5;
+ const qy=outerFbm(x-53,y+41,seed^0xa13d,scale)-.5;
+ return [x+qx*strength,y+qy*strength];
+}
+function outerSwirl(x,y,w){
+ // Несколько широких вихрей формируют туман как общий поток, а не набор круглых пятен.
+ let px=x,py=y;
+ for(const v of w.outerBiomes.vortices){
+   const dx=px-v.x,dy=py-v.y,d2=dx*dx+dy*dy,r=v.radius;
+   const influence=Math.exp(-d2/(r*r));
+   const a=v.spin*influence*(1.15+outerFbm(px,py,w.seed^v.salt,22)*1.1);
+   const ca=Math.cos(a),sa=Math.sin(a);
+   px=v.x+dx*ca-dy*sa;py=v.y+dx*sa+dy*ca;
+ }
+ return [px,py];
+}
+function buildOuterBiomeMap(w){
+ const W=w.baseCols,H=w.baseRows,mode=$('outerBiomeMode')?.value||'auto';
+ const actual=mode==='auto'?'mixed':mode;
+ const waterScore=new Float32Array(W*H),rockScore=new Float32Array(W*H),fogScore=new Float32Array(W*H),forestScore=new Float32Array(W*H);
+ const snowScore=new Float32Array(W*H),desertScore=new Float32Array(W*H);
+ const snowWaterScore=new Float32Array(W*H),snowRockScore=new Float32Array(W*H),snowForestScore=new Float32Array(W*H);
+ const vortices=[];
+ const fogClouds=[];
+ const vc=2+Math.floor(outerHash(91,17,w.seed)*3);
+ for(let i=0;i<vc;i++)vortices.push({
+   x:W*(.08+outerHash(i,201,w.seed)*.84),y:H*(.08+outerHash(i,301,w.seed)*.84),
+   radius:Math.min(W,H)*(.34+outerHash(i,401,w.seed)*.24),
+   spin:(outerHash(i,501,w.seed)<.5?-1:1)*(1.2+outerHash(i,601,w.seed)*2.0),salt:i*7919
+ });
+ // Отдельные крупные облачные массы, а не одна глобальная маска с отверстиями.
+ const cloudCount=4+Math.floor(outerHash(417,913,w.seed)*4);
+ for(let i=0;i<cloudCount;i++)fogClouds.push({
+   x:W*(.10+outerHash(i,1101,w.seed)*.80),y:H*(.10+outerHash(i,1201,w.seed)*.80),
+   rx:W*(.10+outerHash(i,1301,w.seed)*.13),ry:H*(.08+outerHash(i,1401,w.seed)*.12),
+   angle:outerHash(i,1501,w.seed)*Math.PI*2,salt:0x91e7+i*3571
+ });
+ w.outerBiomes={mode:actual,minSize:21,maxSize:45,vortices,fogClouds,waterScore,rockScore,fogScore,forestScore,snowScore,desertScore,snowWaterScore,snowRockScore,snowForestScore};
+ const snowVals=[],desertVals=[],fogVals=[];
+ const scaleMul=actual==='sectors'?1.35:.82;
+ for(let y=0;y<H;y++)for(let x=0;x<W;x++){
+   const i=y*W+x;
+   const [wx,wy]=outerWarp(x,y,w.seed^0x125a,22,26*scaleMul);
+   const [rx,ry]=outerWarp(x,y,w.seed^0x8c31,27,23*scaleMul);
+   const [tx,ty]=outerSwirl(x,y,w);
+   const [fx,fy]=outerWarp(x,y,w.seed^0x31f8,18,20*scaleMul);
+   // Вода: широкие искривлённые потоки и озёрные расширения.
+   const river=1-Math.min(1,Math.abs(outerFbm(wx*.72,wy*1.12,w.seed^0x77d1,25*scaleMul)-.5)*2.45);
+   const lake=outerFbm(wx+71,wy-39,w.seed^0x21b7,18*scaleMul);
+   waterScore[i]=river*.48+lake*.52;
+   // Горы: рваные складчатые гряды.
+   const ridge=1-Math.abs(outerFbm(rx,ry,w.seed^0x43ac,22*scaleMul)*2-1);
+   rockScore[i]=ridge*.72+outerFbm(rx*1.4,ry*.76,w.seed^0xa955,10*scaleMul)*.28;
+   // Туман: несколько самостоятельных больших облаков с вихревыми краями.
+   let cloud=-2;
+   for(const c of fogClouds){
+     const ca=Math.cos(c.angle),sa=Math.sin(c.angle),dx=tx-c.x,dy=ty-c.y;
+     const ex=(dx*ca+dy*sa)/c.rx,ey=(-dx*sa+dy*ca)/c.ry;
+     const d=Math.sqrt(ex*ex+ey*ey);
+     const edgeWarp=(outerFbm(tx+c.salt,ty-c.salt,w.seed^c.salt,38*scaleMul)-.5)*.72;
+     cloud=Math.max(cloud,1-d+edgeWarp);
+   }
+   const spiral=outerFbm(tx,ty,w.seed^0xf061,74*scaleMul);
+   const wisps=.5+.5*Math.sin(tx*.045+(outerFbm(tx,ty,w.seed^0x1d3b,42*scaleMul)-.5)*8.0);
+   fogScore[i]=cloud*.72+spiral*.19+wisps*.09;fogVals.push(fogScore[i]);
+   // Лес: разветвлённые массивы, не совпадающие с водой и горами.
+   const canopy=outerFbm(fx,fy,w.seed^0x6f31,19*scaleMul);
+   const branches=1-Math.abs(outerFbm(fx*1.22,fy*.88,w.seed^0x908d,11*scaleMul)*2-1);
+   forestScore[i]=canopy*.66+branches*.34;
+   // Климатические пояса — отдельное крупномасштабное поле.
+   const [cx,cy]=outerWarp(x,y,w.seed^0xc11a,30,45*scaleMul);
+   const snow=outerFbm(cx,cy,w.seed^0x5a0f,48*scaleMul)*.72+outerFbm(cx+90,cy-70,w.seed^0x711e,23*scaleMul)*.28;
+   const desert=outerFbm(cx-130,cy+80,w.seed^0xd35e,44*scaleMul)*.68+outerFbm(cx*1.1,cy*.8,w.seed^0xa221,21*scaleMul)*.32;
+   snowScore[i]=snow;desertScore[i]=desert;snowVals.push(snow);
+   snowWaterScore[i]=waterScore[i]*.72+outerFbm(wx-33,wy+51,w.seed^0xfee1,16)*.28;
+   snowRockScore[i]=rockScore[i]*.72+outerFbm(rx+47,ry-21,w.seed^0xfee2,15)*.28;
+   snowForestScore[i]=forestScore[i]*.72+outerFbm(fx-61,fy+29,w.seed^0xfee3,17)*.28;
+ }
+ // Снег занимает ровно около 30% базового поля.
+ snowVals.sort((a,b)=>a-b);
+ const snowCut=snowVals[Math.max(0,Math.floor(snowVals.length*.70))];
+ const remainingDesert=[];
+ for(let i=0;i<W*H;i++)if(snowScore[i]<snowCut)remainingDesert.push(desertScore[i]);
+ remainingDesert.sort((a,b)=>a-b);
+ // Пустыня занимает около 22% всей карты, не пересекая снежный пояс.
+ const desertPart=Math.max(0,1-(.22/.70));
+ const desertCut=remainingDesert[Math.max(0,Math.floor(remainingDesert.length*desertPart))];
+ fogVals.sort((a,b)=>a-b);
+ const fogCut=fogVals[Math.max(0,Math.floor(fogVals.length*.75))]; // около 25% карты: вдвое меньше прежнего
+ w.outerBiomes.snowCut=snowCut;w.outerBiomes.desertCut=desertCut;w.outerBiomes.fogCut=fogCut;
+}
+function sampleOuterScore(arr,w,hx,hy){
+ const F=8,W=w.baseCols,H=w.baseRows,gx=hx/F-.5,gy=hy/F-.5;
+ const x0=Math.floor(gx),y0=Math.floor(gy),tx=gx-x0,ty=gy-y0;
+ const at=(x,y)=>arr[Math.max(0,Math.min(H-1,y))*W+Math.max(0,Math.min(W-1,x))];
+ const a=at(x0,y0),b=at(x0+1,y0),c=at(x0,y0+1),d=at(x0+1,y0+1);
+ return (a+(b-a)*tx)+((c+(d-c)*tx)-(a+(b-a)*tx))*ty;
+}
+function smoothOuterBiomeBaseType(w,hx,hy){
+ const b=w.outerBiomes;
+ const edgeNoise=(outerFbm(hx,hy,w.seed^0x73a9d1,34)-.5)*.095;
+ const snow=sampleOuterScore(b.snowScore,w,hx,hy)+edgeNoise;
+ const desert=sampleOuterScore(b.desertScore,w,hx,hy)-edgeNoise*.55;
+ if(snow>=b.snowCut){
+   const sw=sampleOuterScore(b.snowWaterScore,w,hx,hy)+(outerFbm(hx+31,hy,w.seed^0x9111,19)-.5)*.08;
+   const sr=sampleOuterScore(b.snowRockScore,w,hx,hy)+(outerFbm(hx,hy+47,w.seed^0x9222,17)-.5)*.08;
+   const sf=sampleOuterScore(b.snowForestScore,w,hx,hy)+(outerFbm(hx-53,hy-21,w.seed^0x9333,21)-.5)*.08;
+   if(sw>=sr&&sw>=sf)return 5;
+   if(sr>=sf)return 6;
+   return 7;
+ }
+ if(desert>=b.desertCut)return 8;
+ let water=sampleOuterScore(b.waterScore,w,hx,hy),rock=sampleOuterScore(b.rockScore,w,hx,hy),forest=sampleOuterScore(b.forestScore,w,hx,hy);
+ const n=outerFbm(hx,hy,w.seed^0x44ad,18)-.5;
+ water+=n*.07+.005;rock-=n*.035+.018;forest-=n*.025-.235; // сильный приоритет: лес занимает примерно втрое больше площади
+ const scores=[water,rock,forest];
+ let typeIndex=0,best=scores[0];for(let i=1;i<3;i++)if(scores[i]>best){best=scores[i];typeIndex=i}
+ let second=-1,secondVal=-1e9;for(let i=0;i<3;i++)if(i!==typeIndex&&scores[i]>secondVal){secondVal=scores[i];second=i}
+ if(best-secondVal<.032&&outerHash(hx,hy,w.seed^0x91f3)<.22)typeIndex=second;
+ return [0,1,3][typeIndex];
+}
+function smoothOuterBiomeTypeNoFog(w,hx,hy){return smoothOuterBiomeBaseType(w,hx,hy)}
+function smoothOuterBiomeType(w,hx,hy){
+ const b=w.outerBiomes;
+ const fog=sampleOuterScore(b.fogScore,w,hx,hy)+(outerFbm(hx+91,hy-47,w.seed^0x193b,92)-.5)*.045;
+ // Туман — отдельная крупная маска поверх биомов. Медианный порог даёт около 50% покрытия.
+ if(fog>=b.fogCut)return 2;
+ return smoothOuterBiomeBaseType(w,hx,hy);
+}
+const ASSET_ROOT='https://raw.githubusercontent.com/JackofShadow666/GodgraveAssets/main/';
+const BIOME_ATLAS={image:null,canvas:null,ctx:null,data:null,ready:false,path:ASSET_ROOT+'Source/Env/Terrain/T_BiomTIle.png'};
+const GROUND_ATLASES={
+ B:{image:null,ready:false,path:ASSET_ROOT+'Source/Env/Terrain/TerrainAtlasB.png'},
+ D:{image:null,ready:false,path:ASSET_ROOT+'Source/Env/Terrain/TerrainAtlasD.png'}
+};
+const GROUND_ATLAS_COLS=6,GROUND_ATLAS_ROWS=11,GROUND_TILE_W=128,GROUND_TILE_H=64;
+const ISO_DENSITY=3;
+const GROUND_MATERIALS={
+ earth:{atlas:'B',col:0},clay:{atlas:'B',col:1},grass:{atlas:'B',col:3},stone:{atlas:'B',col:5},
+ swamp:{atlas:'D',col:0},road:{atlas:'D',col:4}
+};
+const groundDiamondCache=new Map(),recoloredGroundDiamondCache=new Map(),environmentDiamondCache=new Map();
+function groundAtlasesReady(){return GROUND_ATLASES.B.ready&&GROUND_ATLASES.D.ready}
+function updateTileButton(){
+ const b=$('tiles');if(!b)return;
+ b.classList.toggle('active',S.tileView&&groundAtlasesReady());
+ b.title=groundAtlasesReady()?(S.tileView?'Тайлы земли включены':'Тайлы земли выключены'):'Атласы земли загружаются';
+}
+function loadGroundAtlas(slot){
+ const target=GROUND_ATLASES[slot],img=new Image();img.crossOrigin='anonymous';
+ img.onload=()=>{target.image=img;target.ready=true;groundDiamondCache.clear();recoloredGroundDiamondCache.clear();updateTileButton();draw()};
+ img.onerror=()=>{target.image=null;target.ready=false;updateTileButton();console.error('Не загружен атлас земли:',target.path)};
+ img.src=target.path;
+}
+function getGroundDiamond(role,variant){
+ const def=GROUND_MATERIALS[role]||GROUND_MATERIALS.earth,target=GROUND_ATLASES[def.atlas];
+ if(!target.ready||!target.image)return null;
+ variant=((variant%GROUND_ATLAS_ROWS)+GROUND_ATLAS_ROWS)%GROUND_ATLAS_ROWS;
+ const key=def.atlas+'|'+def.col+'|'+variant;if(groundDiamondCache.has(key))return groundDiamondCache.get(key);
+ const c=document.createElement('canvas');c.width=GROUND_TILE_W;c.height=GROUND_TILE_H;const g=c.getContext('2d',{willReadFrequently:true});
+ const img=target.image,sx0=Math.round(def.col*img.width/GROUND_ATLAS_COLS),sx1=Math.round((def.col+1)*img.width/GROUND_ATLAS_COLS),sy0=Math.round(variant*img.height/GROUND_ATLAS_ROWS),sy1=Math.round((variant+1)*img.height/GROUND_ATLAS_ROWS);
+ g.drawImage(img,sx0,sy0,sx1-sx0,sy1-sy0,0,0,GROUND_TILE_W,GROUND_TILE_H);
+ // Та же очистка, что в основном Terrain Editor: удаляем только почти белый фон, связанный с краями.
+ const id=g.getImageData(0,0,GROUND_TILE_W,GROUND_TILE_H),p=id.data,seen=new Uint8Array(GROUND_TILE_W*GROUND_TILE_H),q=new Int32Array(GROUND_TILE_W*GROUND_TILE_H);let h=0,t=0;
+ const bg=i=>{const o=i*4,r=p[o],gg=p[o+1],b=p[o+2],mn=Math.min(r,gg,b),mx=Math.max(r,gg,b);return mn>=236&&mx-mn<=12};
+ const add=i=>{if(i<0||i>=seen.length||seen[i]||!bg(i))return;seen[i]=1;q[t++]=i};
+ for(let x=0;x<GROUND_TILE_W;x++){add(x);add((GROUND_TILE_H-1)*GROUND_TILE_W+x)}for(let y=1;y<GROUND_TILE_H-1;y++){add(y*GROUND_TILE_W);add(y*GROUND_TILE_W+GROUND_TILE_W-1)}
+ while(h<t){const i=q[h++],x=i%GROUND_TILE_W,y=(i/GROUND_TILE_W)|0;if(x) add(i-1);if(x+1<GROUND_TILE_W)add(i+1);if(y)add(i-GROUND_TILE_W);if(y+1<GROUND_TILE_H)add(i+GROUND_TILE_W)}
+ for(let i=0;i<seen.length;i++)if(seen[i])p[i*4+3]=0;g.putImageData(id,0,0);groundDiamondCache.set(key,c);return c;
+}
+function groundDiamondVariant(w,x,y){return Math.floor(outerHash(x,y,w.seed^0x6a09e667)*GROUND_ATLAS_ROWS)}
+function recolorCanvasPixels(source,rgb,outW=GROUND_TILE_W,outH=GROUND_TILE_H){
+ const c=document.createElement('canvas');c.width=outW;c.height=outH;const g=c.getContext('2d',{willReadFrequently:true});g.imageSmoothingEnabled=true;g.drawImage(source,0,0,outW,outH);const id=g.getImageData(0,0,outW,outH),p=id.data;
+ for(let i=0;i<p.length;i+=4){if(!p[i+3])continue;const lum=(p[i]*.299+p[i+1]*.587+p[i+2]*.114)/255,shade=.36+lum*.82;p[i]=Math.min(255,rgb[0]*shade);p[i+1]=Math.min(255,rgb[1]*shade);p[i+2]=Math.min(255,rgb[2]*shade)}g.putImageData(id,0,0);return c;
+}
+function getRecoloredGroundDiamond(role,variant,type){const key=role+'|'+variant+'|'+type;if(recoloredGroundDiamondCache.has(key))return recoloredGroundDiamondCache.get(key);const base=getGroundDiamond(role,variant)||getGroundDiamond('earth',variant);if(!base)return null;const pal=biomeTilePalette(type),tile=recolorCanvasPixels(base,pal[role]||pal.earth);recoloredGroundDiamondCache.set(key,tile);return tile}
+function getDisplayedGroundDiamond(role,variant,type){return $('recolorMissingTiles')?.checked?getRecoloredGroundDiamond(role,variant,type):getGroundDiamond(role,variant)}
+
+function getEnvironmentDiamond(type,variant){
+ if(!BIOME_ATLAS.ready||!BIOME_ATLAS.image)return null;
+ variant=((variant%GROUND_ATLAS_ROWS)+GROUND_ATLAS_ROWS)%GROUND_ATLAS_ROWS;
+ const key=type+'|'+variant;if(environmentDiamondCache.has(key))return environmentDiamondCache.get(key);
+ const img=BIOME_ATLAS.image,tw=Math.floor(img.naturalWidth/3),th=Math.floor(img.naturalHeight/3),cell=biomeAtlasCell(type);
+ const sx=cell[0]*tw+Math.floor((variant*37)%Math.max(1,tw-GROUND_TILE_W)),sy=cell[1]*th+Math.floor((variant*23)%Math.max(1,th-GROUND_TILE_H));
+ const c=document.createElement('canvas');c.width=GROUND_TILE_W;c.height=GROUND_TILE_H;const g=c.getContext('2d');
+ g.save();g.beginPath();g.moveTo(GROUND_TILE_W*.5,0);g.lineTo(GROUND_TILE_W,GROUND_TILE_H*.5);g.lineTo(GROUND_TILE_W*.5,GROUND_TILE_H);g.lineTo(0,GROUND_TILE_H*.5);g.closePath();g.clip();
+ g.drawImage(img,sx,sy,Math.min(GROUND_TILE_W,tw),Math.min(GROUND_TILE_H,th),0,0,GROUND_TILE_W,GROUND_TILE_H);
+ g.restore();environmentDiamondCache.set(key,c);return c;
 }
 
-function exportPng(){
-  const a = document.createElement('a');
-  a.download = `world-map-${$('seed').value || 'seed'}.png`;
-  a.href = canvas.toDataURL('image/png');
-  a.click();
+function baseCellCoverage(w,bx,by){
+ const factor=Math.max(1,Math.round(w.cols/w.baseCols));
+ let open=0,total=0;
+ for(let sy=0;sy<factor;sy++)for(let sx=0;sx<factor;sx++){
+   const x=bx*factor+sx,y=by*factor+sy;
+   if(y<w.rows&&x<w.cols){total++;if(w.floor?.[y]?.[x])open++}
+ }
+ return total?open/total:0;
+}
+function baseCellRoad(w,bx,by){
+ const factor=Math.max(1,Math.round(w.cols/w.baseCols));
+ for(let sy=0;sy<factor;sy++)for(let sx=0;sx<factor;sx++){
+   const x=bx*factor+sx,y=by*factor+sy;
+   if(w.connector?.[y]?.[x]||w.loopConnector?.[y]?.[x]||w.deadEnds?.[y]?.[x])return true;
+ }
+ return false;
+}
+function isoLayout(w){
+ const isoCols=w.baseCols*ISO_DENSITY,isoRows=w.baseRows*ISO_DENSITY;
+ const factor=w.cols/isoCols;
+ const diamondW=w.cell*Math.max(.25,factor),diamondH=diamondW*.5;
+ const isoWidth=(isoCols+isoRows)*diamondW*.5;
+ const isoHeight=(isoCols+isoRows)*diamondH*.5;
+ const mapWidth=w.cols*w.cell,mapHeight=w.rows*w.cell;
+ return{factor,isoCols,isoRows,diamondW,diamondH,isoWidth,isoHeight,originX:(mapWidth-isoWidth)*.5+(isoRows-1)*diamondW*.5,originY:(mapHeight-isoHeight)*.5};
+}
+function isoDiamondPoint(w,bx,by,l=isoLayout(w)){
+ const px=l.originX+(bx-by)*l.diamondW*.5,py=l.originY+(bx+by)*l.diamondH*.5;
+ return{x:px+l.diamondW*.5,y:py+l.diamondH*.5,px,py,...l};
+}
+function isoPoint(w,x,y){
+ const l=isoLayout(w),bx=x/w.cols*l.isoCols,by=y/w.rows*l.isoRows;
+ return{x:l.originX+(bx-by)*l.diamondW*.5+l.diamondW*.5,y:l.originY+(bx+by)*l.diamondH*.5+l.diamondH*.5};
+}
+function isoCellFloorPoint(w,x,y,l=isoLayout(w)){
+ return{x:Math.max(0,Math.min(w.cols-1,Math.floor((x+.5)*w.cols/l.isoCols))),y:Math.max(0,Math.min(w.rows-1,Math.floor((y+.5)*w.rows/l.isoRows)))};
+}
+function isoCellHighBounds(w,x,y,l=isoLayout(w)){
+ const hi=w.lodCascade?.[8],sx0=Math.floor(x*hi.w/l.isoCols),sx1=Math.max(sx0+1,Math.ceil((x+1)*hi.w/l.isoCols));
+ const sy0=Math.floor(y*hi.h/l.isoRows),sy1=Math.max(sy0+1,Math.ceil((y+1)*hi.h/l.isoRows));
+ return{hi,sx0:Math.max(0,sx0),sx1:Math.min(hi.w,sx1),sy0:Math.max(0,sy0),sy1:Math.min(hi.h,sy1)};
+}
+function isoCellCoverage(w,x,y,l=isoLayout(w)){
+ const b=isoCellHighBounds(w,x,y,l);let open=0,total=0;
+ for(let yy=b.sy0;yy<b.sy1;yy++)for(let xx=b.sx0;xx<b.sx1;xx++){total++;if(b.hi.data[yy*b.hi.w+xx])open++}
+ return total?open/total:0;
+}
+function isoCellRoad(w,x,y,l=isoLayout(w)){
+ const b=isoCellHighBounds(w,x,y,l),loop=w.highTypeMasks?.loop,conn=w.highTypeMasks?.connector,dead=w.highTypeMasks?.dead;
+ for(let yy=b.sy0;yy<b.sy1;yy++)for(let xx=b.sx0;xx<b.sx1;xx++){const i=yy*b.hi.w+xx;if(conn?.[i]||loop?.[i]||dead?.[i])return true}
+ return false;
+}
+function isoVisibleBounds(w,rc,l=isoLayout(w)){
+ const pad=6,left=(-S.panX/S.zoom)-l.diamondW,top=(-S.panY/S.zoom)-l.diamondH,right=(rc.width-S.panX)/S.zoom+l.diamondW,bottom=(rc.height-S.panY)/S.zoom+l.diamondH;
+ const inv=p=>{
+  const a=(p.x-l.originX-l.diamondW*.5)/(l.diamondW*.5),b=(p.y-l.originY-l.diamondH*.5)/(l.diamondH*.5);
+  return{x:(a+b)*.5,y:(b-a)*.5};
+ };
+ const pts=[inv({x:left,y:top}),inv({x:right,y:top}),inv({x:left,y:bottom}),inv({x:right,y:bottom})];
+ return{x0:Math.max(0,Math.floor(Math.min(...pts.map(p=>p.x))-pad)),x1:Math.min(l.isoCols,Math.ceil(Math.max(...pts.map(p=>p.x))+pad)),y0:Math.max(0,Math.floor(Math.min(...pts.map(p=>p.y))-pad)),y1:Math.min(l.isoRows,Math.ceil(Math.max(...pts.map(p=>p.y))+pad))};
+}
+function isoDiamondVisible(p,l,rc){
+ const left=S.panX+p.px*S.zoom,right=S.panX+(p.px+l.diamondW)*S.zoom,top=S.panY+p.py*S.zoom,bottom=S.panY+(p.py+l.diamondH)*S.zoom;
+ return right>=-32&&bottom>=-32&&left<=rc.width+32&&top<=rc.height+32;
+}
+function canvasPixelReader(canvas){
+ if(!canvas)return null;
+ const g=canvas.getContext('2d',{willReadFrequently:true}),id=g.getImageData(0,0,canvas.width,canvas.height).data;
+ return(x,y)=>{x=Math.max(0,Math.min(canvas.width-1,x|0));y=Math.max(0,Math.min(canvas.height-1,y|0));const p=(y*canvas.width+x)*4;return`rgba(${id[p]},${id[p+1]},${id[p+2]},${(id[p+3]/255).toFixed(3)})`};
+}
+function drawIsoDiamond(g,cx,cy,w,h,fill,stroke=null){
+ g.beginPath();g.moveTo(cx,cy-h*.5);g.lineTo(cx+w*.5,cy);g.lineTo(cx,cy+h*.5);g.lineTo(cx-w*.5,cy);g.closePath();
+ if(fill){g.fillStyle=fill;g.fill()}
+ if(stroke){g.strokeStyle=stroke;g.stroke()}
+}
+function drawIsoRasterLayer(g,w,source,alpha=1){
+ if(!source)return;
+ const l=isoLayout(w),pixel=canvasPixelReader(source);
+ g.save();g.globalAlpha=alpha;
+ for(let sum=0;sum<l.isoCols+l.isoRows-1;sum++){
+   const yMin=Math.max(0,sum-(l.isoCols-1)),yMax=Math.min(l.isoRows-1,sum);
+   for(let by=yMin;by<=yMax;by++){
+     const bx=sum-by,p=isoDiamondPoint(w,bx,by,l);
+     const sx=Math.min(source.width-1,Math.floor((bx+.5)*source.width/l.isoCols)),sy=Math.min(source.height-1,Math.floor((by+.5)*source.height/l.isoRows));
+     drawIsoDiamond(g,p.x,p.y,l.diamondW,l.diamondH,pixel(sx,sy));
+   }
+ }
+ g.restore();
+}
+function makeIsoRasterCanvas(w,source,alpha=1){
+ const l=isoLayout(w),c=document.createElement('canvas');c.width=Math.ceil(l.originX+l.isoWidth+l.diamondW);c.height=Math.ceil(l.originY+l.isoHeight+l.diamondH);
+ const g=c.getContext('2d',{alpha:true});drawIsoRasterLayer(g,w,source,alpha);return c;
+}
+function makeIsoTextureCanvas(w,source,alpha=1){
+ if(!source)return null;
+ const l=isoLayout(w),c=document.createElement('canvas');c.width=Math.ceil(l.originX+l.isoWidth+l.diamondW);c.height=Math.ceil(l.originY+l.isoHeight+l.diamondH);
+ const g=c.getContext('2d',{alpha:true});g.save();g.globalAlpha=alpha;g.imageSmoothingEnabled=false;
+ const a=l.isoCols/source.width*l.diamondW*.5,b=l.isoCols/source.width*l.diamondH*.5,cx=-l.isoRows/source.height*l.diamondW*.5,d=l.isoRows/source.height*l.diamondH*.5;
+ g.setTransform(a,b,cx,d,l.originX,l.originY);g.drawImage(source,0,0);g.restore();return c;
+}
+function makeIsoBoundaryCanvas(w){
+ const l=isoLayout(w),c=document.createElement('canvas');c.width=Math.ceil(l.originX+l.isoWidth+l.diamondW);c.height=Math.ceil(l.originY+l.isoHeight+l.diamondH);
+ const g=c.getContext('2d',{alpha:true}),ownerAt=(x,y)=>{const p=isoCellFloorPoint(w,x,y,l);return w.owner[p.y]?.[p.x]};
+ g.strokeStyle='rgba(255,255,255,.16)';g.lineWidth=.5;
+ for(let y=0;y<l.isoRows;y++)for(let x=0;x<l.isoCols;x++){const o=ownerAt(x,y),p=isoDiamondPoint(w,x,y,l);if(x+1<l.isoCols&&ownerAt(x+1,y)!==o){g.beginPath();g.moveTo(p.x,p.y-l.diamondH*.5);g.lineTo(p.x+l.diamondW*.5,p.y);g.stroke()}if(y+1<l.isoRows&&ownerAt(x,y+1)!==o){g.beginPath();g.moveTo(p.x+l.diamondW*.5,p.y);g.lineTo(p.x,p.y+l.diamondH*.5);g.stroke()}}
+ return c;
+}
+function rebuildIsoLayerCache(w){
+ w.isoBiomeCanvas=makeIsoTextureCanvas(w,w.biomeCanvas,1);
+ w.isoBiomeNoFogCanvas=makeIsoTextureCanvas(w,w.biomeNoFogCanvas,1);
+ w.isoColorGroundCanvas=makeIsoRasterCanvas(w,w.colorGroundCanvas,1);
+ w.isoTileGroundCanvas=makeIsoRasterCanvas(w,w.tileGroundCanvas,1);
+ w.isoGroundOutlineCanvas=makeIsoRasterCanvas(w,w.groundOutlineCanvas,1);
+ w.isoBoundaryCanvas=makeIsoBoundaryCanvas(w);
+}
+function isoCellBiomeSample(w,x,y,l=isoLayout(w)){
+ const b=isoCellHighBounds(w,x,y,l),counts=new Map();let fogVotes=0,total=0;
+ // Берём несколько точек внутри ромба и выбираем преобладающий биом. Такой же
+ // результат используют ПКМ, автораскраска и выбор материала тайла.
+ const nx=Math.max(1,Math.min(3,b.sx1-b.sx0)),ny=Math.max(1,Math.min(3,b.sy1-b.sy0));
+ let hx=0,hy=0;
+ for(let yy=0;yy<ny;yy++)for(let xx=0;xx<nx;xx++){
+   const sx=Math.max(0,Math.min(b.hi.w-1,Math.floor(b.sx0+(xx+.5)*(b.sx1-b.sx0)/nx)));
+   const sy=Math.max(0,Math.min(b.hi.h-1,Math.floor(b.sy0+(yy+.5)*(b.sy1-b.sy0)/ny)));
+   const type=smoothOuterBiomeTypeNoFog(w,sx,sy);counts.set(type,(counts.get(type)||0)+1);
+   if(smoothOuterBiomeType(w,sx,sy)===2)fogVotes++;hx+=sx;hy+=sy;total++;
+ }
+ let type=3,best=-1;for(const [k,v] of counts)if(v>best){best=v;type=k}
+ return {hx:Math.round(hx/Math.max(1,total)),hy:Math.round(hy/Math.max(1,total)),type,fog:fogVotes>total/2};
+}
+function drawZoomGroundDiamonds(g,w,rc){
+ const l=isoLayout(w),diamondW=l.diamondW,diamondH=l.diamondH;
+ if(!S.tileView||S.zoom<22||!groundAtlasesReady())return false;
+
+ const vb=isoVisibleBounds(w,rc,l);
+ let drawn=0;
+ g.save();g.imageSmoothingEnabled=true;g.imageSmoothingQuality='high';
+ for(let sum=vb.x0+vb.y0;sum<vb.x1+vb.y1-1;sum++){
+   const yMin=Math.max(vb.y0,sum-(vb.x1-1)),yMax=Math.min(vb.y1-1,sum-vb.x0);
+   for(let y=yMin;y<=yMax;y++){
+     const x=sum-y,coverage=isoCellCoverage(w,x,y,l);
+     if(coverage<.28)continue;
+     const sample=isoCellBiomeSample(w,x,y,l),hx=sample.hx,hy=sample.hy,type=sample.type,isRoad=isoCellRoad(w,x,y,l);
+     const role=groundTileRole(w,hx,hy,type,isRoad),tile=getDisplayedGroundDiamond(role,groundDiamondVariant(w,x,y),type);
+     if(!tile)continue;
+     const p=isoDiamondPoint(w,x,y,l),px=p.px,py=p.py;
+     if(!isoDiamondVisible(p,l,rc))continue;
+     g.globalAlpha=Math.min(1,.72+coverage*.38);
+     g.drawImage(tile,px,py,diamondW,diamondH);
+     drawn++;
+   }
+ }
+ g.globalAlpha=1;g.restore();return drawn>0;
+}
+function drawTileFillDebug(g,w){
+ if(!chk('debugTileFill'))return;
+ const l=isoLayout(w),diamondW=l.diamondW,diamondH=l.diamondH;
+ const rc=canvas.getBoundingClientRect(),visible=visibleBounds(w,w.cell,rc),vb=isoVisibleBounds(w,rc,l);
+ g.save();
+ g.globalCompositeOperation='source-over';
+ g.fillStyle='rgba(255,214,64,.35)';
+ const roadR=Math.max(1.2,2.2/S.zoom);
+ for(let y=visible.y0;y<visible.y1;y++)for(let x=visible.x0;x<visible.x1;x++){
+   if(w.connector?.[y]?.[x]||w.loopConnector?.[y]?.[x]||w.deadEnds?.[y]?.[x]){const p=isoPoint(w,x+.5,y+.5);g.beginPath();g.arc(p.x,p.y,roadR,0,Math.PI*2);g.fill()}
+ }
+ g.lineWidth=Math.max(.7,1.5/S.zoom);
+ for(let sum=vb.x0+vb.y0;sum<vb.x1+vb.y1-1;sum++){
+   const yMin=Math.max(vb.y0,sum-(vb.x1-1)),yMax=Math.min(vb.y1-1,sum-vb.x0);
+   for(let y=yMin;y<=yMax;y++){
+     const x=sum-y,coverage=isoCellCoverage(w,x,y,l);
+     if(coverage<.28)continue;
+     const road=isoCellRoad(w,x,y,l);
+     const p=isoDiamondPoint(w,x,y,l),cx=p.x,cy=p.y,px=p.px,py=p.py;
+     g.strokeStyle=road?'rgba(255,80,80,.95)':'rgba(80,220,255,.62)';
+     g.beginPath();g.moveTo(cx,py);g.lineTo(px+diamondW,cy);g.lineTo(cx,py+diamondH);g.lineTo(px,cy);g.closePath();g.stroke();
+     g.fillStyle=road?'rgba(255,64,64,.95)':'rgba(80,220,255,.9)';
+     const r=Math.max(1.4,3/S.zoom);
+     g.beginPath();g.arc(cx,cy,r,0,Math.PI*2);g.fill();
+   }
+ }
+ g.restore();
 }
 
-for(const color of palette){
-  const swatch = document.createElement('div');
-  swatch.className = 'swatch';
-  swatch.style.background = color;
-  $('palette').appendChild(swatch);
+
+let initialGenerationScheduled=false;
+function scheduleInitialGeneration(){
+ if(initialGenerationScheduled||S.world||!BIOME_ATLAS.ready)return;
+ initialGenerationScheduled=true;
+ const start=()=>{
+   requestAnimationFrame(()=>requestAnimationFrame(()=>{
+     setTimeout(()=>{
+       if(!S.world&&BIOME_ATLAS.ready)requestGenerate(false);
+     },60);
+   }));
+ };
+ if(document.readyState==='complete')start();else window.addEventListener('load',start,{once:true});
 }
-for(const id of controls){
-  $(id).addEventListener('input', () => { refreshLabels(); generate(); });
-  $(id).addEventListener('change', () => { refreshLabels(); generate(); });
+
+function loadBiomeAtlas(){
+ const img=new Image();
+ img.crossOrigin='anonymous';
+ img.onload=()=>{
+  const c=document.createElement('canvas');c.width=img.naturalWidth;c.height=img.naturalHeight;
+  const g=c.getContext('2d',{willReadFrequently:true});g.drawImage(img,0,0);
+  BIOME_ATLAS.image=img;BIOME_ATLAS.canvas=c;BIOME_ATLAS.ctx=g;
+  BIOME_ATLAS.data=g.getImageData(0,0,c.width,c.height);BIOME_ATLAS.ready=true;environmentDiamondCache.clear();
+  scheduleInitialGeneration();
+ };
+ img.onerror=()=>{
+  BIOME_ATLAS.ready=false;
+  console.error('Обязательный атлас биомов не загружен:',BIOME_ATLAS.path);
+  alert('Не удалось загрузить обязательный атлас биомов из GitHub RAW. Проверьте интернет и путь Source/Env/Terrain/T_BiomTIle.png');
+ };
+ img.src=BIOME_ATLAS.path;
 }
-$('generate').addEventListener('click', generate);
-$('randomSeed').addEventListener('click', () => {
-  $('seed').value = Math.random().toString(36).slice(2, 10);
-  generate();
-});
-$('exportPng').addEventListener('click', exportPng);
-refreshLabels();
-generate();
+function biomeAtlasCell(type){
+ // Сетка 3×3: лес, горы, снег / песок, вода, туман / резерв.
+ if(type===3)return [0,0];
+ if(type===1)return [1,0];
+ if(type===5||type===6||type===7)return [2,0];
+ if(type===8||type===9)return [0,1];
+ if(type===0)return [1,1];
+ if(type===2)return [2,1];
+ return [0,0];
+}
+function biomeAtlasPixel(type,x,y,w){
+ if(!BIOME_ATLAS.ready||!BIOME_ATLAS.data)return null;
+ const img=BIOME_ATLAS.data,tw=Math.floor(img.width/3),th=Math.floor(img.height/3);
+ const [cx,cy]=biomeAtlasCell(type);
+ // Один квадрат атласа покрывает крупный участок мира; повторение сдвинуто seed-ом.
+ const scale=0.3833333333; // текстура повторяется примерно в 3 раза чаще
+ const ox=((w.seed>>>3)%tw+tw)%tw,oy=((w.seed>>>11)%th+th)%th;
+ const sx=cx*tw+((Math.floor(x/scale)+ox)%tw+tw)%tw;
+ const sy=cy*th+((Math.floor(y/scale)+oy)%th+th)%th;
+ const p=(sy*img.width+sx)*4,d=img.data;
+ return [d[p],d[p+1],d[p+2],255];
+}
+function outerBiomePixel(type,x,y,w){
+ const atlas=biomeAtlasPixel(type,x,y,w);
+ if(!atlas)throw new Error('Атлас биомов ещё не загружен: '+BIOME_ATLAS.path);
+ return atlas;
+}
+
+function biomeTilePalette(type){
+ // Одинаковые игровые роли сохраняются во всех климатах, меняется только палитра.
+ const palettes={
+  0:{earth:[103,101,67],clay:[113,98,61],grass:[75,108,65],stone:[113,116,99],road:[129,116,82],swamp:[72,99,72]},
+  1:{earth:[83,82,79],clay:[102,88,77],grass:[72,83,72],stone:[117,119,120],road:[132,119,101],swamp:[61,68,64]},
+  2:{earth:[54,51,64],clay:[68,57,72],grass:[49,63,61],stone:[83,80,91],road:[104,91,91],swamp:[43,47,57]},
+  3:{earth:[64,73,43],clay:[92,67,43],grass:[48,103,48],stone:[93,96,79],road:[118,96,67],swamp:[39,72,48]},
+  5:{earth:[104,137,155],clay:[112,139,151],grass:[88,146,148],stone:[139,166,181],road:[143,163,170],swamp:[55,127,173]},
+  6:{earth:[126,131,137],clay:[141,133,130],grass:[117,137,127],stone:[169,174,181],road:[181,171,155],swamp:[103,118,123]},
+  7:{earth:[111,128,112],clay:[132,119,105],grass:[96,147,105],stone:[145,151,143],road:[162,148,126],swamp:[82,116,101]},
+  8:{earth:[151,113,58],clay:[168,94,54],grass:[147,122,67],stone:[151,132,105],road:[183,142,83],swamp:[131,101,61]},
+  9:{earth:[112,83,57],clay:[132,76,50],grass:[105,91,62],stone:[131,116,99],road:[153,114,72],swamp:[94,74,58]}
+ };
+ return palettes[type]||palettes[3];
+}
+const BIOME_MATERIAL_PROFILES={
+ // Все профили обязательно содержат землю, траву и камень. Дополнительные роли
+ // создают климатический характер, но не заменяют базовые материалы целиком.
+ 0:{earth:.34,grass:.27,stone:.14,swamp:.25},       // озеро: болотная почва и растительность
+ 1:{earth:.24,grass:.14,stone:.56,clay:.06},       // скалы
+ 2:{earth:.38,grass:.24,stone:.22,swamp:.16},      // туман наследует нейтральную влажную землю
+ 3:{earth:.25,grass:.58,stone:.14,swamp:.03},      // лес
+ 5:{earth:.30,grass:.25,stone:.18,swamp:.27},      // снежное озеро
+ 6:{earth:.20,grass:.12,stone:.62,clay:.06},       // снежные скалы
+ 7:{earth:.25,grass:.50,stone:.22,swamp:.03},      // снежный лес
+ 8:{earth:.28,grass:.08,stone:.18,clay:.46},       // пустыня
+ 9:{earth:.34,grass:.14,stone:.20,clay:.32}
+};
+function materialNoise(w,x,y,salt,scale){return outerFbm(x,y,w.seed^salt,scale)}
+function smoothMaterialField(w,x,y,role){
+ const salts={earth:0x6a09e6,grass:0x7dea11,stone:0x51f15e,swamp:0x19c0aa,clay:0xc1a7aa};
+ const baseSalt=salts[role]??0xabc983;
+ const warpX=(outerFbm(x+113,y-71,w.seed^(baseSalt+0x101),96)-.5)*26;
+ const warpY=(outerFbm(x-59,y+137,w.seed^(baseSalt+0x202),88)-.5)*26;
+ const broad=outerFbm(x+warpX,y+warpY,w.seed^baseSalt,72);
+ const mid=outerFbm(x*.75+warpY*.2,y*.75-warpX*.2,w.seed^(baseSalt+0x303),31);
+ const ridge=1-Math.abs(outerFbm(x+warpX*.55,y+warpY*.55,w.seed^(baseSalt+0x404),44)*2-1);
+ return broad*.55+mid*.30+ridge*.15;
+}
+function groundTileRole(w,x,y,type,isRoad){
+ if(isRoad)return 'road';
+ const profile=BIOME_MATERIAL_PROFILES[type]||BIOME_MATERIAL_PROFILES[3];
+ const roles=Object.entries(profile);
+ let best=roles[0][0],bestScore=-Infinity,total=0;
+ for(const v of Object.values(profile))total+=v;
+ const dominance=Object.fromEntries(roles.map(([role,weight])=>[role,weight/Math.max(.0001,total)]));
+ for(const [role,weight] of roles){
+   const field=smoothMaterialField(w,x,y,role);
+   const bias=Math.log(Math.max(.025,weight/Math.max(.0001,total)))*.18;
+   const rareBoost=(dominance[role]<.12?0.035:0);
+   const score=field+bias+rareBoost;
+   if(score>bestScore){bestScore=score;best=role}
+ }
+ return best;
+}
+function groundTilePixel(w,type,role,x,y,bx,by){
+ const pal=biomeTilePalette(type),base=pal[role];
+ const grain=outerHash(x,y,w.seed^0x91a725),micro=outerFbm(x,y,w.seed^0x64da13,7);
+ const lx=x&7,ly=y&7;
+ let shade=(grain-.5)*12+(micro-.5)*9;
+ // Рисунок остаётся тайловым, но не превращает клетки в одноцветные квадраты.
+ if(lx===0||ly===0)shade-=4;
+ if(role==='grass'&&((lx+ly+bx*3)%7===0))shade+=13;
+ if(role==='clay'&&Math.abs(Math.sin((x-y)*.45))>.88)shade-=10;
+ if(role==='stone'&&((lx*3+ly*5+bx+by)%11===0))shade+=18;
+ if(role==='road'){
+   shade+=Math.sin((lx+ly*.45)*1.2)*5;
+   if(lx===1||lx===6)shade-=3;
+ }
+ if(role==='swamp'&&((lx+ly*2)%9===0))shade+=10;
+ return [
+  Math.max(0,Math.min(255,Math.round(base[0]+shade))),
+  Math.max(0,Math.min(255,Math.round(base[1]+shade))),
+  Math.max(0,Math.min(255,Math.round(base[2]+shade)))
+ ];
+}
+
+function buildLodCanvases(w){
+ const hi=w.lodCascade[8],F=8;
+ buildOuterBiomeMap(w);
+ const hiLoop=buildTypedHighMask(w.loopConnector,w,0x51f15e);
+ const hiConn=buildTypedHighMask(w.connector,w,0x19c0aa);
+ const hiDead=buildTypedHighMask(w.deadEnds,w,0x7dea11);
+ for(let i=0;i<hi.data.length;i++)if(hiLoop[i]||hiConn[i]||hiDead[i])hi.data[i]=1;
+ w.highTypeMasks={loop:hiLoop,connector:hiConn,dead:hiDead};
+ const biomeImg=new ImageData(hi.w,hi.h),biomeNoFogImg=new ImageData(hi.w,hi.h);
+ const colorGroundImg=new ImageData(hi.w,hi.h),tileGroundImg=new ImageData(hi.w,hi.h),outlineImg=new ImageData(hi.w,hi.h);
+ const bp=biomeImg.data,np=biomeNoFogImg.data,cp=colorGroundImg.data,tp=tileGroundImg.data,op=outlineImg.data;
+ for(let y=0;y<hi.h;y++)for(let x=0;x<hi.w;x++){
+   const i=y*hi.w+x,p=i*4,bx=Math.min(w.baseCols-1,Math.floor(x/F)),by=Math.min(w.baseRows-1,Math.floor(y/F));
+   const type=smoothOuterBiomeType(w,x,y),baseType=smoothOuterBiomeTypeNoFog(w,x,y);
+   const c=outerBiomePixel(type,x,y,w),n=outerBiomePixel(baseType,x,y,w);
+   bp[p]=c[0];bp[p+1]=c[1];bp[p+2]=c[2];bp[p+3]=255;
+   np[p]=n[0];np[p+1]=n[1];np[p+2]=n[2];np[p+3]=255;
+   if(!hi.data[i])continue;
+   let color=[75,80,83];
+   if(hiDead[i])color=[208,108,139];
+   else if(hiLoop[i])color=[255,43,214];
+   else if(hiConn[i])color=[169,143,104];
+   else {
+     const a=algos.find(v=>v.id===w.seeds[w.owner[by]?.[bx]]?.algo)||algos[0];
+     const m=/^#([0-9a-f]{6})$/i.exec(a.color);if(m){const q=parseInt(m[1],16);color=[q>>16,(q>>8)&255,q&255]}
+   }
+   cp[p]=color[0];cp[p+1]=color[1];cp[p+2]=color[2];cp[p+3]=255;
+   const groundBiome=smoothOuterBiomeTypeNoFog(w,x,y);
+   const isRoad=!!(hiConn[i]||hiLoop[i]||hiDead[i]||w.connector?.[by]?.[bx]||w.loopConnector?.[by]?.[bx]);
+   const role=groundTileRole(w,x,y,groundBiome,isRoad),tc=groundTilePixel(w,groundBiome,role,x,y,bx,by);
+   tp[p]=tc[0];tp[p+1]=tc[1];tp[p+2]=tc[2];tp[p+3]=255;
+ }
+ // Отдельная тёмная обводка снаружи проходимой земли. Прозрачность управляется ползунком.
+ const hat=(x,y)=>x>=0&&y>=0&&x<hi.w&&y<hi.h?hi.data[y*hi.w+x]:0;
+ for(let y=0;y<hi.h;y++)for(let x=0;x<hi.w;x++){
+   const i=y*hi.w+x;if(hi.data[i])continue;
+   let near=false;for(let oy=-2;oy<=2&&!near;oy++)for(let ox=-2;ox<=2;ox++)if(ox*ox+oy*oy<=4&&hat(x+ox,y+oy)){near=true;break}
+   if(near){const p=i*4;op[p]=12;op[p+1]=15;op[p+2]=17;op[p+3]=255}
+ }
+ const makeCanvas=(img,alpha=true)=>{const c=document.createElement('canvas');c.width=hi.w;c.height=hi.h;const g=c.getContext('2d',{alpha});if(!alpha){g.fillStyle='#020304';g.fillRect(0,0,c.width,c.height)}g.putImageData(img,0,0);return c};
+ w.biomeCanvas=makeCanvas(biomeImg,false);
+ w.biomeNoFogCanvas=makeCanvas(biomeNoFogImg,false);
+ // Отдельная детализация окружения: не увеличивает число ромбов и не влияет на
+ // производительность зума земли. Она лишь подчёркивает фактуру исходного RAW-атласа.
+ for(const c of [w.biomeCanvas,w.biomeNoFogCanvas]){const g=c.getContext('2d');g.save();g.globalCompositeOperation='soft-light';g.globalAlpha=.14;g.drawImage(c,1,0);g.drawImage(c,-1,1);g.restore()}
+ w.colorGroundCanvas=makeCanvas(colorGroundImg,true);
+ w.tileGroundCanvas=makeCanvas(tileGroundImg,true);
+ w.groundOutlineCanvas=makeCanvas(outlineImg,true);
+ // Совместимые готовые композиции для экспорта и старых обработчиков.
+ const compose=(ground)=>{const c=document.createElement('canvas');c.width=hi.w;c.height=hi.h;const g=c.getContext('2d',{alpha:false});g.drawImage(w.biomeCanvas,0,0);g.drawImage(ground,0,0);return c};
+ w.lodCanvases={8:compose(w.colorGroundCanvas)};w.tileCanvases={8:compose(w.tileGroundCanvas)};
+}
+
+function weightedAlgorithm(r){
+ // Основа карты: цепочки овальных камер. Остальные методы — редкие акценты.
+ const table=[
+  ['walk',64],['rooms',20],['ca',5],['maze',4],['bsp',5],['cross',2]
+ ];
+ let roll=r()*100;
+ for(const [id,weight] of table){roll-=weight;if(roll<0)return id}
+ return 'walk';
+}
+
+function addPeripheralMegaCellularAutomata(floor,owner,seeds,stats,cols,rows,mapMargin,r){
+ // Два крупных клеточных автомата размером 40–70 клеток.
+ // Каждый комплекс собирается из перекрывающихся овальных CA-пятен,
+ // поэтому общий силуэт не превращается в круг или квадрат.
+ const centers=[];
+ const sectors=[0,1,2,3]; // левая, правая, верхняя и нижняя периферия
+ // Выбираем разные стороны карты, предпочтительно противоположные.
+ const first=ir(0,3,r),opposite=(first+2)%4;
+ const second=r()<.72?opposite:sectors.filter(v=>v!==first)[ir(0,2,r)];
+ const chosen=[first,second];
+
+ for(let i=0;i<2;i++){
+   const requested=ir(40,70,r);
+   const side=Math.max(24,Math.min(requested,cols-mapMargin*2-4,rows-mapMargin*2-4));
+   if(side<24)continue;
+   const half=side/2;
+   // Безопасная граница учитывает полный размер комплекса и добавочный зазор.
+   const safeX=mapMargin+half+3,safeY=mapMargin+half+3;
+   const maxX=cols-mapMargin-half-4,maxY=rows-mapMargin-half-4;
+   if(maxX<=safeX||maxY<=safeY)continue;
+
+   let p=null;
+   for(let attempt=0;attempt<140;attempt++){
+     const sector=chosen[i];
+     let x,y;
+     if(sector===0){
+       x=range(safeX,Math.min(maxX,cols*.30),r);y=range(safeY,maxY,r);
+     }else if(sector===1){
+       x=range(Math.max(safeX,cols*.70),maxX,r);y=range(safeY,maxY,r);
+     }else if(sector===2){
+       x=range(safeX,maxX,r);y=range(safeY,Math.min(maxY,rows*.30),r);
+     }else{
+       x=range(safeX,maxX,r);y=range(Math.max(safeY,rows*.70),maxY,r);
+     }
+     const q={x:Math.round(x),y:Math.round(y)};
+     if(!centers.length||centers.every(v=>Math.hypot(v.x-q.x,v.y-q.y)>=(v.side+side)*.48)){p=q;break}
+   }
+   if(!p){
+     const sector=chosen[i];
+     p={
+       x:Math.round(sector===0?safeX:sector===1?maxX:(safeX+maxX)/2),
+       y:Math.round(sector===2?safeY:sector===3?maxY:(safeY+maxY)/2)
+     };
+   }
+   centers.push({...p,side});
+
+   const local=Array.from({length:side},()=>Array(side).fill(0));
+   const ovalCount=ir(5,9,r);
+   const baseAngle=r()*Math.PI*2;
+   // Центральное продолговатое пятно связывает все остальные овалы.
+   cellularPatch(local,side/2,side/2,side*range(.58,.78,r),side*range(.35,.55,r),r,true);
+   for(let k=0;k<ovalCount;k++){
+     const t=ovalCount===1?0:k/(ovalCount-1)-.5;
+     const bend=Math.sin(t*Math.PI)*side*range(.04,.13,r);
+     const along=t*side*range(.48,.68,r);
+     const across=bend+range(-side*.075,side*.075,r);
+     const ca=Math.cos(baseAngle),sa=Math.sin(baseAngle);
+     const ox=along*ca-across*sa,oy=along*sa+across*ca;
+     const pw=side*range(.27,.48,r),ph=side*range(.20,.39,r);
+     cellularPatch(local,side/2+ox,side/2+oy,pw,ph,r,k%3===0);
+   }
+   // Несколько боковых овалов создают лопасти и не дают форме стать одной каплей.
+   for(let k=0;k<ir(2,4,r);k++){
+     const a=baseAngle+(k%2?1:-1)*range(.75,1.35,r);
+     const d=side*range(.12,.27,r);
+     cellularPatch(local,side/2+Math.cos(a)*d,side/2+Math.sin(a)*d,side*range(.24,.40,r),side*range(.18,.34,r),r,false);
+   }
+   const shaped=finalizeRegion(smoothMask(local,1),'ca',r);
+   const seedIndex=seeds.length;
+   seeds.push({x:p.x,y:p.y,targetSize:requested,algo:'ca',forcedPeripheral:true,compoundOvals:true});
+   const cells=[];let sx=0,sy=0;
+   const ox=Math.round(p.x-side/2),oy=Math.round(p.y-side/2);
+   for(let ly=0;ly<side;ly++)for(let lx=0;lx<side;lx++)if(shaped[ly][lx]){
+     const x=ox+lx,y=oy+ly;
+     if(x<=mapMargin||y<=mapMargin||x>=cols-mapMargin-1||y>=rows-mapMargin-1)continue;
+     floor[y][x]=1;owner[y][x]=seedIndex;cells.push({x,y});sx+=x;sy+=y;
+   }
+   if(cells.length)stats.push({i:seedIndex,algo:'ca',open:cells.length,cells,center:{x:sx/cells.length,y:sy/cells.length},forcedPeripheral:true,compoundOvals:true});
+ }
+ return centers.length;
+}
+
+function generate(preserveCamera=false){
+ setLoading(true,'Подготовка');
+ try{
+ const perfStart=performance.now(),perfMarks=[],mark=name=>{const now=performance.now();perfMarks.push({name,ms:now-(perfMarks.length?perfMarks[perfMarks.length-1].at:perfStart),at:now});setLoading(true,name)};
+ const view=preserveCamera&&S.world?captureView():null;
+ const seed=num('seed')|0,r=rng32(seed),cols=Math.max(60,num('cols')|0),rows=Math.max(50,num('rows')|0),count=ir(num('regionsMin'),num('regionsMax'),r);
+ const owner=Array.from({length:rows},()=>Array(cols).fill(-1)),floor=Array.from({length:rows},()=>Array(cols).fill(0)),connector=Array.from({length:rows},()=>Array(cols).fill(0)),loopConnector=Array.from({length:rows},()=>Array(cols).fill(0)),deadEnds=Array.from({length:rows},()=>Array(cols).fill(0)),seeds=[];
+ const minSeedDistance=Math.max(5,num('regionMin')|0),mapMargin=Math.max(18,Math.ceil(minSeedDistance*2.2));
+ let ovalChainIndex=0;
+ for(let i=0;i<count;i++){
+   let candidate=null;
+   for(let attempt=0;attempt<180;attempt++){
+     const q={x:ir(mapMargin,cols-mapMargin-1,r),y:ir(mapMargin,rows-mapMargin-1,r)};
+     if(seeds.every(s=>Math.hypot(s.x-q.x,s.y-q.y)>=minSeedDistance)){candidate=q;break}
+   }
+   if(!candidate)candidate={x:ir(mapMargin,cols-mapMargin-1,r),y:ir(mapMargin,rows-mapMargin-1,r)};
+   const sizeLo=Math.max(6,num('regionSizeMin')|0),sizeHi=Math.max(sizeLo,num('regionSizeMax')|0);
+   let algo=chk('mix')?weightedAlgorithm(r):$('single').value;
+   // В смешанном режиме считаются только цепочки овальных камер.
+   // Каждая четвёртая такая цепочка заменяется клеточным автоматом.
+   if(chk('mix')&&algo==='walk'){
+     ovalChainIndex++;
+     if(ovalChainIndex%4===0)algo='ca';
+   }
+   seeds.push({...candidate,targetSize:ir(sizeLo,sizeHi,r),algo});
+ }
+ for(let y=0;y<rows;y++)for(let x=0;x<cols;x++){let bi=0,bd=1e20;for(let i=0;i<seeds.length;i++){const s=seeds[i],scale=.58+1.15*((s.targetSize-10)/45),d=((x-s.x)**2+(y-s.y)**2*.82)/(scale*scale);if(d<bd){bd=d;bi=i}}owner[y][x]=bi}
+ const envelope=buildOrganicRegionEnvelope(owner,seeds,mapMargin,seed);
+ const boxes=seeds.map(()=>({x1:cols,y1:rows,x2:0,y2:0}));
+ for(let y=0;y<rows;y++)for(let x=0;x<cols;x++){const b=boxes[owner[y][x]];b.x1=Math.min(b.x1,x);b.y1=Math.min(b.y1,y);b.x2=Math.max(b.x2,x);b.y2=Math.max(b.y2,y)}
+ mark('Размещение регионов и поле владельцев');
+ const stats=[];
+ for(let i=0;i<seeds.length;i++){
+   const b=boxes[i],bw=b.x2-b.x1+1,bh=b.y2-b.y1+1;if(bw<7||bh<7)continue;
+   // Генерируем с внутренним запасом: форма не упирается в прямоугольную границу Voronoi-региона.
+   const margin=Math.max(4,Math.min(10,Math.floor(Math.min(bw,bh)*.20)));
+   const w=bw-margin*2,h=bh-margin*2;if(w<4||h<4)continue;
+   let local=makeRegionMask(w,h,seeds[i].algo,r),localDead=ACTIVE_DEAD_MASK;
+   const balance=Math.max(0,Math.min(100,num('scaleBalance')||0))/100;
+   const scaled=scaleLocalGeneration(local,localDead,.86+balance*.72);local=scaled.mask;localDead=scaled.deadMask;
+   const pasted=copyRegionWithFeather(local,localDead,floor,deadEnds,owner,envelope,i,b,margin,r);
+   const cells=pasted.cells,sx=pasted.sx,sy=pasted.sy;
+   if(!cells.length)continue;
+   stats.push({i,algo:seeds[i].algo,open:cells.length,cells,center:{x:sx/cells.length,y:sy/cells.length}});
+ }
+ mark('Генерация локальных форм');
+ // Два обязательных больших клеточных автомата 40–70 клеток ближе к периферии.
+ // Их общая форма собирается из перекрывающихся овальных CA-пятен.
+ addPeripheralMegaCellularAutomata(floor,owner,seeds,stats,cols,rows,mapMargin,r);
+ // Соединяем открытые области минимальным остовным деревом. Тоннель — цепочка смещённых кругляшей.
+ let connections=0,loopConnections=0,connectorBranches=0;
+ if(stats.length>1){
+   const used=new Set([0]);
+   while(used.size<stats.length){
+     let best=null,bd=Infinity;
+     for(const ai of used)for(let bi=0;bi<stats.length;bi++)if(!used.has(bi)){
+       const a=stats[ai].center,b=stats[bi].center,d=(a.x-b.x)**2+(a.y-b.y)**2;
+       if(d<bd){bd=d;best=[ai,bi]}
+     }
+     if(!best)break;
+     const [ai,bi]=best,pair=nearestOpenPair(stats[ai].cells,stats[bi].cells);
+     if(pair){connectorCurve(floor,connector,pair[0],pair[1],r);connections++}
+     used.add(bi);
+   }
+   // Дополнительные редкие связи создают кольцевые маршруты, а не линейное дерево.
+   const existing=new Set();
+   const candidates=[];
+   for(let i=0;i<stats.length;i++)for(let j=i+1;j<stats.length;j++){
+     const dx=stats[i].center.x-stats[j].center.x,dy=stats[i].center.y-stats[j].center.y,dist=Math.hypot(dx,dy);
+     if(dist<Math.max(cols,rows)*.38)candidates.push({i,j,dist,score:dist*range(.75,1.25,r)});
+   }
+   candidates.sort((a,b)=>a.score-b.score);
+   const loopTarget=Math.min(Math.max(2,Math.floor(stats.length/3.5)),8);
+   for(const q of candidates){
+     if(loopConnections>=loopTarget)break;
+     if(r()>.48)continue;
+     const pair=nearestOpenPair(stats[q.i].cells,stats[q.j].cells);
+     if(!pair)continue;
+     const direct=Math.hypot(pair[0].x-pair[1].x,pair[0].y-pair[1].y);
+     if(direct<8||direct>Math.max(cols,rows)*.30)continue;
+     const start=nearestMaskPoint(connector,pair[0],22)||pair[0],end=nearestMaskPoint(connector,pair[1],22)||pair[1];
+     if(Math.hypot(start.x-end.x,start.y-end.y)<8)continue;
+     const avoid=connector.map((row,y)=>row.map((v,x)=>v||loopConnector[y][x]));
+     if(loopConnectorCurve(floor,loopConnector,avoid,start,end,r,maskTangent(connector,start),maskTangent(connector,end)))loopConnections++;
+   }
+   // Ветвей примерно вдвое больше; длинная сеть тоннелей получает больше ответвлений.
+   let connectorCells=0;for(const row of connector)for(const v of row)connectorCells+=v;
+   const branchMax=Math.max(2,Math.min(14,Math.ceil(connectorCells/70)*2));
+   connectorBranches=addDeadEndBranches(connector,Math.floor(branchMax*.45),branchMax,r,deadEnds);
+   for(let y=0;y<rows;y++)for(let x=0;x<cols;x++){if(connector[y][x]||loopConnector[y][x])floor[y][x]=1;if(deadEnds[y][x])floor[y][x]=1}
+ }
+ mark('Соединительные, кольцевые и боковые тоннели');
+ clearMapBorder(floor,connector,loopConnector,deadEnds,owner,mapMargin);
+ removeDisconnectedDeadEnds(floor,deadEnds);
+ // Финальная проверка всей карты: ни одна область не должна остаться изолированной.
+ connections+=ensureSingleConnectedFloor(floor,connector,r);
+ clearMapBorder(floor,connector,loopConnector,deadEnds,owner,mapMargin);
+ connections+=ensureSingleConnectedFloor(floor,connector,r);
+ for(let y=0;y<rows;y++)for(let x=0;x<cols;x++)if(connector[y][x]||loopConnector[y][x])floor[y][x]=1;
+ removeDisconnectedDeadEnds(floor,deadEnds);
+ resolveDiagonalTouches(floor,connector,loopConnector,deadEnds);
+ mark('Проверка связности и ремонт геометрии');
+ const refined=refineWorld(floor,connector,loopConnector,deadEnds,owner,1,seed);
+ let open=0,deadOpen=0;for(let y=0;y<refined.floor.length;y++)for(let x=0;x<refined.floor[0].length;x++){open+=refined.floor[y][x];deadOpen+=refined.deadEnds[y][x]}
+ S.world={seed,cols:refined.floor[0].length,rows:refined.floor.length,baseCols:cols,baseRows:rows,cell:num('cell')/refined.factor,floor:refined.floor,connector:refined.connector,loopConnector:refined.loopConnector,deadEnds:refined.deadEnds,owner:refined.owner,seeds,stats,open,deadOpen,detail:8,connections,loopConnections,connectorBranches};mark('Финальное уточнение LOD 8');buildCascadeLOD(S.world);rebuildIsoLayerCache(S.world);mark('Биомы, текстуры и iso-пререндер');S.routes=null;if(S.routesVisible){S.routes=buildRouteNetwork(S.world);mark('Расчёт маршрутов')}const total=performance.now()-perfStart;const timings=perfMarks.map(({name,ms})=>({name,ms}));const longest=timings.reduce((a,b)=>!a||b.ms>a.ms?b:a,null);S.lastPerformance={total,timings,longest,generatedAt:new Date()};if(view)restoreView(view);else fit();updateStats();draw();buildLegend();setLoading(false)
+ }catch(err){setLoading(true,'Ошибка генерации');throw err}
+}
+function buildLegend(){
+ const items=[];
+ if(!chk('terrainGroundMode')){
+   const used=new Set((S.world?.stats||[]).map(s=>s.algo));
+   for(const a of algos.filter(a=>used.has(a.id)))items.push(`<div><b><span class="dot" style="background:${a.color}"></span>${a.name}</b>${a.desc}</div>`);
+   if(S.world?.connections)items.push(`<div><b><span class="dot" style="background:#a98f68"></span>Соединительные тоннели</b>тип генерации проходов</div>`);
+   if(S.world?.loopConnections)items.push(`<div><b><span class="dot" style="background:#ff2bd6"></span>Кольцевые тоннели</b>обходные связи</div>`);
+   if(S.world?.deadOpen)items.push(`<div><b><span class="dot" style="background:#d06c8b"></span>Тупиковые ответвления</b>тонкие боковые ветви</div>`);
+ }else{
+   const defs=[[0,'Озеро'],[1,'Скалы'],[3,'Лес'],[5,'Снежное озеро'],[6,'Снежные скалы'],[7,'Снежный лес'],[8,'Пустыня']];
+   const roleNames={earth:'земля',grass:'трава',stone:'камень',clay:'глина',swamp:'болотная почва',road:'дорога'};
+   for(const [type,name] of defs){const p=biomeTilePalette(type),profile=BIOME_MATERIAL_PROFILES[type]||BIOME_MATERIAL_PROFILES[3],dominant=Object.entries(profile).sort((a,b)=>b[1]-a[1])[0][0],c=p[dominant]||p.earth;const mix=Object.entries(profile).sort((a,b)=>b[1]-a[1]).map(([r,v])=>roleNames[r]+' '+Math.round(v*100)+'%').join(' · ');items.push(`<div><b><span class="dot" style="background:rgb(${c.join(',')})"></span>${name}</b>${mix}</div>`)}
+   items.push(`<div><b><span class="dot" style="background:#262334"></span>Туман войны</b>внешняя скрывающая маска</div>`);
+ }
+ $('legend').innerHTML=items.join('');
+}
+function updateStats(){
+ const w=S.world,used=new Set(w.stats.map(s=>s.algo)),perf=S.lastPerformance;
+ const l=isoLayout(w),screenCell=S.zoom,tileFrom=22;
+ const tileStatus=!S.tileView?'выключены':(groundAtlasesReady()?(screenCell>=tileFrom?'ромбы активны':'авто: ждут zoom'):'атласы загружаются');
+ const perfHtml=perf?`<br><br><b>Загрузка карты</b><br>Всего: ${perf.total.toFixed(1)} мс<br>Самый долгий этап: ${perf.longest?perf.longest.name+' — '+perf.longest.ms.toFixed(1)+' мс':'—'}<br>${perf.timings.map(t=>`${t.name}: ${t.ms.toFixed(1)} мс`).join('<br>')}`:'';
+ $('stats').innerHTML=`Регионов: ${w.stats.length}<br>Клеток земли: ${w.open}<br>Алгоритмов: ${used.size}<br>Соединений дерева: ${w.connections||0}<br>Кольцевых связей: ${w.loopConnections||0}<br>Тупиков от тоннелей: ${w.connectorBranches||0}<br>Клеток тупиков: ${w.deadOpen||0}<br>Размеры регионов: ${Math.min(...w.seeds.map(s=>s.targetSize||0))}–${Math.max(...w.seeds.map(s=>s.targetSize||0))}<br>Режим земли: ${chk('terrainGroundMode')?'материалы и текстуры':'типы генераторов'}<br>Изометрический растр: ${l.isoCols}×${l.isoRows}<br>LOD: 8× (${w.baseCols*8}×${w.baseRows*8})<br>Тайлы: ${tileStatus} (zoom ${screenCell.toFixed(1)} / ${tileFrom.toFixed(1)})<br>Seed: ${w.seed}${perfHtml}`;
+}
+
+function visibleBounds(w,c,rc){
+ const x0=Math.max(0,Math.floor((-S.panX/S.zoom)/c)-2),y0=Math.max(0,Math.floor((-S.panY/S.zoom)/c)-2);
+ const x1=Math.min(w.cols,Math.ceil(((rc.width-S.panX)/S.zoom)/c)+2),y1=Math.min(w.rows,Math.ceil(((rc.height-S.panY)/S.zoom)/c)+2);
+ return{x0,y0,x1,y1};
+}
+function highProfileOpen(w,bx,by,hx,hy){
+ if(!w.floor[by]?.[bx])return false;
+ const MAX=12;
+ const left=!w.floor[by]?.[bx-1],right=!w.floor[by]?.[bx+1],up=!w.floor[by-1]?.[bx],down=!w.floor[by+1]?.[bx];
+ if(!(left||right||up||down))return true;
+ const wave=(axis,pos,salt)=>{
+   const n1=Math.sin((axis*.73+pos*.19+w.seed*.013+salt)*1.17);
+   const n2=Math.sin((axis*.21+pos*1.91+w.seed*.003+salt*2.7)*.83);
+   const n3=hashNoise(axis,pos,w.seed^salt)-.5;
+   return n1*.42+n2*.26+n3*.64;
+ };
+ let cut=false;
+ if(left){const depth=Math.max(1,Math.min(5,Math.round(2.7+wave(by*MAX+hy,bx*MAX,0x1234)*2.2)));cut ||= hx<depth}
+ if(right){const depth=Math.max(1,Math.min(5,Math.round(2.7+wave(by*MAX+hy,bx*MAX+11,0x2345)*2.2)));cut ||= hx>=MAX-depth}
+ if(up){const depth=Math.max(1,Math.min(5,Math.round(2.7+wave(bx*MAX+hx,by*MAX,0x3456)*2.2)));cut ||= hy<depth}
+ if(down){const depth=Math.max(1,Math.min(5,Math.round(2.7+wave(bx*MAX+hx,by*MAX+11,0x4567)*2.2)));cut ||= hy>=MAX-depth}
+ const isTunnel=w.connector?.[by]?.[bx]||w.loopConnector?.[by]?.[bx]||w.deadEnds?.[by]?.[bx];
+ if(isTunnel&&cut){
+   const fx=(hx+.5)/MAX,fy=(hy+.5)/MAX;
+   const horizontal=(w.connector?.[by]?.[bx-1]||w.connector?.[by]?.[bx+1]||w.loopConnector?.[by]?.[bx-1]||w.loopConnector?.[by]?.[bx+1]);
+   const vertical=(w.connector?.[by-1]?.[bx]||w.connector?.[by+1]?.[bx]||w.loopConnector?.[by-1]?.[bx]||w.loopConnector?.[by+1]?.[bx]);
+   if(horizontal&&!vertical&&Math.abs(fy-.5)<.27)cut=false;
+   else if(vertical&&!horizontal&&Math.abs(fx-.5)<.27)cut=false;
+   else if(Math.abs(fx-.5)<.23&&Math.abs(fy-.5)<.23)cut=false;
+ }
+ return !cut;
+}
+function rawRefinedGlobal(w,gx,gy,d){
+ const bx=Math.floor(gx/d),by=Math.floor(gy/d),sx=((gx%d)+d)%d,sy=((gy%d)+d)%d;
+ if(bx<0||by<0||bx>=w.cols||by>=w.rows)return false;
+ if(d<=1)return !!w.floor[by][bx];
+ const MAX=12,x0=Math.floor(sx*MAX/d),x1=Math.max(x0+1,Math.ceil((sx+1)*MAX/d));
+ const y0=Math.floor(sy*MAX/d),y1=Math.max(y0+1,Math.ceil((sy+1)*MAX/d));
+ let open=0,total=0;
+ for(let hy=y0;hy<Math.min(MAX,y1);hy++)for(let hx=x0;hx<Math.min(MAX,x1);hx++){total++;if(highProfileOpen(w,bx,by,hx,hy))open++}
+ return open/Math.max(1,total)>=.48;
+}
+function refinedCellOpen(w,bx,by,sx,sy,d){
+ const gx=bx*d+sx,gy=by*d+sy;
+ if(rawRefinedGlobal(w,gx,gy,d))return true;
+ // Устраняем диагональное касание на любом LOD: в конфликтном блоке 2×2
+ // детерминированно заполняется одна из двух ортогональных клеток.
+ for(const [ox,oy] of [[-1,-1],[0,-1],[-1,0],[0,0]]){
+   const x=gx+ox,y=gy+oy;
+   const a=rawRefinedGlobal(w,x,y,d),b=rawRefinedGlobal(w,x+1,y,d),c=rawRefinedGlobal(w,x,y+1,d),dd=rawRefinedGlobal(w,x+1,y+1,d);
+   if(a&&dd&&!b&&!c){const choose=((x*73856093)^(y*19349663)^w.seed)&1;if((choose&&gx===x+1&&gy===y)||(!choose&&gx===x&&gy===y+1))return true}
+   if(b&&c&&!a&&!dd){const choose=((x*83492791)^(y*2971215073)^w.seed)&1;if((choose&&gx===x&&gy===y)||(!choose&&gx===x+1&&gy===y+1))return true}
+ }
+ return false;
+}
+function refinedNeighbourOpen(w,bx,by,sx,sy,d,dx,dy){
+ let nx=sx+dx,ny=sy+dy,xx=bx,yy=by;
+ if(nx<0){xx--;nx=d-1}else if(nx>=d){xx++;nx=0}
+ if(ny<0){yy--;ny=d-1}else if(ny>=d){yy++;ny=0}
+ return refinedCellOpen(w,xx,yy,nx,ny,d);
+}
+
+
+function drawZoomEnvironmentTiles(g,w,rc){
+ return false;
+}
+function draw(){
+ const rc=canvas.getBoundingClientRect(),dpr=Math.min(2,devicePixelRatio||1);canvas.width=Math.floor(rc.width*dpr);canvas.height=Math.floor(rc.height*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);ctx.fillStyle='#020304';ctx.fillRect(0,0,rc.width,rc.height);if(!S.world)return;
+ const w=S.world,detail=8;
+ ctx.save();ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over';ctx.translate(S.panX,S.panY);ctx.scale(S.zoom,S.zoom);ctx.imageSmoothingEnabled=false;
+ // Слои независимы: биомы, туман и земля можно скрывать отдельно.
+ if(!$('hideBiomes').checked){const bg=$('hideFog').checked?w.isoBiomeNoFogCanvas:w.isoBiomeCanvas;if(bg){const dark=Math.max(0,Math.min(60,+$('environmentDarkness').value||0));ctx.filter=`brightness(${100-dark}%)`;ctx.drawImage(bg,0,0);ctx.filter='none'}drawZoomEnvironmentTiles(ctx,w,rc)}
+ if(!$('hideGround').checked){const outlineAlpha=Math.max(0,Math.min(100,+$('groundOutlineOpacity').value||0))/100;if(outlineAlpha>0&&w.isoGroundOutlineCanvas){ctx.globalAlpha=outlineAlpha;ctx.drawImage(w.isoGroundOutlineCanvas,0,0);ctx.globalAlpha=1}if(chk('terrainGroundMode')){const diamonds=drawZoomGroundDiamonds(ctx,w,rc);if(!diamonds&&w.isoTileGroundCanvas)ctx.drawImage(w.isoTileGroundCanvas,0,0)}else if(w.isoColorGroundCanvas)ctx.drawImage(w.isoColorGroundCanvas,0,0);drawTileFillDebug(ctx,w)}
+ if(chk('boundaries')&&w.isoBoundaryCanvas)ctx.drawImage(w.isoBoundaryCanvas,0,0);
+ ctx.restore();drawRouteOverlay()
+}
+function captureView(){const r=canvas.getBoundingClientRect();return{wx:(r.width/2-S.panX)/S.zoom,wy:(r.height/2-S.panY)/S.zoom,zoom:S.zoom}}
+function restoreView(v){const r=canvas.getBoundingClientRect();S.zoom=v.zoom;S.panX=r.width/2-v.wx*S.zoom;S.panY=r.height/2-v.wy*S.zoom}
+function fitZoom(){if(!S.world)return 1;const r=canvas.getBoundingClientRect(),pad=40,l=isoLayout(S.world);return Math.min((r.width-pad*2)/l.isoWidth,(r.height-pad*2)/l.isoHeight)}
+
+function fit(){if(!S.world)return;const r=canvas.getBoundingClientRect(),l=isoLayout(S.world);S.zoom=fitZoom();S.panX=(r.width-l.isoWidth*S.zoom)/2-l.originX*S.zoom;S.panY=(r.height-l.isoHeight*S.zoom)/2-l.originY*S.zoom}
+function randomGen(){$('seed').value=Math.floor(Math.random()*2147483647);requestGenerate(!!S.world)}
+$('gen').onclick=$('gen2').onclick=()=>requestGenerate(!!S.world);$('rand').onclick=$('rand2').onclick=randomGen;$('center').onclick=$('fit').onclick=()=>{fit();draw()};$('plus').onclick=()=>zoomAt(canvas.clientWidth/2,canvas.clientHeight/2,1.25);$('minus').onclick=()=>zoomAt(canvas.clientWidth/2,canvas.clientHeight/2,1/1.25);$('png').onclick=()=>{if(!S.world)return;const a=document.createElement('a');a.download=`godgrave_multi_cave_${S.world.seed}.png`;a.href=canvas.toDataURL('image/png');a.click()};
+$('settings').onclick=()=>{const data={version:'7.7',savedAt:new Date().toISOString(),settings:{}};document.querySelectorAll('input,select').forEach(el=>data.settings[el.id]=el.type==='checkbox'?el.checked:el.value);const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`godgrave_cave_settings_${$('seed').value}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(url),500)};
+function zoomAt(mx,my,factor){const wx=(mx-S.panX)/S.zoom,wy=(my-S.panY)/S.zoom;S.zoom=Math.max(.01,S.zoom*factor);S.panX=mx-wx*S.zoom;S.panY=my-wy*S.zoom;if(S.world)updateStats();draw()}
+function setViewMode(mode){
+ if(mode===1){S.tileView=true;$('terrainGroundMode').checked=true;$('recolorMissingTiles').checked=false;$('hideGround').checked=false}
+ else if(mode===2){S.tileView=true;$('terrainGroundMode').checked=true;$('recolorMissingTiles').checked=true;$('hideGround').checked=false}
+ else if(mode===3){S.tileView=false;$('terrainGroundMode').checked=true;$('recolorMissingTiles').checked=true;$('hideGround').checked=false}
+ else if(mode===4){S.tileView=false;$('terrainGroundMode').checked=false;$('recolorMissingTiles').checked=false;$('hideGround').checked=false}
+ else if(mode===5){$('hideGround').checked=!$('hideGround').checked}
+ updateTileButton();buildLegend();if(S.world)updateStats();draw();
+}
+
+function bfsFloor(w,start,targets=null){
+ const W=w.cols,H=w.rows,N=W*H,dist=new Int32Array(N),parent=new Int32Array(N);dist.fill(-1);parent.fill(-1);
+ const q=new Int32Array(N);let head=0,tail=0,found=-1,far=start.y*W+start.x;
+ const si=start.y*W+start.x;dist[si]=0;q[tail++]=si;
+ while(head<tail){const i=q[head++],x=i%W,y=(i/W)|0;if(dist[i]>dist[far])far=i;if(targets&&targets[i]){found=i;break}
+  if(x>0){const n=i-1;if(dist[n]<0&&w.floor[y][x-1]){dist[n]=dist[i]+1;parent[n]=i;q[tail++]=n}}
+  if(x+1<W){const n=i+1;if(dist[n]<0&&w.floor[y][x+1]){dist[n]=dist[i]+1;parent[n]=i;q[tail++]=n}}
+  if(y>0){const n=i-W;if(dist[n]<0&&w.floor[y-1][x]){dist[n]=dist[i]+1;parent[n]=i;q[tail++]=n}}
+  if(y+1<H){const n=i+W;if(dist[n]<0&&w.floor[y+1][x]){dist[n]=dist[i]+1;parent[n]=i;q[tail++]=n}}
+ }
+ return{dist,parent,far,found};
+}
+function reconstructPath(parent,end,W){const path=[];for(let i=end;i>=0;i=parent[i]){path.push({x:i%W,y:(i/W)|0});if(parent[i]===i)break}return path.reverse()}
+function nearestOpenTo(w,tx,ty,exclude=[]){let best=null,bd=Infinity;for(let y=0;y<w.rows;y++)for(let x=0;x<w.cols;x++)if(w.floor[y][x]){let ok=true;for(const p of exclude)if((x-p.x)**2+(y-p.y)**2<225){ok=false;break}if(!ok)continue;const d=(x-tx)**2+(y-ty)**2;if(d<bd){bd=d;best={x,y}}}return best}
+function buildRouteNetwork(w){
+ const start=nearestOpenTo(w,0,0)||nearestOpenTo(w,w.cols/2,w.rows/2);if(!start)return null;
+ const first=bfsFloor(w,start),exit={x:first.far%w.cols,y:(first.far/w.cols)|0};
+ const main=reconstructPath(first.parent,first.far,w.cols),road=new Uint8Array(w.cols*w.rows);for(const p of main)road[p.y*w.cols+p.x]=1;
+ const cornerTargets=[[w.cols-1,0],[w.cols-1,w.rows-1],[0,w.rows-1]],saves=[],branches=[];
+ for(const [tx,ty] of cornerTargets){const p=nearestOpenTo(w,tx,ty,[start,exit,...saves]);if(!p)continue;const b=bfsFloor(w,p,road);if(b.found<0)continue;saves.push(p);branches.push(reconstructPath(b.parent,b.found,w.cols))}
+ const campfires=[];const wanted=Math.max(6,Math.min(14,Math.floor(main.length/28)));
+ for(let i=1;i<=wanted;i++){const k=Math.min(main.length-1,Math.floor(i*main.length/(wanted+1)));if(main[k])campfires.push(main[k])}
+ // Дополнительный костёр иногда ставится на боковой дороге.
+ for(const branch of branches)if(branch.length>10){const count=Math.max(1,Math.floor(branch.length/70));for(let j=1;j<=count;j++)campfires.push(branch[Math.floor(j*branch.length/(count+1))])}
+ return{start,exit,main,saves,branches,campfires};
+}
+function drawRouteOverlay(){
+ const rc=routeCanvas.getBoundingClientRect(),dpr=Math.min(2,devicePixelRatio||1);routeCanvas.width=Math.floor(rc.width*dpr);routeCanvas.height=Math.floor(rc.height*dpr);routeCtx.setTransform(dpr,0,0,dpr,0,0);routeCtx.clearRect(0,0,rc.width,rc.height);
+ if(!S.world||!S.routesVisible||!S.routes)return;const w=S.world,R=S.routes,c=w.cell;
+ routeCtx.save();routeCtx.translate(S.panX,S.panY);routeCtx.scale(S.zoom,S.zoom);routeCtx.lineJoin='round';routeCtx.lineCap='round';
+ const strokePath=(path,color,width,shadow=true)=>{if(!path||path.length<2)return;const pt=i=>isoPoint(w,path[i].x+.5,path[i].y+.5);routeCtx.beginPath();const p0=pt(0);routeCtx.moveTo(p0.x,p0.y);for(let i=1;i<path.length-1;i++){const p=pt(i),n=pt(i+1),mx=(p.x+n.x)/2,my=(p.y+n.y)/2;routeCtx.quadraticCurveTo(p.x,p.y,mx,my)}const pe=pt(path.length-1);routeCtx.lineTo(pe.x,pe.y);if(shadow){routeCtx.strokeStyle='rgba(0,0,0,.72)';routeCtx.lineWidth=(width+3)/S.zoom;routeCtx.stroke()}routeCtx.strokeStyle=color;routeCtx.lineWidth=width/S.zoom;routeCtx.stroke()};
+ strokePath(R.main,'rgba(255,226,78,.96)',3.2,true);for(const p of R.branches)strokePath(p,'rgba(255,255,255,.58)',2.1,true);
+ const marker=(p,fill,shape='circle')=>{const q=isoPoint(w,p.x+.5,p.y+.5),x=q.x,y=q.y,r=6/S.zoom;routeCtx.beginPath();if(shape==='diamond'){routeCtx.moveTo(x,y-r);routeCtx.lineTo(x+r,y);routeCtx.lineTo(x,y+r);routeCtx.lineTo(x-r,y);routeCtx.closePath()}else routeCtx.arc(x,y,r,0,Math.PI*2);routeCtx.fillStyle=fill;routeCtx.strokeStyle='rgba(0,0,0,.9)';routeCtx.lineWidth=2/S.zoom;routeCtx.fill();routeCtx.stroke()};
+ marker(R.start,'#55e879');marker(R.exit,'#ff5555');for(const p of R.saves)marker(p,'#63a8ff','diamond');
+ for(const p of R.campfires){const q=isoPoint(w,p.x+.5,p.y+.5),x=q.x,y=q.y,r=4.5/S.zoom;routeCtx.beginPath();routeCtx.arc(x,y,r,0,Math.PI*2);routeCtx.fillStyle='#ff9d2e';routeCtx.fill();routeCtx.strokeStyle='#fff1a6';routeCtx.lineWidth=1.4/S.zoom;routeCtx.stroke()}
+ routeCtx.restore();
+}
+
+const BIOME_NAMES=['Озеро','Скалы','Туман','Лес','Равнина','Снежное озеро','Снежные скалы','Снежный лес','Пустыня'];
+function describeIsoPoint(clientX,clientY){
+ if(!S.world)return;const r=canvas.getBoundingClientRect(),sx=clientX-r.left,sy=clientY-r.top,wx=(sx-S.panX)/S.zoom,wy=(sy-S.panY)/S.zoom,w=S.world,l=isoLayout(w);
+ const a=(wx-l.originX-l.diamondW*.5)/(l.diamondW*.5),b=(wy-l.originY-l.diamondH*.5)/(l.diamondH*.5),ix=(a+b)*.5,iy=(b-a)*.5;
+ if(ix<0||iy<0||ix>=l.isoCols||iy>=l.isoRows)return;const x=Math.floor(ix),y=Math.floor(iy),sample=isoCellBiomeSample(w,x,y,l),hx=sample.hx,hy=sample.hy,type=sample.type,fog=sample.fog,coverage=isoCellCoverage(w,x,y,l),floor=coverage>=.28,road=isoCellRoad(w,x,y,l),role=floor?groundTileRole(w,hx,hy,type,road):null,variant=groundDiamondVariant(w,x,y),def=role?(GROUND_MATERIALS[role]||GROUND_MATERIALS.earth):null,box=$('tileInspector');
+ box.style.left=Math.min(r.width-620,Math.max(8,sx+14))+'px';box.style.top=Math.min(r.height-120,Math.max(8,sy+14))+'px';box.style.maxWidth='610px';box.style.display='block';const roleNames={earth:'земля',grass:'трава',stone:'камень',clay:'глина',swamp:'болотная почва',road:'дорога'},tileName=floor?(role==='road'?'земля':(roleNames[role]||role)):'окружение';box.innerHTML='<b>'+(BIOME_NAMES[type]||type)+(fog?' + туман':'')+' · '+tileName+'</b><div class="muted">'+(floor?'Atlas '+def.atlas+' · колонка '+def.col+' · вариант '+variant+' · ':'Ячейка окружения '+biomeAtlasCell(type).join('×')+' · ')+'ISO '+x+', '+y+' · LOD8 '+hx+', '+hy+' · покрытие '+Math.round(coverage*100)+'%</div>';clearTimeout(describeIsoPoint.timer);describeIsoPoint.timer=setTimeout(()=>box.style.display='none',8000);
+}
+function usedBiomeTypesForCurrentMap(){const w=S.world,found=new Set();if(!w)return [0,1,3,5,6,7,8];const hi=w.lodCascade?.[8];if(!hi)return [0,1,3,5,6,7,8];const step=Math.max(1,Math.floor(Math.sqrt((hi.w*hi.h)/60000)));for(let y=0;y<hi.h;y+=step)for(let x=0;x<hi.w;x+=step)found.add(smoothOuterBiomeTypeNoFog(w,x,y));return [...found].filter(v=>v!==2).sort((a,b)=>a-b)}
+function exportGeneratedCanvas(c,name){const a=document.createElement('a');a.download=name;a.href=c.toDataURL('image/png');a.click()}
+function generateSyntheticTileAtlas(){const host=$('generatedAtlasSheets'),tw=Math.max(16,Math.min(512,+$('generatedTileW').value||128)),th=Math.max(8,Math.min(256,+$('generatedTileH').value||64)),roles=['earth','grass','stone','clay','swamp','road'],roleLabels={earth:'земля',grass:'трава',stone:'камень',clay:'глина',swamp:'болото',road:'дорога'};host.innerHTML='';for(const type of usedBiomeTypesForCurrentMap()){const wrap=document.createElement('div'),title=document.createElement('div'),labels=document.createElement('div'),out=document.createElement('canvas');wrap.style.marginBottom='18px';title.style.cssText='display:flex;align-items:center;gap:10px;margin:0 0 7px;color:#dce7ef;font:12px ui-monospace,monospace';title.innerHTML='<b>'+(BIOME_NAMES[type]||('Биом '+type))+'</b><span>6 колонок × 11 строк</span>';labels.className='atlasRoleLabels';labels.style.gridTemplateColumns=`repeat(${roles.length},${tw}px)`;labels.innerHTML=roles.map(r=>`<span>${roleLabels[r]}</span>`).join('');out.width=tw*roles.length;out.height=th*GROUND_ATLAS_ROWS;out.dataset.biome=type;const g=out.getContext('2d');g.clearRect(0,0,out.width,out.height);const pal=biomeTilePalette(type);for(let col=0;col<roles.length;col++)for(let row=0;row<GROUND_ATLAS_ROWS;row++){const base=getGroundDiamond(roles[col],row)||getGroundDiamond('earth',row);if(base)g.drawImage(recolorCanvasPixels(base,pal[roles[col]]||pal.earth,tw,th),col*tw,row*th)}const btn=document.createElement('button');btn.textContent='PNG';btn.onclick=()=>exportGeneratedCanvas(out,'godgrave_'+(BIOME_NAMES[type]||('biome_'+type)).toLowerCase().replace(/\s+/g,'_')+'.png');title.appendChild(btn);wrap.append(title,labels,out);host.appendChild(wrap)}host.dataset.ready='1'}
+$('tileGenerator').onclick=()=>{$('tileGeneratorModal').classList.add('visible');generateSyntheticTileAtlas()};$('closeTileGenerator').onclick=()=>$('tileGeneratorModal').classList.remove('visible');$('tileGeneratorModal').addEventListener('mousedown',e=>{if(e.target===$('tileGeneratorModal'))$('tileGeneratorModal').classList.remove('visible')});$('generateTileAtlas').onclick=generateSyntheticTileAtlas;$('exportTileAtlas').onclick=()=>{if($('generatedAtlasSheets').dataset.ready!=='1')generateSyntheticTileAtlas();[...$('generatedAtlasSheets').querySelectorAll('canvas')].forEach((c,i)=>setTimeout(()=>exportGeneratedCanvas(c,'godgrave_biome_'+c.dataset.biome+'_'+c.width+'x'+c.height+'.png'),i*180))};$('recolorMissingTiles').addEventListener('input',draw);$('terrainGroundMode').addEventListener('input',()=>{buildLegend();if(S.world)updateStats();draw()});
+
+$('tiles').onclick=()=>{S.tileView=!S.tileView;updateTileButton();if(S.world)updateStats();draw()};
+$('routes').onclick=()=>{S.routesVisible=!S.routesVisible;if(S.routesVisible&&!S.routes&&S.world)S.routes=buildRouteNetwork(S.world);$('routes').classList.toggle('active',S.routesVisible);$('routes').title=S.routesVisible?'Маршруты включены':'Маршруты выключены';draw()};
+$('regionTint').oninput=()=>{if(S.world){buildLodCanvases(S.world);rebuildIsoLayerCache(S.world)}draw()};
+for(const id of ['boundaries','floorDots','hideFog','hideGround','hideBiomes','debugTileFill'])$(id).oninput=draw;$('environmentDarkness').addEventListener('input',()=>{$('environmentDarknessValue').textContent=$('environmentDarkness').value+'%';draw()});$('groundOutlineOpacity').addEventListener('input',()=>{$('groundOutlineOpacityValue').textContent=$('groundOutlineOpacity').value+'%';draw()});$('groundTileThreshold').addEventListener('input',()=>{if(S.world)updateStats();draw()});$('showInfo').addEventListener('input',()=>{$('infoHud').classList.toggle('hidden',!$('showInfo').checked)});window.addEventListener('keydown',e=>{if(['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName))return;const k=e.key.toLowerCase();if(e.code==='Space'){e.preventDefault();$('showInfo').checked=!$('showInfo').checked;$('infoHud').classList.toggle('hidden',!$('showInfo').checked);return}if(e.code==='Digit1'||e.code==='Numpad1'){e.preventDefault();setViewMode(1);return}if(e.code==='Digit2'||e.code==='Numpad2'){e.preventDefault();setViewMode(2);return}if(e.code==='Digit3'||e.code==='Numpad3'){e.preventDefault();setViewMode(3);return}if(e.code==='Digit4'||e.code==='Numpad4'){e.preventDefault();setViewMode(4);return}if(e.code==='Digit5'||e.code==='Numpad5'){e.preventDefault();setViewMode(5);return}if(k==='e'||k==='у')requestGenerate(!!S.world);if(k==='r'||k==='к')randomGen();if(k==='c'||k==='с'){fit();draw()}});canvas.addEventListener('wheel',e=>{e.preventDefault();const r=canvas.getBoundingClientRect();zoomAt(e.clientX-r.left,e.clientY-r.top,Math.exp(-e.deltaY*.0012))},{passive:false});canvas.onmousedown=e=>{if(e.button!==0)return;S.drag=true;S.lx=e.clientX;S.ly=e.clientY;canvas.classList.add('drag')};window.onmousemove=e=>{if(!S.drag)return;S.panX+=e.clientX-S.lx;S.panY+=e.clientY-S.ly;S.lx=e.clientX;S.ly=e.clientY;draw()};window.onmouseup=()=>{S.drag=false;canvas.classList.remove('drag')};canvas.oncontextmenu=e=>{e.preventDefault();describeIsoPoint(e.clientX,e.clientY)};canvas.ondblclick=()=>{fit();draw()};window.onresize=()=>draw();
+$('scaleBalance').addEventListener('input',()=>{$('scaleBalanceValue').textContent=$('scaleBalance').value});$('outerBiomeMode').addEventListener('change',()=>requestGenerate(!!S.world));
+updateTileButton();loadGroundAtlas('B');loadGroundAtlas('D');loadBiomeAtlas();
 </script>
-</body>
-</html>
+</body></html>
+
+
+
