@@ -1,9 +1,9 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="ru">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Godgrave Multi-Algorithm Cave Generator v7.6</title>
+<title>Godgrave World ISO v6.3 — Cached Minimap, Profiler & Camera</title>
 <style>
 :root{--bg:#090c0f;--panel:#12171c;--panel2:#151b21;--line:#29323a;--text:#e7ecef;--muted:#919ca5;--accent:#6c8fd8;--accent2:#8d6bc5;--radius:9px}
 *{box-sizing:border-box}html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font-family:Inter,system-ui,Segoe UI,Arial,sans-serif}body{overflow:hidden}
@@ -12,36 +12,182 @@
 input,button{font:inherit}input[type=number],select{width:100%;padding:7px;background:#0a1015;color:var(--text);border:1px solid #33414d;border-radius:5px}input[type=range]{width:100%;accent-color:#4779d8}button{border:1px solid #34424f;border-radius:5px;padding:8px 11px;color:#eaf0f5;background:#17212a;cursor:pointer}button:hover{background:#202c36}.primary{background:linear-gradient(180deg,#396ed6,#2858b8);border-color:#4a80eb}.random{background:linear-gradient(180deg,#713bbb,#552690);border-color:#8b55cf}.wide{width:100%}.check{display:flex;gap:7px;align-items:center;font-size:12px;color:#bac4cc;margin:7px 0}.small{font-size:11px;color:var(--muted);line-height:1.45}
 .workspace{position:relative;overflow:hidden;background:#020304}.workspace canvas{position:absolute;inset:0;width:100%;height:100%;display:block}.workspace #routeOverlay{image-rendering:pixelated}.workspace #map{cursor:grab}.workspace #map.drag{cursor:grabbing}.workspace #routeOverlay{pointer-events:none;z-index:2}.hud{position:absolute;left:12px;top:12px;min-width:190px;padding:9px 11px;background:rgba(8,12,15,.9);border:1px solid var(--line);border-radius:6px;font-size:12px;line-height:1.55}.hud.hidden{display:none}.loading{position:absolute;inset:0;z-index:4;display:flex;align-items:center;justify-content:center;background:rgba(2,3,4,.64);pointer-events:none}.loading.hidden{display:none}.loadingBox{min-width:260px;padding:13px 15px;background:rgba(8,12,15,.94);border:1px solid #3c4b58;border-radius:6px;box-shadow:0 16px 40px rgba(0,0,0,.36)}.loadingTitle{font-size:12px;font-weight:800;letter-spacing:.06em;margin-bottom:8px}.loadingStage{font-size:12px;color:#d4dce3;margin-bottom:9px}.loadingBar{height:5px;overflow:hidden;background:#101820;border-radius:4px}.loadingBar i{display:block;width:42%;height:100%;background:#4a80eb;animation:loadPulse 1s ease-in-out infinite}@keyframes loadPulse{0%{transform:translateX(-105%)}100%{transform:translateX(245%)}}.hint{position:absolute;left:12px;bottom:12px;padding:7px 9px;background:rgba(8,12,15,.88);border:1px solid var(--line);border-radius:5px;color:#95a0aa;font-size:11px}.zoom{position:absolute;right:13px;bottom:13px;display:grid;gap:4px}.zoom button{width:36px;height:36px;padding:0;font-size:20px}.legend{display:grid;grid-template-columns:repeat(4,minmax(150px,1fr));gap:7px;position:absolute;left:12px;right:58px;bottom:49px;padding:8px;background:rgba(8,12,15,.92);border:1px solid var(--line);border-radius:6px}.legend div{font-size:10px;color:#aeb7bf}.legend b{display:block;font-size:11px;margin-bottom:2px}.dot{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:5px}
 .tileInspector{position:absolute;z-index:12;display:none;min-width:280px;max-width:360px;padding:10px 12px;background:rgba(7,11,14,.96);border:1px solid #50606d;border-radius:7px;font-size:12px;line-height:1.5;pointer-events:none;box-shadow:0 12px 34px rgba(0,0,0,.5)}.tileInspector .muted{margin-top:5px;color:#8f9aa4;font-size:10px}.modalBackdrop{position:fixed;inset:0;z-index:40;background:rgba(0,0,0,.76);display:none;align-items:center;justify-content:center;padding:24px}.modalBackdrop.visible{display:flex}.tileModal{width:min(1150px,96vw);max-height:94vh;overflow:auto;background:#0d141a;border:1px solid #40515f;border-radius:10px;padding:16px;box-shadow:0 20px 70px rgba(0,0,0,.65)}.tileModalHead{display:flex;gap:10px;align-items:center;margin-bottom:12px}.tileModalHead h2{margin:0 auto 0 0;font-size:16px}.tileTools{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px}.tileTools label{display:flex;align-items:center;gap:5px;font-size:12px;color:#b8c3cc}.tileTools input[type=number]{width:78px}.atlasStage{overflow:auto;max-height:68vh;padding:10px;background:repeating-conic-gradient(#1a2229 0 25%,#11181e 0 50%) 50%/16px 16px;border:1px solid #33414d;border-radius:7px}.atlasStage canvas{display:block;max-width:none;image-rendering:pixelated;margin-bottom:16px}.modalNote{font-size:11px;color:#8f9aa4;margin-top:9px}
-.top{gap:6px;padding:7px 9px;background:rgba(13,17,21,.96);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}.top button,.top select,.top input{min-height:29px}.top button{min-width:104px}.top .check{padding:5px 7px;border:1px solid transparent;border-radius:7px;background:#11171c;min-width:92px}.top .check:hover{border-color:#34404a}.top .active{outline:1px solid #6c8fd8;background:#1d2b39}.brand{font-size:11px;color:#cfd7dd}.row{margin:7px 0}.row input,.row select,button{border-radius:7px}.legend{gap:5px;padding:7px 8px;background:rgba(13,17,21,.9);backdrop-filter:blur(8px);border-radius:9px}.legend div{padding:4px 6px;border-radius:6px;background:rgba(255,255,255,.025)}.hud,.hint,.tileInspector{backdrop-filter:blur(9px)}.tileInspector b{font-size:12px}.tileInspector .muted{line-height:1.45}.workspace #map{image-rendering:auto}.workspace{background:radial-gradient(circle at 50% 45%,#11171b,#050708 72%)}.atlasRoleLabels{display:grid;gap:0;margin:7px 0 3px;font:11px ui-monospace,monospace;color:#dce7ef}.atlasRoleLabels span{padding:3px 6px;text-align:center;background:#16202a;border:1px solid #33414d;border-left:0}.atlasRoleLabels span:first-child{border-left:1px solid #33414d;border-radius:5px 0 0 5px}.atlasRoleLabels span:last-child{border-radius:0 5px 5px 0}
+.top{gap:6px;padding:7px 9px;background:rgba(13,17,21,.96);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}.top button,.top select,.top input{min-height:29px}.top .check{padding:5px 7px;border:1px solid transparent;border-radius:7px;background:#11171c}.top .check:hover{border-color:#34404a}.brand{font-size:11px;color:#cfd7dd}.row{margin:7px 0}.row input,.row select,button{border-radius:7px}.legend{gap:5px;padding:7px 8px;background:rgba(13,17,21,.9);backdrop-filter:blur(8px);border-radius:9px}.legend div{padding:4px 6px;border-radius:6px;background:rgba(255,255,255,.025)}.hud,.hint,.tileInspector{backdrop-filter:blur(9px)}.tileInspector b{font-size:12px}.tileInspector .muted{line-height:1.45}.workspace #map{image-rendering:auto}.workspace{background:radial-gradient(circle at 50% 45%,#11171b,#050708 72%)}
 @media(max-width:900px){.app{grid-template-columns:280px 1fr}.legend{grid-template-columns:repeat(2,minmax(120px,1fr))}}
+
+/* v3.0 — стабильный минималистичный интерфейс */
+.top{display:grid;grid-template-columns:auto repeat(6,max-content) minmax(190px,1fr) repeat(4,max-content);align-items:center;overflow:hidden;max-height:none;min-height:48px}
+.top button,.top .check,.top .modeBox{height:31px;min-width:0;white-space:nowrap}
+.top button{display:inline-flex;align-items:center;justify-content:center}
+.top #gen{width:118px}.top #rand{width:112px}.top #routes{width:126px}.top #tiles{width:112px}.top #tileGenerator{width:82px}
+.modeBox{display:flex;align-items:center;gap:7px;padding:3px 8px;background:#11171c;border:1px solid #34404a;border-radius:7px;font-size:11px;color:#c7d0d7}
+.modeBox select{width:190px;height:25px;padding:2px 7px;font-size:11px}
+.compatHidden{display:none!important}
+.atlasLabels{display:grid;gap:0;margin:0 0 4px;font:10px ui-monospace,monospace;color:#c8d1d8;text-align:center}
+.atlasLabels span{padding:4px 2px;background:#121a20;border-right:1px solid #2f3b45;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.atlasLabels span:first-child{border-radius:5px 0 0 5px}.atlasLabels span:last-child{border-radius:0 5px 5px 0;border-right:0}
+.modeHelp{font-size:10px;color:#8f9aa4;line-height:1.45;margin-top:7px}
+@media(max-width:1250px){.app{grid-template-columns:300px 1fr}.top{grid-template-columns:auto repeat(4,max-content) minmax(170px,1fr) repeat(3,max-content)}.top .secondaryHide{display:none}}
+
+/* v5.0 — игровой режим и потоковые чанки */
+#play{background:linear-gradient(180deg,#3e9b62,#277345);border-color:#55bd79;font-weight:800}
+body.play-mode .side{display:none}
+body.play-mode .app{grid-template-columns:1fr;grid-template-rows:42px 1fr}
+body.play-mode .top{grid-column:1;grid-template-columns:auto max-content max-content 1fr max-content;min-height:42px;height:42px;padding:5px 9px}
+body.play-mode .top>*{display:none!important}
+body.play-mode .top .brand,body.play-mode .top #play,body.play-mode .top #worldMapButton,body.play-mode .top #playStatus,body.play-mode .top #exitPlay{display:inline-flex!important}
+body.play-mode #play,body.play-mode #playHere{display:none!important}
+#playStatus{display:none;align-items:center;color:#aebac3;font:11px ui-monospace,monospace;justify-self:end}
+#exitPlay{display:none;background:#3b1e22;border-color:#75404a}
+#worldMapButton{display:none}
+.gameHud{display:none;position:absolute;left:12px;top:12px;z-index:15;min-width:235px;padding:9px 11px;background:rgba(6,10,13,.9);border:1px solid #35434e;border-radius:8px;font:11px/1.55 ui-monospace,monospace;pointer-events:none;backdrop-filter:blur(8px)}
+body.play-mode .gameHud{display:block}
+.playerMarker{display:none;position:absolute;z-index:14;pointer-events:none;transform:translate(-50%,-82%);filter:drop-shadow(0 7px 5px rgba(0,0,0,.8))}
+body.play-mode .playerMarker{display:block}
+.playerMarker img{display:block;width:auto;height:64px;image-rendering:auto;transform-origin:50% 100%}
+.playerMarker .fallback{width:22px;height:34px;border-radius:50% 50% 42% 42%;background:#dbe8f5;border:2px solid #304354}
+.chunkBadge{display:inline-block;padding:1px 5px;margin-left:4px;border-radius:4px;background:#173123;color:#7fe49c}
+.worldMapOverlay{display:none;position:absolute;inset:0;z-index:30;background:rgba(2,5,7,.92);align-items:center;justify-content:center;padding:28px}
+.worldMapOverlay.visible{display:flex}
+.worldMapPanel{position:relative;width:min(1000px,94vw);height:min(760px,88vh);padding:14px;background:#0b1116;border:1px solid #40515e;border-radius:11px;box-shadow:0 25px 80px rgba(0,0,0,.72);display:grid;grid-template-rows:auto 1fr auto;gap:10px}
+.worldMapHead{display:flex;align-items:center;gap:10px}.worldMapHead b{margin-right:auto}.worldMapHead button{padding:5px 9px}
+#worldMapCanvas{position:relative!important;inset:auto!important;width:100%!important;height:100%!important;background:#020405;border:1px solid #2d3943;border-radius:7px;cursor:crosshair;image-rendering:auto}
+.worldMapFoot{font-size:11px;color:#9aa6af}.startScreen{position:absolute;inset:0;z-index:3;display:flex;align-items:center;justify-content:center;pointer-events:none}.startScreen.hidden{display:none}.startCard{text-align:center;padding:22px 28px;background:rgba(8,12,15,.84);border:1px solid #2d3942;border-radius:10px;color:#aeb9c1}.startCard b{display:block;color:#e7edf2;font-size:17px;margin-bottom:7px}.startCard span{font-size:12px}
+body.play-mode .legend,body.play-mode .hint,body.play-mode .zoom,body.play-mode #infoHud{display:none!important}
+
+
+/* v7.1 — play layer controls, copyable diagnostics, tabbed profiler, dense biome clutter */
+.side details.panel{padding:0;overflow:hidden}.side details.panel>summary{cursor:pointer;list-style:none;padding:11px 12px;font-size:10px;letter-spacing:.12em;color:#aeb8c1;font-weight:800;background:#141a20;border-bottom:1px solid transparent}.side details.panel>summary::-webkit-details-marker{display:none}.side details.panel>summary:before{content:"▸";display:inline-block;width:16px;color:#6f91d9}.side details[open].panel>summary:before{content:"▾"}.side details[open].panel>summary{border-bottom-color:#29323a}.side details.panel>.panelBody{padding:9px 12px 12px}.decorButtons{display:grid;grid-template-columns:1fr 1fr;gap:6px}.decorButtons button:first-child{grid-column:1/3}.valueLine{display:flex;justify-content:space-between;font-size:11px;color:#9da9b2}.playerMarker{display:none!important}.chunkBadge{padding:1px 5px;border:1px solid #42624c;border-radius:9px;color:#8fe2a7}.danger{background:#3b2024;border-color:#75404a}.environmentHint{font-size:10px;color:#7f8b95;margin-top:5px}
+
+button.ui-button{min-height:32px;border-radius:7px;transition:filter .12s ease,transform .12s ease}button.ui-button:hover{filter:brightness(1.08)}button.ui-button:active{transform:translateY(1px)}button.ui-button--primary{font-weight:700}button.ui-button--danger{font-weight:700}
+
+/* v6.3 — игровая виньетка и профайлер */
+.workspace::after{content:"";position:absolute;inset:0;z-index:13;pointer-events:none;opacity:0;transition:opacity .25s;background:radial-gradient(ellipse at center,transparent 46%,rgba(0,0,0,.18) 70%,rgba(0,0,0,.62) 100%)}
+body.play-mode .workspace::after{opacity:1}body.play-mode.hide-vignette .workspace::after{opacity:0}
+.perfBreakdown{margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,.12);color:#d8e3ea;white-space:pre-line}
+.fpsGood{color:#80d89c}.fpsWarn{color:#f0c36a}.fpsBad{color:#ef7f78}
+#playHere{background:linear-gradient(180deg,#356b8f,#244c69);border-color:#4e86aa;font-weight:750}
+
+/* v7.1 HUD / tabs / layer visibility */
+.gameHud{pointer-events:auto;cursor:pointer;user-select:none;min-width:285px}
+.gameHud:hover{border-color:#5a7386;background:rgba(9,14,18,.94)}
+.gameHud .hudTop{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.gameHud .hudActions{display:flex;gap:5px}
+.gameHud .hudMiniBtn{min-height:23px;padding:2px 7px;font-size:10px;border-radius:5px}
+.gameHud .copyHint{color:#74828d;font-size:9px}
+.playLayers{display:none;position:fixed;left:12px;top:150px;z-index:1000;width:270px;padding:10px;background:rgba(7,11,14,.96);border:1px solid #40505c;border-radius:8px;box-shadow:0 12px 35px rgba(0,0,0,.45);font:11px/1.35 ui-monospace,monospace}
+.playLayers.open{display:block!important}.playLayers b{display:block;margin-bottom:7px;color:#e5edf2}.playLayers .check{margin:4px 0}
+.infoTabs{display:flex;gap:3px;margin:5px 0 3px;position:relative;z-index:7}.infoTab{min-height:22px!important;padding:2px 5px!important;font-size:8px!important;letter-spacing:.02em}.infoTab.active{background:#38566c;border-color:#6489a5;color:#fff}
+#infoHud{max-width:360px;max-height:min(66vh,560px);overflow:auto;font-size:9px;line-height:1.28;padding-top:9px}
+#infoHud .infoHead{position:sticky;top:0;z-index:6;margin:-9px -11px 0;padding:7px 9px 6px;background:rgba(6,10,13,.97);border-bottom:1px solid #2d3942}
+#editorFps{font-size:12px;margin-left:5px}
+body.play-mode .side{display:none}
+body.play-mode .top .secondaryHide{display:flex}
+
+.generatedAtlasGrid{display:grid;grid-template-columns:repeat(6,max-content);gap:12px;align-items:start}.generatedAtlasGrid>*{min-width:0}
+
+.atlasCanvas,.generatedAtlasGrid canvas,#grassAtlasPreview,#clutterAtlasPreview{
+  max-width:none!important;max-height:none!important;width:auto!important;height:auto!important;
+  image-rendering:pixelated;display:block
+}
+.atlasPreviewViewport,.atlas-scroll,.atlasPreview{
+  overflow:auto!important;max-height:520px;max-width:100%
+}
+
+
+#envDebugToggle{position:fixed;right:14px;top:58px;z-index:1003;background:#263746;border:1px solid #60798d;color:#e8f4ff;padding:7px 10px;border-radius:6px}
+#envDebugPanel{position:fixed;right:14px;top:98px;z-index:1002;width:300px;max-height:calc(100vh - 115px);overflow:auto;background:rgba(12,18,24,.97);border:1px solid #60798d;border-radius:8px;padding:12px;box-shadow:0 12px 36px #0009;color:#dce7ef}
+#envDebugPanel.hidden{display:none}
+#envDebugPanel label,#envDebugPanel select,#envDebugPanel input{width:100%;box-sizing:border-box}
+#envDebugPanel .envRow{margin:9px 0}
 </style>
 </head>
 <body>
 <div class="app">
-<header class="top"><div class="brand">GODGRAVE — WORLD ISO v2.0</div><button id="gen" class="primary">Сгенерировать (E / У)</button><button id="rand" class="random">Случайный seed (R / К)</button><input id="detail" type="hidden" value="8"><button id="routes">Проложить маршруты</button><button id="tiles">Показать тайлы земли</button><label class="check" style="margin:0" title="Включено: цвет текстуры и местности. Выключено: тип генератора. 1 текстуры, 2 автоцвет подробно, 3 автоцвет обычно, 4 техразметка, 5 скрыть землю."><input id="terrainGroundMode" type="checkbox" checked> Материалы</label><label class="check" style="margin:0" title="Исходный тайл переводится в ЧБ и окрашивается в цвет биома и материала"><input id="recolorMissingTiles" type="checkbox"> Автоцвет</label><button id="tileGenerator">Атласы</button><label class="check" style="margin:0"><input id="hideFog" type="checkbox"> Без тумана</label><label class="check" style="margin:0"><input id="hideGround" type="checkbox"> Без земли</label><label class="check" style="margin:0"><input id="hideBiomes" type="checkbox"> Без окружения</label><div class="detailTop" title="Насколько внешнее окружение темнее проходимой земли"><span>Темнее окружение</span><input id="environmentDarkness" type="range" min="0" max="60" value="20" style="width:90px"><b id="environmentDarknessValue">20%</b></div><div class="detailTop" title="Прозрачность тёмной обводки по краю проходимой земли"><span>Обводка земли</span><input id="groundOutlineOpacity" type="range" min="0" max="100" value="55" style="width:82px"><b id="groundOutlineOpacityValue">55%</b></div><input id="groundTileThreshold" type="hidden" value="22"><label class="check" style="margin:0"><input id="showInfo" type="checkbox" checked> Информация</label><button id="settings">Настройки</button><button id="png">PNG</button><button id="center">Центр</button></header>
+<button id="envDebugToggle" type="button">Окружение DEBUG</button>
+<section id="envDebugPanel">
+ <div style="display:flex;justify-content:space-between;align-items:center"><b>Отладка окружения</b><button id="envDebugClose" type="button">×</button></div>
+ <div class="envRow"><label>Режим
+  <select id="envPanelMode"><option value="atlas">Атлас + биомный тон</option><option value="raw">Атлас без тона</option><option value="color">Только заливка</option><option value="checker">Контрастная сетка</option></select>
+ </label></div>
+ <div class="envRow"><label>Кадр атласа: <b id="envPanelFrameValue">0</b><input id="envPanelFrame" type="range" min="0" max="31" step="1" value="0"></label></div>
+ <div class="envRow"><label>Сила тона: <b id="envPanelTintValue">38%</b><input id="envPanelTint" type="range" min="0" max="100" step="1" value="38"></label></div>
+ <div class="envRow"><label>Затемнение: <b id="envPanelDarkValue">20%</b><input id="envPanelDark" type="range" min="0" max="90" step="1" value="20"></label></div><div class="envRow"><label>Забеление: <b id="envPanelWhiteValue">0%</b><input id="envPanelWhite" type="range" min="0" max="100" step="1" value="0"></label></div>
+ <div class="envRow" style="font-size:11px;color:#9fb0bd">Панель работает и в редакторе, и в Play. «Контрастная сетка» подтверждает, что сами тайлы окружения отрисовываются.</div>
+</section>
+
+<header class="top"><div class="brand">GODGRAVE — WORLD ISO v8.12</div><button id="gen" class="primary">🛠 Редактирование</button><button id="play">▶ Играть</button><button id="playHere" title="Начать или перенести персонажа в ближайшую к центру камеры проходимую клетку">▶ Играть отсюда</button><button id="worldMapButton">Карта [M]</button><span id="playStatus"></span><button id="exitPlay">В редактор</button><button id="rand" class="random">Случайный seed</button><button id="routes">Маршруты</button><button id="tiles">Тайлы земли</button><button id="tileGenerator">Атласы</button><div class="modeBox"><span>Земля</span><select id="groundRenderMode" title="1 — текстуры GitHub, 2 — подробный автоцвет, 3 — обычный автоцвет, 4 — техническая разметка генераторов, 5 — скрыть землю"><option value="texture">1 · Текстуры GitHub</option><option value="detailed">2 · Автоцвет подробный</option><option value="simple">3 · Автоцвет обычный</option><option value="technical">4 · Техническая разметка</option><option value="hidden">5 · Скрыть землю</option></select></div><label class="check secondaryHide" style="margin:0"><input id="hideFog" type="checkbox"> Без тумана</label><label class="check secondaryHide" style="margin:0"><input id="hideBiomes" type="checkbox"> Без окружения</label><label class="check secondaryHide" style="margin:0" title="Тест: выводит детализированный слой окружения последним, поверх земли, границ и маршрутов"><input id="environmentOnTop" type="checkbox"> Окружение поверх</label><label class="check" style="margin:0"><input id="showInfo" type="checkbox" checked> Инфо</label><button id="settings">JSON</button><button id="png">PNG</button><button id="center">Центр</button><div class="compatHidden"><input id="detail" type="hidden" value="8"><input id="terrainGroundMode" type="checkbox" checked><input id="recolorMissingTiles" type="checkbox"><input id="hideGround" type="checkbox"><input id="groundTileThreshold" type="hidden" value="22"></div></header>
 <aside class="side">
-<section class="panel"><h3>ГЕНЕРАЦИЯ</h3><div class="row"><label>Seed</label><input id="seed" type="number" value="928374"></div><div class="pair"><button id="gen2" class="primary">Сгенерировать</button><button id="rand2" class="random">Случайный</button></div></section>
-<section class="panel"><h3>КАРТА</h3><div class="row"><label>Ширина, клеток</label><input id="cols" type="number" min="90" max="260" value="256"></div><div class="row"><label>Высота, клеток</label><input id="rows" type="number" min="64" max="256" value="256"></div><div class="row"><label>Размер клетки</label><input id="cell" type="number" min="1" max="12" value="2"></div></section>
-<section class="panel"><h3>РЕГИОНЫ</h3><div class="row"><label>Минимум</label><input id="regionsMin" type="number" min="10" max="55" value="33"></div><div class="row"><label>Максимум</label><input id="regionsMax" type="number" min="10" max="55" value="33"></div><div class="row"><label>Мин. размер</label><input id="regionMin" type="number" min="5" max="30" value="11"></div><div class="row"><label>Размер регионов min / max</label><div class="pair"><input id="regionSizeMin" type="number" min="6" max="55" value="10"><input id="regionSizeMax" type="number" min="10" max="80" value="55"></div></div><label class="check"><input id="mix" type="checkbox" checked> Разные алгоритмы по регионам</label><label class="check"><input id="boundaries" type="checkbox"> Показывать границы регионов</label><label class="check"><input id="debugTileFill" type="checkbox"> Debug tile fill</label></section>
-<section class="panel"><h3>ВНЕШНЯЯ ЗОНА</h3><div class="row"><label>Распределение биомов</label><select id="outerBiomeMode"><option value="auto" selected>Общий климатический рисунок</option><option value="sectors">Более крупные пояса</option><option value="mixed">Более перемешанные зоны</option></select></div><div class="small">Лес получает повышенный приоритет и занимает примерно втрое больше площади. Туман состоит из отдельных крупных облачных масс и покрывает около 25% карты. Около 30% внешней зоны занимает снежный пояс. Текстуры обязательны и загружаются только из RAW GitHub-репозитория <code>GodgraveAssets/Source/Env/Terrain/T_BiomTIle.png</code> по сетке 3×3.</div></section>
-<input id="scaleBalance" type="hidden" value="100"><span id="scaleBalanceValue" hidden>100</span><input id="fill" type="hidden" value="45"><input id="smooth" type="hidden" value="4"><input id="passageMin" type="hidden" value="2"><input id="passageMax" type="hidden" value="12"><input id="floorDots" type="checkbox" hidden><input id="regionTint" type="checkbox" hidden><select id="single" hidden><option value="ca" selected></option></select>
-<section class="panel"><h3>УПРАВЛЕНИЕ</h3><div class="small">ЛКМ — перемещение<br>Колесо — масштаб<br>C — центрировать<br>E / У — текущий seed<br>R / К — случайный seed<br>Пробел — общая информация</div></section>
+<details class="panel" open><summary>ГЕНЕРАЦИЯ</summary><div class="panelBody"><div class="row"><label>Seed</label><input id="seed" type="number" value="928374"></div><div class="pair"><button id="gen2" class="primary">Сгенерировать</button><button id="rand2" class="random">Случайный</button></div></div></details>
+<details class="panel"><summary>КАРТА</summary><div class="panelBody"><div class="row"><label>Ширина, клеток</label><input id="cols" type="number" min="90" max="260" value="256"></div><div class="row"><label>Высота, клеток</label><input id="rows" type="number" min="64" max="256" value="256"></div><div class="row"><label>Размер клетки</label><input id="cell" type="number" min="1" max="12" value="2"></div><div class="valueLine"><span>Прозрачность контура земли</span><b id="groundOutlineOpacityValue">100%</b></div><input id="groundOutlineOpacity" type="range" min="0" max="100" value="100"></div></details>
+<details class="panel"><summary>РЕГИОНЫ</summary><div class="panelBody"><div class="row"><label>Минимум</label><input id="regionsMin" type="number" min="10" max="55" value="33"></div><div class="row"><label>Максимум</label><input id="regionsMax" type="number" min="10" max="55" value="33"></div><div class="row"><label>Мин. размер</label><input id="regionMin" type="number" min="5" max="30" value="11"></div><div class="row"><label>Размер регионов min / max</label><div class="pair"><input id="regionSizeMin" type="number" min="6" max="55" value="10"><input id="regionSizeMax" type="number" min="10" max="80" value="55"></div></div><label class="check"><input id="mix" type="checkbox" checked> Разные алгоритмы по регионам</label><label class="check"><input id="boundaries" type="checkbox"> Показывать границы регионов</label><label class="check"><input id="debugTileFill" type="checkbox"> Debug tile fill</label></div></details>
+<details class="panel"><summary>ВНЕШНЯЯ ЗОНА</summary><div class="panelBody"><div class="row"><label>Распределение биомов</label><select id="outerBiomeMode"><option value="auto" selected>Общий климатический рисунок</option><option value="sectors">Более крупные пояса</option><option value="mixed">Более перемешанные зоны</option></select></div><div class="valueLine"><span>Затемнение окружения</span><b id="environmentDarknessValue">20%</b></div><input id="environmentDarkness" type="range" min="0" max="90" value="20">
+<div class="valueLine"><span>Режим окружения</span></div>
+<select id="environmentRenderMode">
+ <option value="atlas">Атлас T_BiomTIle.png</option>
+ <option value="color">Биомная заливка</option>
+ <option value="raw">Атлас без тонирования</option>
+ <option value="checker">Отладочная сетка</option>
+</select>
+<div class="valueLine"><span>Кадр атласа</span><b id="environmentFrameValue">0</b></div>
+<input id="environmentFrame" type="range" min="0" max="15" step="1" value="0">
+<div class="valueLine"><span>Сила биомного тона</span><b id="environmentTintValue">38%</b></div>
+<input id="environmentTint" type="range" min="0" max="100" step="1" value="38">
+<label class="check"><input id="environmentDebugColor" type="checkbox"> Окружение: отладочная биомная раскраска</label><div class="environmentHint">В Play окружение собирается одним буфером на чанк и рисуется сразу за землёй.</div></div></details>
+<details class="panel" open><summary>ДЕКОРАЦИИ</summary><div class="panelBody"><div class="decorButtons"><button id="spawnDecorations" class="primary">🌲 Сгенерировать</button><button id="regenDecorations">🔄 Перегенерировать</button><button id="clearDecorations" class="danger">🗑 Очистить</button></div><div class="valueLine" style="margin-top:10px"><span>Плотность</span><b id="decorationDensityValue">10%</b></div><input id="decorationDensity" type="range" min="0" max="100" value="10"><div class="valueLine"><span>Размер</span><b id="decorationScaleValue">200%</b></div><input id="decorationScale" type="range" min="50" max="300" value="200"><label class="check"><input id="decorTrees" type="checkbox" checked> Деревья</label><label class="check"><input id="decorBushes" type="checkbox" checked> Кусты</label><label class="check"><input id="decorRocks" type="checkbox" checked> Скалы</label><label class="check"><input id="decorStones" type="checkbox" checked> Камни</label><div class="grassGroup"><label class="check"><input id="decorGrass" type="checkbox" checked> Обычная трава</label><div class="valueLine"><span>Плотность травы</span><b id="grassDensityValue">20%</b></div><input id="grassDensity" type="range" min="0" max="100" value="20"><div class="valueLine"><span>Плотность мелкого декора</span><b id="clutterDensityValue">20%</b></div><input id="clutterDensity" type="range" min="0" max="100" value="20"><label class="check"><input id="decorDenseGrass" type="checkbox" checked> Высокая трава · маскировка</label></div><div class="environmentHint">На клетке появляется 2–3 кучки. Плотная высокая трава заполняет ромб; через 1 секунду персонаж становится прозрачным на 50%.</div></div></details>
+<div class="compatHidden"><input id="scaleBalance" type="range" value="100"><b id="scaleBalanceValue">100</b><input id="fill" type="number" value="45"><input id="smooth" type="number" value="4"><input id="passageMin" type="number" value="2"><input id="passageMax" type="number" value="12"><input id="floorDots" type="checkbox"><input id="regionTint" type="checkbox"><select id="single"><option value="ca">ca</option></select></div>
+<details class="panel"><summary>УПРАВЛЕНИЕ</summary><div class="panelBody"><div class="small">WASD / стрелки — движение<br>M / Tab — миникарта<br>Клик по миникарте — быстрое перемещение<br>Esc — перейти в редактор без повторной генерации геометрии<br>ЛКМ — перемещение камеры редактора<br>Колесо — масштаб</div></div></details>
+
+<details class="panel">
+ <summary>Процедурные атласы</summary>
+ <button id="refreshAtlasPreview" type="button">Обновить предпросмотр</button>
+ <div class="valueLine"><span>Трава 2×2</span><b>4 варианта</b></div>
+ <div class="atlasPreviewViewport"><canvas id="grassAtlasPreview"></canvas></div>
+ <div class="valueLine"><span>Мелкий декор 6×6</span><b>36 вариантов</b></div>
+ <div class="atlasPreviewViewport"><canvas id="clutterAtlasPreview"></canvas></div>
+</details>
 </aside>
-<main class="workspace"><canvas id="map"></canvas><canvas id="routeOverlay"></canvas><div class="tileInspector" id="tileInspector"></div><div class="hud" id="infoHud"><b>Информация и производительность</b><div id="stats"></div></div><div class="loading hidden" id="loading"><div class="loadingBox"><div class="loadingTitle">ГЕНЕРАЦИЯ КАРТЫ</div><div class="loadingStage" id="loadingStage">Подготовка</div><div class="loadingBar"><i></i></div></div></div><div class="hint">Тонкие волнистые тупики ответвляются от тоннелей, лабиринтов и цепочек камер.</div><div class="legend" id="legend"></div><div class="zoom"><button id="plus">+</button><button id="minus">−</button><button id="fit">⌾</button></div></main>
+<main class="workspace"><canvas id="map"></canvas><canvas id="routeOverlay"></canvas><div class="startScreen" id="startScreen"><div class="startCard"><b>Мир ещё не построен</b><span>При открытии ничего не строится. Нажми «Редактирование» для полной карты или «Play» для виртуального мира и потоковых чанков.</span></div></div><div class="gameHud" id="gameHud"></div><div class="playerMarker" id="playerMarker"><img id="playerImage" alt="player"><div class="fallback" id="playerFallback"></div></div><div class="worldMapOverlay" id="worldMapOverlay"><div class="worldMapPanel"><div class="worldMapHead"><b>Глобальная карта мира</b><span>Клик — быстрое перемещение</span><label class="miniMapControl">Зум <input id="minimapZoom" type="range" min="100" max="500" value="100"><b id="minimapZoomValue">100%</b></label><label class="check miniMapShade"><input id="minimapShade" type="checkbox" checked> Затемнение окружения</label><button id="closeWorldMap">Закрыть [M]</button></div><canvas id="worldMapCanvas"></canvas><div class="worldMapFoot">Миникарта читает глобальные данные. Детальные чанки загружаются только вокруг персонажа.</div></div></div><div class="tileInspector" id="tileInspector"></div><div class="hud" id="infoHud"><div class="infoHead"><b>Информация и производительность · <span id="editorFps" class="fpsGood">60 FPS</span></b><div class="infoTabs"><button class="infoTab active" data-info-tab="map">Параметры карты</button><button class="infoTab" data-info-tab="generation">Скорость генерации</button><button class="infoTab" data-info-tab="render">Скорость рендеринга</button></div></div><div id="stats"></div></div><div class="playLayers" id="playLayers"><b>Видимость элементов</b><label class="check"><input id="playHideEnvironment" type="checkbox"> Скрыть окружение</label><label class="check"><input id="playHideGround" type="checkbox"> Скрыть плитки земли</label><label class="check"><input id="playHideLowDecor" type="checkbox"> Скрыть траву и мелкий декор</label><label class="check"><input id="playHideLargeDecor" type="checkbox"> Скрыть крупные декорации</label><label class="check"><input id="playHideVignette" type="checkbox"> Скрыть виньетку</label>
+<div class="valueLine"><span>Отсечение чанков земли</span><b id="groundCullMarginValue">-190 px</b></div>
+<input id="groundCullMargin" type="range" min="-800" max="1200" step="10" value="-190">
+<div class="valueLine"><span>Зазор отсечения</span><b id="cameraCullMarginValue">10 px</b></div><input id="cameraCullMargin" type="range" min="-800" max="1200" step="10" value="10"></div><div class="stealthToast" id="stealthToast"></div><div class="loading hidden" id="loading"><div class="loadingBox"><div class="loadingTitle">ГЕНЕРАЦИЯ КАРТЫ</div><div class="loadingStage" id="loadingStage">Подготовка</div><div class="loadingBar"><i></i></div></div></div><div class="hint">Тонкие волнистые тупики ответвляются от тоннелей, лабиринтов и цепочек камер.</div><div class="legend" id="legend"></div><div class="zoom"><button id="plus">+</button><button id="minus">−</button><button id="fit">⌾</button></div></main>
 </div>
 
-<div class="modalBackdrop" id="tileGeneratorModal"><div class="tileModal"><div class="tileModalHead"><h2>Генератор атласов текущей карты</h2><button id="closeTileGenerator">Закрыть</button></div><div class="tileTools"><label>Ширина тайла <input id="generatedTileW" type="number" min="16" max="512" value="128"></label><label>Высота тайла <input id="generatedTileH" type="number" min="8" max="256" value="64"></label><button id="generateTileAtlas" class="primary">Пересобрать листы</button><button id="exportTileAtlas">Экспортировать все PNG</button></div><div class="atlasStage" id="generatedAtlasSheets"></div><div class="modalNote">Создаются отдельные прозрачные листы для всех биомов текущей карты. Колонки: земля, трава, камень, глина, болото, дорога. Каждый климат обязательно содержит землю, траву и камень. Строки: 11 вариантов.</div></div></div>
+<div class="modalBackdrop" id="tileGeneratorModal"><div class="tileModal"><div class="tileModalHead"><h2>Генератор атласов текущей карты</h2><button id="closeTileGenerator">Закрыть</button></div><div class="tileTools"><label>Ширина тайла <input id="generatedTileW" type="number" min="16" max="512" value="128"></label><label>Высота тайла <input id="generatedTileH" type="number" min="8" max="256" value="64"></label><button id="generateTileAtlas" class="primary">Пересобрать листы</button><button id="exportTileAtlas">Экспортировать все PNG</button></div><div class="atlasStage" id="generatedAtlasSheets"></div><div class="modalNote">Создаются отдельные прозрачные листы для всех биомов текущей карты. Подписи типов показаны отдельно над листом и не попадают в экспорт. Шесть колонок всегда сохраняют одну структуру: земля, глина, трава, высокая трава, гравий, камень. Для каждого биома над листом показываются собственные названия этих же ролей. Подписи не попадают в экспорт. Строки: 11 вариантов. Внизу также показываются процедурные атласы травы и мелкого наземного декора: камешки, листья, веточки, мох, грибы, папоротник, тростник и шишки.</div></div></div>
 <script>
 'use strict';
+const BIOME_ENV_TILE_URL='https://raw.githubusercontent.com/JackofShadow666/GodgraveAssets/main/T_BiomTIle.png';
+
 const canvas=document.getElementById('map'),ctx=canvas.getContext('2d',{alpha:false}),routeCanvas=document.getElementById('routeOverlay'),routeCtx=routeCanvas.getContext('2d');
-const S={world:null,zoom:1,panX:0,panY:0,drag:false,lx:0,ly:0,routes:null,routesVisible:false,tileView:true,lastPerformance:null,loading:false,loadingStarted:0};
-const $=id=>document.getElementById(id),num=id=>Number($(id).value),chk=id=>$(id).checked;
-function cleanupStaticUi(){
- document.querySelectorAll('.top .detailTop').forEach(el=>{if(el.querySelector('#detail')){el.insertAdjacentHTML('afterend','<input id="detail" type="hidden" value="8">');el.remove()}});
- document.querySelectorAll('.panel h3').forEach(h=>{if(/СТИЛЬ|ПЕЩЕР|АЛГОРИТМЫ/.test(h.textContent))h.closest('.panel')?.remove()});
- if(!$('scaleBalance'))document.querySelector('.side')?.insertAdjacentHTML('beforeend','<input id="scaleBalance" type="hidden" value="100"><span id="scaleBalanceValue" hidden>100</span><input id="fill" type="hidden" value="45"><input id="smooth" type="hidden" value="4"><input id="passageMin" type="hidden" value="2"><input id="passageMax" type="hidden" value="12"><input id="floorDots" type="checkbox" hidden><input id="regionTint" type="checkbox" hidden><select id="single" hidden><option value="ca" selected></option></select>');
+const S={world:null,zoom:1,panX:0,panY:0,drag:false,lx:0,ly:0,routes:null,routesVisible:false,tileView:true,groundMode:'texture',lastPerformance:null,loading:false,loadingStarted:0,envDetailCanvas:null,playMode:false,pendingPlay:false,player:null,gameKeys:new Set(),activeChunks:new Map(),chunkSize:16,chunkRadius:2,lastFrame:0,worldMapOpen:false,buildMode:null,editorDecorationsEnabled:false,decorationChunks:new Map(),environmentChunks:new Map(),environmentDiamondCache:new Map(),editorMaterialized:false,cameraFlight:null,grassAtlas:null,grassTintCache:new Map(),clutterAtlas:new Map(),decorSpriteCache:new Map(),editorCamera:null,worldMapCache:null,worldMapCacheWorld:null,showFrameProfile:false,fps:60,fpsFrames:0,fpsStamp:0,frameProfile:{draw:0,update:0,decor:0,chunks:0,minimap:0,total:0},denseGrassTime:0,playerStealthAlpha:1,lowDecorChunks:new Map(),infoTab:'map',drawCalls:0,visibleDynamic:0,playLayerPanel:false,lastHudReport:'',visibleRenderChunks:[],lastVisibleChunkKey:'',renderLod:'near',visibleTilesDrawn:0,visibleChunksDrawn:0,playCamera:null,minimapZoom:1,stealthState:false,stealthToastTimer:0,playOverviewCache:null,playOverviewWorld:null,mapZoom:1,mapPanX:0,mapPanY:0,mapShaded:true,worldMapCacheKey:null,mapDrag:false,mapDragX:0,mapDragY:0,editorViewPending:null,hasEnteredPlay:false};
+
+let biomeEnvTileImage=null;
+function getBiomeEnvTileImage(){
+ if(biomeEnvTileImage)return biomeEnvTileImage;
+ const im=new Image();im.crossOrigin='anonymous';im.src=BIOME_ENV_TILE_URL;im.onload=()=>{S.environmentChunks.clear();draw()};biomeEnvTileImage=im;return im;
 }
-cleanupStaticUi();
+const $=id=>document.getElementById(id);
+const UI={
+  get(id){return $(id)},
+  on(id,event,handler,options){const el=$(id);if(!el){console.warn('[UI] missing element:',id);return null}el.addEventListener(event,handler,options);return el},
+  onMany(ids,event,handler,options){for(const id of ids)UI.on(id,event,handler,options)},
+  value(id,fallback=0){const el=$(id);return el?el.value:fallback},
+  number(id,fallback=0){const n=Number(UI.value(id,fallback));return Number.isFinite(n)?n:fallback},
+  checked(id,fallback=false){const el=$(id);return el?!!el.checked:fallback},
+  text(id,value){const el=$(id);if(el)el.textContent=value;return el},
+  toggle(id,className,state){const el=$(id);if(el)el.classList.toggle(className,state);return el},
+  initButtonClasses(){document.querySelectorAll('button').forEach(btn=>{btn.classList.add('ui-button');if(btn.classList.contains('primary'))btn.classList.add('ui-button--primary');if(btn.classList.contains('danger'))btn.classList.add('ui-button--danger')})}
+};
+const MathX={
+  clamp:(v,min,max)=>v<min?min:v>max?max:v,
+  lerp:(a,b,t)=>a+(b-a)*t,
+  invLerp:(a,b,v)=>a===b?0:(v-a)/(b-a),
+  saturate:v=>v<0?0:v>1?1:v,
+  mod:(v,m)=>((v%m)+m)%m,
+  dist2:(ax,ay,bx,by)=>{const dx=ax-bx,dy=ay-by;return dx*dx+dy*dy},
+  hash2:(x,y,seed=0)=>{let h=Math.imul((x|0)^seed,0x9e3779b1)^Math.imul((y|0)^(seed>>>1),0x85ebca6b);h^=h>>>16;h=Math.imul(h,0x7feb352d);h^=h>>>15;return h>>>0}
+};
+const num=id=>UI.number(id),chk=id=>UI.checked(id);
 function setLoading(active,stage='Подготовка'){
  if(active)S.loadingStarted=S.loadingStarted||performance.now();
  S.loading=active;
@@ -539,6 +685,32 @@ function clearMapBorder(floor,connector,loopConnector,deadEnds,owner,margin){
   }
 }
 
+const BASE_OWNER_MASK_STEP=2;
+function buildOwnerFieldMasked(cols,rows,seeds,step=BASE_OWNER_MASK_STEP){
+  const t0=performance.now(),cw=Math.ceil(cols/step),ch=Math.ceil(rows/step),coarse=new Int16Array(cw*ch);
+  for(let cy=0;cy<ch;cy++)for(let cx=0;cx<cw;cx++){
+    const x=Math.min(cols-1,cx*step+step*.5),y=Math.min(rows-1,cy*step+step*.5);
+    let bi=0,bd=Infinity;
+    for(let i=0;i<seeds.length;i++){const s=seeds[i],scale=.58+1.15*((s.targetSize-10)/45),dx=x-s.x,dy=y-s.y,d=(dx*dx+dy*dy*.82)/(scale*scale);if(d<bd){bd=d;bi=i}}
+    coarse[cy*cw+cx]=bi;
+  }
+  const owner=Array.from({length:rows},()=>new Int16Array(cols)),boxes=seeds.map(()=>({x1:cols,y1:rows,x2:0,y2:0}));
+  for(let y=0;y<rows;y++)for(let x=0;x<cols;x++){
+    const cx=Math.min(cw-1,(x/step)|0),cy=Math.min(ch-1,(y/step)|0),center=coarse[cy*cw+cx];let chosen=center,boundary=false;
+    if(cx>0&&coarse[cy*cw+cx-1]!==center)boundary=true;else if(cx+1<cw&&coarse[cy*cw+cx+1]!==center)boundary=true;else if(cy>0&&coarse[(cy-1)*cw+cx]!==center)boundary=true;else if(cy+1<ch&&coarse[(cy+1)*cw+cx]!==center)boundary=true;
+    if(boundary){const candidates=[];for(let oy=-1;oy<=1;oy++)for(let ox=-1;ox<=1;ox++){const xx=cx+ox,yy=cy+oy;if(xx<0||yy<0||xx>=cw||yy>=ch)continue;const id=coarse[yy*cw+xx];if(!candidates.includes(id))candidates.push(id)}let bd=Infinity;for(const id of candidates){const s=seeds[id],scale=.58+1.15*((s.targetSize-10)/45),dx=x-s.x,dy=y-s.y,d=(dx*dx+dy*dy*.82)/(scale*scale);if(d<bd){bd=d;chosen=id}}}
+    owner[y][x]=chosen;const b=boxes[chosen];if(x<b.x1)b.x1=x;if(y<b.y1)b.y1=y;if(x>b.x2)b.x2=x;if(y>b.y2)b.y2=y;
+  }
+  return {owner,boxes,ms:performance.now()-t0,step,cells:cw*ch};
+}
+function buildOrganicRegionEnvelopeTyped(owner,seeds,mapMargin,seed){
+  const t0=performance.now(),h=owner.length,w=owner[0].length,n=w*h,dist=new Uint16Array(n),queue=new Int32Array(n);dist.fill(65535);let head=0,tail=0;
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++){const i=y*w+x,o=owner[y][x];if(x<mapMargin||y<mapMargin||x>=w-mapMargin||y>=h-mapMargin||x===0||y===0||x===w-1||y===h-1||owner[y][x-1]!==o||owner[y][x+1]!==o||owner[y-1][x]!==o||owner[y+1][x]!==o){dist[i]=0;queue[tail++]=i}}
+  while(head<tail){const i=queue[head++],x=i%w,y=(i/w)|0,nd=dist[i]+1,o=owner[y][x];if(x>0){const j=i-1;if(owner[y][x-1]===o&&nd<dist[j]){dist[j]=nd;queue[tail++]=j}}if(x+1<w){const j=i+1;if(owner[y][x+1]===o&&nd<dist[j]){dist[j]=nd;queue[tail++]=j}}if(y>0){const j=i-w;if(owner[y-1][x]===o&&nd<dist[j]){dist[j]=nd;queue[tail++]=j}}if(y+1<h){const j=i+w;if(owner[y+1][x]===o&&nd<dist[j]){dist[j]=nd;queue[tail++]=j}}}
+  const env=Array.from({length:h},()=>new Uint8Array(w));
+  for(let y=mapMargin;y<h-mapMargin;y++)for(let x=mapMargin;x<w-mapMargin;x++){const i=y*w+x,o=owner[y][x];if(o<0)continue;const n1=hashNoise((x/3)|0,(y/3)|0,seed^Math.imul(o+1,7919)),n2=hashNoise((x/7)|0,(y/7)|0,seed^Math.imul(o+1,104729));if(dist[i]>=2.2+n1*2.2+n2*1.5)env[y][x]=1}
+  return {env,ms:performance.now()-t0};
+}
 function buildOrganicRegionEnvelope(owner,seeds,mapMargin,seed){
   const h=owner.length,w=owner[0].length;
   const env=Array.from({length:h},()=>Array(w).fill(0));
@@ -705,13 +877,13 @@ function cascadeStage(prev,newFactor,seed,baseConnector,baseLoop,baseDead,baseW,
  }
  return {data:out,w,h,factor:newFactor};
 }
-function buildCascadeLOD(w){
+function buildCascadeLOD(w,withCanvases=true){
  const l1=flatFromGrid(w.floor);
  const l2=cascadeStage(l1,2,w.seed,w.connector,w.loopConnector,w.deadEnds,w.baseCols,w.baseRows);
  const l3=cascadeStage(l2,3,w.seed,w.connector,w.loopConnector,w.deadEnds,w.baseCols,w.baseRows);
  const l8=cascadeStage(l3,8,w.seed,w.connector,w.loopConnector,w.deadEnds,w.baseCols,w.baseRows);
  w.lodCascade={1:l1,2:l2,3:l3,8:l8};
- buildLodCanvases(w);
+ if(withCanvases)buildLodCanvases(w);
 }
 function buildTypedHighMask(baseMask,w,seedSalt){
  // Каждый тип тоннеля проходит тот же сохранённый каскад 1 → 2 → 3 → 8,
@@ -880,16 +1052,19 @@ const GROUND_ATLASES={
 };
 const GROUND_ATLAS_COLS=6,GROUND_ATLAS_ROWS=11,GROUND_TILE_W=128,GROUND_TILE_H=64;
 const ISO_DENSITY=3;
+const ZOOM_TILE_DENSITY=2; // плотнее только интерактивный плиточный слой, без увеличения общего iso-растра
 const GROUND_MATERIALS={
- earth:{atlas:'B',col:0},clay:{atlas:'B',col:1},grass:{atlas:'B',col:3},stone:{atlas:'B',col:5},
- swamp:{atlas:'D',col:0},road:{atlas:'D',col:4}
+ // Фиксированная семантика шести колонок TerrainAtlas: внешний вид и подпись
+ // меняются биомом, но индекс роли всегда остаётся одинаковым.
+ earth:{atlas:'B',col:0},clay:{atlas:'B',col:1},grass:{atlas:'B',col:2},
+ tallGrass:{atlas:'B',col:3},gravel:{atlas:'B',col:4},stone:{atlas:'B',col:5}
 };
-const groundDiamondCache=new Map(),recoloredGroundDiamondCache=new Map(),environmentDiamondCache=new Map();
+const groundDiamondCache=new Map(),recoloredGroundDiamondCache=new Map();
 function groundAtlasesReady(){return GROUND_ATLASES.B.ready&&GROUND_ATLASES.D.ready}
 function updateTileButton(){
  const b=$('tiles');if(!b)return;
- b.classList.toggle('active',S.tileView&&groundAtlasesReady());
- b.title=groundAtlasesReady()?(S.tileView?'Тайлы земли включены':'Тайлы земли выключены'):'Атласы земли загружаются';
+ if(!groundAtlasesReady()){b.textContent='Тайлы: загрузка';return}
+ b.textContent=S.tileView?'Тайлы: вкл':'Тайлы: выкл';
 }
 function loadGroundAtlas(slot){
  const target=GROUND_ATLASES[slot],img=new Image();img.crossOrigin='anonymous';
@@ -901,10 +1076,15 @@ function getGroundDiamond(role,variant){
  const def=GROUND_MATERIALS[role]||GROUND_MATERIALS.earth,target=GROUND_ATLASES[def.atlas];
  if(!target.ready||!target.image)return null;
  variant=((variant%GROUND_ATLAS_ROWS)+GROUND_ATLAS_ROWS)%GROUND_ATLAS_ROWS;
- const key=def.atlas+'|'+def.col+'|'+variant;if(groundDiamondCache.has(key))return groundDiamondCache.get(key);
+ const img=target.image,iw=img.naturalWidth||img.width,ih=img.naturalHeight||img.height;
+ if(iw<GROUND_ATLAS_COLS||ih<GROUND_ATLAS_ROWS)return null;
+ const frameW=iw/GROUND_ATLAS_COLS,frameH=ih/GROUND_ATLAS_ROWS;
+ if(frameW<=1||frameH<=1)return null;
+ const key=def.atlas+'|'+iw+'x'+ih+'|'+def.col+'|'+variant;if(groundDiamondCache.has(key))return groundDiamondCache.get(key);
  const c=document.createElement('canvas');c.width=GROUND_TILE_W;c.height=GROUND_TILE_H;const g=c.getContext('2d',{willReadFrequently:true});
- const img=target.image,sx0=Math.round(def.col*img.width/GROUND_ATLAS_COLS),sx1=Math.round((def.col+1)*img.width/GROUND_ATLAS_COLS),sy0=Math.round(variant*img.height/GROUND_ATLAS_ROWS),sy1=Math.round((variant+1)*img.height/GROUND_ATLAS_ROWS);
- g.drawImage(img,sx0,sy0,sx1-sx0,sy1-sy0,0,0,GROUND_TILE_W,GROUND_TILE_H);
+ g.imageSmoothingEnabled=false;
+ const sx=Math.floor(def.col*frameW),sy=Math.floor(variant*frameH),sw=Math.max(1,Math.floor((def.col+1)*frameW)-sx),sh=Math.max(1,Math.floor((variant+1)*frameH)-sy);
+ g.drawImage(img,sx,sy,sw,sh,0,0,GROUND_TILE_W,GROUND_TILE_H);
  // Та же очистка, что в основном Terrain Editor: удаляем только почти белый фон, связанный с краями.
  const id=g.getImageData(0,0,GROUND_TILE_W,GROUND_TILE_H),p=id.data,seen=new Uint8Array(GROUND_TILE_W*GROUND_TILE_H),q=new Int32Array(GROUND_TILE_W*GROUND_TILE_H);let h=0,t=0;
  const bg=i=>{const o=i*4,r=p[o],gg=p[o+1],b=p[o+2],mn=Math.min(r,gg,b),mx=Math.max(r,gg,b);return mn>=236&&mx-mn<=12};
@@ -919,19 +1099,7 @@ function recolorCanvasPixels(source,rgb,outW=GROUND_TILE_W,outH=GROUND_TILE_H){
  for(let i=0;i<p.length;i+=4){if(!p[i+3])continue;const lum=(p[i]*.299+p[i+1]*.587+p[i+2]*.114)/255,shade=.36+lum*.82;p[i]=Math.min(255,rgb[0]*shade);p[i+1]=Math.min(255,rgb[1]*shade);p[i+2]=Math.min(255,rgb[2]*shade)}g.putImageData(id,0,0);return c;
 }
 function getRecoloredGroundDiamond(role,variant,type){const key=role+'|'+variant+'|'+type;if(recoloredGroundDiamondCache.has(key))return recoloredGroundDiamondCache.get(key);const base=getGroundDiamond(role,variant)||getGroundDiamond('earth',variant);if(!base)return null;const pal=biomeTilePalette(type),tile=recolorCanvasPixels(base,pal[role]||pal.earth);recoloredGroundDiamondCache.set(key,tile);return tile}
-function getDisplayedGroundDiamond(role,variant,type){return $('recolorMissingTiles')?.checked?getRecoloredGroundDiamond(role,variant,type):getGroundDiamond(role,variant)}
-
-function getEnvironmentDiamond(type,variant){
- if(!BIOME_ATLAS.ready||!BIOME_ATLAS.image)return null;
- variant=((variant%GROUND_ATLAS_ROWS)+GROUND_ATLAS_ROWS)%GROUND_ATLAS_ROWS;
- const key=type+'|'+variant;if(environmentDiamondCache.has(key))return environmentDiamondCache.get(key);
- const img=BIOME_ATLAS.image,tw=Math.floor(img.naturalWidth/3),th=Math.floor(img.naturalHeight/3),cell=biomeAtlasCell(type);
- const sx=cell[0]*tw+Math.floor((variant*37)%Math.max(1,tw-GROUND_TILE_W)),sy=cell[1]*th+Math.floor((variant*23)%Math.max(1,th-GROUND_TILE_H));
- const c=document.createElement('canvas');c.width=GROUND_TILE_W;c.height=GROUND_TILE_H;const g=c.getContext('2d');
- g.save();g.beginPath();g.moveTo(GROUND_TILE_W*.5,0);g.lineTo(GROUND_TILE_W,GROUND_TILE_H*.5);g.lineTo(GROUND_TILE_W*.5,GROUND_TILE_H);g.lineTo(0,GROUND_TILE_H*.5);g.closePath();g.clip();
- g.drawImage(img,sx,sy,Math.min(GROUND_TILE_W,tw),Math.min(GROUND_TILE_H,th),0,0,GROUND_TILE_W,GROUND_TILE_H);
- g.restore();environmentDiamondCache.set(key,c);return c;
-}
+function getDisplayedGroundDiamond(role,variant,type,mode=S.groundMode){return mode==='detailed'||mode==='simple'?getRecoloredGroundDiamond(role,variant,type):getGroundDiamond(role,variant)}
 
 function baseCellCoverage(w,bx,by){
  const factor=Math.max(1,Math.round(w.cols/w.baseCols));
@@ -959,6 +1127,10 @@ function isoLayout(w){
  const mapWidth=w.cols*w.cell,mapHeight=w.rows*w.cell;
  return{factor,isoCols,isoRows,diamondW,diamondH,isoWidth,isoHeight,originX:(mapWidth-isoWidth)*.5+(isoRows-1)*diamondW*.5,originY:(mapHeight-isoHeight)*.5};
 }
+function zoomTileLayout(w){
+ const l=isoLayout(w),d=ZOOM_TILE_DENSITY;
+ return {...l,isoCols:l.isoCols*d,isoRows:l.isoRows*d,diamondW:l.diamondW/d,diamondH:l.diamondH/d};
+}
 function isoDiamondPoint(w,bx,by,l=isoLayout(w)){
  const px=l.originX+(bx-by)*l.diamondW*.5,py=l.originY+(bx+by)*l.diamondH*.5;
  return{x:px+l.diamondW*.5,y:py+l.diamondH*.5,px,py,...l};
@@ -985,14 +1157,18 @@ function isoCellRoad(w,x,y,l=isoLayout(w)){
  for(let yy=b.sy0;yy<b.sy1;yy++)for(let xx=b.sx0;xx<b.sx1;xx++){const i=yy*b.hi.w+xx;if(conn?.[i]||loop?.[i]||dead?.[i])return true}
  return false;
 }
-function isoVisibleBounds(w,rc,l=isoLayout(w)){
- const pad=6,left=(-S.panX/S.zoom)-l.diamondW,top=(-S.panY/S.zoom)-l.diamondH,right=(rc.width-S.panX)/S.zoom+l.diamondW,bottom=(rc.height-S.panY)/S.zoom+l.diamondH;
- const inv=p=>{
-  const a=(p.x-l.originX-l.diamondW*.5)/(l.diamondW*.5),b=(p.y-l.originY-l.diamondH*.5)/(l.diamondH*.5);
-  return{x:(a+b)*.5,y:(b-a)*.5};
- };
- const pts=[inv({x:left,y:top}),inv({x:right,y:top}),inv({x:left,y:bottom}),inv({x:right,y:bottom})];
- return{x0:Math.max(0,Math.floor(Math.min(...pts.map(p=>p.x))-pad)),x1:Math.min(l.isoCols,Math.ceil(Math.max(...pts.map(p=>p.x))+pad)),y0:Math.max(0,Math.floor(Math.min(...pts.map(p=>p.y))-pad)),y1:Math.min(l.isoRows,Math.ceil(Math.max(...pts.map(p=>p.y))+pad))};
+function isoWorldToCell(wx,wy,l){
+ const dx=wx-(l.originX+l.diamondW*.5),dy=wy-(l.originY+l.diamondH*.5);
+ return{x:dx/l.diamondW+dy/l.diamondH,y:dy/l.diamondH-dx/l.diamondW}
+}
+function isoVisibleBoundsWithMargin(w,rc,l,marginPx){
+ const z=Math.max(.001,S.zoom),x0=(-S.panX-marginPx)/z,y0=(-S.panY-marginPx)/z,x1=(rc.width-S.panX+marginPx)/z,y1=(rc.height-S.panY+marginPx)/z;
+ const pts=[isoWorldToCell(x0,y0,l),isoWorldToCell(x1,y0,l),isoWorldToCell(x0,y1,l),isoWorldToCell(x1,y1,l)];
+ const pad=4;
+ return{x0:Math.max(0,Math.floor(Math.min(...pts.map(p=>p.x)))-pad),y0:Math.max(0,Math.floor(Math.min(...pts.map(p=>p.y)))-pad),x1:Math.min(l.isoCols,Math.ceil(Math.max(...pts.map(p=>p.x)))+pad+1),y1:Math.min(l.isoRows,Math.ceil(Math.max(...pts.map(p=>p.y)))+pad+1)}
+}
+function isoVisibleBounds(w,rc,l=zoomTileLayout(w)){
+ return isoVisibleBoundsWithMargin(w,rc,l,MathX.clamp(UI.number('cameraCullMargin',10),-800,1200))
 }
 function isoDiamondVisible(p,l,rc){
  const left=S.panX+p.px*S.zoom,right=S.panX+(p.px+l.diamondW)*S.zoom,top=S.panY+p.py*S.zoom,bottom=S.panY+(p.py+l.diamondH)*S.zoom;
@@ -1023,8 +1199,11 @@ function drawIsoRasterLayer(g,w,source,alpha=1){
  g.restore();
 }
 function makeIsoRasterCanvas(w,source,alpha=1){
- const l=isoLayout(w),c=document.createElement('canvas');c.width=Math.ceil(l.originX+l.isoWidth+l.diamondW);c.height=Math.ceil(l.originY+l.isoHeight+l.diamondH);
- const g=c.getContext('2d',{alpha:true});drawIsoRasterLayer(g,w,source,alpha);return c;
+ // Быстрый путь: вся прямоугольная маска одним drawImage преобразуется
+ // аффинной матрицей в изометрический ромб. Каждый исходный пиксель при этом
+ // становится тем же ромбом, что и в старом поклеточном цикле, но без тысяч
+ // fillStyle-строк, beginPath и draw calls.
+ return makeIsoTextureCanvas(w,source,alpha);
 }
 function makeIsoTextureCanvas(w,source,alpha=1){
  if(!source)return null;
@@ -1040,13 +1219,62 @@ function makeIsoBoundaryCanvas(w){
  for(let y=0;y<l.isoRows;y++)for(let x=0;x<l.isoCols;x++){const o=ownerAt(x,y),p=isoDiamondPoint(w,x,y,l);if(x+1<l.isoCols&&ownerAt(x+1,y)!==o){g.beginPath();g.moveTo(p.x,p.y-l.diamondH*.5);g.lineTo(p.x+l.diamondW*.5,p.y);g.stroke()}if(y+1<l.isoRows&&ownerAt(x,y+1)!==o){g.beginPath();g.moveTo(p.x+l.diamondW*.5,p.y);g.lineTo(p.x,p.y+l.diamondH*.5);g.stroke()}}
  return c;
 }
+
+const biomePatternCells=new Map();
+function getBiomePatternCell(type){
+ if(!BIOME_ATLAS.ready||!BIOME_ATLAS.image)return null;
+ if(biomePatternCells.has(type))return biomePatternCells.get(type);
+ const [cx,cy]=biomeAtlasCell(type),img=BIOME_ATLAS.image,tw=Math.floor(img.naturalWidth/3),th=Math.floor(img.naturalHeight/3),c=document.createElement('canvas');
+ c.width=tw;c.height=th;c.getContext('2d').drawImage(img,cx*tw,cy*th,tw,th,0,0,tw,th);biomePatternCells.set(type,c);return c;
+}
+function buildDetailedEnvironmentTexture(w){
+ const totalStart=performance.now();
+ if(!BIOME_ATLAS.ready||!BIOME_ATLAS.image||!w.lodCascade?.[8])return {canvas:null,ms:0,maskMs:0,patternMs:0,isoMs:0,scale:0};
+ const hi=w.lodCascade[8],base=w.biomeTypeMasks?.base;if(!base)return {canvas:null,ms:0,maskMs:0,patternMs:0,isoMs:0,scale:0};
+ const scale=2,sw=hi.w*scale,sh=hi.h*scale;
+ const source=document.createElement('canvas');source.width=sw;source.height=sh;
+ const sg=source.getContext('2d',{alpha:true});sg.clearRect(0,0,sw,sh);
+ const maskLarge=document.createElement('canvas');maskLarge.width=sw;maskLarge.height=sh;
+ const lg=maskLarge.getContext('2d',{alpha:true});
+ const maskStart=performance.now(),masks=[];
+ for(let type=0;type<=8;type++){
+  const c=document.createElement('canvas');c.width=hi.w;c.height=hi.h;const cg=c.getContext('2d'),id=cg.createImageData(hi.w,hi.h),d=id.data;let used=false;
+  for(let i=0;i<base.length;i++)if(base[i]===type){d[i*4+3]=255;used=true}
+  if(used){cg.putImageData(id,0,0);masks[type]=c}else masks[type]=null;
+ }
+ const maskMs=performance.now()-maskStart,patternStart=performance.now(),ox=(w.seed>>>3)&255,oy=(w.seed>>>11)&255;
+ for(let type=0;type<=8;type++){
+  const mask=masks[type],cell=getBiomePatternCell(type);if(!mask||!cell)continue;
+  lg.setTransform(1,0,0,1,0,0);lg.globalCompositeOperation='copy';lg.clearRect(0,0,sw,sh);lg.imageSmoothingEnabled=false;lg.drawImage(mask,0,0,sw,sh);
+  lg.globalCompositeOperation='source-in';lg.fillStyle=lg.createPattern(cell,'repeat');lg.save();lg.translate(-(ox%cell.width),-(oy%cell.height));lg.fillRect(0,0,sw+cell.width,sh+cell.height);lg.restore();
+  lg.globalCompositeOperation='source-over';sg.drawImage(maskLarge,0,0);
+ }
+ const patternMs=performance.now()-patternStart,isoStart=performance.now(),canvas=makeIsoTextureCanvas(w,source,1),isoMs=performance.now()-isoStart;
+ return {canvas,ms:performance.now()-totalStart,maskMs,patternMs,isoMs,scale};
+}
+function drawDetailedEnvironmentScreen(g,w,rc){
+ if(S.zoom<4||!w.isoEnvironmentDetailCanvas)return;
+ const dark=Math.max(0,Math.min(60,UI.number('environmentDarkness',20)));
+ g.save();g.translate(S.panX,S.panY);g.scale(S.zoom,S.zoom);g.filter=`brightness(${100-dark}%)`;g.globalAlpha=.94;g.imageSmoothingEnabled=true;g.imageSmoothingQuality='high';g.drawImage(w.isoEnvironmentDetailCanvas,0,0);g.restore();
+}
 function rebuildIsoLayerCache(w){
- w.isoBiomeCanvas=makeIsoTextureCanvas(w,w.biomeCanvas,1);
- w.isoBiomeNoFogCanvas=makeIsoTextureCanvas(w,w.biomeNoFogCanvas,1);
- w.isoColorGroundCanvas=makeIsoRasterCanvas(w,w.colorGroundCanvas,1);
- w.isoTileGroundCanvas=makeIsoRasterCanvas(w,w.tileGroundCanvas,1);
- w.isoGroundOutlineCanvas=makeIsoRasterCanvas(w,w.groundOutlineCanvas,1);
- w.isoBoundaryCanvas=makeIsoBoundaryCanvas(w);
+ const totalStart=performance.now(),steps=[];
+ const run=(name,fn)=>{const t=performance.now(),value=fn();steps.push({name,ms:performance.now()-t});return value};
+ w.isoBiomeCanvas=run('ISO · биомы с туманом',()=>makeIsoTextureCanvas(w,w.biomeCanvas,1));
+ w.isoBiomeNoFogCanvas=run('ISO · биомы без тумана',()=>makeIsoTextureCanvas(w,w.biomeNoFogCanvas,1));
+ w.isoColorGroundCanvas=run('ISO · техническая земля',()=>makeIsoRasterCanvas(w,w.colorGroundCanvas,1));
+ w.isoTileGroundDetailedCanvas=run('ISO · подробная земля',()=>makeIsoRasterCanvas(w,w.tileGroundDetailedCanvas,1));
+ w.isoTileGroundSimpleCanvas=run('ISO · обычная земля',()=>makeIsoRasterCanvas(w,w.tileGroundSimpleCanvas,1));
+ w.isoTileGroundCanvas=w.isoTileGroundDetailedCanvas;
+ w.isoGroundOutlineCanvas=run('ISO · контур земли',()=>makeIsoRasterCanvas(w,w.groundOutlineCanvas,1));
+ w.isoBoundaryCanvas=run('ISO · границы регионов',()=>makeIsoBoundaryCanvas(w));
+ // v8: старая полноразмерная texture окружения больше не строится.
+ // На дальнем LOD используется уже готовая общая biome texture, а на близком —
+ // только реальные ромбы terrain-atlas в видимых чанках.
+ w.isoEnvironmentDetailCanvas=null;
+ steps.push({name:'Окружение · старый полноэкранный слой отключён',ms:0});
+ const tileCache=run('Карта клеток + seeds декораций',()=>buildZoomTileCache(w));w.zoomTileCache=tileCache;w.cellDataMap=tileCache;
+ w.isoPerformance={total:performance.now()-totalStart,steps};
 }
 function isoCellBiomeSample(w,x,y,l=isoLayout(w)){
  const b=isoCellHighBounds(w,x,y,l),counts=new Map();let fogVotes=0,total=0;
@@ -1063,29 +1291,104 @@ function isoCellBiomeSample(w,x,y,l=isoLayout(w)){
  let type=3,best=-1;for(const [k,v] of counts)if(v>best){best=v;type=k}
  return {hx:Math.round(hx/Math.max(1,total)),hy:Math.round(hy/Math.max(1,total)),type,fog:fogVotes>total/2};
 }
-function drawZoomGroundDiamonds(g,w,rc){
- const l=isoLayout(w),diamondW=l.diamondW,diamondH=l.diamondH;
- if(!S.tileView||S.zoom<22||!groundAtlasesReady())return false;
 
- const vb=isoVisibleBounds(w,rc,l);
+function preparePlayPlan(w){
+ const hi=w.lodCascade[8];
+ buildOuterBiomeMap(w);
+ const hiLoop=buildTypedHighMask(w.loopConnector,w,0x51f15e),hiConn=buildTypedHighMask(w.connector,w,0x19c0aa),hiDead=buildTypedHighMask(w.deadEnds,w,0x7dea11);
+ for(let i=0;i<hi.data.length;i++)if(hiLoop[i]||hiConn[i]||hiDead[i])hi.data[i]=1;
+ w.highTypeMasks={loop:hiLoop,connector:hiConn,dead:hiDead};
+ w.biomeTypeMasks=buildBiomeTypeMasks(w,hi);
+ w.playDetailMask=buildDetailedMaterialMask(w,hi,w.biomeTypeMasks.base);
+ w.cellIntegralCache=null;
+ w.zoomTileCache=buildZoomTileCache(w);w.cellDataMap=w.zoomTileCache;
+ w.virtualPlanReady=true;
+}
+function buildCellIntegralCache(w){
+ const hi=w.lodCascade?.[8],conn=w.highTypeMasks?.connector,loop=w.highTypeMasks?.loop,dead=w.highTypeMasks?.dead;
+ if(!hi)return null;
+ const key=hi.w+'x'+hi.h+':'+(w.seed|0);
+ if(w.cellIntegralCache?.key===key)return w.cellIntegralCache;
+ const stride=hi.w+1,size=stride*(hi.h+1),floorIntegral=new Uint32Array(size),roadIntegral=new Uint32Array(size);
+ for(let y=0;y<hi.h;y++){
+  let floorRow=0,roadRow=0;const src=y*hi.w,dst=(y+1)*stride,prev=y*stride;
+  for(let x=0;x<hi.w;x++){
+   const q=src+x;floorRow+=hi.data[q]?1:0;roadRow+=(conn?.[q]||loop?.[q]||dead?.[q])?1:0;
+   floorIntegral[dst+x+1]=floorIntegral[prev+x+1]+floorRow;
+   roadIntegral[dst+x+1]=roadIntegral[prev+x+1]+roadRow;
+  }
+ }
+ return w.cellIntegralCache={key,stride,floorIntegral,roadIntegral};
+}
+function integralRectSum(a,stride,x0,y0,x1,y1){return a[y1*stride+x1]-a[y0*stride+x1]-a[y1*stride+x0]+a[y0*stride+x0]}
+function buildZoomTileCache(w){
+ const t0=performance.now(),l=zoomTileLayout(w),N=l.isoCols*l.isoRows;
+ // Это полная логическая карта клеток, а не графический кэш. На ней позже
+ // можно детерминированно спавнить декорации независимо от камеры и рендера.
+ const active=new Uint8Array(N),type=new Uint8Array(N),roleDetailed=new Uint8Array(N),roleSimple=new Uint8Array(N),variant=new Uint8Array(N),alpha=new Uint8Array(N),roadMap=new Uint8Array(N),decorationMask=new Uint8Array(N),decorationSeed=new Uint32Array(N);
+ const baseMask=w.biomeTypeMasks?.base,hi=w.lodCascade?.[8],integrals=buildCellIntegralCache(w);
+ if(!baseMask||!hi||!integrals)return {l,active,type,roleDetailed,roleSimple,variant,alpha,roadMap,decorationMask,decorationSeed,ms:performance.now()-t0};
+ const {stride,floorIntegral,roadIntegral}=integrals;
+ for(let y=0;y<l.isoRows;y++)for(let x=0;x<l.isoCols;x++){
+  const i=y*l.isoCols+x,b=isoCellHighBounds(w,x,y,l),total=Math.max(1,(b.sx1-b.sx0)*(b.sy1-b.sy0));
+  const open=integralRectSum(floorIntegral,stride,b.sx0,b.sy0,b.sx1,b.sy1),roadCount=integralRectSum(roadIntegral,stride,b.sx0,b.sy0,b.sx1,b.sy1),cov=open/total;
+  const hx=Math.min(hi.w-1,Math.floor((b.sx0+b.sx1)*.5)),hy=Math.min(hi.h-1,Math.floor((b.sy0+b.sy1)*.5)),q=hy*hi.w+hx,bt=baseMask[q]||0,road=roadCount>0;
+  type[i]=bt;roadMap[i]=road?1:0;variant[i]=groundDiamondVariant(w,x,y);
+  // Seed существует для каждой клетки, в том числе пока не видимой камерой.
+  const seed=((Math.imul((x+1)^w.seed,0x9e3779b1)^Math.imul((y+1)^(w.seed>>>1),0x85ebca6b))>>>0);decorationSeed[i]=seed;
+  if(cov<.28)continue;
+  active[i]=1;alpha[i]=Math.round((road?1:Math.min(1,.72+cov*.38))*255);
+  roleDetailed[i]=w.playDetailMask?sampleDetailedMaterialMaskId(w.playDetailMask,hx,hy,w.seed):(MATERIAL_ROLE_IDS[groundTileRole(w,hx,hy,bt,road,'detailed')]||0);roleSimple[i]=MATERIAL_ROLE_IDS[dominantBiomeMaterial(bt)]||0;
+  // Базовая пригодность для декора: пол, не тоннель, не слишком прозрачный край.
+  decorationMask[i]=(!road&&cov>.62)?1:0;
+ }
+ const result={l,active,type,roleDetailed,roleSimple,variant,alpha,roadMap,decorationMask,decorationSeed,ms:performance.now()-t0};
+ w.cellDataMap=result;
+ return result;
+}
+
+function groundChunkCanvas16(w,cx,cy){
+ if(!(S.groundChunkCache instanceof Map))S.groundChunkCache=new Map();
+ const cache=w.zoomTileCache||(w.zoomTileCache=buildZoomTileCache(w)),l=cache.l,size=16;
+ const key=[cx,cy,S.groundMode,w.seed,w.zoomTileCacheVersion||0].join('|');
+ if(S.groundChunkCache.has(key))return S.groundChunkCache.get(key);
+ const x0=cx*size,y0=cy*size,x1=Math.min(l.isoCols,x0+size),y1=Math.min(l.isoRows,y0+size);
+ if(x0>=x1||y0>=y1)return null;
+ const corners=[isoDiamondPoint(w,x0,y0,l),isoDiamondPoint(w,x1-1,y0,l),isoDiamondPoint(w,x0,y1-1,l),isoDiamondPoint(w,x1-1,y1-1,l)];
+ const minX=Math.floor(Math.min(...corners.map(p=>p.px))-l.diamondW),maxX=Math.ceil(Math.max(...corners.map(p=>p.px))+l.diamondW*2);
+ const minY=Math.floor(Math.min(...corners.map(p=>p.py))-l.diamondH),maxY=Math.ceil(Math.max(...corners.map(p=>p.py))+l.diamondH*2);
+ const cv=document.createElement('canvas');cv.width=Math.max(1,maxX-minX);cv.height=Math.max(1,maxY-minY);
+ const g=cv.getContext('2d',{alpha:true});g.imageSmoothingEnabled=true;g.imageSmoothingQuality='high';
+ for(let sum=x0+y0;sum<=x1+y1-2;sum++){
+  const yy0=Math.max(y0,sum-(x1-1)),yy1=Math.min(y1-1,sum-x0);
+  for(let y=yy0;y<=yy1;y++){
+   const x=sum-y,i=y*l.isoCols+x;if(!cache.active[i])continue;
+   const type=cache.type[i],rid=S.groundMode==='simple'?cache.roleSimple[i]:cache.roleDetailed[i],role=MATERIAL_ID_ROLES[rid];
+   const tile=getDisplayedGroundDiamond(role,cache.variant[i],type,S.groundMode);if(!tile)continue;
+   const p=isoDiamondPoint(w,x,y,l);g.globalAlpha=cache.alpha[i]/255;
+   g.drawImage(tile,p.px-minX,p.py-minY,l.diamondW,l.diamondH);
+  }
+ }
+ g.globalAlpha=1;
+ const centerCellX=(x0+x1-1)*.5,centerCellY=(y0+y1-1)*.5,center=isoDiamondPoint(w,centerCellX,centerCellY,l);
+ const out={canvas:cv,x:minX,y:minY,centerX:center.px+l.diamondW*.5,centerY:center.py+l.diamondH*.5};
+ S.groundChunkCache.set(key,out);return out
+}
+function drawZoomGroundDiamonds(g,w,rc){
+ if(S.groundMode==='technical'||!S.tileView||(!S.playMode&&S.zoom<22)||!groundAtlasesReady())return false;
+ const l=zoomTileLayout(w),size=16,maxCX=Math.max(0,Math.ceil(l.isoCols/size)-1),maxCY=Math.max(0,Math.ceil(l.isoRows/size)-1);
+ const margin=MathX.clamp(UI.number('groundCullMargin',-190),-800,1200);
+ const left=-margin,right=rc.width+margin,top=-margin,bottom=rc.height+margin;
  let drawn=0;
  g.save();g.imageSmoothingEnabled=true;g.imageSmoothingQuality='high';
- for(let sum=vb.x0+vb.y0;sum<vb.x1+vb.y1-1;sum++){
-   const yMin=Math.max(vb.y0,sum-(vb.x1-1)),yMax=Math.min(vb.y1-1,sum-vb.x0);
-   for(let y=yMin;y<=yMax;y++){
-     const x=sum-y,coverage=isoCellCoverage(w,x,y,l);
-     if(coverage<.28)continue;
-     const sample=isoCellBiomeSample(w,x,y,l),hx=sample.hx,hy=sample.hy,type=sample.type,isRoad=isoCellRoad(w,x,y,l);
-     const role=groundTileRole(w,hx,hy,type,isRoad),tile=getDisplayedGroundDiamond(role,groundDiamondVariant(w,x,y),type);
-     if(!tile)continue;
-     const p=isoDiamondPoint(w,x,y,l),px=p.px,py=p.py;
-     if(!isoDiamondVisible(p,l,rc))continue;
-     g.globalAlpha=Math.min(1,.72+coverage*.38);
-     g.drawImage(tile,px,py,diamondW,diamondH);
-     drawn++;
-   }
+ for(let cy=0;cy<=maxCY;cy++)for(let cx=0;cx<=maxCX;cx++){
+  const item=groundChunkCanvas16(w,cx,cy);if(!item)continue;
+  const sx=S.panX+item.centerX*S.zoom,sy=S.panY+item.centerY*S.zoom;
+  if(sx<left||sx>right||sy<top||sy>bottom)continue;
+  g.drawImage(item.canvas,item.x,item.y);
+  drawn++;S.drawCalls++;S.visibleChunksDrawn++;
  }
- g.globalAlpha=1;g.restore();return drawn>0;
+ g.restore();return drawn>0
 }
 function drawTileFillDebug(g,w){
  if(!chk('debugTileFill'))return;
@@ -1124,7 +1427,7 @@ function scheduleInitialGeneration(){
  const start=()=>{
    requestAnimationFrame(()=>requestAnimationFrame(()=>{
      setTimeout(()=>{
-       if(!S.world&&BIOME_ATLAS.ready)requestGenerate(false);
+       // v5.2: при открытии HTML карта намеренно не генерируется.
      },60);
    }));
  };
@@ -1138,8 +1441,8 @@ function loadBiomeAtlas(){
   const c=document.createElement('canvas');c.width=img.naturalWidth;c.height=img.naturalHeight;
   const g=c.getContext('2d',{willReadFrequently:true});g.drawImage(img,0,0);
   BIOME_ATLAS.image=img;BIOME_ATLAS.canvas=c;BIOME_ATLAS.ctx=g;
-  BIOME_ATLAS.data=g.getImageData(0,0,c.width,c.height);BIOME_ATLAS.ready=true;environmentDiamondCache.clear();
-  scheduleInitialGeneration();
+  BIOME_ATLAS.data=g.getImageData(0,0,c.width,c.height);BIOME_ATLAS.ready=true;
+  // Карта строится только явной кнопкой Редактирование или Play.
  };
  img.onerror=()=>{
   BIOME_ATLAS.ready=false;
@@ -1177,59 +1480,179 @@ function outerBiomePixel(type,x,y,w){
 }
 
 function biomeTilePalette(type){
- // Одинаковые игровые роли сохраняются во всех климатах, меняется только палитра.
+ // Шесть постоянных ролей: земля, глина, трава, высокая трава, гравий, камень.
+ // Снежные варианты холоднее и светлее; болото использует влажные земли и мох.
  const palettes={
-  0:{earth:[103,101,67],clay:[113,98,61],grass:[75,108,65],stone:[113,116,99],road:[129,116,82],swamp:[72,99,72]},
-  1:{earth:[83,82,79],clay:[102,88,77],grass:[72,83,72],stone:[117,119,120],road:[132,119,101],swamp:[61,68,64]},
-  2:{earth:[54,51,64],clay:[68,57,72],grass:[49,63,61],stone:[83,80,91],road:[104,91,91],swamp:[43,47,57]},
-  3:{earth:[64,73,43],clay:[92,67,43],grass:[48,103,48],stone:[93,96,79],road:[118,96,67],swamp:[39,72,48]},
-  5:{earth:[104,137,155],clay:[112,139,151],grass:[88,146,148],stone:[139,166,181],road:[143,163,170],swamp:[55,127,173]},
-  6:{earth:[126,131,137],clay:[141,133,130],grass:[117,137,127],stone:[169,174,181],road:[181,171,155],swamp:[103,118,123]},
-  7:{earth:[111,128,112],clay:[132,119,105],grass:[96,147,105],stone:[145,151,143],road:[162,148,126],swamp:[82,116,101]},
-  8:{earth:[151,113,58],clay:[168,94,54],grass:[147,122,67],stone:[151,132,105],road:[183,142,83],swamp:[131,101,61]},
-  9:{earth:[112,83,57],clay:[132,76,50],grass:[105,91,62],stone:[131,116,99],road:[153,114,72],swamp:[94,74,58]}
+  0:{earth:[94,88,58],clay:[72,68,48],grass:[76,105,67],tallGrass:[54,83,55],gravel:[100,101,82],stone:[77,91,71]},
+  1:{earth:[117,91,65],clay:[101,91,79],grass:[128,119,77],tallGrass:[100,94,65],gravel:[126,122,113],stone:[113,108,101]},
+  2:{earth:[59,57,66],clay:[48,47,57],grass:[57,68,62],tallGrass:[43,55,52],gravel:[79,79,87],stone:[69,70,78]},
+  3:{earth:[76,67,43],clay:[59,51,35],grass:[54,108,48],tallGrass:[37,79,39],gravel:[104,101,81],stone:[86,87,73]},
+  4:{earth:[104,91,62],clay:[79,69,49],grass:[79,116,61],tallGrass:[57,88,48],gravel:[120,116,96],stone:[101,102,91]},
+  5:{earth:[126,148,158],clay:[103,128,142],grass:[104,156,158],tallGrass:[76,130,144],gravel:[153,174,184],stone:[125,157,169]},
+  6:{earth:[160,158,157],clay:[138,144,149],grass:[154,164,151],tallGrass:[125,145,139],gravel:[184,190,196],stone:[169,180,188]},
+  7:{earth:[146,146,134],clay:[120,126,125],grass:[127,172,132],tallGrass:[99,145,116],gravel:[173,181,180],stone:[151,164,166]},
+  8:{earth:[190,151,83],clay:[145,101,62],grass:[169,143,83],tallGrass:[137,112,66],gravel:[169,153,123],stone:[151,134,106]},
+  9:{earth:[132,104,70],clay:[103,76,55],grass:[126,111,72],tallGrass:[96,86,60],gravel:[145,135,116],stone:[128,119,104]}
  };
  return palettes[type]||palettes[3];
 }
 const BIOME_MATERIAL_PROFILES={
- // Все профили обязательно содержат землю, траву и камень. Дополнительные роли
- // создают климатический характер, но не заменяют базовые материалы целиком.
- 0:{earth:.34,grass:.27,stone:.14,swamp:.25},       // озеро: болотная почва и растительность
- 1:{earth:.24,grass:.14,stone:.56,clay:.06},       // скалы
- 2:{earth:.38,grass:.24,stone:.22,swamp:.16},      // туман наследует нейтральную влажную землю
- 3:{earth:.25,grass:.58,stone:.14,swamp:.03},      // лес
- 5:{earth:.30,grass:.25,stone:.18,swamp:.27},      // снежное озеро
- 6:{earth:.20,grass:.12,stone:.62,clay:.06},       // снежные скалы
- 7:{earth:.25,grass:.50,stone:.22,swamp:.03},      // снежный лес
- 8:{earth:.28,grass:.08,stone:.18,clay:.46},       // пустыня
- 9:{earth:.34,grass:.14,stone:.20,clay:.32}
+ // В подробном режиме каждый профиль содержит все шесть ролей. Вес задаёт
+ // преобладание, а связные зональные алгоритмы решают их пространственную форму.
+ 0:{earth:.20,clay:.20,grass:.19,tallGrass:.21,gravel:.08,stone:.12}, // болото
+ 1:{earth:.18,clay:.22,grass:.10,tallGrass:.08,gravel:.18,stone:.24}, // скалы
+ 2:{earth:.26,clay:.16,grass:.20,tallGrass:.12,gravel:.12,stone:.14}, // туман
+ 3:{earth:.20,clay:.10,grass:.34,tallGrass:.22,gravel:.06,stone:.08}, // лес
+ 4:{earth:.28,clay:.12,grass:.27,tallGrass:.15,gravel:.09,stone:.09}, // равнина
+ 5:{earth:.20,clay:.20,grass:.18,tallGrass:.20,gravel:.09,stone:.13}, // снежное болото
+ 6:{earth:.16,clay:.22,grass:.09,tallGrass:.07,gravel:.19,stone:.27}, // снежные скалы
+ 7:{earth:.19,clay:.11,grass:.32,tallGrass:.21,gravel:.07,stone:.10}, // снежный лес
+ 8:{earth:.31,clay:.24,grass:.14,tallGrass:.10,gravel:.11,stone:.10}, // пустыня
+ 9:{earth:.29,clay:.22,grass:.15,tallGrass:.11,gravel:.12,stone:.11}
 };
-function materialNoise(w,x,y,salt,scale){return outerFbm(x,y,w.seed^salt,scale)}
-function smoothMaterialField(w,x,y,role){
- const salts={earth:0x6a09e6,grass:0x7dea11,stone:0x51f15e,swamp:0x19c0aa,clay:0xc1a7aa};
- const baseSalt=salts[role]??0xabc983;
- const warpX=(outerFbm(x+113,y-71,w.seed^(baseSalt+0x101),96)-.5)*26;
- const warpY=(outerFbm(x-59,y+137,w.seed^(baseSalt+0x202),88)-.5)*26;
- const broad=outerFbm(x+warpX,y+warpY,w.seed^baseSalt,72);
- const mid=outerFbm(x*.75+warpY*.2,y*.75-warpX*.2,w.seed^(baseSalt+0x303),31);
- const ridge=1-Math.abs(outerFbm(x+warpX*.55,y+warpY*.55,w.seed^(baseSalt+0x404),44)*2-1);
- return broad*.55+mid*.30+ridge*.15;
+const DEFAULT_ROLE_LABELS={earth:'земля',clay:'глина',grass:'трава',tallGrass:'высокая трава',gravel:'гравий',stone:'камень'};
+function biomeRoleLabels(type){
+ if(type===0||type===5)return {earth:'земля',clay:'глина',grass:'болотная почва',tallGrass:'болотная трава',gravel:'камень',stone:'мшистый камень'};
+ if(type===1||type===6)return {earth:'сухая земля',clay:'каменистая земля',grass:'сухая трава',tallGrass:'высокая сухая трава',gravel:'гравий',stone:'булыжник'};
+ if(type===8||type===9)return {earth:'песок',clay:'грязь',grass:'сухая трава с песком',tallGrass:'сухая трава',gravel:'гравий',stone:'камни'};
+ return DEFAULT_ROLE_LABELS;
 }
-function groundTileRole(w,x,y,type,isRoad){
- if(isRoad)return 'road';
+function materialNoise(w,x,y,salt,scale){return outerFbm(x,y,w.seed^salt,scale)}
+function dominantBiomeMaterial(type){
  const profile=BIOME_MATERIAL_PROFILES[type]||BIOME_MATERIAL_PROFILES[3];
- const roles=Object.entries(profile);
- let best=roles[0][0],bestScore=-Infinity,total=0;
- for(const v of Object.values(profile))total+=v;
- const dominance=Object.fromEntries(roles.map(([role,weight])=>[role,weight/Math.max(.0001,total)]));
- for(const [role,weight] of roles){
-   const field=smoothMaterialField(w,x,y,role);
-   const bias=Math.log(Math.max(.025,weight/Math.max(.0001,total)))*.18;
-   const rareBoost=(dominance[role]<.12?0.035:0);
-   const score=field+bias+rareBoost;
-   if(score>bestScore){bestScore=score;best=role}
+ let best='earth',weight=-1;for(const role in profile)if(profile[role]>weight){best=role;weight=profile[role]}return best;
+}
+function weightedRoleFromUnit(profile,u){
+ let acc=0,last='earth';for(const [role,weight] of Object.entries(profile)){last=role;acc+=weight;if(u<acc)return role}return last;
+}
+function materialZoneSample(w,x,y,type,cellSize,salt){
+ const warpX=(outerFbm(x,y,w.seed^(salt^0x51ed270b),58)-.5)*cellSize*1.35;
+ const warpY=(outerFbm(x+211,y-137,w.seed^(salt^0x9e3779b9),58)-.5)*cellSize*1.35;
+ const px=(x+warpX)/cellSize,py=(y+warpY)/cellSize,cx=Math.floor(px),cy=Math.floor(py);
+ let d1=1e9,d2=1e9,bx=0,by=0;
+ for(let oy=-1;oy<=1;oy++)for(let ox=-1;ox<=1;ox++){
+   const gx=cx+ox,gy=cy+oy,jx=.15+outerHash(gx,gy,w.seed^salt)*.70,jy=.15+outerHash(gx,gy,w.seed^(salt^0x85ebca6b))*.70;
+   const dx=px-(gx+jx),dy=py-(gy+jy),d=dx*dx+dy*dy;
+   if(d<d1){d2=d1;d1=d;bx=gx;by=gy}else if(d<d2)d2=d;
  }
- return best;
+ return{unit:outerHash(bx,by,w.seed^(salt^type*0x45d9f3b)),edge:Math.max(0,Math.min(1,(Math.sqrt(d2)-Math.sqrt(d1))*2.2)),cellX:bx,cellY:by};
+}
+
+// Десять художественных конфигураций, отобранных в отдельном стенде.
+// Два варианта Hybrid Continental сохранены с разным масштабом зон.
+const DETAILED_FILL_PRESETS=[
+ {key:'1',kind:'fbm',zone:10,contrast:1.80,iterations:2,thickness:1},
+ {key:'2a',kind:'hybrid',zone:10,contrast:1.80,iterations:2,thickness:1},
+ {key:'2b',kind:'hybrid',zone:18,contrast:1.80,iterations:2,thickness:1},
+ {key:'4',kind:'edge',zone:9,contrast:1.80,iterations:2,thickness:1},
+ {key:'5',kind:'phi',zone:14,contrast:1.80,iterations:2,thickness:1},
+ {key:'6',kind:'majority',zone:16,contrast:1.25,iterations:2,thickness:1},
+ {key:'7',kind:'bands',zone:20,contrast:.70,iterations:2,thickness:1},
+ {key:'8',kind:'ridged',zone:19,contrast:1.00,iterations:2,thickness:1},
+ {key:'U',kind:'smoothLife',zone:4,contrast:1.80,iterations:2,thickness:1},
+ {key:'I',kind:'metaballs',zone:12,contrast:.85,iterations:2,thickness:1}
+];
+function clampUnit(v){return v<0?0:v>.999999?.999999:v}
+function contrastUnit(v,c){return clampUnit(.5+(v-.5)*c)}
+function presetForPoint(w,x,y,type){
+ // Крупная карта выбора алгоритма: один пресет держится на большой связной области.
+ const z=materialZoneSample(w,x,y,type,72,0x6a09e667);
+ const i=Math.min(DETAILED_FILL_PRESETS.length-1,(z.unit*DETAILED_FILL_PRESETS.length)|0);
+ return {preset:DETAILED_FILL_PRESETS[i],selection:z};
+}
+function worleyField(w,x,y,type,scale,salt){
+ const z=materialZoneSample(w,x,y,type,Math.max(3,scale),salt);
+ return {value:clampUnit(.62*(1-Math.min(1,z.edge))+.38*z.unit),edge:z.edge,unit:z.unit};
+}
+function selectedPresetField(w,x,y,type,p){
+ const seedSalt=(type+1)*0x45d9f3b;
+ const n=outerFbm(x,y,w.seed^(0x243f6a88^seedSalt),p.zone);
+ let v=n,edge=1;
+ if(p.kind==='hybrid'){
+   const q=worleyField(w,x,y,type,p.zone,0x13198a2e^seedSalt);
+   const ridge=1-Math.abs(outerFbm(x+31,y-17,w.seed^(0xa4093822^seedSalt),Math.max(4,p.zone*.7))*2-1);
+   v=.55*n+.28*q.value+.17*ridge;edge=q.edge;
+ }else if(p.kind==='edge'){
+   // FBM задаёт массы, узкая полоса около медианы становится переходной землёй.
+   v=n;edge=Math.min(1,Math.abs(n-.5)/.08);
+ }else if(p.kind==='phi'){
+   const a=worleyField(w,x,y,type,p.zone,0x299f31d0^seedSalt);
+   const b=worleyField(w,x,y,type,p.zone/1.61803398875,0x082efa98^seedSalt);
+   v=.60*a.value+.40*b.value;edge=Math.min(a.edge,b.edge);
+ }else if(p.kind==='majority'){
+   // Два дешёвых прохода большинства над непрерывным полем без выделения массивов.
+   let sum=0,weight=0;
+   for(let oy=-2;oy<=2;oy++)for(let ox=-2;ox<=2;ox++){
+     const wt=(ox===0&&oy===0)?4:(Math.abs(ox)+Math.abs(oy)<=1?2:1);
+     sum+=outerFbm(x+ox*2,y+oy*2,w.seed^(0x452821e6^seedSalt),p.zone)*wt;weight+=wt;
+   }
+   v=sum/weight;
+ }else if(p.kind==='bands'){
+   const a=outerFbm(x,y,w.seed^(0x38d01377^seedSalt),p.zone);
+   const b=outerFbm(x+53,y-29,w.seed^(0xbe5466cf^seedSalt),Math.max(4,p.zone*.48));
+   v=.5+.5*Math.sin(a*15.5+b*4.2);
+ }else if(p.kind==='ridged'){
+   v=1-Math.abs(n*2-1);
+ }else if(p.kind==='smoothLife'){
+   // Непрерывный клеточный автомат: локальная плотность и мягкая S-кривая.
+   let sum=0,count=0;
+   for(let oy=-2;oy<=2;oy++)for(let ox=-2;ox<=2;ox++)if(ox||oy){
+     sum+=outerFbm(x+ox,y+oy,w.seed^(0x34e90c6c^seedSalt),p.zone);count++;
+   }
+   const avg=sum/count,center=outerFbm(x,y,w.seed^(0x34e90c6c^seedSalt),p.zone);
+   const birth=1/(1+Math.exp(-(avg-.49)*18));
+   v=.42*center+.58*birth;
+ }else if(p.kind==='metaballs'){
+   // Стабильные колонии: центры берутся из соседних ячеек, поэтому швов нет.
+   const sc=p.zone*1.7,cx=Math.floor(x/sc),cy=Math.floor(y/sc);let field=0;
+   for(let oy=-2;oy<=2;oy++)for(let ox=-2;ox<=2;ox++){
+     const gx=cx+ox,gy=cy+oy;
+     const px=(gx+.12+outerHash(gx,gy,w.seed^(0xc0ac29b7^seedSalt))*.76)*sc;
+     const py=(gy+.12+outerHash(gx,gy,w.seed^(0xc97c50dd^seedSalt))*.76)*sc;
+     const radius=sc*(.24+outerHash(gx,gy,w.seed^(0x3f84d5b5^seedSalt))*.25);
+     const dx=x-px,dy=y-py;field+=radius*radius/(dx*dx+dy*dy+radius*.35);
+   }
+   v=1-Math.exp(-field*.48);
+ }
+ return {value:contrastUnit(v,p.contrast),edge};
+}
+function weightedBiomeMaterial(w,x,y,type){
+ const profile=BIOME_MATERIAL_PROFILES[type]||BIOME_MATERIAL_PROFILES[3];
+ const chosen=presetForPoint(w,x,y,type),sample=selectedPresetField(w,x,y,type,chosen.preset);
+ let role=weightedRoleFromUnit(profile,sample.value);
+ // Переходные полосы у Edge Transition и на границе крупных пресетных областей.
+ if((chosen.preset.kind==='edge'&&sample.edge<.48)||chosen.selection.edge<.10){
+   if(role!=='earth'&&role!=='clay')role=sample.value>.5?'clay':'earth';
+ }
+ // Общие логические акценты остаются редкими и не разрушают рисунок пресета.
+ const ridge=1-Math.abs(outerFbm(x+type*37,y-type*23,w.seed^0x7f4a7c15,42)*2-1);
+ const moisture=outerFbm(x-type*19,y+type*29,w.seed^0x94d049bb,52);
+ if((profile.stone||0)>.08&&ridge>.93&&chosen.selection.edge>.22)role='stone';
+ if((profile.tallGrass||0)>.08&&moisture>.84&&ridge<.72&&chosen.selection.edge>.20)role='tallGrass';
+ return role;
+}
+function pairedMaterialRole(w,x,y,type,role){
+ // Парные роли чередуются внутри протяжённых подзон выбранного алгоритма.
+ const pairs={earth:'clay',clay:'earth',grass:'tallGrass',tallGrass:'grass',gravel:'stone',stone:'gravel'};
+ const mate=pairs[role];if(!mate)return role;
+ const chosen=presetForPoint(w,x,y,type),p=chosen.preset;
+ const broad=outerFbm(x+type*41,y-type*17,w.seed^0x3c6ef372,Math.max(7,p.zone*.82));
+ const elongated=outerFbm(x*.58+y*.16,y*.94-x*.09,w.seed^0xa54ff53a,Math.max(5,p.zone*.52));
+ const ridge=1-Math.abs(elongated*2-1);
+ const threshold=(role==='grass'||role==='gravel'||role==='earth')?.76:.87;
+ if(broad>.60&&ridge>threshold)return mate;
+ const island=materialZoneSample(w,x,y,type,Math.max(5,p.zone*.45),0x510e527f);
+ if(island.edge>.62&&island.unit>.88)return mate;
+ return role;
+}
+function groundTileRole(w,x,y,type,isRoad,mode=S.groundMode){
+ // Тоннель и маршрут — это геометрическая/техническая разметка, а не материал.
+ // В подробном и обычном автоцвете они проходят тот же биомный алгоритм,
+ // поэтому длинные обычные и розовые тоннели больше не выглядят как
+ // однотонные непрорисованные полосы. Их тип остаётся виден в режиме 4.
+ if(mode==='simple')return dominantBiomeMaterial(type);
+ const base=weightedBiomeMaterial(w,x,y,type);
+ return pairedMaterialRole(w,x,y,type,base);
 }
 function groundTilePixel(w,type,role,x,y,bx,by){
  const pal=biomeTilePalette(type),base=pal[role];
@@ -1239,18 +1662,180 @@ function groundTilePixel(w,type,role,x,y,bx,by){
  // Рисунок остаётся тайловым, но не превращает клетки в одноцветные квадраты.
  if(lx===0||ly===0)shade-=4;
  if(role==='grass'&&((lx+ly+bx*3)%7===0))shade+=13;
+ if(role==='tallGrass'&&((lx*2+ly+by)%6===0))shade+=15;
  if(role==='clay'&&Math.abs(Math.sin((x-y)*.45))>.88)shade-=10;
+ if(role==='gravel'&&((lx*5+ly*3+bx)%9===0))shade+=12;
  if(role==='stone'&&((lx*3+ly*5+bx+by)%11===0))shade+=18;
- if(role==='road'){
-   shade+=Math.sin((lx+ly*.45)*1.2)*5;
-   if(lx===1||lx===6)shade-=3;
- }
- if(role==='swamp'&&((lx+ly*2)%9===0))shade+=10;
  return [
   Math.max(0,Math.min(255,Math.round(base[0]+shade))),
   Math.max(0,Math.min(255,Math.round(base[1]+shade))),
   Math.max(0,Math.min(255,Math.round(base[2]+shade)))
  ];
+}
+
+
+const MATERIAL_ROLE_IDS={earth:0,clay:1,grass:2,tallGrass:3,gravel:4,stone:5};
+const MATERIAL_ID_ROLES=['earth','clay','grass','tallGrass','gravel','stone'];
+const DETAIL_MASK_STEP=3;
+// Экспериментальная библиотека процедурных паттернов. Тяжёлые функции
+// выполняются один раз для небольших шаблонов, после чего карта только читает
+// Uint8Array, применяя смещение/поворот/отражение по крупным мировым блокам.
+const PATTERN_LIBRARY_SIZE=96;
+let PROCEDURAL_PATTERN_LIBRARY=null;
+function ensureProceduralPatternLibrary(){
+ if(PROCEDURAL_PATTERN_LIBRARY)return {library:PROCEDURAL_PATTERN_LIBRARY,ms:0,cached:true};
+ const t0=performance.now(),size=PATTERN_LIBRARY_SIZE,fakeWorld={seed:0x51f15e};
+ const patterns=[];
+ for(let pi=0;pi<DETAILED_FILL_PRESETS.length;pi++){
+  const preset=DETAILED_FILL_PRESETS[pi],data=new Uint8Array(size*size);
+  // Координаты масштабируются так, чтобы каждый шаблон содержал несколько
+  // характерных зон выбранного алгоритма, а не один почти постоянный фрагмент.
+  const scale=Math.max(.65,18/preset.zone);
+  for(let y=0;y<size;y++)for(let x=0;x<size;x++){
+   const sample=selectedPresetField(fakeWorld,x/scale,y/scale,pi%9,preset);
+   data[y*size+x]=Math.max(0,Math.min(255,(sample.value*255)|0));
+  }
+  patterns.push(data);
+ }
+ PROCEDURAL_PATTERN_LIBRARY={size,patterns};
+ return {library:PROCEDURAL_PATTERN_LIBRARY,ms:performance.now()-t0,cached:false};
+}
+function patternValueAt(lib,presetIndex,x,y,seed,type){
+ const size=lib.size,macro=72,mx=Math.floor(x/macro),my=Math.floor(y/macro);
+ const h=outerHash(mx,my,seed^(type*0x45d9f3b)^(presetIndex*0x9e3779b9));
+ const transform=(h*8)|0,ox=((outerHash(mx,my,seed^0x68bc21eb)*size)|0),oy=((outerHash(mx,my,seed^0x02e5be93)*size)|0);
+ let lx=((x+ox)%size+size)%size,ly=((y+oy)%size+size)%size;
+ if(transform&1)lx=size-1-lx;if(transform&2)ly=size-1-ly;if(transform&4){const t=lx;lx=ly;ly=t}
+ return lib.patterns[presetIndex][ly*size+lx]/255;
+}
+function fastDetailedRoleFromLibrary(lib,w,x,y,type){
+ const macro=72,mx=Math.floor(x/macro),my=Math.floor(y/macro);
+ const presetIndex=Math.min(DETAILED_FILL_PRESETS.length-1,(outerHash(mx,my,w.seed^(type*0x27d4eb2d))*DETAILED_FILL_PRESETS.length)|0);
+ const profile=BIOME_MATERIAL_PROFILES[type]||BIOME_MATERIAL_PROFILES[3];
+ const value=patternValueAt(lib,presetIndex,x,y,w.seed,type);
+ let role=weightedRoleFromUnit(profile,value);
+ // Второй дешёвый lookup создаёт связные парные микрозоны без вызовов FBM.
+ const pairValue=patternValueAt(lib,(presetIndex+3)%lib.patterns.length,x+31,y-19,w.seed^0xa54ff53a,type);
+ const pairs={earth:'clay',clay:'earth',grass:'tallGrass',tallGrass:'grass',gravel:'stone',stone:'gravel'};
+ if(pairValue>.84&&pairs[role])role=pairs[role];
+ return role;
+}
+// v4.0: общий кэш растров. Один комплект ImageData/canvas на размер карты.
+// При повторной генерации массивы очищаются и заполняются заново без аллокаций.
+const BIOME_MASK_STEP=3;
+let SHARED_RASTER_CACHE=null;
+function ensureSharedRasterCache(width,height){
+ const key=width+'x'+height;
+ if(SHARED_RASTER_CACHE&&SHARED_RASTER_CACHE.key===key){
+  const c=SHARED_RASTER_CACHE;
+  for(const img of Object.values(c.images))img.data.fill(0);
+  return {cache:c,reused:true,ms:0};
+ }
+ const t0=performance.now();
+ const names=['biome','biomeNoFog','colorGround','tileDetailed','tileSimple','outline'];
+ const images={},canvases={};
+ for(const name of names){
+  images[name]=new ImageData(width,height);
+  const canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;
+  canvases[name]=canvas;
+ }
+ SHARED_RASTER_CACHE={key,width,height,images,canvases};
+ return {cache:SHARED_RASTER_CACHE,reused:false,ms:performance.now()-t0};
+}
+function uploadCachedCanvas(cache,name,alpha=true){
+ const c=cache.canvases[name],g=c.getContext('2d',{alpha});
+ if(!alpha){g.globalCompositeOperation='copy';g.fillStyle='#020304';g.fillRect(0,0,c.width,c.height);g.globalCompositeOperation='source-over'}
+ else g.clearRect(0,0,c.width,c.height);
+ g.putImageData(cache.images[name],0,0);
+ return c;
+}
+function buildBiomeTypeMasks(w,hi){
+ const totalStart=performance.now(),step=BIOME_MASK_STEP;
+ const lw=Math.ceil(hi.w/step)+1,lh=Math.ceil(hi.h/step)+1;
+ const lowBase=new Uint8Array(lw*lh),lowFog=new Uint8Array(lw*lh);
+ const base=new Uint8Array(hi.w*hi.h),fog=new Uint8Array(hi.w*hi.h);
+ const lowStart=performance.now();
+ for(let ly=0;ly<lh;ly++)for(let lx=0;lx<lw;lx++){
+  const x=Math.min(hi.w-1,lx*step),y=Math.min(hi.h-1,ly*step),i=ly*lw+lx;
+  lowBase[i]=smoothOuterBiomeBaseType(w,x,y);
+ }
+ const lowBaseMs=performance.now()-lowStart,fogLowStart=performance.now(),b=w.outerBiomes;
+ for(let ly=0;ly<lh;ly++)for(let lx=0;lx<lw;lx++){
+  const x=Math.min(hi.w-1,lx*step),y=Math.min(hi.h-1,ly*step),i=ly*lw+lx;
+  const v=sampleOuterScore(b.fogScore,w,x,y)+(outerFbm(x+91,y-47,w.seed^0x193b,92)-.5)*.045;
+  lowFog[i]=v>=b.fogCut?2:lowBase[i];
+ }
+ const lowFogMs=performance.now()-fogLowStart,expandStart=performance.now();
+ // Один дешёвый разворачивающий проход; обе полноразмерные карты используют одну сетку.
+ for(let y=0;y<hi.h;y++){
+  const ly=Math.min(lh-1,(y/step)|0),srcRow=ly*lw,dstRow=y*hi.w;
+  for(let x=0;x<hi.w;x++){
+   const si=srcRow+Math.min(lw-1,(x/step)|0),di=dstRow+x;
+   base[di]=lowBase[si];fog[di]=lowFog[si];
+  }
+ }
+ const expandMs=performance.now()-expandStart;
+ return {fog,base,lowBase,lowFog,lw,lh,step,baseMs:lowBaseMs,fogMs:lowFogMs,expandMs,ms:performance.now()-totalStart};
+}
+function buildDetailedMaterialMask(w,hi,baseBiome){
+ const totalStart=performance.now(),prep=ensureProceduralPatternLibrary(),lib=prep.library;
+ const applyStart=performance.now(),step=DETAIL_MASK_STEP,mw=Math.ceil(hi.w/step)+1,mh=Math.ceil(hi.h/step)+1,roles=new Uint8Array(mw*mh);
+ for(let my=0;my<mh;my++)for(let mx=0;mx<mw;mx++){
+  const x=Math.min(hi.w-1,mx*step),y=Math.min(hi.h-1,my*step),type=baseBiome[y*hi.w+x];
+  roles[my*mw+mx]=MATERIAL_ROLE_IDS[fastDetailedRoleFromLibrary(lib,w,x,y,type)]||0;
+ }
+ const applyMs=performance.now()-applyStart;
+ return {roles,mw,mh,step,libraryMs:prep.ms,libraryCached:prep.cached,applyMs,ms:performance.now()-totalStart};
+}
+function sampleDetailedMaterialMask(mask,x,y,seed){
+ const fx=x/mask.step,fy=y/mask.step,x0=Math.floor(fx),y0=Math.floor(fy),tx=fx-x0,ty=fy-y0;
+ const x1=Math.min(mask.mw-1,x0+1),y1=Math.min(mask.mh-1,y0+1),a=mask.roles[y0*mask.mw+x0],b=mask.roles[y0*mask.mw+x1],c=mask.roles[y1*mask.mw+x0],d=mask.roles[y1*mask.mw+x1];
+ if(a===b&&a===c&&a===d)return MATERIAL_ID_ROLES[a];
+ // Стохастическая билинейная выборка применяется только на границе масок.
+ // Внутри однородной зоны путь полностью детерминирован и не создаёт шахматку.
+ const h=outerHash(x,y,seed^0x6d2b79f5),wA=(1-tx)*(1-ty),wB=tx*(1-ty),wC=(1-tx)*ty;
+ const id=h<wA?a:h<wA+wB?b:h<wA+wB+wC?c:d;
+ return MATERIAL_ID_ROLES[id];
+}
+
+
+// v4.2: packed RGBA pipeline. Все итоговые пиксели записываются одним Uint32,
+// а общие шумовые выборки материала вычисляются один раз на клетку-пиксель.
+const PACK_RGBA=(r,g,b,a=255)=>((a<<24)|(b<<16)|(g<<8)|r)>>>0;
+function outerBiomePacked(type,x,y,w){
+ if(!BIOME_ATLAS.ready||!BIOME_ATLAS.data)throw new Error('Атлас биомов ещё не загружен: '+BIOME_ATLAS.path);
+ const img=BIOME_ATLAS.data,tw=(img.width/3)|0,th=(img.height/3)|0,[cx,cy]=biomeAtlasCell(type);
+ const scale=.3833333333,ox=((w.seed>>>3)%tw+tw)%tw,oy=((w.seed>>>11)%th+th)%th;
+ const sx=cx*tw+(((Math.floor(x/scale)+ox)%tw+tw)%tw),sy=cy*th+(((Math.floor(y/scale)+oy)%th+th)%th);
+ const p=(sy*img.width+sx)*4,d=img.data;
+ return PACK_RGBA(d[p],d[p+1],d[p+2],255);
+}
+let PACKED_BIOME_PALETTES=null,DOMINANT_ROLE_IDS=null;
+function ensurePackedBiomePalettes(){
+ if(PACKED_BIOME_PALETTES)return;
+ PACKED_BIOME_PALETTES=Array.from({length:10},(_,type)=>{
+  const pal=biomeTilePalette(type);return MATERIAL_ID_ROLES.map(role=>pal[role]);
+ });
+ DOMINANT_ROLE_IDS=Array.from({length:10},(_,type)=>MATERIAL_ROLE_IDS[dominantBiomeMaterial(type)]||0);
+}
+function sampleDetailedMaterialMaskId(mask,x,y,seed){
+ const fx=x/mask.step,fy=y/mask.step,x0=fx|0,y0=fy|0,tx=fx-x0,ty=fy-y0;
+ const x1=Math.min(mask.mw-1,x0+1),y1=Math.min(mask.mh-1,y0+1),a=mask.roles[y0*mask.mw+x0],b=mask.roles[y0*mask.mw+x1],c=mask.roles[y1*mask.mw+x0],d=mask.roles[y1*mask.mw+x1];
+ if(a===b&&a===c&&a===d)return a;
+ const h=outerHash(x,y,seed^0x6d2b79f5),wA=(1-tx)*(1-ty),wB=tx*(1-ty),wC=(1-tx)*ty;
+ return h<wA?a:h<wA+wB?b:h<wA+wB+wC?c:d;
+}
+function packedGroundPixel(type,roleId,x,y,bx,by,grain,micro){
+ const base=PACKED_BIOME_PALETTES[type][roleId],lx=x&7,ly=y&7;
+ let shade=(grain-.5)*12+(micro-.5)*9;
+ if(lx===0||ly===0)shade-=4;
+ if(roleId===2&&((lx+ly+bx*3)%7===0))shade+=13;
+ if(roleId===3&&((lx*2+ly+by)%6===0))shade+=15;
+ if(roleId===1&&Math.abs(Math.sin((x-y)*.45))>.88)shade-=10;
+ if(roleId===4&&((lx*5+ly*3+bx)%9===0))shade+=12;
+ if(roleId===5&&((lx*3+ly*5+bx+by)%11===0))shade+=18;
+ const r=Math.max(0,Math.min(255,Math.round(base[0]+shade))),g=Math.max(0,Math.min(255,Math.round(base[1]+shade))),b=Math.max(0,Math.min(255,Math.round(base[2]+shade)));
+ return PACK_RGBA(r,g,b,255);
 }
 
 function buildLodCanvases(w){
@@ -1261,12 +1846,16 @@ function buildLodCanvases(w){
  const hiDead=buildTypedHighMask(w.deadEnds,w,0x7dea11);
  for(let i=0;i<hi.data.length;i++)if(hiLoop[i]||hiConn[i]||hiDead[i])hi.data[i]=1;
  w.highTypeMasks={loop:hiLoop,connector:hiConn,dead:hiDead};
- const biomeImg=new ImageData(hi.w,hi.h),biomeNoFogImg=new ImageData(hi.w,hi.h);
- const colorGroundImg=new ImageData(hi.w,hi.h),tileGroundImg=new ImageData(hi.w,hi.h),outlineImg=new ImageData(hi.w,hi.h);
- const bp=biomeImg.data,np=biomeNoFogImg.data,cp=colorGroundImg.data,tp=tileGroundImg.data,op=outlineImg.data;
+ const buildStart=performance.now(),shared=ensureSharedRasterCache(hi.w,hi.h),rc=shared.cache;
+ const biomeImg=rc.images.biome,biomeNoFogImg=rc.images.biomeNoFog,colorGroundImg=rc.images.colorGround,tileGroundDetailedImg=rc.images.tileDetailed,tileGroundSimpleImg=rc.images.tileSimple,outlineImg=rc.images.outline;
+ const bp=biomeImg.data,np=biomeNoFogImg.data,cp=colorGroundImg.data,tdp=tileGroundDetailedImg.data,tsp=tileGroundSimpleImg.data,op=outlineImg.data;
+ const biomeMasks=buildBiomeTypeMasks(w,hi),detailMask=buildDetailedMaterialMask(w,hi,biomeMasks.base);
+ w.biomeTypeMasks=biomeMasks;
+ w.maskPerformance={biomes:biomeMasks.ms,biomeBase:biomeMasks.baseMs,biomeFog:biomeMasks.fogMs,biomeExpand:biomeMasks.expandMs||0,biomeStep:biomeMasks.step||1,rasterCacheMs:shared.ms||0,rasterCacheReused:shared.reused,detail:detailMask.ms,patternLibrary:detailMask.libraryMs||0,patternApply:detailMask.applyMs||0,patternCached:!!detailMask.libraryCached,step:DETAIL_MASK_STEP,steps:[]};
+ const rasterStart=performance.now();
  for(let y=0;y<hi.h;y++)for(let x=0;x<hi.w;x++){
    const i=y*hi.w+x,p=i*4,bx=Math.min(w.baseCols-1,Math.floor(x/F)),by=Math.min(w.baseRows-1,Math.floor(y/F));
-   const type=smoothOuterBiomeType(w,x,y),baseType=smoothOuterBiomeTypeNoFog(w,x,y);
+   const type=biomeMasks.fog[i],baseType=biomeMasks.base[i];
    const c=outerBiomePixel(type,x,y,w),n=outerBiomePixel(baseType,x,y,w);
    bp[p]=c[0];bp[p+1]=c[1];bp[p+2]=c[2];bp[p+3]=255;
    np[p]=n[0];np[p+1]=n[1];np[p+2]=n[2];np[p+3]=255;
@@ -1280,11 +1869,15 @@ function buildLodCanvases(w){
      const m=/^#([0-9a-f]{6})$/i.exec(a.color);if(m){const q=parseInt(m[1],16);color=[q>>16,(q>>8)&255,q&255]}
    }
    cp[p]=color[0];cp[p+1]=color[1];cp[p+2]=color[2];cp[p+3]=255;
-   const groundBiome=smoothOuterBiomeTypeNoFog(w,x,y);
+   const groundBiome=baseType;
    const isRoad=!!(hiConn[i]||hiLoop[i]||hiDead[i]||w.connector?.[by]?.[bx]||w.loopConnector?.[by]?.[bx]);
-   const role=groundTileRole(w,x,y,groundBiome,isRoad),tc=groundTilePixel(w,groundBiome,role,x,y,bx,by);
-   tp[p]=tc[0];tp[p+1]=tc[1];tp[p+2]=tc[2];tp[p+3]=255;
+   const detailedRole=sampleDetailedMaterialMask(detailMask,x,y,w.seed),simpleRole=dominantBiomeMaterial(groundBiome);
+   const dt=groundTilePixel(w,groundBiome,detailedRole,x,y,bx,by),st=groundTilePixel(w,groundBiome,simpleRole,x,y,bx,by);
+   tdp[p]=dt[0];tdp[p+1]=dt[1];tdp[p+2]=dt[2];tdp[p+3]=255;
+   tsp[p]=st[0];tsp[p+1]=st[1];tsp[p+2]=st[2];tsp[p+3]=255;
  }
+ w.maskPerformance.rasterFill=performance.now()-rasterStart;
+ const outlineStart=performance.now();
  // Отдельная тёмная обводка снаружи проходимой земли. Прозрачность управляется ползунком.
  const hat=(x,y)=>x>=0&&y>=0&&x<hi.w&&y<hi.h?hi.data[y*hi.w+x]:0;
  for(let y=0;y<hi.h;y++)for(let x=0;x<hi.w;x++){
@@ -1292,18 +1885,36 @@ function buildLodCanvases(w){
    let near=false;for(let oy=-2;oy<=2&&!near;oy++)for(let ox=-2;ox<=2;ox++)if(ox*ox+oy*oy<=4&&hat(x+ox,y+oy)){near=true;break}
    if(near){const p=i*4;op[p]=12;op[p+1]=15;op[p+2]=17;op[p+3]=255}
  }
- const makeCanvas=(img,alpha=true)=>{const c=document.createElement('canvas');c.width=hi.w;c.height=hi.h;const g=c.getContext('2d',{alpha});if(!alpha){g.fillStyle='#020304';g.fillRect(0,0,c.width,c.height)}g.putImageData(img,0,0);return c};
- w.biomeCanvas=makeCanvas(biomeImg,false);
- w.biomeNoFogCanvas=makeCanvas(biomeNoFogImg,false);
+ w.maskPerformance.outline=performance.now()-outlineStart;
+ const canvasStart=performance.now();
+ w.biomeCanvas=uploadCachedCanvas(rc,'biome',false);
+ w.biomeNoFogCanvas=uploadCachedCanvas(rc,'biomeNoFog',false);
  // Отдельная детализация окружения: не увеличивает число ромбов и не влияет на
  // производительность зума земли. Она лишь подчёркивает фактуру исходного RAW-атласа.
  for(const c of [w.biomeCanvas,w.biomeNoFogCanvas]){const g=c.getContext('2d');g.save();g.globalCompositeOperation='soft-light';g.globalAlpha=.14;g.drawImage(c,1,0);g.drawImage(c,-1,1);g.restore()}
- w.colorGroundCanvas=makeCanvas(colorGroundImg,true);
- w.tileGroundCanvas=makeCanvas(tileGroundImg,true);
- w.groundOutlineCanvas=makeCanvas(outlineImg,true);
+ w.colorGroundCanvas=uploadCachedCanvas(rc,'colorGround',true);
+ w.tileGroundDetailedCanvas=uploadCachedCanvas(rc,'tileDetailed',true);
+ w.tileGroundSimpleCanvas=uploadCachedCanvas(rc,'tileSimple',true);
+ w.tileGroundCanvas=w.tileGroundDetailedCanvas;
+ w.groundOutlineCanvas=uploadCachedCanvas(rc,'outline',true);
  // Совместимые готовые композиции для экспорта и старых обработчиков.
  const compose=(ground)=>{const c=document.createElement('canvas');c.width=hi.w;c.height=hi.h;const g=c.getContext('2d',{alpha:false});g.drawImage(w.biomeCanvas,0,0);g.drawImage(ground,0,0);return c};
- w.lodCanvases={8:compose(w.colorGroundCanvas)};w.tileCanvases={8:compose(w.tileGroundCanvas)};
+ w.lodCanvases={8:compose(w.colorGroundCanvas)};w.tileCanvases={8:compose(w.tileGroundDetailedCanvas)};
+ w.maskPerformance.canvasUpload=performance.now()-canvasStart;
+ w.maskPerformance.total=performance.now()-buildStart;
+ w.maskPerformance.steps=[
+  {name:'Биомные маски · всего',ms:w.maskPerformance.biomes},
+  {name:'↳ Базовые биомы (один проход)',ms:w.maskPerformance.biomeBase||0},
+  {name:'↳ Туман на общей низкой сетке',ms:w.maskPerformance.biomeFog||0},
+  {name:'↳ Развёртка общей сетки '+w.maskPerformance.biomeStep+'×'+w.maskPerformance.biomeStep,ms:w.maskPerformance.biomeExpand||0},
+  {name:'Общие ImageData/canvas'+(w.maskPerformance.rasterCacheReused?' (реюз)':' (создание)'),ms:w.maskPerformance.rasterCacheMs||0},
+  {name:'Библиотека процедурных паттернов'+(w.maskPerformance.patternCached?' (кэш)':''),ms:w.maskPerformance.patternLibrary},
+  {name:'Применение паттернов к маске',ms:w.maskPerformance.patternApply},
+  {name:'Низкая маска материалов · всего',ms:w.maskPerformance.detail},
+  {name:'Packed RGBA · один Uint32 + общий шум',ms:w.maskPerformance.rasterFill},
+  {name:'Контур земли',ms:w.maskPerformance.outline},
+  {name:'Загрузка ImageData в canvas',ms:w.maskPerformance.canvasUpload}
+ ];
 }
 
 function weightedAlgorithm(r){
@@ -1398,7 +2009,7 @@ function addPeripheralMegaCellularAutomata(floor,owner,seeds,stats,cols,rows,map
  return centers.length;
 }
 
-function generate(preserveCamera=false){
+function generate(preserveCamera=false,playPlanOnly=false){
  setLoading(true,'Подготовка');
  try{
  const perfStart=performance.now(),perfMarks=[],mark=name=>{const now=performance.now();perfMarks.push({name,ms:now-(perfMarks.length?perfMarks[perfMarks.length-1].at:perfStart),at:now});setLoading(true,name)};
@@ -1424,11 +2035,11 @@ function generate(preserveCamera=false){
    }
    seeds.push({...candidate,targetSize:ir(sizeLo,sizeHi,r),algo});
  }
- for(let y=0;y<rows;y++)for(let x=0;x<cols;x++){let bi=0,bd=1e20;for(let i=0;i<seeds.length;i++){const s=seeds[i],scale=.58+1.15*((s.targetSize-10)/45),d=((x-s.x)**2+(y-s.y)**2*.82)/(scale*scale);if(d<bd){bd=d;bi=i}}owner[y][x]=bi}
- const envelope=buildOrganicRegionEnvelope(owner,seeds,mapMargin,seed);
- const boxes=seeds.map(()=>({x1:cols,y1:rows,x2:0,y2:0}));
- for(let y=0;y<rows;y++)for(let x=0;x<cols;x++){const b=boxes[owner[y][x]];b.x1=Math.min(b.x1,x);b.y1=Math.min(b.y1,y);b.x2=Math.max(b.x2,x);b.y2=Math.max(b.y2,y)}
- mark('Размещение регионов и поле владельцев');
+ const ownerMask=buildOwnerFieldMasked(cols,rows,seeds),ownerFast=ownerMask.owner,boxes=ownerMask.boxes;
+ for(let y=0;y<rows;y++)owner[y]=ownerFast[y];
+ const envelopeMask=buildOrganicRegionEnvelopeTyped(owner,seeds,mapMargin,seed),envelope=envelopeMask.env;
+ const baseMaskPerformance={owner:ownerMask.ms,envelope:envelopeMask.ms,step:ownerMask.step,coarseCells:ownerMask.cells,fullCells:cols*rows};
+ mark('Маски основы: владельцы и органические границы');
  const stats=[];
  for(let i=0;i<seeds.length;i++){
    const b=boxes[i],bw=b.x2-b.x1+1,bh=b.y2-b.y1+1;if(bw<7||bh<7)continue;
@@ -1502,31 +2113,40 @@ function generate(preserveCamera=false){
  mark('Проверка связности и ремонт геометрии');
  const refined=refineWorld(floor,connector,loopConnector,deadEnds,owner,1,seed);
  let open=0,deadOpen=0;for(let y=0;y<refined.floor.length;y++)for(let x=0;x<refined.floor[0].length;x++){open+=refined.floor[y][x];deadOpen+=refined.deadEnds[y][x]}
- S.world={seed,cols:refined.floor[0].length,rows:refined.floor.length,baseCols:cols,baseRows:rows,cell:num('cell')/refined.factor,floor:refined.floor,connector:refined.connector,loopConnector:refined.loopConnector,deadEnds:refined.deadEnds,owner:refined.owner,seeds,stats,open,deadOpen,detail:8,connections,loopConnections,connectorBranches};mark('Финальное уточнение LOD 8');buildCascadeLOD(S.world);rebuildIsoLayerCache(S.world);mark('Биомы, текстуры и iso-пререндер');S.routes=null;if(S.routesVisible){S.routes=buildRouteNetwork(S.world);mark('Расчёт маршрутов')}const total=performance.now()-perfStart;const timings=perfMarks.map(({name,ms})=>({name,ms}));const longest=timings.reduce((a,b)=>!a||b.ms>a.ms?b:a,null);S.lastPerformance={total,timings,longest,generatedAt:new Date()};if(view)restoreView(view);else fit();updateStats();draw();buildLegend();setLoading(false)
+ S.envDetailCanvas=null;S.worldMapCache=null;S.worldMapCacheWorld=null;S.world={seed,cols:refined.floor[0].length,rows:refined.floor.length,baseCols:cols,baseRows:rows,cell:num('cell')/refined.factor,floor:refined.floor,connector:refined.connector,loopConnector:refined.loopConnector,deadEnds:refined.deadEnds,owner:refined.owner,seeds,stats,open,deadOpen,detail:8,connections,loopConnections,connectorBranches,baseMaskPerformance,playPlanOnly:!!playPlanOnly};mark('Финальное уточнение LOD 8');buildCascadeLOD(S.world,!playPlanOnly);if(playPlanOnly){mark('Виртуальный план: биомы, материалы и коллизии');preparePlayPlan(S.world);S.routes=buildRouteNetwork(S.world);mark('Разметка маршрутов и миникарты')}else{mark('Биомные маски и 2D-текстуры');rebuildIsoLayerCache(S.world);mark('Быстрый ISO-пререндер и окружение');S.routes=null;if(S.routesVisible){S.routes=buildRouteNetwork(S.world);mark('Расчёт маршрутов')}}const total=performance.now()-perfStart;const timings=perfMarks.map(({name,ms})=>({name,ms}));const longest=timings.reduce((a,b)=>!a||b.ms>a.ms?b:a,null);S.lastPerformance={total,timings,longest,generatedAt:new Date()};if(view)restoreView(view);else fit();updateStats();draw();buildLegend();setLoading(false);$('startScreen')?.classList.add('hidden');if(playPlanOnly||S.pendingPlay){const atCamera=!!S.pendingPlayAtCamera;S.pendingPlay=false;S.pendingPlayAtCamera=false;enterPlayMode(true,atCamera)}
  }catch(err){setLoading(true,'Ошибка генерации');throw err}
 }
 function buildLegend(){
  const items=[];
- if(!chk('terrainGroundMode')){
+ if(S.groundMode==='technical'){
    const used=new Set((S.world?.stats||[]).map(s=>s.algo));
    for(const a of algos.filter(a=>used.has(a.id)))items.push(`<div><b><span class="dot" style="background:${a.color}"></span>${a.name}</b>${a.desc}</div>`);
    if(S.world?.connections)items.push(`<div><b><span class="dot" style="background:#a98f68"></span>Соединительные тоннели</b>тип генерации проходов</div>`);
    if(S.world?.loopConnections)items.push(`<div><b><span class="dot" style="background:#ff2bd6"></span>Кольцевые тоннели</b>обходные связи</div>`);
    if(S.world?.deadOpen)items.push(`<div><b><span class="dot" style="background:#d06c8b"></span>Тупиковые ответвления</b>тонкие боковые ветви</div>`);
  }else{
-   const defs=[[0,'Озеро'],[1,'Скалы'],[3,'Лес'],[5,'Снежное озеро'],[6,'Снежные скалы'],[7,'Снежный лес'],[8,'Пустыня']];
-   const roleNames={earth:'земля',grass:'трава',stone:'камень',clay:'глина',swamp:'болотная почва',road:'дорога'};
-   for(const [type,name] of defs){const p=biomeTilePalette(type),profile=BIOME_MATERIAL_PROFILES[type]||BIOME_MATERIAL_PROFILES[3],dominant=Object.entries(profile).sort((a,b)=>b[1]-a[1])[0][0],c=p[dominant]||p.earth;const mix=Object.entries(profile).sort((a,b)=>b[1]-a[1]).map(([r,v])=>roleNames[r]+' '+Math.round(v*100)+'%').join(' · ');items.push(`<div><b><span class="dot" style="background:rgb(${c.join(',')})"></span>${name}</b>${mix}</div>`)}
+   const defs=[[0,'Болото'],[1,'Скалы'],[3,'Лес'],[5,'Снежное болото'],[6,'Снежные скалы'],[7,'Снежный лес'],[8,'Пустыня']];
+   for(const [type,name] of defs){const p=biomeTilePalette(type),profile=BIOME_MATERIAL_PROFILES[type]||BIOME_MATERIAL_PROFILES[3],roleNames=biomeRoleLabels(type),dominant=Object.entries(profile).sort((a,b)=>b[1]-a[1])[0][0],c=p[dominant]||p.earth;const mix=Object.entries(profile).sort((a,b)=>b[1]-a[1]).map(([r,v])=>(roleNames[r]||r)+' '+Math.round(v*100)+'%').join(' · ');items.push(`<div><b><span class="dot" style="background:rgb(${c.join(',')})"></span>${name}</b>${mix}</div>`)}
    items.push(`<div><b><span class="dot" style="background:#262334"></span>Туман войны</b>внешняя скрывающая маска</div>`);
  }
  $('legend').innerHTML=items.join('');
 }
 function updateStats(){
- const w=S.world,used=new Set(w.stats.map(s=>s.algo)),perf=S.lastPerformance;
- const l=isoLayout(w),screenCell=S.zoom,tileFrom=22;
- const tileStatus=!S.tileView?'выключены':(groundAtlasesReady()?(screenCell>=tileFrom?'ромбы активны':'авто: ждут zoom'):'атласы загружаются');
- const perfHtml=perf?`<br><br><b>Загрузка карты</b><br>Всего: ${perf.total.toFixed(1)} мс<br>Самый долгий этап: ${perf.longest?perf.longest.name+' — '+perf.longest.ms.toFixed(1)+' мс':'—'}<br>${perf.timings.map(t=>`${t.name}: ${t.ms.toFixed(1)} мс`).join('<br>')}`:'';
- $('stats').innerHTML=`Регионов: ${w.stats.length}<br>Клеток земли: ${w.open}<br>Алгоритмов: ${used.size}<br>Соединений дерева: ${w.connections||0}<br>Кольцевых связей: ${w.loopConnections||0}<br>Тупиков от тоннелей: ${w.connectorBranches||0}<br>Клеток тупиков: ${w.deadOpen||0}<br>Размеры регионов: ${Math.min(...w.seeds.map(s=>s.targetSize||0))}–${Math.max(...w.seeds.map(s=>s.targetSize||0))}<br>Режим земли: ${chk('terrainGroundMode')?'материалы и текстуры':'типы генераторов'}<br>Изометрический растр: ${l.isoCols}×${l.isoRows}<br>LOD: 8× (${w.baseCols*8}×${w.baseRows*8})<br>Тайлы: ${tileStatus} (zoom ${screenCell.toFixed(1)} / ${tileFrom.toFixed(1)})<br>Seed: ${w.seed}${perfHtml}`;
+ if(!S.world)return;
+ const w=S.world,used=new Set(w.stats.map(s=>s.algo)),perf=S.lastPerformance,l=isoLayout(w),maskPerf=w.maskPerformance,basePerf=w.baseMaskPerformance,isoPerf=w.isoPerformance;
+ const mapHtml=`<b>Мир</b><br>FPS: ${Math.round(S.fps)}<br>Регионов: ${w.stats.length}<br>Клеток земли: ${w.open}<br>Алгоритмов: ${used.size}<br>Соединений дерева: ${w.connections||0}<br>Кольцевых связей: ${w.loopConnections||0}<br>Тупиков: ${w.connectorBranches||0}<br>Размер: ${l.isoCols}×${l.isoRows}<br>LOD 8: ${w.baseCols*8}×${w.baseRows*8}<br>Seed: ${w.seed}<br>Режим земли: ${{texture:'текстуры GitHub',detailed:'автоцвет подробный',simple:'автоцвет обычный',technical:'технический',hidden:'скрыта'}[S.groundMode]}`;
+ const generationRows=[];
+ if(perf){generationRows.push(`<b>Полная генерация: ${perf.total.toFixed(1)} мс</b>`,...perf.timings.map(t=>`${t.name}: ${t.ms.toFixed(1)} мс`))}
+ if(basePerf)generationRows.push('',`Поле владельцев: ${basePerf.owner.toFixed(1)} мс`,`Органические границы: ${basePerf.envelope.toFixed(1)} мс`);
+ if(maskPerf)generationRows.push('',`Биомы и материалы: ${(maskPerf.total||0).toFixed(1)} мс`,...(maskPerf.steps||[]).map(t=>`${t.name}: ${t.ms.toFixed(1)} мс`));
+ if(isoPerf)generationRows.push('',`ISO-пререндер: ${isoPerf.total.toFixed(1)} мс`,...isoPerf.steps.map(t=>`${t.name}: ${t.ms.toFixed(1)} мс`));
+ const p=S.frameProfile;
+ const renderHtml=`<b>${Math.round(S.fps)} FPS · ${p.total.toFixed(1)} ms</b><br>Render ${p.draw.toFixed(1)} · Decor ${p.decor.toFixed(1)}<br>Logic ${p.update.toFixed(1)} · Chunks ${p.chunks.toFixed(1)}<br>Map ${p.minimap.toFixed(1)} · Calls ${S.drawCalls||0}<br>LOD ${S.renderLod} · Tiles ${S.visibleTilesDrawn||0} · Chunks ${S.visibleChunksDrawn||0}<br>Active ${S.activeChunks.size} · Dyn ${S.visibleDynamic||0}<br>Env cache ${S.environmentChunks.size} · Low cache ${S.lowDecorChunks.size}`;
+ const html=S.infoTab==='generation'?generationRows.join('<br>'):S.infoTab==='render'?renderHtml:mapHtml;
+ UI.text('editorFps',Math.round(S.fps)+' FPS');
+ const ef=$('editorFps');if(ef)ef.className=S.fps>=50?'fpsGood':S.fps>=30?'fpsWarn':'fpsBad';
+ $('stats').innerHTML=html;
+ document.querySelectorAll('.infoTab').forEach(b=>b.classList.toggle('active',b.dataset.infoTab===S.infoTab));
 }
 
 function visibleBounds(w,c,rc){
@@ -1592,18 +2212,153 @@ function refinedNeighbourOpen(w,bx,by,sx,sy,d,dx,dy){
 }
 
 
-function drawZoomEnvironmentTiles(g,w,rc){
- return false;
+function getEnvironmentDiamond(type,variant,dw,dh){
+ const role=dominantBiomeMaterial(type)||'grass';
+ const mode=(S.groundMode==='simple')?'simple':'detailed';
+ const source=getDisplayedGroundDiamond(role,variant,type,mode)||getGroundDiamond(role,variant);
+ if(!source)return null;
+ const key='atlas|'+type+'|'+role+'|'+(variant%11)+'|'+Math.round(dw)+'x'+Math.round(dh);
+ if(S.environmentDiamondCache.has(key))return S.environmentDiamondCache.get(key);
+ const cv=document.createElement('canvas');cv.width=Math.max(2,Math.ceil(dw));cv.height=Math.max(2,Math.ceil(dh));
+ const g=cv.getContext('2d',{alpha:true});g.imageSmoothingEnabled=false;
+ g.drawImage(source,0,0,cv.width,cv.height);
+ S.environmentDiamondCache.set(key,cv);return cv;
+}
+function environmentChunkCanvas(w,cx,cy){
+ const legacyDebug=UI.checked('environmentDebugColor',false),mode=legacyDebug?'color':($('envPanelMode')?.value||'atlas');
+ const tintStrength=MathX.clamp(+$('envPanelTint')?.value||38,0,100)/100,dark=MathX.clamp(+$('envPanelDark')?.value||20,0,90)/100,white=MathX.clamp(+$('envPanelWhite')?.value||0,0,100)/100;
+ const key=[cx,cy,mode,Math.round(tintStrength*100),Math.round(dark*100),Math.round(white*100),'full-image-v811'].join('|');
+ if(S.environmentChunks.has(key))return S.environmentChunks.get(key);
+ const c=w.cellDataMap,l=c.l,pad=1,x0=Math.max(0,cx*S.chunkSize-pad),y0=Math.max(0,cy*S.chunkSize-pad),x1=Math.min(l.isoCols,(cx+1)*S.chunkSize+pad),y1=Math.min(l.isoRows,(cy+1)*S.chunkSize+pad);
+ const pts=[isoDiamondPoint(w,x0,y0,l),isoDiamondPoint(w,x1,y0,l),isoDiamondPoint(w,x0,y1,l),isoDiamondPoint(w,x1,y1,l)],minX=Math.floor(Math.min(...pts.map(p=>p.px))-l.diamondW),maxX=Math.ceil(Math.max(...pts.map(p=>p.px))+l.diamondW*2),minY=Math.floor(Math.min(...pts.map(p=>p.py))-l.diamondH),maxY=Math.ceil(Math.max(...pts.map(p=>p.py))+l.diamondH*2);
+ const cv=document.createElement('canvas');cv.width=Math.max(1,maxX-minX);cv.height=Math.max(1,maxY-minY);
+ const g=cv.getContext('2d',{alpha:true}),pal=[[70,101,71],[122,118,109],[45,49,58],[74,113,70],[61,66,72],[131,151,162],[165,176,180],[95,134,102],[176,144,86],[128,106,77]],src=getBiomeEnvTileImage();
+ g.imageSmoothingEnabled=true;g.imageSmoothingQuality='high';
+ for(let sum=x0+y0;sum<x1+y1-1;sum++){const yy0=Math.max(y0,sum-(x1-1)),yy1=Math.min(y1-1,sum-x0);for(let y=yy0;y<=yy1;y++){
+  const x=sum-y,i=y*l.isoCols+x;if(c.active[i])continue;
+  const b=isoCellHighBounds(w,x,y,l),type=smoothOuterBiomeTypeNoFog(w,Math.floor((b.sx0+b.sx1)*.5),Math.floor((b.sy0+b.sy1)*.5)),col=pal[type]||pal[0],p=isoDiamondPoint(w,x,y,l),dx=p.px-minX,dy=p.py-minY;
+  g.save();g.beginPath();g.moveTo(dx+l.diamondW*.5,dy);g.lineTo(dx+l.diamondW,dy+l.diamondH*.5);g.lineTo(dx+l.diamondW*.5,dy+l.diamondH);g.lineTo(dx,dy+l.diamondH*.5);g.closePath();g.clip();
+  if(mode==='checker'){
+   g.fillStyle=((x+y)&1)?'#ff35dd':'#35e8ff';g.fillRect(dx,dy,l.diamondW,l.diamondH);
+  }else if(mode==='color'||!src.complete||!src.naturalWidth){
+   g.fillStyle=`rgb(${col[0]},${col[1]},${col[2]})`;g.fillRect(dx,dy,l.diamondW,l.diamondH);
+  }else{
+   // Full source image is scaled onto every complete diamond. No frame crop and no UV pixel lookup.
+   g.drawImage(src,0,0,src.naturalWidth,src.naturalHeight,dx,dy,l.diamondW,l.diamondH);
+   if(mode!=='raw'&&tintStrength>0){g.globalCompositeOperation='multiply';g.globalAlpha=tintStrength;g.fillStyle=`rgb(${col[0]},${col[1]},${col[2]})`;g.fillRect(dx,dy,l.diamondW,l.diamondH)}
+  }
+  g.globalCompositeOperation='source-over';
+  if(dark>0){g.globalAlpha=dark;g.fillStyle='#000';g.fillRect(dx,dy,l.diamondW,l.diamondH)}
+  if(white>0){g.globalAlpha=white;g.fillStyle='#fff';g.fillRect(dx,dy,l.diamondW,l.diamondH)}
+  g.restore();
+ }}
+ const out={canvas:cv,x:minX,y:minY};S.environmentChunks.set(key,out);return out
+}
+
+function visibleGroundChunkCoords(w,rc,margin=0){
+ const l=zoomTileLayout(w),size=16,signedPx=MathX.clamp(UI.number('groundCullMargin',-190),-800,1200),vb=isoVisibleBoundsWithMargin(w,rc,l,signedPx);
+ let minX=Math.floor(vb.x0/size)-margin,maxX=Math.floor(Math.max(vb.x0,vb.x1-1)/size)+margin,minY=Math.floor(vb.y0/size)-margin,maxY=Math.floor(Math.max(vb.y0,vb.y1-1)/size)+margin;
+ const maxCX=Math.max(0,Math.ceil(l.isoCols/size)-1),maxCY=Math.max(0,Math.ceil(l.isoRows/size)-1);
+ minX=MathX.clamp(minX,0,maxCX);maxX=MathX.clamp(maxX,0,maxCX);minY=MathX.clamp(minY,0,maxCY);maxY=MathX.clamp(maxY,0,maxCY);
+ const out=[];for(let cy=minY;cy<=maxY;cy++)for(let cx=minX;cx<=maxX;cx++)out.push({x:cx,y:cy});return out
+}
+function visibleChunkCoords(w,rc,margin=0){
+ const l=zoomTileLayout(w),vb=isoVisibleBoundsWithMargin(w,rc,l,0),size=S.chunkSize;
+ let minX=Math.floor(vb.x0/size)-margin,maxX=Math.floor(Math.max(vb.x0,vb.x1-1)/size)+margin,minY=Math.floor(vb.y0/size)-margin,maxY=Math.floor(Math.max(vb.y0,vb.y1-1)/size)+margin;
+ minX=Math.max(0,minX);minY=Math.max(0,minY);maxX=Math.min(Math.ceil(l.isoCols/size)-1,maxX);maxY=Math.min(Math.ceil(l.isoRows/size)-1,maxY);
+ const out=[];for(let cy=minY;cy<=maxY;cy++)for(let cx=minX;cx<=maxX;cx++)out.push({x:cx,y:cy});return out
+}
+function trimCanvasCache(cache,maxEntries){
+ while(cache.size>maxEntries){const first=cache.keys().next().value;cache.delete(first)}
+}
+function drawChunkEnvironment(g,w){
+ if(!S.playMode)return;
+ const rc=canvas.getBoundingClientRect(),chunks=visibleChunkCoords(w,rc,1);
+ for(const ch of chunks){const e=environmentChunkCanvas(w,ch.x,ch.y);if(!e?.canvas)continue;g.drawImage(e.canvas,e.x,e.y);S.drawCalls++;S.visibleChunksDrawn++}
+ trimCanvasCache(S.environmentChunks,Math.max(24,chunks.length*3));
+}
+function drawZoomEnvironmentTiles(g,w,rc){return false;}
+function renderLodFor(w){
+ const l=zoomTileLayout(w),tilePx=l.diamondW*S.zoom;
+ if(tilePx<7)return 'far';
+ if(tilePx<20)return 'mid';
+ return 'near';
+}
+function buildPlayOverviewTexture(w){
+ if(S.playOverviewCache&&S.playOverviewWorld===w)return S.playOverviewCache;
+ const c=w.cellDataMap||w.zoomTileCache,l=c.l,maxSamples=260,step=Math.max(1,Math.ceil(Math.max(l.isoCols,l.isoRows)/maxSamples));
+ const scale=.18,worldMinX=l.originX-l.isoRows*l.diamondW*.5,worldMinY=l.originY,worldW=(l.isoCols+l.isoRows)*l.diamondW*.5,worldH=(l.isoCols+l.isoRows)*l.diamondH*.5;
+ const cv=document.createElement('canvas');cv.width=Math.max(2,Math.ceil(worldW*scale));cv.height=Math.max(2,Math.ceil(worldH*scale));
+ const g=cv.getContext('2d',{alpha:true});g.imageSmoothingEnabled=false;
+ const pal=[[64,86,70],[126,123,113],[33,35,40],[72,111,70],[61,65,72],[131,148,158],[161,171,174],[96,132,101],[177,145,88],[130,108,79]];
+ const dw=l.diamondW*step*scale,dh=l.diamondH*step*scale;
+ for(let y=0;y<l.isoRows;y+=step)for(let x=0;x<l.isoCols;x+=step){
+  const i=Math.min(l.isoRows-1,y)*l.isoCols+Math.min(l.isoCols-1,x),active=!!c.active[i];
+  let type=c.type[i]||0;
+  if(!active){
+   const b=isoCellHighBounds(w,Math.min(l.isoCols-1,x),Math.min(l.isoRows-1,y),l);
+   type=smoothOuterBiomeTypeNoFog(w,Math.floor((b.sx0+b.sx1)*.5),Math.floor((b.sy0+b.sy1)*.5));
+  }
+  const col=pal[type]||pal[0],noise=((hashU32(x,y,w.seed)&255)-128)/128,k=active?1:.62;
+  g.fillStyle=`rgb(${MathX.clamp(col[0]*(1+noise*.08)*k,0,255)},${MathX.clamp(col[1]*(1+noise*.08)*k,0,255)},${MathX.clamp(col[2]*(1+noise*.08)*k,0,255)})`;
+  const p=isoDiamondPoint(w,x,y,l),px=(p.px-worldMinX)*scale,py=(p.py-worldMinY)*scale;
+  g.beginPath();g.moveTo(px+dw*.5,py);g.lineTo(px+dw,py+dh*.5);g.lineTo(px+dw*.5,py+dh);g.lineTo(px,py+dh*.5);g.closePath();g.fill();
+ }
+ const out={canvas:cv,x:worldMinX,y:worldMinY,w:worldW,h:worldH};S.playOverviewCache=out;S.playOverviewWorld=w;return out;
+}
+function drawWorldTextureLod(g,w,hideEnvironment=false,hideGround=false){
+ g.save();g.imageSmoothingEnabled=true;g.imageSmoothingQuality='high';
+ let drew=false;
+ const candidates=[UI.checked('hideFog')?w.isoBiomeNoFogCanvas:w.isoBiomeCanvas,w.isoBiomeNoFogCanvas,w.isoBiomeCanvas];
+ const envTex=candidates.find(cv=>cv&&cv.width>1&&cv.height>1);
+ if(!hideEnvironment&&envTex){const dark=MathX.clamp(UI.number('environmentDarkness',20),0,60);g.filter=`brightness(${100-dark}%)`;g.drawImage(envTex,0,0);g.filter='none';S.drawCalls++;drew=true}
+ const ground=S.groundMode==='technical'?w.isoColorGroundCanvas:S.groundMode==='simple'?w.isoTileGroundSimpleCanvas:w.isoTileGroundDetailedCanvas;
+ if(!hideGround&&S.groundMode!=='hidden'&&ground&&ground.width>1&&ground.height>1){g.drawImage(ground,0,0);S.drawCalls++;drew=true}
+ if(!drew){
+  const ov=buildPlayOverviewTexture(w);
+  if(ov){
+   // The overview remains available in virtual Play worlds where editor canvases do not exist.
+   g.globalAlpha=hideEnvironment&&!hideGround?1:hideGround&&!hideEnvironment?.72:1;
+   g.drawImage(ov.canvas,ov.x,ov.y,ov.w,ov.h);g.globalAlpha=1;S.drawCalls++;
+  }
+ }
+ g.restore();
 }
 function draw(){
- const rc=canvas.getBoundingClientRect(),dpr=Math.min(2,devicePixelRatio||1);canvas.width=Math.floor(rc.width*dpr);canvas.height=Math.floor(rc.height*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);ctx.fillStyle='#020304';ctx.fillRect(0,0,rc.width,rc.height);if(!S.world)return;
- const w=S.world,detail=8;
- ctx.save();ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over';ctx.translate(S.panX,S.panY);ctx.scale(S.zoom,S.zoom);ctx.imageSmoothingEnabled=false;
- // Слои независимы: биомы, туман и земля можно скрывать отдельно.
- if(!$('hideBiomes').checked){const bg=$('hideFog').checked?w.isoBiomeNoFogCanvas:w.isoBiomeCanvas;if(bg){const dark=Math.max(0,Math.min(60,+$('environmentDarkness').value||0));ctx.filter=`brightness(${100-dark}%)`;ctx.drawImage(bg,0,0);ctx.filter='none'}drawZoomEnvironmentTiles(ctx,w,rc)}
- if(!$('hideGround').checked){const outlineAlpha=Math.max(0,Math.min(100,+$('groundOutlineOpacity').value||0))/100;if(outlineAlpha>0&&w.isoGroundOutlineCanvas){ctx.globalAlpha=outlineAlpha;ctx.drawImage(w.isoGroundOutlineCanvas,0,0);ctx.globalAlpha=1}if(chk('terrainGroundMode')){const diamonds=drawZoomGroundDiamonds(ctx,w,rc);if(!diamonds&&w.isoTileGroundCanvas)ctx.drawImage(w.isoTileGroundCanvas,0,0)}else if(w.isoColorGroundCanvas)ctx.drawImage(w.isoColorGroundCanvas,0,0);drawTileFillDebug(ctx,w)}
- if(chk('boundaries')&&w.isoBoundaryCanvas)ctx.drawImage(w.isoBoundaryCanvas,0,0);
- ctx.restore();drawRouteOverlay()
+ const __drawStart=performance.now();S.drawCalls=0;S.visibleTilesDrawn=0;S.visibleChunksDrawn=0;
+ const rc=canvas.getBoundingClientRect(),dpr=Math.min(2,devicePixelRatio||1);
+ canvas.width=Math.floor(rc.width*dpr);canvas.height=Math.floor(rc.height*dpr);
+ ctx.setTransform(dpr,0,0,dpr,0,0);ctx.fillStyle='#020304';ctx.fillRect(0,0,rc.width,rc.height);
+ if(!S.world)return;
+ const w=S.world,lod=renderLodFor(w);S.renderLod=lod;
+ if(S.playMode)S.visibleRenderChunks=lod==='near'?visibleChunkCoords(w,rc,1):[];
+
+ ctx.save();ctx.translate(S.panX,S.panY);ctx.scale(S.zoom,S.zoom);
+
+ if((lod==='far'||lod==='mid')&&!S.playMode){
+  drawWorldTextureLod(ctx,w,UI.checked('playHideEnvironment'),UI.checked('playHideGround'));
+  if(chk('boundaries')&&w.isoBoundaryCanvas){ctx.drawImage(w.isoBoundaryCanvas,0,0);S.drawCalls++}
+ }else{
+  // Near uses tiled rendering only.
+  // Tile LOD is exclusive: never draw the giant map/environment textures.
+  ctx.imageSmoothingEnabled=false;
+  if(S.playMode&&!UI.checked('playHideEnvironment')&&!UI.checked('hideBiomes'))drawChunkEnvironment(ctx,w);
+  if(S.groundMode!=='hidden'&&!UI.checked('playHideGround')){
+   const diamonds=drawZoomGroundDiamonds(ctx,w,rc);
+   if(!diamonds&&!S.playMode){
+    const fallback=S.groundMode==='technical'?w.isoColorGroundCanvas:
+     S.groundMode==='simple'?w.isoTileGroundSimpleCanvas:w.isoTileGroundDetailedCanvas;
+    if(fallback){ctx.drawImage(fallback,0,0);S.drawCalls++}
+   }
+   drawTileFillDebug(ctx,w);
+  }
+  if(chk('boundaries')&&w.isoBoundaryCanvas){ctx.drawImage(w.isoBoundaryCanvas,0,0);S.drawCalls++}
+  drawSortedObjects(ctx,w,rc);
+ }
+ ctx.restore();
+ drawRouteOverlay();
+ if(S.playMode)drawPlayOverlay();else updateStats();
+ S.frameProfile.draw=performance.now()-__drawStart;
 }
 function captureView(){const r=canvas.getBoundingClientRect();return{wx:(r.width/2-S.panX)/S.zoom,wy:(r.height/2-S.panY)/S.zoom,zoom:S.zoom}}
 function restoreView(v){const r=canvas.getBoundingClientRect();S.zoom=v.zoom;S.panX=r.width/2-v.wx*S.zoom;S.panY=r.height/2-v.wy*S.zoom}
@@ -1611,17 +2366,9 @@ function fitZoom(){if(!S.world)return 1;const r=canvas.getBoundingClientRect(),p
 
 function fit(){if(!S.world)return;const r=canvas.getBoundingClientRect(),l=isoLayout(S.world);S.zoom=fitZoom();S.panX=(r.width-l.isoWidth*S.zoom)/2-l.originX*S.zoom;S.panY=(r.height-l.isoHeight*S.zoom)/2-l.originY*S.zoom}
 function randomGen(){$('seed').value=Math.floor(Math.random()*2147483647);requestGenerate(!!S.world)}
-$('gen').onclick=$('gen2').onclick=()=>requestGenerate(!!S.world);$('rand').onclick=$('rand2').onclick=randomGen;$('center').onclick=$('fit').onclick=()=>{fit();draw()};$('plus').onclick=()=>zoomAt(canvas.clientWidth/2,canvas.clientHeight/2,1.25);$('minus').onclick=()=>zoomAt(canvas.clientWidth/2,canvas.clientHeight/2,1/1.25);$('png').onclick=()=>{if(!S.world)return;const a=document.createElement('a');a.download=`godgrave_multi_cave_${S.world.seed}.png`;a.href=canvas.toDataURL('image/png');a.click()};
-$('settings').onclick=()=>{const data={version:'7.7',savedAt:new Date().toISOString(),settings:{}};document.querySelectorAll('input,select').forEach(el=>data.settings[el.id]=el.type==='checkbox'?el.checked:el.value);const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`godgrave_cave_settings_${$('seed').value}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(url),500)};
+$('gen').onclick=$('gen2').onclick=()=>{S.buildMode='editor';S.pendingPlay=false;requestGenerate(false)};$('rand').onclick=$('rand2').onclick=randomGen;$('center').onclick=$('fit').onclick=()=>{fit();draw()};$('plus').onclick=()=>zoomAt(canvas.clientWidth/2,canvas.clientHeight/2,1.25);$('minus').onclick=()=>zoomAt(canvas.clientWidth/2,canvas.clientHeight/2,1/1.25);$('png').onclick=()=>{if(!S.world)return;const a=document.createElement('a');a.download=`godgrave_multi_cave_${S.world.seed}.png`;a.href=canvas.toDataURL('image/png');a.click()};
+$('settings').onclick=()=>{const data={version:'8.12',savedAt:new Date().toISOString(),settings:{}};document.querySelectorAll('input,select').forEach(el=>data.settings[el.id]=el.type==='checkbox'?el.checked:el.value);const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`godgrave_cave_settings_${$('seed').value}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(url),500)};
 function zoomAt(mx,my,factor){const wx=(mx-S.panX)/S.zoom,wy=(my-S.panY)/S.zoom;S.zoom=Math.max(.01,S.zoom*factor);S.panX=mx-wx*S.zoom;S.panY=my-wy*S.zoom;if(S.world)updateStats();draw()}
-function setViewMode(mode){
- if(mode===1){S.tileView=true;$('terrainGroundMode').checked=true;$('recolorMissingTiles').checked=false;$('hideGround').checked=false}
- else if(mode===2){S.tileView=true;$('terrainGroundMode').checked=true;$('recolorMissingTiles').checked=true;$('hideGround').checked=false}
- else if(mode===3){S.tileView=false;$('terrainGroundMode').checked=true;$('recolorMissingTiles').checked=true;$('hideGround').checked=false}
- else if(mode===4){S.tileView=false;$('terrainGroundMode').checked=false;$('recolorMissingTiles').checked=false;$('hideGround').checked=false}
- else if(mode===5){$('hideGround').checked=!$('hideGround').checked}
- updateTileButton();buildLegend();if(S.world)updateStats();draw();
-}
 
 function bfsFloor(w,start,targets=null){
  const W=w.cols,H=w.rows,N=W*H,dist=new Int32Array(N),parent=new Int32Array(N);dist.fill(-1);parent.fill(-1);
@@ -1641,12 +2388,21 @@ function buildRouteNetwork(w){
  const start=nearestOpenTo(w,0,0)||nearestOpenTo(w,w.cols/2,w.rows/2);if(!start)return null;
  const first=bfsFloor(w,start),exit={x:first.far%w.cols,y:(first.far/w.cols)|0};
  const main=reconstructPath(first.parent,first.far,w.cols),road=new Uint8Array(w.cols*w.rows);for(const p of main)road[p.y*w.cols+p.x]=1;
- const cornerTargets=[[w.cols-1,0],[w.cols-1,w.rows-1],[0,w.rows-1]],saves=[],branches=[];
- for(const [tx,ty] of cornerTargets){const p=nearestOpenTo(w,tx,ty,[start,exit,...saves]);if(!p)continue;const b=bfsFloor(w,p,road);if(b.found<0)continue;saves.push(p);branches.push(reconstructPath(b.parent,b.found,w.cols))}
- const campfires=[];const wanted=Math.max(6,Math.min(14,Math.floor(main.length/28)));
+ const secondaryTargets=[
+  [w.cols-1,0],[w.cols-1,w.rows-1],[0,w.rows-1],
+  [w.cols*.5,0],[w.cols-1,w.rows*.5],[w.cols*.5,w.rows-1],[0,w.rows*.5],
+  [w.cols*.22,w.rows*.22],[w.cols*.78,w.rows*.28],[w.cols*.72,w.rows*.76]
+ ],saves=[],branches=[];
+ for(const [tx,ty] of secondaryTargets){
+  const p=nearestOpenTo(w,tx,ty,[start,exit,...saves]);if(!p)continue;
+  const b=bfsFloor(w,p,road);if(b.found<0)continue;
+  const path=reconstructPath(b.parent,b.found,w.cols);if(path.length<8)continue;
+  saves.push(p);branches.push(path);for(const q of path)road[q.y*w.cols+q.x]=1;
+ }
+ const campfires=[];const wanted=Math.max(12,Math.min(28,Math.floor(main.length/14)));
  for(let i=1;i<=wanted;i++){const k=Math.min(main.length-1,Math.floor(i*main.length/(wanted+1)));if(main[k])campfires.push(main[k])}
  // Дополнительный костёр иногда ставится на боковой дороге.
- for(const branch of branches)if(branch.length>10){const count=Math.max(1,Math.floor(branch.length/70));for(let j=1;j<=count;j++)campfires.push(branch[Math.floor(j*branch.length/(count+1))])}
+ for(const branch of branches)if(branch.length>10){const count=Math.max(2,Math.floor(branch.length/35));for(let j=1;j<=count;j++)campfires.push(branch[Math.floor(j*branch.length/(count+1))])}
  return{start,exit,main,saves,branches,campfires};
 }
 function drawRouteOverlay(){
@@ -1661,26 +2417,501 @@ function drawRouteOverlay(){
  routeCtx.restore();
 }
 
-const BIOME_NAMES=['Озеро','Скалы','Туман','Лес','Равнина','Снежное озеро','Снежные скалы','Снежный лес','Пустыня'];
+const BIOME_NAMES=['Болото','Скалы','Туман','Лес','Равнина','Снежное болото','Снежные скалы','Снежный лес','Пустыня'];
 function describeIsoPoint(clientX,clientY){
- if(!S.world)return;const r=canvas.getBoundingClientRect(),sx=clientX-r.left,sy=clientY-r.top,wx=(sx-S.panX)/S.zoom,wy=(sy-S.panY)/S.zoom,w=S.world,l=isoLayout(w);
+ if(!S.world)return;const r=canvas.getBoundingClientRect(),sx=clientX-r.left,sy=clientY-r.top,wx=(sx-S.panX)/S.zoom,wy=(sy-S.panY)/S.zoom,w=S.world,cache=w.cellDataMap||w.zoomTileCache||buildZoomTileCache(w),l=cache.l;
  const a=(wx-l.originX-l.diamondW*.5)/(l.diamondW*.5),b=(wy-l.originY-l.diamondH*.5)/(l.diamondH*.5),ix=(a+b)*.5,iy=(b-a)*.5;
- if(ix<0||iy<0||ix>=l.isoCols||iy>=l.isoRows)return;const x=Math.floor(ix),y=Math.floor(iy),sample=isoCellBiomeSample(w,x,y,l),hx=sample.hx,hy=sample.hy,type=sample.type,fog=sample.fog,coverage=isoCellCoverage(w,x,y,l),floor=coverage>=.28,road=isoCellRoad(w,x,y,l),role=floor?groundTileRole(w,hx,hy,type,road):null,variant=groundDiamondVariant(w,x,y),def=role?(GROUND_MATERIALS[role]||GROUND_MATERIALS.earth):null,box=$('tileInspector');
- box.style.left=Math.min(r.width-620,Math.max(8,sx+14))+'px';box.style.top=Math.min(r.height-120,Math.max(8,sy+14))+'px';box.style.maxWidth='610px';box.style.display='block';const roleNames={earth:'земля',grass:'трава',stone:'камень',clay:'глина',swamp:'болотная почва',road:'дорога'},tileName=floor?(role==='road'?'земля':(roleNames[role]||role)):'окружение';box.innerHTML='<b>'+(BIOME_NAMES[type]||type)+(fog?' + туман':'')+' · '+tileName+'</b><div class="muted">'+(floor?'Atlas '+def.atlas+' · колонка '+def.col+' · вариант '+variant+' · ':'Ячейка окружения '+biomeAtlasCell(type).join('×')+' · ')+'ISO '+x+', '+y+' · LOD8 '+hx+', '+hy+' · покрытие '+Math.round(coverage*100)+'%</div>';clearTimeout(describeIsoPoint.timer);describeIsoPoint.timer=setTimeout(()=>box.style.display='none',8000);
+ if(ix<0||iy<0||ix>=l.isoCols||iy>=l.isoRows)return;const x=Math.floor(ix),y=Math.floor(iy),i=y*l.isoCols+x,bounds=isoCellHighBounds(w,x,y,l),hx=Math.min(bounds.hi.w-1,Math.floor((bounds.sx0+bounds.sx1)*.5)),hy=Math.min(bounds.hi.h-1,Math.floor((bounds.sy0+bounds.sy1)*.5)),type=cache.type[i],floor=!!cache.active[i],road=!!cache.roadMap[i],role=floor?MATERIAL_ID_ROLES[cache.roleDetailed[i]]:null,variant=cache.variant[i],def=role?(GROUND_MATERIALS[role]||GROUND_MATERIALS.earth):null,box=$('tileInspector');
+ const fog=smoothOuterBiomeType(w,hx,hy)===2,coverage=floor?Math.max(0,Math.min(1,(cache.alpha[i]/255-.72)/.38)):0,decor=!!cache.decorationMask[i],seed=cache.decorationSeed[i]>>>0;
+ box.style.left=Math.min(r.width-620,Math.max(8,sx+14))+'px';box.style.top=Math.min(r.height-135,Math.max(8,sy+14))+'px';box.style.maxWidth='610px';box.style.display='block';const roleNames=biomeRoleLabels(type),tileName=floor?(roleNames[role]||role):'окружение',biomeName=(BIOME_NAMES[type]||type);box.innerHTML='<b>'+biomeName+': '+tileName+(fog?' (туман)':'')+'</b><div class="muted">'+(floor?'Atlas '+def.atlas+' · колонка '+def.col+' · вариант '+variant+' · ':'Ячейка окружения '+biomeAtlasCell(type).join('×')+' · ')+'ISO '+x+', '+y+' · LOD8 '+hx+', '+hy+' · декор '+(decor?'разрешён':'запрещён')+' · seed '+seed+'</div>';clearTimeout(describeIsoPoint.timer);describeIsoPoint.timer=setTimeout(()=>box.style.display='none',8000);
 }
 function usedBiomeTypesForCurrentMap(){const w=S.world,found=new Set();if(!w)return [0,1,3,5,6,7,8];const hi=w.lodCascade?.[8];if(!hi)return [0,1,3,5,6,7,8];const step=Math.max(1,Math.floor(Math.sqrt((hi.w*hi.h)/60000)));for(let y=0;y<hi.h;y+=step)for(let x=0;x<hi.w;x+=step)found.add(smoothOuterBiomeTypeNoFog(w,x,y));return [...found].filter(v=>v!==2).sort((a,b)=>a-b)}
 function exportGeneratedCanvas(c,name){const a=document.createElement('a');a.download=name;a.href=c.toDataURL('image/png');a.click()}
-function generateSyntheticTileAtlas(){const host=$('generatedAtlasSheets'),tw=Math.max(16,Math.min(512,+$('generatedTileW').value||128)),th=Math.max(8,Math.min(256,+$('generatedTileH').value||64)),roles=['earth','grass','stone','clay','swamp','road'],roleLabels={earth:'земля',grass:'трава',stone:'камень',clay:'глина',swamp:'болото',road:'дорога'};host.innerHTML='';for(const type of usedBiomeTypesForCurrentMap()){const wrap=document.createElement('div'),title=document.createElement('div'),labels=document.createElement('div'),out=document.createElement('canvas');wrap.style.marginBottom='18px';title.style.cssText='display:flex;align-items:center;gap:10px;margin:0 0 7px;color:#dce7ef;font:12px ui-monospace,monospace';title.innerHTML='<b>'+(BIOME_NAMES[type]||('Биом '+type))+'</b><span>6 колонок × 11 строк</span>';labels.className='atlasRoleLabels';labels.style.gridTemplateColumns=`repeat(${roles.length},${tw}px)`;labels.innerHTML=roles.map(r=>`<span>${roleLabels[r]}</span>`).join('');out.width=tw*roles.length;out.height=th*GROUND_ATLAS_ROWS;out.dataset.biome=type;const g=out.getContext('2d');g.clearRect(0,0,out.width,out.height);const pal=biomeTilePalette(type);for(let col=0;col<roles.length;col++)for(let row=0;row<GROUND_ATLAS_ROWS;row++){const base=getGroundDiamond(roles[col],row)||getGroundDiamond('earth',row);if(base)g.drawImage(recolorCanvasPixels(base,pal[roles[col]]||pal.earth,tw,th),col*tw,row*th)}const btn=document.createElement('button');btn.textContent='PNG';btn.onclick=()=>exportGeneratedCanvas(out,'godgrave_'+(BIOME_NAMES[type]||('biome_'+type)).toLowerCase().replace(/\s+/g,'_')+'.png');title.appendChild(btn);wrap.append(title,labels,out);host.appendChild(wrap)}host.dataset.ready='1'}
-$('tileGenerator').onclick=()=>{$('tileGeneratorModal').classList.add('visible');generateSyntheticTileAtlas()};$('closeTileGenerator').onclick=()=>$('tileGeneratorModal').classList.remove('visible');$('tileGeneratorModal').addEventListener('mousedown',e=>{if(e.target===$('tileGeneratorModal'))$('tileGeneratorModal').classList.remove('visible')});$('generateTileAtlas').onclick=generateSyntheticTileAtlas;$('exportTileAtlas').onclick=()=>{if($('generatedAtlasSheets').dataset.ready!=='1')generateSyntheticTileAtlas();[...$('generatedAtlasSheets').querySelectorAll('canvas')].forEach((c,i)=>setTimeout(()=>exportGeneratedCanvas(c,'godgrave_biome_'+c.dataset.biome+'_'+c.width+'x'+c.height+'.png'),i*180))};$('recolorMissingTiles').addEventListener('input',draw);$('terrainGroundMode').addEventListener('input',()=>{buildLegend();if(S.world)updateStats();draw()});
+function generateSyntheticTileAtlas(){const host=$('generatedAtlasSheets'),tw=Math.max(16,Math.min(512,+$('generatedTileW').value||128)),th=Math.max(8,Math.min(256,+$('generatedTileH').value||64)),roles=['earth','clay','grass','tallGrass','gravel','stone'];host.innerHTML='';for(const type of usedBiomeTypesForCurrentMap()){const wrap=document.createElement('div'),title=document.createElement('div'),labelRow=document.createElement('div'),out=document.createElement('canvas'),labels=biomeRoleLabels(type);wrap.style.marginBottom='18px';title.style.cssText='display:flex;align-items:center;gap:10px;margin:0 0 7px;color:#dce7ef;font:12px ui-monospace,monospace';title.innerHTML='<b>'+(BIOME_NAMES[type]||('Биом '+type))+'</b><span>6 колонок × 11 строк</span>';labelRow.className='atlasLabels';labelRow.style.gridTemplateColumns='repeat('+roles.length+','+tw+'px)';labelRow.innerHTML=roles.map(r=>'<span title="'+labels[r]+'">'+labels[r]+'</span>').join('');out.width=tw*roles.length;out.height=th*GROUND_ATLAS_ROWS;out.dataset.biome=type;const g=out.getContext('2d');g.clearRect(0,0,out.width,out.height);const pal=biomeTilePalette(type);for(let col=0;col<roles.length;col++)for(let row=0;row<GROUND_ATLAS_ROWS;row++){const base=getGroundDiamond(roles[col],row)||getGroundDiamond('earth',row);if(base)g.drawImage(recolorCanvasPixels(base,pal[roles[col]]||pal.earth,tw,th),col*tw,row*th)}const btn=document.createElement('button');btn.textContent='PNG';btn.onclick=()=>exportGeneratedCanvas(out,'godgrave_'+(BIOME_NAMES[type]||('biome_'+type)).toLowerCase().replace(/\s+/g,'_')+'.png');title.appendChild(btn);wrap.append(title,labelRow,out);host.appendChild(wrap)}const grassWrap=document.createElement('div'),grassTitle=document.createElement('div'),grassOut=document.createElement('canvas'),grass=buildGrassAtlas();grassWrap.style.marginBottom='18px';grassTitle.style.cssText='display:flex;align-items:center;gap:10px;margin:0 0 7px;color:#dce7ef;font:12px ui-monospace,monospace';grassTitle.innerHTML='<b>Процедурные травинки</b><span>4 вариации · сетка 2×2</span>';grassOut.width=grass.width;grassOut.height=grass.height;grassOut.style.cssText='display:block;max-width:none;width:'+grass.width+'px;height:'+grass.height+'px;image-rendering:pixelated';grassOut.getContext('2d').drawImage(grass,0,0);const gb=document.createElement('button');gb.textContent='PNG';gb.onclick=()=>exportGeneratedCanvas(grassOut,'godgrave_grass_2x2.png');grassTitle.appendChild(gb);grassWrap.append(grassTitle,grassOut);host.appendChild(grassWrap);const clutterWrap=document.createElement('div'),clutterTitle=document.createElement('div'),clutterOut=document.createElement('canvas'),clutter=buildClutterAtlas();clutterWrap.style.marginBottom='18px';clutterTitle.style.cssText='display:flex;align-items:center;gap:10px;margin:0 0 7px;color:#dce7ef;font:12px ui-monospace,monospace';clutterTitle.innerHTML='<b>Мелкий наземный декор</b><span>6×6: листья · камни · ветки · грибы · мох · смешанный</span>';clutterOut.width=clutter.width;clutterOut.height=clutter.height;clutterOut.style.cssText='display:block;max-width:none;width:'+clutter.width+'px;height:'+clutter.height+'px;image-rendering:pixelated';clutterOut.getContext('2d').drawImage(clutter,0,0);const cb=document.createElement('button');cb.textContent='PNG';cb.onclick=()=>exportGeneratedCanvas(clutterOut,'godgrave_small_clutter_6x6.png');clutterTitle.appendChild(cb);clutterWrap.append(clutterTitle,clutterOut);host.appendChild(clutterWrap);host.dataset.ready='1'}
+$('tileGenerator').onclick=()=>{$('tileGeneratorModal').classList.add('visible');generateSyntheticTileAtlas()};$('closeTileGenerator').onclick=()=>$('tileGeneratorModal').classList.remove('visible');$('tileGeneratorModal').addEventListener('mousedown',e=>{if(e.target===$('tileGeneratorModal'))$('tileGeneratorModal').classList.remove('visible')});$('generateTileAtlas').onclick=generateSyntheticTileAtlas;$('exportTileAtlas').onclick=()=>{if($('generatedAtlasSheets').dataset.ready!=='1')generateSyntheticTileAtlas();[...$('generatedAtlasSheets').querySelectorAll('canvas')].forEach((c,i)=>setTimeout(()=>exportGeneratedCanvas(c,'godgrave_biome_'+c.dataset.biome+'_'+c.width+'x'+c.height+'.png'),i*180))};function setGroundMode(mode){if(S.groundChunkCache)S.groundChunkCache.clear();S.groundMode=mode;$('groundRenderMode').value=mode;$('hideGround').checked=mode==='hidden';$('terrainGroundMode').checked=mode!=='technical';$('recolorMissingTiles').checked=mode==='detailed'||mode==='simple';buildLegend();if(S.world)updateStats();draw()}$('groundRenderMode').addEventListener('change',e=>setGroundMode(e.target.value));
 
 $('tiles').onclick=()=>{S.tileView=!S.tileView;updateTileButton();if(S.world)updateStats();draw()};
-$('routes').onclick=()=>{S.routesVisible=!S.routesVisible;if(S.routesVisible&&!S.routes&&S.world)S.routes=buildRouteNetwork(S.world);$('routes').classList.toggle('active',S.routesVisible);$('routes').title=S.routesVisible?'Маршруты включены':'Маршруты выключены';draw()};
+$('routes').onclick=()=>{S.routesVisible=!S.routesVisible;if(S.routesVisible&&!S.routes&&S.world)S.routes=buildRouteNetwork(S.world);$('routes').textContent=S.routesVisible?'Маршруты: вкл':'Маршруты: выкл';draw()};
 $('regionTint').oninput=()=>{if(S.world){buildLodCanvases(S.world);rebuildIsoLayerCache(S.world)}draw()};
-for(const id of ['boundaries','floorDots','hideFog','hideGround','hideBiomes','debugTileFill'])$(id).oninput=draw;$('environmentDarkness').addEventListener('input',()=>{$('environmentDarknessValue').textContent=$('environmentDarkness').value+'%';draw()});$('groundOutlineOpacity').addEventListener('input',()=>{$('groundOutlineOpacityValue').textContent=$('groundOutlineOpacity').value+'%';draw()});$('groundTileThreshold').addEventListener('input',()=>{if(S.world)updateStats();draw()});$('showInfo').addEventListener('input',()=>{$('infoHud').classList.toggle('hidden',!$('showInfo').checked)});window.addEventListener('keydown',e=>{if(['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName))return;const k=e.key.toLowerCase();if(e.code==='Space'){e.preventDefault();$('showInfo').checked=!$('showInfo').checked;$('infoHud').classList.toggle('hidden',!$('showInfo').checked);return}if(e.code==='Digit1'||e.code==='Numpad1'){e.preventDefault();setViewMode(1);return}if(e.code==='Digit2'||e.code==='Numpad2'){e.preventDefault();setViewMode(2);return}if(e.code==='Digit3'||e.code==='Numpad3'){e.preventDefault();setViewMode(3);return}if(e.code==='Digit4'||e.code==='Numpad4'){e.preventDefault();setViewMode(4);return}if(e.code==='Digit5'||e.code==='Numpad5'){e.preventDefault();setViewMode(5);return}if(k==='e'||k==='у')requestGenerate(!!S.world);if(k==='r'||k==='к')randomGen();if(k==='c'||k==='с'){fit();draw()}});canvas.addEventListener('wheel',e=>{e.preventDefault();const r=canvas.getBoundingClientRect();zoomAt(e.clientX-r.left,e.clientY-r.top,Math.exp(-e.deltaY*.0012))},{passive:false});canvas.onmousedown=e=>{if(e.button!==0)return;S.drag=true;S.lx=e.clientX;S.ly=e.clientY;canvas.classList.add('drag')};window.onmousemove=e=>{if(!S.drag)return;S.panX+=e.clientX-S.lx;S.panY+=e.clientY-S.ly;S.lx=e.clientX;S.ly=e.clientY;draw()};window.onmouseup=()=>{S.drag=false;canvas.classList.remove('drag')};canvas.oncontextmenu=e=>{e.preventDefault();describeIsoPoint(e.clientX,e.clientY)};canvas.ondblclick=()=>{fit();draw()};window.onresize=()=>draw();
-$('scaleBalance').addEventListener('input',()=>{$('scaleBalanceValue').textContent=$('scaleBalance').value});$('outerBiomeMode').addEventListener('change',()=>requestGenerate(!!S.world));
-updateTileButton();loadGroundAtlas('B');loadGroundAtlas('D');loadBiomeAtlas();
+UI.onMany(['boundaries','floorDots','hideFog','hideBiomes','environmentOnTop','debugTileFill'],'input',draw);
+UI.on('environmentDarkness','input',()=>{UI.text('environmentDarknessValue',UI.value('environmentDarkness',20)+'%');S.environmentChunks.clear();S.environmentDiamondCache.clear();draw()});
+UI.on('environmentDebugColor','change',()=>{S.environmentChunks.clear();draw()});
+
+
+function invalidateEnvironmentDebug(){S.environmentChunks.clear();S.environmentDiamondCache.clear();draw()}
+$('envDebugToggle').onclick=()=>$('envDebugPanel').classList.toggle('hidden');
+$('envDebugClose').onclick=()=>$('envDebugPanel').classList.add('hidden');
+$('envPanelMode').onchange=invalidateEnvironmentDebug;
+$('envPanelFrame').oninput=()=>{$('envPanelFrameValue').textContent=$('envPanelFrame').value;invalidateEnvironmentDebug()};
+$('envPanelTint').oninput=()=>{$('envPanelTintValue').textContent=$('envPanelTint').value+'%';invalidateEnvironmentDebug()};
+$('envPanelDark').oninput=()=>{$('envPanelDarkValue').textContent=$('envPanelDark').value+'%';invalidateEnvironmentDebug()};
+$('envPanelWhite').oninput=()=>{$('envPanelWhiteValue').textContent=$('envPanelWhite').value+'%';invalidateEnvironmentDebug()};
+
+UI.on('environmentRenderMode','change',()=>{S.environmentChunks.clear();draw()});
+UI.on('environmentFrame','input',()=>{$('environmentFrameValue').textContent=UI.number('environmentFrame',0);S.environmentChunks.clear();draw()});
+UI.on('environmentTint','input',()=>{$('environmentTintValue').textContent=UI.number('environmentTint',38)+'%';S.environmentChunks.clear();draw()});
+UI.on('refreshAtlasPreview','click',refreshProceduralAtlasPreviews);
+
+UI.on('groundOutlineOpacity','input',()=>{UI.text('groundOutlineOpacityValue',UI.value('groundOutlineOpacity',100)+'%');draw()});
+UI.on('groundOutlineOpacity','input',()=>{UI.text('groundOutlineOpacityValue',UI.value('groundOutlineOpacity',100)+'%');draw()});
+UI.on('groundTileThreshold','input',()=>{if(S.world)updateStats();draw()});
+UI.on('showInfo','input',()=>UI.toggle('infoHud','hidden',!UI.checked('showInfo')));window.addEventListener('keydown',e=>{if(['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName))return;const k=e.key.toLowerCase();if(e.code==='Space'){e.preventDefault();$('showInfo').checked=!$('showInfo').checked;$('infoHud').classList.toggle('hidden',!$('showInfo').checked);return}if(e.code==='Digit1'||e.code==='Numpad1'){e.preventDefault();setGroundMode('texture');return}if(e.code==='Digit2'||e.code==='Numpad2'){e.preventDefault();setGroundMode('detailed');return}if(e.code==='Digit3'||e.code==='Numpad3'){e.preventDefault();setGroundMode('simple');return}if(e.code==='Digit4'||e.code==='Numpad4'){e.preventDefault();setGroundMode('technical');return}if(e.code==='Digit5'||e.code==='Numpad5'){e.preventDefault();setGroundMode('hidden');return}if(k==='e'||k==='у'){S.buildMode='editor';requestGenerate(false)}if(k==='r'||k==='к')randomGen();if(k==='c'||k==='с'){fit();draw()}});canvas.addEventListener('wheel',e=>{e.preventDefault();const r=canvas.getBoundingClientRect();zoomAt(e.clientX-r.left,e.clientY-r.top,Math.exp(-e.deltaY*.0012))},{passive:false});canvas.onmousedown=e=>{if(S.playMode)return;if(e.button!==0)return;S.drag=true;S.lx=e.clientX;S.ly=e.clientY;canvas.classList.add('drag')};window.onmousemove=e=>{if(!S.drag)return;S.panX+=e.clientX-S.lx;S.panY+=e.clientY-S.ly;S.lx=e.clientX;S.ly=e.clientY;draw()};window.onmouseup=()=>{S.drag=false;canvas.classList.remove('drag')};canvas.oncontextmenu=e=>{e.preventDefault();if(!S.playMode)describeIsoPoint(e.clientX,e.clientY)};canvas.ondblclick=()=>{if(!S.playMode){fit();draw()}};let lastViewportW=canvas.getBoundingClientRect().width,lastViewportH=canvas.getBoundingClientRect().height;window.onresize=()=>{const r=canvas.getBoundingClientRect(),dx=r.width-lastViewportW,dy=r.height-lastViewportH;if(!S.restoringEditorCamera){S.panX+=dx*.5;S.panY+=dy*.5}lastViewportW=r.width;lastViewportH=r.height;draw()};
+
+
+// v5.0 — игровой режим. Глобальный мир остаётся компактным планом, а активность
+// детальных клеток организована чанками вокруг персонажа.
+
+const DECORATION_PATHS={
+ bush:Array.from({length:4},(_,i)=>ASSET_ROOT+'Source/Env/Foliadge/T_Env_Bush_0'+(i+1)+'.png'),
+ rock:Array.from({length:9},(_,i)=>ASSET_ROOT+'Source/Env/Foliadge/T_Env_Rock_0'+(i+1)+'.png'),
+ stone:Array.from({length:4},(_,i)=>ASSET_ROOT+'Source/Env/Foliadge/T_Env_Stone_0'+(i+1)+'.png'),
+ dead:Array.from({length:2},(_,i)=>ASSET_ROOT+'Source/Env/Foliadge/T_Env_TreeDead_0'+(i+1)+'.png'),
+ leaf:Array.from({length:2},(_,i)=>ASSET_ROOT+'Source/Env/Foliadge/T_Env_TreeLeaf_0'+(i+1)+'.png'),
+ pine:Array.from({length:4},(_,i)=>ASSET_ROOT+'Source/Env/Foliadge/T_Env_TreePine_0'+(i+1)+'.png')
+};
+const DECORATION_IMAGES=new Map();
+function getDecorationImage(path){let im=DECORATION_IMAGES.get(path);if(im)return im;im=new Image();im.crossOrigin='anonymous';im.src=path;im.onload=()=>draw();DECORATION_IMAGES.set(path,im);return im}
+function hashU32(a,b,c){return MathX.hash2(a,b,c)}
+function decorEnabled(kind){if(kind==='tree'||kind==='dead')return UI.checked('decorTrees',true);if(kind==='bush')return UI.checked('decorBushes',true);if(kind==='rock')return UI.checked('decorRocks',true);if(kind==='stone')return UI.checked('decorStones',true);if(kind==='grass')return UI.checked('decorGrass',true);if(kind==='denseGrass')return UI.checked('decorDenseGrass',true);return true}
+function decorationTint(kind,type){const swamp=type===0,snow=type===5||type===6||type===7,desert=type===8,rock=kind==='rock'||kind==='stone';if(desert&&kind==='grass')return 'sepia(.88) saturate(1.65) hue-rotate(350deg) brightness(1.12)';if(snow)return rock?'saturate(.62) brightness(1.22) hue-rotate(168deg)':'saturate(.58) brightness(1.16) hue-rotate(170deg)';if(swamp)return rock?'saturate(.72) brightness(.83) hue-rotate(25deg)':'saturate(.78) brightness(.80) hue-rotate(22deg)';if(desert)return rock?'sepia(.22) saturate(.82) brightness(1.04)':'sepia(.52) saturate(1.08) brightness(1.06)';return rock?'saturate(.92) brightness(.96)':'saturate(.96) brightness(.98)'}
+
+function refreshProceduralAtlasPreviews(){
+ const grass=buildGrassAtlas(),clutter=buildClutterAtlas(4);
+ const gp=$('grassAtlasPreview'),cp=$('clutterAtlasPreview');
+ if(gp){gp.width=grass.width;gp.height=grass.height;gp.getContext('2d').drawImage(grass,0,0)}
+ if(cp){cp.width=clutter.width;cp.height=clutter.height;cp.getContext('2d').drawImage(clutter,0,0)}
+}
+function buildGrassAtlas(){
+ if(S.grassAtlas)return S.grassAtlas;
+ const cellW=64,cellH=48,variants=4,cols=2,rows=2,cv=document.createElement('canvas');cv.width=cellW*cols;cv.height=cellH*rows;
+ const g=cv.getContext('2d');g.clearRect(0,0,cv.width,cv.height);g.lineCap='round';
+ for(let v=0;v<variants;v++){
+  const ox=(v%cols)*cellW,oy=Math.floor(v/cols)*cellH,rnd=n=>((hashU32(v,n,0x51ed270b)&65535)/65535),tufts=2+(v%2);
+  for(let t=0;t<tufts;t++){
+   const center=ox+12+t*(40/Math.max(1,tufts-1))+(rnd(t+4)-.5)*5,blades=3+(hashU32(v,t,77)%3);
+   for(let b=0;b<blades;b++){
+    const x=center+(b-(blades-1)/2)*2.4+(rnd(t*11+b)-.5)*2,y=oy+46,h=10+rnd(t*17+b+60)*10,lean=(rnd(t*23+b+90)-.5)*7;
+    g.strokeStyle=`rgba(240,245,225,${.72+rnd(t*29+b+120)*.25})`;g.lineWidth=.9+rnd(t*31+b+150)*.8;
+    g.beginPath();g.moveTo(x,y);g.quadraticCurveTo(x+lean*.3,y-h*.55,x+lean,y-h);g.stroke();
+   }
+  }
+ }
+ S.grassAtlas=cv;return cv
+}
+function grassColor(type,role='grass'){
+ const pal=biomeTilePalette(type),c=pal[role]||pal.grass||[92,130,68];
+ return [Math.min(255,c[0]*1.04+8),Math.min(255,c[1]*1.08+10),Math.min(255,c[2]*.9+3)];
+}
+
+function materialRoleAt(w,x,y){
+ const c=w.cellDataMap||w.zoomTileCache,l=c.l,ix=MathX.clamp(Math.floor(x),0,l.isoCols-1),iy=MathX.clamp(Math.floor(y),0,l.isoRows-1),i=iy*l.isoCols+ix;
+ return MATERIAL_ID_ROLES[c.roleDetailed[i]]||'grass';
+}
+function materialTintFilter(role,kind){
+ if(role==='stone')return kind==='clutter'?'grayscale(.35) brightness(.9) contrast(1.12)':'saturate(.55) brightness(.88)';
+ if(role==='gravel')return kind==='clutter'?'sepia(.18) saturate(.6) brightness(.92)':'saturate(.62) brightness(.9)';
+ if(role==='clay')return 'sepia(.45) saturate(1.18) hue-rotate(342deg) brightness(.96)';
+ if(role==='earth')return 'sepia(.3) saturate(.82) brightness(.9)';
+ if(role==='tallGrass')return kind==='clutter'?'saturate(.9) brightness(.78)':'saturate(1.08) brightness(.82)';
+ return kind==='clutter'?'saturate(.95) brightness(.88)':'saturate(1.02) brightness(.92)';
+}
+function getTintedGrassAtlas(type,role){
+ const key=type+'|'+role;if(S.grassTintCache.has(key))return S.grassTintCache.get(key);
+ const src=buildGrassAtlas(),cv=document.createElement('canvas');cv.width=src.width;cv.height=src.height;const g=cv.getContext('2d');g.drawImage(src,0,0);g.globalCompositeOperation='source-in';const c=grassColor(type,role);g.fillStyle=`rgb(${c[0]|0},${c[1]|0},${c[2]|0})`;g.fillRect(0,0,cv.width,cv.height);g.globalCompositeOperation='source-over';S.grassTintCache.set(key,cv);return cv;
+}
+function biomeClutterPalette(type){
+ const sets={
+  0:{stone:'#59684f',stone2:'#889174',leaf:'#544f2e',leaf2:'#7b6e37',wood:'#493b2b'},
+  1:{stone:'#74716b',stone2:'#aaa49a',leaf:'#7c6845',leaf2:'#a28c58',wood:'#5e4935'},
+  2:{stone:'#4c4e57',stone2:'#767985',leaf:'#465347',leaf2:'#6d765d',wood:'#3f3540'},
+  3:{stone:'#59634b',stone2:'#858b70',leaf:'#3e702f',leaf2:'#8b7630',wood:'#4d3422'},
+  4:{stone:'#777660',stone2:'#a8a287',leaf:'#617d3c',leaf2:'#a28a43',wood:'#5e452c'},
+  5:{stone:'#8ca0a7',stone2:'#c3d0d4',leaf:'#718e8b',leaf2:'#a9c0b7',wood:'#596d73'},
+  6:{stone:'#a8adb2',stone2:'#e0e3e5',leaf:'#8c9890',leaf2:'#c1c9bf',wood:'#72787c'},
+  7:{stone:'#879a91',stone2:'#c2cec8',leaf:'#66866d',leaf2:'#9bb09d',wood:'#57665f'},
+  8:{stone:'#a5885f',stone2:'#d0b47b',leaf:'#b29a4c',leaf2:'#d6bd65',wood:'#82613b'},
+  9:{stone:'#806e59',stone2:'#b49d7c',leaf:'#806f3f',leaf2:'#aa9453',wood:'#63462f'}
+ };return sets[type]||sets[4]
+}
+function buildClutterAtlas(type=4){
+ if(!(S.clutterAtlas instanceof Map))S.clutterAtlas=new Map();if(S.clutterAtlas.has(type))return S.clutterAtlas.get(type);
+ const cellW=128,cellH=88,cols=6,rows=6,variants=36,cv=document.createElement('canvas');cv.width=cellW*cols;cv.height=cellH*rows;
+ const g=cv.getContext('2d'),pal=biomeClutterPalette(type),rnd=(v,n)=>((hashU32(type*977+v*131,n*313+17,0x7f4a7c15)&65535)/65535);
+ function leaf(x,y,s,r){g.fillStyle=r>.5?pal.leaf2:pal.leaf;g.beginPath();g.ellipse(x,y,s,s*.38,r*6.28,0,Math.PI*2);g.fill();g.strokeStyle='rgba(25,22,14,.34)';g.lineWidth=.7;g.beginPath();g.moveTo(x-Math.cos(r*6.28)*s*.75,y-Math.sin(r*6.28)*s*.75);g.lineTo(x+Math.cos(r*6.28)*s*.75,y+Math.sin(r*6.28)*s*.75);g.stroke()}
+ function stone(x,y,s,r){g.fillStyle=r>.58?pal.stone2:pal.stone;g.beginPath();g.ellipse(x,y,s*(.72+r*.38),s*(.42+r*.25),r*3.1,0,Math.PI*2);g.fill();g.fillStyle='rgba(255,255,255,.16)';g.beginPath();g.ellipse(x-s*.18,y-s*.15,s*.24,s*.12,r*2,0,Math.PI*2);g.fill()}
+ function twig(x,y,s,r){const a=r*6.28,x2=x+Math.cos(a)*s,y2=y+Math.sin(a)*s;g.strokeStyle=pal.wood;g.lineCap='round';g.lineWidth=Math.max(1.4,s*.12);g.beginPath();g.moveTo(x,y);g.quadraticCurveTo((x+x2)/2+Math.sin(a)*s*.16,(y+y2)/2-Math.cos(a)*s*.16,x2,y2);g.stroke();for(let q=0;q<2;q++){const t=.35+q*.3,px=x+(x2-x)*t,py=y+(y2-y)*t,ba=a+(q?1:-1)*.72;g.lineWidth=Math.max(1,s*.07);g.beginPath();g.moveTo(px,py);g.lineTo(px+Math.cos(ba)*s*.28,py+Math.sin(ba)*s*.28);g.stroke()}}
+ function mushroom(x,y,s,r){g.fillStyle='#d8c7a5';g.fillRect(x-s*.09,y,s*.18,s*.62);g.fillStyle=r>.66?'#a94f42':r>.33?'#c08a50':'#ddd0ad';g.beginPath();g.ellipse(x,y,s*.55,s*.32,0,Math.PI,Math.PI*2);g.fill();g.fillStyle='rgba(255,255,255,.3)';g.beginPath();g.arc(x-s*.18,y-s*.08,s*.07,0,Math.PI*2);g.arc(x+s*.13,y-s*.12,s*.055,0,Math.PI*2);g.fill()}
+ function moss(x,y,s,r,v){g.fillStyle=r>.5?pal.leaf2:pal.leaf;for(let k=0;k<8;k++){const a=k*.785+r*4,rr=s*(.18+.2*rnd(v,k+900));g.beginPath();g.arc(x+Math.cos(a)*s*.42,y+Math.sin(a)*s*.24,rr,0,Math.PI*2);g.fill()}}
+ const rowNames=['leaf','stone','twig','mushroom','moss','mixed'];
+ for(let v=0;v<variants;v++){
+  const col=v%cols,row=Math.floor(v/cols),ox=col*cellW,oy=row*cellH,kind=rowNames[row];
+  g.save();g.clearRect(ox,oy,cellW,cellH);g.translate(ox,oy);g.lineJoin='round';
+  const count=kind==='mushroom'?18+col*2:kind==='mixed'?18+col:12+col*2;
+  for(let i=0;i<count;i++){
+   const x=9+rnd(v,i*7+2)*110,y=20+rnd(v,i*7+3)*57,r=rnd(v,i*7+4),s=3+rnd(v,i*7+5)*7;
+   let k=kind;
+   if(kind==='mixed')k=['leaf','stone','twig','mushroom','moss'][Math.floor(rnd(v,i*11+70)*5)];
+   if(k==='leaf')leaf(x,y,s*1.15,r);
+   else if(k==='stone')stone(x,y,s,r);
+   else if(k==='twig')twig(x,y,s*3.1,r);
+   else if(k==='mushroom')mushroom(x,y,s*1.7,r); // roughly 3x larger than old caps/stems
+   else moss(x,y,s*1.45,r,v);
+  }
+  g.restore();
+ }
+ S.clutterAtlas.set(type,cv);return cv
+}
+function decorFootprint(kind){return kind==='tree'||kind==='dead'?1.9:kind==='rock'?1.35:kind==='bush'?1.05:kind==='stone'?.7:.45}
+function ensureDecorationChunk(w,cx,cy){
+ const key=cx+','+cy+'@'+UI.number('decorationDensity',10)+'@'+UI.number('grassDensity',20)+'@'+UI.number('clutterDensity',20)+'@v86';
+ if(S.decorationChunks.has(key))return S.decorationChunks.get(key);
+ const c=w.cellDataMap,l=c.l,out=[],x0=cx*S.chunkSize,y0=cy*S.chunkSize,x1=Math.min(l.isoCols,x0+S.chunkSize),y1=Math.min(l.isoRows,y0+S.chunkSize),density=MathX.clamp(UI.number('decorationDensity',10),0,100)/100,grassDensity=MathX.clamp(UI.number('grassDensity',20),0,100)/100,clutterDensity=MathX.clamp(UI.number('clutterDensity',20),0,100)/100;
+ for(let y=y0;y<y1;y++)for(let x=x0;x<x1;x++){
+  const i=y*l.isoCols+x;if(!c.active[i])continue;const onRoad=!!c.roadMap[i],canLarge=!!c.decorationMask[i]&&!onRoad;
+  const role=MATERIAL_ID_ROLES[c.roleDetailed[i]],type=c.type[i],base=hashU32(x,y,w.seed),r=(base&65535)/65535,isRidge=type===1||type===6,isDesert=type===8||type===9;
+  let kind=null,paths=null,rate=0;
+  if(role==='grass'||role==='tallGrass'){if(r<density*.34){kind='tree';paths=((base>>>18)&1)?DECORATION_PATHS.pine:DECORATION_PATHS.leaf}else if(r<density*.78){kind='bush';paths=DECORATION_PATHS.bush}}
+  else if(role==='stone'){kind='rock';paths=DECORATION_PATHS.rock;rate=density*.72}
+  else if(role==='gravel'){kind=((base>>>17)&1)?'rock':'stone';paths=kind==='rock'?DECORATION_PATHS.rock:DECORATION_PATHS.stone;rate=density*(isRidge?.42:.20)}
+  else if((role==='earth'||role==='clay')&&isRidge){kind=((base>>>17)&1)?'rock':'stone';paths=kind==='rock'?DECORATION_PATHS.rock:DECORATION_PATHS.stone;rate=density*.16}
+  else if((role==='earth'||role==='clay')&&r<density*.09){kind='dead';paths=DECORATION_PATHS.dead}
+  if(!canLarge)kind=null;if(kind&&rate&&r>=rate)kind=null;
+  if(kind&&decorEnabled(kind)){const footprint=decorFootprint(kind),accept=((base>>>8)&65535)/65535;if(accept<1/footprint){const path=paths[(base>>>16)%paths.length],scale=.72+((base>>>20)&255)/255*.45,mirror=(base>>>29)&1;out.push({x:x+.08+((base>>>3)&255)/255*.84,y:y+.08+((base>>>11)&255)/255*.84,path,kind,scale,mirror,tintType:type,seed:base})}}
+  const grassAllowed=role==='grass'||role==='tallGrass'||(isDesert&&(role==='earth'||role==='clay')&&((base>>>6)&255)<18);
+  if(grassAllowed&&UI.checked('decorGrass',true)){const gr=((base>>>9)&65535)/65535,localGrassDensity=grassDensity*(onRoad?.35:1);if(gr<localGrassDensity){const count=2+((base>>>25)&1);for(let n=0;n<count;n++)out.push({x:x+.36+(((hashU32(base,n,17))>>>3)&255)/255*.28,y:y+.36+(((hashU32(base,n,29))>>>11)&255)/255*.28,kind:'grass',variant:(base+n*3)&7,tileRole:role,scale:1.05+(((base>>>15)+n*41)&255)/255*.35,mirror:(base>>>28)&1,tintType:type,materialRole:isDesert?'tallGrass':role,seed:base+n})}}
+  if(role==='tallGrass'&&decorEnabled('denseGrass')&&((base>>>4)&65535)/65535<grassDensity){out.push({x:x+.5,y:y+.56,kind:'denseGrass',tileRole:role,variant:(base>>>20)&7,scale:.9+((base>>>14)&255)/255*.18,mirror:0,tintType:type,materialRole:'tallGrass',seed:base^0x33aa})}
+  const clutterRoll=((base>>>5)&65535)/65535,clutterBase=(role==='grass'||role==='tallGrass')?Math.min(1,clutterDensity*1.18):clutterDensity,clutterPriority=clutterBase*(onRoad?.45:1);if(clutterRoll<clutterPriority){const ck=role==='gravel'||role==='stone'?'pebble':role==='grass'||role==='tallGrass'?'leaf':'twig';out.push({x:x+.38+((base>>>13)&255)/255*.24,y:y+.38+((base>>>21)&255)/255*.24,kind:'clutter',clutterKind:ck,tileRole:role,variant:(base>>>24)%36,scale:.86+((base>>>16)&255)/255*.22,mirror:(base>>>30)&1,tintType:type,seed:base^0x77aa})}
+ }
+ S.decorationChunks.set(key,out);return out
+}
+function visibleDecorationObjects(w,rc){
+ if(!S.playMode&&!S.editorDecorationsEnabled)return[];
+ const l=zoomTileLayout(w),screenPad=MathX.clamp(UI.number('cameraCullMargin',10),-800,1200),sourceBounds=isoVisibleBoundsWithMargin(w,rc,l,Math.max(0,screenPad)+Math.max(l.diamondW,l.diamondH)*S.zoom*3),a=[],extraChunks=2;
+ const q=[],minCY=Math.floor(sourceBounds.y0/S.chunkSize)-extraChunks,maxCY=Math.floor(Math.max(sourceBounds.y0,sourceBounds.y1-1)/S.chunkSize)+extraChunks,minCX=Math.floor(sourceBounds.x0/S.chunkSize)-extraChunks,maxCX=Math.floor(Math.max(sourceBounds.x0,sourceBounds.x1-1)/S.chunkSize)+extraChunks;
+ for(let cy=minCY;cy<=maxCY;cy++)for(let cx=minCX;cx<=maxCX;cx++)q.push({x:cx,y:cy});
+ const globalScale=MathX.clamp(UI.number('decorationScale',200),50,300)/100;
+ for(const ch of q)for(const d of ensureDecorationChunk(w,ch.x,ch.y)){
+  const p=isoDiamondPoint(w,d.x,d.y,l);let im=null,h,ww;
+  const ground=d.kind==='denseGrass'||d.kind==='grass'||d.kind==='clutter';
+  if(d.kind==='denseGrass'){im=getTintedGrassAtlas(d.tintType,d.tileRole||'tallGrass');h=l.diamondH*.72*d.scale*globalScale;ww=h*(64/48)}
+  else if(d.kind==='grass'){im=getTintedGrassAtlas(d.tintType,d.tileRole||d.materialRole||'grass');h=l.diamondH*.46*d.scale*globalScale;ww=h*(64/48)}
+  else if(d.kind==='clutter'){im=buildClutterAtlas(d.tintType);h=l.diamondH*.54*d.scale*globalScale;ww=h*(128/88)}
+  else{im=getDecorationImage(d.path);if(!im.complete||!im.naturalWidth)continue;h=((d.kind==='tree'||d.kind==='dead')?l.diamondH*2.2:(d.kind==='rock'?l.diamondH*3.8:l.diamondH*.95))*d.scale*globalScale;ww=h*(im.naturalWidth/im.naturalHeight)}
+  const sx=S.panX+p.x*S.zoom,baseSy=S.panY+(p.y+l.diamondH*.13)*S.zoom,sw=ww*S.zoom,sh=h*S.zoom;
+  if(sx+sw*.7<-screenPad||sx-sw*.7>rc.width+screenPad||baseSy+40<-screenPad||baseSy-sh>rc.height+screenPad)continue;
+  const baseY=p.y+(ground?l.diamondH*.08:l.diamondH*.13);a.push({sortY:baseY,baseY,kind:'decor',d,p,im,h,ww})
+ }
+ return a
+}
+function drawGrassSprite(g,o){
+ const v=(o.d.variant||0)&3,sx=(v%2)*64,sy=Math.floor(v/2)*48;
+ if(o.d.kind==='denseGrass'){
+  for(let k=0;k<3;k++){const vv=(v+k)&3,xx=(vv%2)*64,yy=Math.floor(vv/2)*48;g.drawImage(o.im,xx,yy,64,48,-o.ww/2+k*o.ww*.27,-o.h*(.86+(k&1)*.12),o.ww*.46,o.h)}
+ }else g.drawImage(o.im,sx,sy,64,48,-o.ww/2,-o.h,o.ww,o.h)
+}
+function drawClutterSprite(g,o){const v=(o.d.variant||0)%36,sx=(v%6)*128,sy=Math.floor(v/6)*88;g.drawImage(o.im,sx,sy,128,88,-o.ww/2,-o.h,o.ww,o.h)}
+function lowDecorationChunkCanvas(w,cx,cy){
+ const key=cx+','+cy+'@'+UI.number('decorationDensity',10)+'@'+UI.number('grassDensity',20)+'@'+UI.number('clutterDensity',20)+'@'+UI.number('decorationScale',200)+'@'+(UI.checked('decorGrass')?1:0)+'@low-v83';
+ if(S.lowDecorChunks.has(key)){const v=S.lowDecorChunks.get(key);S.lowDecorChunks.delete(key);S.lowDecorChunks.set(key,v);return v}
+ const c=w.cellDataMap,l=c.l,size=S.chunkSize,x0=cx*size,y0=cy*size,x1=Math.min(l.isoCols,x0+size),y1=Math.min(l.isoRows,y0+size);
+ const corners=[isoDiamondPoint(w,x0-2,y0-2,l),isoDiamondPoint(w,x1+2,y0-2,l),isoDiamondPoint(w,x0-2,y1+2,l),isoDiamondPoint(w,x1+2,y1+2,l)];
+ const minX=Math.floor(Math.min(...corners.map(p=>p.px))-l.diamondW*2),maxX=Math.ceil(Math.max(...corners.map(p=>p.px))+l.diamondW*2);
+ const minY=Math.floor(Math.min(...corners.map(p=>p.py))-l.diamondH*4),maxY=Math.ceil(Math.max(...corners.map(p=>p.py))+l.diamondH*2);
+ const cv=document.createElement('canvas');cv.width=Math.max(1,maxX-minX);cv.height=Math.max(1,maxY-minY);
+ const g=cv.getContext('2d',{alpha:true});g.clearRect(0,0,cv.width,cv.height);g.imageSmoothingEnabled=false;
+ const low=ensureDecorationChunk(w,cx,cy)?.filter(d=>d.kind==='grass'||d.kind==='clutter')||[];
+ const globalScale=MathX.clamp(UI.number('decorationScale',200),50,300)/100;
+ for(const d of low){
+  const p=isoDiamondPoint(w,d.x,d.y,l),baseX=p.px-minX,baseY=p.py-minY+l.diamondH*.02;
+  g.save();g.globalAlpha=1;g.globalCompositeOperation='source-over';g.filter='none';
+  const clipW=l.diamondW*.92,clipH=l.diamondH*.92;
+  g.beginPath();g.moveTo(baseX,baseY-clipH*.5);g.lineTo(baseX+clipW*.5,baseY);g.lineTo(baseX,baseY+clipH*.5);g.lineTo(baseX-clipW*.5,baseY);g.closePath();g.clip();
+  g.translate(baseX,baseY);g.scale(d.mirror?-1:1,1);
+  if(d.kind==='grass'){
+   const im=getTintedGrassAtlas(d.tintType,d.materialRole||'grass'),h=l.diamondH*.82*d.scale*globalScale,ww=h*2.25,sx=(d.variant||0)*64;
+   g.drawImage(im,sx,0,64,48,-ww/2,-h,ww,h);
+  }else{
+   const im=buildClutterAtlas(d.tintType),h=l.diamondH*.42*d.scale*globalScale,ww=l.diamondW*.62*d.scale*globalScale,sx=(d.variant||0)*128;
+   g.drawImage(im,sx,0,128,88,-ww/2,-h,ww,h);
+  }
+  g.restore();
+ }
+ const out={canvas:cv,x:minX,y:minY};S.lowDecorChunks.set(key,out);trimCanvasCache(S.lowDecorChunks,48);return out;
+}
+function drawLowDecorationChunks(g,w,rc){
+ if(S.renderLod!=='near')return;
+ if(!S.playMode&&!S.editorDecorationsEnabled)return;
+ const chunks=S.playMode?visibleChunkCoords(w,rc,1):visibleChunkCoords(w,rc,1);
+ for(const ch of chunks){const e=lowDecorationChunkCanvas(w,ch.x,ch.y);if(!e?.canvas)continue;g.drawImage(e.canvas,e.x,e.y);S.drawCalls++}
+ trimCanvasCache(S.lowDecorChunks,Math.max(18,chunks.length*2));
+}
+function drawPlayerOnly(g,w){
+ if(!S.player)return;const l=zoomTileLayout(w),p=isoDiamondPoint(w,S.player.x,S.player.y,l),im=$('playerImage'),h=l.diamondH*2,ww=im.naturalHeight?h*(im.naturalWidth/im.naturalHeight):l.diamondH;
+ g.save();g.globalAlpha=S.playerStealthAlpha||1;g.translate(p.x,p.y+l.diamondH*.14);g.scale(S.player.dir,1);if(im.complete&&im.naturalWidth)g.drawImage(im,-ww/2,-h,ww,h);g.restore();S.drawCalls++;
+}
+function drawSortedObjects(g,w,rc){if(S.renderLod!=='near'){if(S.playMode)drawPlayerOnly(g,w);return}
+ const t0=performance.now(),l=zoomTileLayout(w),hideLow=UI.checked('playHideLowDecor'),hideLarge=UI.checked('playHideLargeDecor');
+ let items=visibleDecorationObjects(w,rc);
+ if(hideLow||hideLarge)items=items.filter(o=>{
+  if(o.kind!=='decor')return true;
+  const low=o.d.kind==='grass'||o.d.kind==='denseGrass'||o.d.kind==='clutter';
+  return low?!hideLow:!hideLarge;
+ });
+ let playerItem=null;
+ if(S.playMode&&S.player){const p=isoDiamondPoint(w,S.player.x,S.player.y,l),im=$('playerImage'),h=l.diamondH*2,ww=im.naturalHeight?h*(im.naturalWidth/im.naturalHeight):l.diamondH;playerItem={sortY:p.y+l.diamondH*.14,baseY:p.y+l.diamondH*.14,kind:'player',p,im,h,ww};items.push(playerItem)}
+ items.sort((a,b)=>a.sortY-b.sortY||a.baseY-b.baseY);S.visibleDynamic=items.length;
+ let fullyOccluded=false;
+ if(playerItem){
+  const pr={l:playerItem.p.x-playerItem.ww*.34,r:playerItem.p.x+playerItem.ww*.34,t:playerItem.baseY-playerItem.h*.92,b:playerItem.baseY-playerItem.h*.08};
+  const pArea=Math.max(1,(pr.r-pr.l)*(pr.b-pr.t));
+  for(const o of items){
+   if(o.kind!=='decor'||o.d.kind==='grass'||o.d.kind==='denseGrass'||o.d.kind==='clutter'||o.baseY<=playerItem.baseY)continue;
+   const dr={l:o.p.x-o.ww*.43,r:o.p.x+o.ww*.43,t:o.baseY-o.h*.92,b:o.baseY};
+   const iw=Math.max(0,Math.min(pr.r,dr.r)-Math.max(pr.l,dr.l)),ih=Math.max(0,Math.min(pr.b,dr.b)-Math.max(pr.t,dr.t));
+   if(iw*ih/pArea>=.88){fullyOccluded=true;break}
+  }
+ }
+ for(const o of items){
+  if(o.kind==='decor'){const d=o.d;g.save();g.translate(o.p.x,o.baseY);g.scale(d.mirror?-1:1,1);g.filter=(d.kind==='grass'||d.kind==='denseGrass'||d.kind==='clutter')?materialTintFilter(d.tileRole||materialRoleAt(w,d.x,d.y),d.kind):decorationTint(d.kind,d.tintType);if(d.kind==='grass'||d.kind==='denseGrass')drawGrassSprite(g,o);else if(d.kind==='clutter')drawClutterSprite(g,o);else g.drawImage(o.im,-o.ww/2,-o.h,o.ww,o.h);g.restore();S.drawCalls++}
+  else{g.save();g.globalAlpha=S.playerStealthAlpha||1;g.translate(o.p.x,o.baseY);g.scale(S.player.dir,1);if(o.im.complete&&o.im.naturalWidth)g.drawImage(o.im,-o.ww/2,-o.h,o.ww,o.h);else{g.fillStyle='#d7e2ea';g.fillRect(-l.diamondW*.18,-o.h,l.diamondW*.36,o.h)}g.restore();S.drawCalls++}
+ }
+ if(fullyOccluded&&playerItem){g.save();g.globalAlpha=.68;g.globalCompositeOperation='screen';g.filter='grayscale(1) brightness(2.4) contrast(1.25)';g.translate(playerItem.p.x,playerItem.baseY);g.scale(S.player.dir,1);if(playerItem.im.complete&&playerItem.im.naturalWidth)g.drawImage(playerItem.im,-playerItem.ww/2,-playerItem.h,playerItem.ww,playerItem.h);g.restore();S.drawCalls++}
+ S.frameProfile.decor=performance.now()-t0
+}
+function spawnEditorDecorations(){if(!S.world){alert('Сначала открой режим «Редактирование».');return}if(S.world.playPlanOnly)materializeEditorFromSession();S.editorDecorationsEnabled=true;S.decorationChunks.clear();S.lowDecorChunks.clear();draw()}
+function clearDecorations(){S.editorDecorationsEnabled=false;S.decorationChunks.clear();S.lowDecorChunks.clear();draw()}
+function regenerateDecorations(){S.decorationChunks.clear();S.lowDecorChunks.clear();S.editorDecorationsEnabled=true;draw()}
+const PLAYER_ASSET=ASSET_ROOT+'Source/Character/Knight/T_Character_01.png';
+function loadPlayerAsset(){const img=$('playerImage'),fallback=$('playerFallback');img.onload=()=>{img.style.display='block';fallback.style.display='none'};img.onerror=()=>{img.style.display='none';fallback.style.display='block'};img.src=PLAYER_ASSET}
+function firstPlayableCell(w){const c=w.cellDataMap||w.zoomTileCache||buildZoomTileCache(w),l=c.l;for(let r=0;r<Math.max(l.isoCols,l.isoRows);r++){const cx=(l.isoCols/2)|0,cy=(l.isoRows/2)|0;for(let y=Math.max(0,cy-r);y<=Math.min(l.isoRows-1,cy+r);y++)for(let x=Math.max(0,cx-r);x<=Math.min(l.isoCols-1,cx+r);x++){if(c.active[y*l.isoCols+x])return{x:x+.5,y:y+.5}}}return{x:.5,y:.5}}
+function playerCellIndex(x,y){if(!S.world)return-1;const c=S.world.cellDataMap||S.world.zoomTileCache||buildZoomTileCache(S.world),l=c.l,ix=Math.floor(x),iy=Math.floor(y);return ix>=0&&iy>=0&&ix<l.isoCols&&iy<l.isoRows?iy*l.isoCols+ix:-1}
+function decorationBlocksPlayer(x,y){
+ if(!S.world)return false;const size=S.chunkSize,cx=Math.floor(x/size),cy=Math.floor(y/size);
+ for(let yy=cy-1;yy<=cy+1;yy++)for(let xx=cx-1;xx<=cx+1;xx++)for(const d of ensureDecorationChunk(S.world,xx,yy)){
+  if(d.kind==='grass'||d.kind==='denseGrass'||d.kind==='clutter'||d.kind==='bush')continue;const fp=decorFootprint(d.kind),radius=(d.kind==='tree'||d.kind==='dead')?.32*fp:(d.kind==='rock'?.28*fp:(d.kind==='bush'?.22*fp:.18*fp));
+  const dx=x-d.x,dy=y-d.y;if(dx*dx+dy*dy<radius*radius)return true;
+ }
+ return false;
+}
+function playerCanStand(x,y){const c=S.world?.cellDataMap||S.world?.zoomTileCache;if(!c)return false;for(const [ox,oy] of [[0,.05],[-.22,0],[.22,0],[-.18,-.20],[.18,-.20]]){const px=x+ox,py=y+oy,i=playerCellIndex(px,py);if(i<0||!c.active[i]||decorationBlocksPlayer(px,py))return false}return true}
+function refreshActiveChunks(){
+ if(!S.world||!S.player)return;
+ const c=S.world.cellDataMap||S.world.zoomTileCache,l=c.l,size=S.chunkSize,cx=Math.floor(S.player.x/size),cy=Math.floor(S.player.y/size),next=new Map(),radius=1;
+ for(let y=cy-radius;y<=cy+radius;y++)for(let x=cx-radius;x<=cx+radius;x++){
+  if(x<0||y<0||x*size>=l.isoCols||y*size>=l.isoRows)continue;
+  const key=x+','+y;next.set(key,S.activeChunks.get(key)||{x,y,loadedAt:performance.now()});
+ }
+ S.activeChunks=next;
+ if(renderLodFor(S.world)==='near')for(const ch of next.values())ensureDecorationChunk(S.world,ch.x,ch.y);
+ const rc=canvas.getBoundingClientRect();S.visibleRenderChunks=renderLodFor(S.world)==='near'?visibleChunkCoords(S.world,rc,1):[];
+}
+function cameraTargetOnPlayer(zoom=S.zoom){const r=canvas.getBoundingClientRect(),l=zoomTileLayout(S.world),p=isoDiamondPoint(S.world,S.player.x,S.player.y,l);return{panX:r.width*.5-p.x*zoom,panY:r.height*.58-p.y*zoom,zoom}}
+function centerCameraOnPlayer(immediate=true){if(!S.world||!S.player)return;const target=cameraTargetOnPlayer();if(immediate){S.panX=target.panX;S.panY=target.panY}else S.cameraFlight={fromX:S.panX,fromY:S.panY,fromZoom:S.zoom,toX:target.panX,toY:target.panY,toZoom:target.zoom,start:performance.now(),duration:850}}
+function nearestPlayableCell(x,y,maxRadius=80){const c=S.world?.cellDataMap||S.world?.zoomTileCache;if(!c)return firstPlayableCell(S.world);const l=c.l,tx=MathX.clamp(Math.floor(x),0,l.isoCols-1),ty=MathX.clamp(Math.floor(y),0,l.isoRows-1);for(let r=0;r<=maxRadius;r++)for(let yy=Math.max(0,ty-r);yy<=Math.min(l.isoRows-1,ty+r);yy++)for(let xx=Math.max(0,tx-r);xx<=Math.min(l.isoCols-1,tx+r);xx++){if(Math.abs(xx-tx)!==r&&Math.abs(yy-ty)!==r)continue;if(c.active[yy*l.isoCols+xx]&&!decorationBlocksPlayer(xx+.5,yy+.5))return{x:xx+.5,y:yy+.5}}return firstPlayableCell(S.world)}
+function cameraCenterCell(){const r=canvas.getBoundingClientRect(),l=zoomTileLayout(S.world),wx=(r.width*.5-S.panX)/Math.max(.001,S.zoom),wy=(r.height*.5-S.panY)/Math.max(.001,S.zoom),dx=wx-(l.originX+l.diamondW*.5),dy=wy-(l.originY+l.diamondH*.5);return{x:dx/l.diamondW+dy/l.diamondH,y:dy/l.diamondH-dx/l.diamondW}}
+function playZoomFor15Tiles(){
+ const r=canvas.getBoundingClientRect(),l=isoLayout(S.world),targetTiles=20;
+ return MathX.clamp(r.width/Math.max(1,targetTiles*l.diamondW),.04,8)
+}
+function updatePlayButtons(){const btn=$('play');if(btn)btn.textContent=S.player?'▶ Продолжить':'▶ Играть'}
+function enterPlayMode(planAlreadyBuilt=false,startAtCamera=false){
+ if(!S.world||!S.world.virtualPlanReady){S.pendingPlay=true;S.pendingPlayAtCamera=startAtCamera;S.buildMode='play';setLoading(true,'Создание виртуального мира');requestAnimationFrame(()=>setTimeout(()=>generate(false,true),0));return}
+ if(!S.playMode)S.editorCamera=Object.freeze({zoom:S.zoom,panX:S.panX,panY:S.panY});
+ const hadPlayer=!!S.player,firstPlay=!S.hasEnteredPlay;
+ if(startAtCamera){const c=cameraCenterCell(),p=nearestPlayableCell(c.x,c.y);S.player={x:p.x,y:p.y,dir:1,speed:8.5};S.playCamera=null}
+ else if(!S.player){const p=firstPlayableCell(S.world);S.player={x:p.x,y:p.y,dir:1,speed:8.5}}
+ S.playMode=true;document.body.classList.add('play-mode');updatePlayButtons();S.cameraFlight=null;$('playStatus').textContent='WASD · M карта · Space ms';
+ requestAnimationFrame(()=>{
+  const r=canvas.getBoundingClientRect(),l=isoLayout(S.world);
+  if(!firstPlay&&hadPlayer&&!startAtCamera&&S.playCamera){
+   S.zoom=S.playCamera.zoom;S.panX=S.playCamera.panX;S.panY=S.playCamera.panY;
+  }else{
+   const z=playZoomFor15Tiles(),p=isoDiamondPoint(S.world,S.player.x,S.player.y,l);
+   S.zoom=z;S.panX=r.width*.5-p.x*z;S.panY=r.height*.58-p.y*z;S.playCamera=null;
+  }
+  S.hasEnteredPlay=true;refreshActiveChunks();draw();
+ });
+}
+function materializeEditorFromSession(){if(!S.world||!S.world.playPlanOnly)return;setLoading(true,'Подготовка редактора из текущей сессии');buildCascadeLOD(S.world,true);rebuildIsoLayerCache(S.world);S.world.playPlanOnly=false;S.editorMaterialized=true;setLoading(false)}
+function exitPlayMode(){
+ if(S.playMode)S.playCamera={zoom:S.zoom,panX:S.panX,panY:S.panY};
+ const saved=S.editorCamera?{zoom:S.editorCamera.zoom,panX:S.editorCamera.panX,panY:S.editorCamera.panY}:null;
+ S.playMode=false;S.worldMapOpen=false;S.gameKeys.clear();
+ document.body.classList.remove('play-mode');$('worldMapOverlay').classList.remove('visible');
+ materializeEditorFromSession();S.editorDecorationsEnabled=true;S.cameraFlight=null;
+ const restore=()=>{
+  if(saved){S.zoom=saved.zoom;S.panX=saved.panX;S.panY=saved.panY}
+  updatePlayButtons();draw();
+ };
+ restore();requestAnimationFrame(restore);setTimeout(restore,50)
+}
+function toggleWorldMap(){if(!S.playMode||!S.world)return;S.worldMapOpen=!S.worldMapOpen;$('worldMapOverlay').classList.toggle('visible',S.worldMapOpen);if(S.worldMapOpen)drawWorldMap()}
+function buildWorldMapCache(){
+ if(!S.world)return null;
+ const shaded=UI.checked('minimapShade',true),cacheKey=(shaded?'shaded':'flat')+'|'+S.world.seed+'|'+S.world;
+ if(S.worldMapCache&&S.worldMapCacheWorld===S.world&&S.worldMapCacheKey===cacheKey)return S.worldMapCache;
+ const t0=performance.now(),w=S.world,c=w.cellDataMap||w.zoomTileCache,l=c.l,cv=document.createElement('canvas');cv.width=l.isoCols;cv.height=l.isoRows;const g=cv.getContext('2d'),img=g.createImageData(l.isoCols,l.isoRows),p=img.data;
+ // Стилизованная текстура окружения: проходимая земля красится палитрой биома,
+ // непроходимое окружение — приглушённым тоном той же палитры (а не техническим дебаг-цветом).
+ const floorPal=[[74,98,58],[132,128,110],[46,58,86],[70,120,64],[70,74,66],[150,168,176],[176,182,180],[104,140,104],[188,158,102],[132,110,82]];
+ const wallPal=[[42,54,35],[72,70,60],[27,31,45],[39,65,37],[41,43,39],[80,92,98],[94,98,100],[55,75,57],[101,85,59],[71,61,47]];
+ for(let y=0;y<l.isoRows;y++)for(let x=0;x<l.isoCols;x++){
+  const i=y*l.isoCols+x,q=i*4,active=c.active[i],pal=active?floorPal:wallPal,col=pal[c.type[i]]||(active?[80,95,78]:[36,40,34]);
+  let shade=1;
+  if(shaded){
+   // Простое рельефное затенение: клетки на границе проходимой/непроходимой территории
+   // получают лёгкую тень, создавая ощущение объёма вместо плоской заливки.
+   const east=x+1<l.isoCols?c.active[i+1]:active,south=y+1<l.isoRows?c.active[i+l.isoCols]:active,north=y>0?c.active[i-l.isoCols]:active;
+   if(!active){shade=(north||east)?1.28:.58}
+  }
+  p[q]=Math.min(255,col[0]*shade);p[q+1]=Math.min(255,col[1]*shade);p[q+2]=Math.min(255,col[2]*shade);p[q+3]=255;
+ }
+ g.putImageData(img,0,0);S.worldMapCache=cv;S.worldMapCacheWorld=S.world;S.worldMapCacheKey=cacheKey;S.frameProfile.minimap=performance.now()-t0;return cv
+}
+function drawWorldMap(){
+ const t0=performance.now(),cv=$('worldMapCanvas'),r=cv.getBoundingClientRect(),dpr=Math.min(2,devicePixelRatio||1);cv.width=Math.max(1,Math.floor(r.width*dpr));cv.height=Math.max(1,Math.floor(r.height*dpr));const g=cv.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);g.fillStyle='#020405';g.fillRect(0,0,r.width,r.height);if(!S.world)return;
+ g.imageSmoothingEnabled=true;g.imageSmoothingQuality='high';
+ const w=S.world,c=w.cellDataMap||w.zoomTileCache,l=c.l,mapZoom=MathX.clamp(S.mapZoom||1,1,8),fitScale=Math.min(r.width/l.isoCols,r.height/l.isoRows),scale=fitScale*mapZoom,dw=l.isoCols*scale,dh=l.isoRows*scale,ox=(r.width-dw)/2+(S.mapPanX||0),oy=(r.height-dh)/2+(S.mapPanY||0),base=buildWorldMapCache();g.imageSmoothingEnabled=mapZoom>1.6;g.drawImage(base,ox,oy,dw,dh);
+ if(w.routes?.edges){g.strokeStyle='rgba(245,194,93,.95)';g.lineWidth=Math.max(1,scale*.55);for(const e of w.routes.edges){const a=e.a||e[0],b=e.b||e[1];if(!a||!b)continue;g.beginPath();g.moveTo(ox+(a.x/l.isoCols)*dw,oy+(a.y/l.isoRows)*dh);g.lineTo(ox+(b.x/l.isoCols)*dw,oy+(b.y/l.isoRows)*dh);g.stroke()}}
+ const px=S.player.x/l.isoCols,py=S.player.y/l.isoRows;g.fillStyle='#fff';g.strokeStyle='#14202a';g.lineWidth=4;g.beginPath();g.arc(ox+px*dw,oy+py*dh,6,0,Math.PI*2);g.stroke();g.fill()
+ cv._mapFit={ox,oy,dw,dh};S.frameProfile.minimap=performance.now()-t0
+}
+function fastTravelFromMap(ev){if(!S.world||!S.player)return;const cv=$('worldMapCanvas'),r=cv.getBoundingClientRect(),w=S.world,f=cv._mapFit||{ox:0,oy:0,dw:r.width,dh:r.height},dw=f.dw,dh=f.dh,ox=f.ox,oy=f.oy,nx=(ev.clientX-r.left-ox)/dw,ny=(ev.clientY-r.top-oy)/dh;if(nx<0||ny<0||nx>1||ny>1)return;const c=w.cellDataMap||w.zoomTileCache,l=c.l,tx=Math.floor(nx*l.isoCols),ty=Math.floor(ny*l.isoRows);let best=null,bd=Infinity;for(let rad=0;rad<48&&!best;rad++)for(let y=Math.max(0,ty-rad);y<=Math.min(l.isoRows-1,ty+rad);y++)for(let x=Math.max(0,tx-rad);x<=Math.min(l.isoCols-1,tx+rad);x++){const i=y*l.isoCols+x;if(!c.active[i])continue;const d=(x-tx)**2+(y-ty)**2;if(d<bd){bd=d;best={x:x+.5,y:y+.5}}}if(best){S.player.x=best.x;S.player.y=best.y;refreshActiveChunks();centerCameraOnPlayer();S.worldMapOpen=false;$('worldMapOverlay').classList.remove('visible');draw()}}
+function playerInDenseGrass(){
+ if(!S.world||!S.player||!UI.checked('decorDenseGrass'))return false;
+ const c=S.world.cellDataMap||S.world.zoomTileCache,l=c.l,x=Math.floor(S.player.x),y=Math.floor(S.player.y);
+ if(x<0||y<0||x>=l.isoCols||y>=l.isoRows)return false;
+ const i=y*l.isoCols+x,role=MATERIAL_ID_ROLES[c.roleDetailed[i]];
+ if(role!=='tallGrass')return false;
+ const density=MathX.clamp(UI.number('grassDensity',20),0,100)/100;
+ return ((hashU32(x,y,S.world.seed^0x6f23)&65535)/65535)<density;
+}
+function showStealthToast(message){
+ const el=$('stealthToast');if(!el)return;
+ el.textContent=message;el.classList.add('visible');clearTimeout(S.stealthToastTimer);
+ S.stealthToastTimer=setTimeout(()=>el.classList.remove('visible'),1500)
+}
+function updateStealthState(){
+ const hidden=playerInDenseGrass();
+ if(hidden!==S.stealthState){S.stealthState=hidden;showStealthToast(hidden?'Вы скрыты в высокой траве':'Вы вышли из высокой травы')}
+}
+function updatePlay(dt){
+ const __updateStart=performance.now();if(!S.playMode||S.worldMapOpen||!S.player)return;
+ let dx=0,dy=0;if(S.gameKeys.has('KeyW')){dx-=1;dy-=1}if(S.gameKeys.has('KeyS')){dx+=1;dy+=1}if(S.gameKeys.has('KeyA')){dx-=1;dy+=1}if(S.gameKeys.has('KeyD')){dx+=1;dy-=1}const len=Math.hypot(dx,dy);
+ if(len){dx/=len;dy/=len;const step=S.player.speed*dt,px=S.player.x,py=S.player.y;let moved=false;const tryMove=(vx,vy)=>{const nx=px+vx*step,ny=py+vy*step;if(playerCanStand(nx,ny)){S.player.x=nx;S.player.y=ny;return true}return false};if(!tryMove(dx,dy)){const angles=[.28,-.28,.52,-.52,.78,-.78,1.04,-1.04];for(const a of angles){const ca=Math.cos(a),sa=Math.sin(a),vx=dx*ca-dy*sa,vy=dx*sa+dy*ca;if(tryMove(vx,vy)){dx=vx;dy=vy;moved=true;break}}if(!moved){if(playerCanStand(px+dx*step,py))S.player.x=px+dx*step;else if(playerCanStand(px,py+dy*step))S.player.y=py+dy*step}}S.player.dir=dx>=0?1:-1}
+ const __chunksStart=performance.now();refreshActiveChunks();S.frameProfile.chunks=performance.now()-__chunksStart;if(!S.cameraFlight)centerCameraOnPlayer();updateStealthState();S.denseGrassTime=S.stealthState?S.denseGrassTime+dt:0;S.playerStealthAlpha=S.stealthState?.5:1;S.frameProfile.update=performance.now()-__updateStart;draw()
+}
+function buildHudReport(){
+ if(!S.world||!S.player)return'';const i=playerCellIndex(S.player.x,S.player.y),c=S.world.cellDataMap||S.world.zoomTileCache,biome=i>=0?BIOME_NAMES[c.type[i]]:'—',role=i>=0?MATERIAL_ID_ROLES[c.roleDetailed[i]]:'—',p=S.frameProfile,cx=Math.floor(S.player.x/S.chunkSize),cy=Math.floor(S.player.y/S.chunkSize);
+ return `Godgrave World v8.12
+FPS: ${S.fps.toFixed(1)}
+Frame: ${p.total.toFixed(2)} ms
+Render: ${p.draw.toFixed(2)} ms
+Decor/Y-sort: ${p.decor.toFixed(2)} ms
+Update: ${p.update.toFixed(2)} ms
+Chunks update: ${p.chunks.toFixed(2)} ms
+Minimap: ${p.minimap.toFixed(2)} ms
+LOD: ${S.renderLod}
+Draw calls: ${S.drawCalls||0}
+Visible tile draws: ${S.visibleTilesDrawn||0}
+Visible chunk draws: ${S.visibleChunksDrawn||0}
+Active chunks: ${S.activeChunks.size}
+Environment cache: ${S.environmentChunks.size}
+Low decor cache: ${S.lowDecorChunks.size}
+Dynamic visible: ${S.visibleDynamic||0}
+Player chunk: ${cx}, ${cy}
+Player cell: ${Math.floor(S.player.x)}, ${Math.floor(S.player.y)}
+Biome: ${biome}
+Material: ${role||'земля'}
+Seed: ${S.world.seed}`;
+}
+function drawPlayOverlay(){
+ if(!S.world||!S.player)return;
+ const i=playerCellIndex(S.player.x,S.player.y),c=S.world.cellDataMap||S.world.zoomTileCache,
+ biome=i>=0?BIOME_NAMES[c.type[i]]:'—',role=i>=0?MATERIAL_ID_ROLES[c.roleDetailed[i]]:'—',
+ cx=Math.floor(S.player.x/S.chunkSize),cy=Math.floor(S.player.y/S.chunkSize),fps=Math.round(S.fps),
+ fpsClass=fps>=50?'fpsGood':fps>=30?'fpsWarn':'fpsBad',
+ cameraTiles=(canvas.getBoundingClientRect().width/Math.max(.01,zoomTileLayout(S.world).diamondW*S.zoom));
+ let perf='';
+ if(S.showFrameProfile){const p=S.frameProfile;perf='<div class="perfBreakdown">Кадр: '+p.total.toFixed(2)+' ms\nРендер: '+p.draw.toFixed(2)+' ms\nДекор/Y-sort: '+p.decor.toFixed(2)+' ms\nЛогика: '+p.update.toFixed(2)+' ms\nЧанки: '+p.chunks.toFixed(2)+' ms\nМиникарта: '+p.minimap.toFixed(2)+' ms\nLOD: '+S.renderLod+'\nTiles: '+(S.visibleTilesDrawn||0)+'\nChunks: '+(S.visibleChunksDrawn||0)+'\nDraw calls: '+(S.drawCalls||0)+'</div>'}
+ S.lastHudReport=buildHudReport();
+ $('gameHud').innerHTML='<div class="hudTop"><div><b>Бесшовный мир · <span class="'+fpsClass+'">'+fps+' FPS</span></b><div class="cameraDistance">Дальность камеры: '+cameraTiles.toFixed(1)+' плиток</div></div><div class="hudActions"><button type="button" class="hudMiniBtn" id="hudLayers">Слои</button></div></div>Чанк: '+cx+', '+cy+' <span class="chunkBadge">'+S.activeChunks.size+' активных</span><br>Клетка: '+Math.floor(S.player.x)+', '+Math.floor(S.player.y)+'<br>'+biome+': '+(role||'земля')+'<br>LOD: '+S.renderLod+' · tiles '+(S.visibleTilesDrawn||0)+' · chunks '+(S.visibleChunksDrawn||0)+'<br><span style="color:#8f9aa4">WASD · M карта · Space ms · Esc редактор</span><br><span class="copyHint">Клик по панели — копировать диагностику</span>'+perf;
+}
+function gameLoop(t){const frameStart=performance.now(),rawDt=Math.max(0,(t-(S.lastFrame||t))/1000),dt=Math.min(.05,rawDt);S.lastFrame=t;if(!S.fpsStamp)S.fpsStamp=t;S.fpsFrames++;if(t-S.fpsStamp>=400){const instant=S.fpsFrames*1000/(t-S.fpsStamp);S.fps=S.fps*.65+instant*.35;S.fpsFrames=0;S.fpsStamp=t;UI.text('editorFps',Math.round(S.fps)+' FPS')}if(S.cameraFlight){const f=S.cameraFlight,u=MathX.clamp((t-f.start)/f.duration,0,1),e=1-Math.pow(1-u,3);S.zoom=MathX.lerp(f.fromZoom,f.toZoom,e);S.panX=MathX.lerp(f.fromX,f.toX,e);S.panY=MathX.lerp(f.fromY,f.toY,e);if(u>=1)S.cameraFlight=null;draw()}updatePlay(dt);S.frameProfile.total=performance.now()-frameStart;requestAnimationFrame(gameLoop)}
+UI.on('spawnDecorations','click',spawnEditorDecorations);UI.on('regenDecorations','click',regenerateDecorations);UI.on('clearDecorations','click',clearDecorations);
+
+document.querySelectorAll('.infoTab').forEach(btn=>btn.addEventListener('click',()=>{S.infoTab=btn.dataset.infoTab||'map';updateStats()}));
+const gameHudEl=$('gameHud');
+if(gameHudEl){
+ gameHudEl.addEventListener('pointerdown',e=>{
+  const btn=e.target.closest?.('#hudLayers');
+  if(!btn)return;
+  e.preventDefault();e.stopPropagation();
+  S.playLayerPanel=!S.playLayerPanel;
+  UI.toggle('playLayers','open',S.playLayerPanel);
+ },true);
+ gameHudEl.addEventListener('click',async e=>{
+  if(e.target.closest?.('#hudLayers')){e.preventDefault();e.stopPropagation();return}
+  const report=S.lastHudReport||buildHudReport();
+  try{await navigator.clipboard.writeText(report)}
+  catch{const ta=document.createElement('textarea');ta.value=report;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove()}
+ });
+}
+UI.onMany(['playHideEnvironment','playHideGround','playHideLowDecor','playHideLargeDecor'],'input',draw);
+UI.on('playHideVignette','input',()=>document.body.classList.toggle('hide-vignette',UI.checked('playHideVignette')));
+UI.onMany(['decorationDensity','decorationScale','grassDensity','clutterDensity','decorGrass','decorDenseGrass'],'input',e=>{const id=e.currentTarget.id;UI.text(id+'Value',e.currentTarget.value+'%');S.decorationChunks.clear();S.lowDecorChunks.clear();draw()});
+UI.onMany(['decorTrees','decorBushes','decorRocks','decorStones','decorGrass','decorDenseGrass'],'input',()=>{S.decorationChunks.clear();S.lowDecorChunks.clear();draw()});
+UI.on('play','click',()=>enterPlayMode(false,false));UI.on('playHere','click',()=>enterPlayMode(false,true));UI.on('exitPlay','click',exitPlayMode);UI.on('worldMapButton','click',toggleWorldMap);UI.on('closeWorldMap','click',toggleWorldMap);UI.on('worldMapCanvas','click',fastTravelFromMap);
+const worldMapCanvasEl=$('worldMapCanvas');
+if(worldMapCanvasEl){
+ worldMapCanvasEl.addEventListener('wheel',e=>{
+  if(!S.worldMapOpen)return;e.preventDefault();e.stopPropagation();
+  const r=worldMapCanvasEl.getBoundingClientRect(),mx=e.clientX-r.left,my=e.clientY-r.top,fit=worldMapCanvasEl._mapFit;
+  const oldZoom=S.mapZoom||1,next=MathX.clamp(oldZoom*(e.deltaY<0?1.18:1/1.18),1,8);
+  if(fit&&next!==oldZoom){
+   const wx=(mx-fit.ox)/fit.dw,wy=(my-fit.oy)/fit.dh;
+   S.mapZoom=next;drawWorldMap();
+   const nf=worldMapCanvasEl._mapFit;
+   S.mapPanX+=mx-(nf.ox+wx*nf.dw);S.mapPanY+=my-(nf.oy+wy*nf.dh);drawWorldMap();
+  }
+  const input=$('minimapZoom');if(input)input.value=Math.min(500,Math.round(S.mapZoom*100));
+  $('minimapZoomValue').textContent=Math.round(S.mapZoom*100)+'%';
+ },{passive:false});
+ worldMapCanvasEl.addEventListener('pointerdown',e=>{if(!S.worldMapOpen)return;S.mapDrag=true;S.mapDragX=e.clientX;S.mapDragY=e.clientY;worldMapCanvasEl.setPointerCapture?.(e.pointerId);worldMapCanvasEl.classList.add('dragging')});
+ worldMapCanvasEl.addEventListener('pointermove',e=>{if(!S.mapDrag)return;S.mapPanX+=e.clientX-S.mapDragX;S.mapPanY+=e.clientY-S.mapDragY;S.mapDragX=e.clientX;S.mapDragY=e.clientY;drawWorldMap()});
+ const stopMapDrag=e=>{if(!S.mapDrag)return;S.mapDrag=false;worldMapCanvasEl.classList.remove('dragging');worldMapCanvasEl.releasePointerCapture?.(e.pointerId)};
+ worldMapCanvasEl.addEventListener('pointerup',stopMapDrag);worldMapCanvasEl.addEventListener('pointercancel',stopMapDrag);
+}
+
+UI.on('minimapZoom','input',()=>{S.mapZoom=MathX.clamp(UI.number('minimapZoom',100)/100,1,5);$('minimapZoomValue').textContent=Math.round(S.mapZoom*100)+'%';if(S.worldMapOpen)drawWorldMap()});
+UI.on('minimapShade','change',()=>{S.mapShaded=UI.checked('minimapShade',true);S.worldMapCache=null;S.worldMapCacheKey=null;if(S.worldMapOpen)drawWorldMap()});
+UI.on('cameraCullMargin','input',()=>{$('cameraCullMarginValue').textContent=UI.number('cameraCullMargin',10)+' px';draw()});
+UI.on('groundCullMargin','input',()=>{$('groundCullMarginValue').textContent=UI.number('groundCullMargin',-190)+' px';draw()});
+
+window.addEventListener('keydown',e=>{if(!S.playMode)return;if(e.code==='Space'){e.preventDefault();S.showFrameProfile=true;draw();return}const arrows={ArrowUp:'KeyW',ArrowDown:'KeyS',ArrowLeft:'KeyA',ArrowRight:'KeyD'};if(e.code==='KeyM'||e.key?.toLowerCase()==='m'||e.key?.toLowerCase()==='ь'||e.code==='Tab'){e.preventDefault();e.stopPropagation();toggleWorldMap();return}if(e.code==='Escape'){e.preventDefault();if(S.worldMapOpen)toggleWorldMap();else exitPlayMode();return}const code=arrows[e.code]||e.code;if(['KeyW','KeyA','KeyS','KeyD'].includes(code)){e.preventDefault();S.gameKeys.add(code)}},true);
+window.addEventListener('keyup',e=>{if(e.code==='Space'){S.showFrameProfile=false;draw();return}const arrows={ArrowUp:'KeyW',ArrowDown:'KeyS',ArrowLeft:'KeyA',ArrowRight:'KeyD'};S.gameKeys.delete(arrows[e.code]||e.code)},true);
+window.addEventListener('blur',()=>S.gameKeys.clear());loadPlayerAsset();updatePlayButtons();requestAnimationFrame(gameLoop);
+
+UI.on('scaleBalance','input',()=>UI.text('scaleBalanceValue',UI.value('scaleBalance')));UI.on('outerBiomeMode','change',()=>{if(S.world&&!S.playMode)requestGenerate(false)});
+UI.initButtonClasses();
+setGroundMode('texture');updateTileButton();loadGroundAtlas('B');loadGroundAtlas('D');loadBiomeAtlas();
 </script>
 </body></html>
 
+<style>
+#stats{padding-top:4px}
+.gameHud .cameraDistance{font-size:10px;color:#9fb3c0;margin-top:2px}
+.gameHud .hudMiniBtn{position:relative;z-index:3}
+.playLayers{pointer-events:auto}
+.grassGroup{border:1px solid #31404a;border-radius:7px;padding:7px;margin-top:7px;background:rgba(255,255,255,.018)}
+.grassGroup .check{margin-bottom:5px}
+</style>
 
-
+<style>
+.worldMapHead{gap:10px;flex-wrap:wrap}
+.miniMapControl{display:flex;align-items:center;gap:6px;font-size:10px;color:#aeb8c1}
+.miniMapControl input{width:120px}
+.miniMapShade{margin-left:auto;white-space:nowrap}
+.stealthToast{position:absolute;left:50%;top:88px;z-index:1100;transform:translate(-50%,-12px);padding:8px 13px;border:1px solid #68866f;border-radius:7px;background:rgba(9,20,13,.94);color:#baf2c8;font:700 12px ui-monospace,monospace;opacity:0;pointer-events:none;transition:opacity .18s,transform .18s}
+.stealthToast.visible{opacity:1;transform:translate(-50%,0)}
+</style>

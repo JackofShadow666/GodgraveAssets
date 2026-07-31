@@ -8,14 +8,70 @@ F:\Jack\Project\Godgrave\Public\Godgrave\Source\Godgrave_Launcher.html
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Hummer.psd
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Push.vbs
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\T_Axe.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\T_Bow.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\T_Claws.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\T_Crosier.png
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\T_Flail.png
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\T_FlailChain.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\T_Halberd.png
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\T_Hammer.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\T_Rapier.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\T_ShieldSpike.png
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\T_Spear.png
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\T_Staff.png
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\T_Wand.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\T_Whip.png
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\T_Ñrossbow.png
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\.mayaSwatches\T_Ñrossbow.png_hcm.swatch
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Build\AGENTS.md
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Build\Build.html
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Build\build.log
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Build\build.py
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Build\Build.standalone.html
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Build\build_lookup.py
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Build\gamepad-controls.txt
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Build\hud.txt
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Build\net-effects.txt
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Build\player-controls.txt
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Build\src\AGENTS.md
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Build\src\main.js
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Build\src\MAP.md
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Build\src\RUNTIME.md
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Build\src\ai\ai.js
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Build\src\arena\arena.js
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Build\src\combat\AGENTS.md
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Build\src\combat\combat.js
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Build\src\combat\debug-balls.js
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Build\src\combat\factions.js
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Build\src\combat\flail.js
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Build\src\combat\ranged.js
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Build\src\combat\weapons.js
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Build\src\core\debug-config.js
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Build\src\core\engine.js
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Build\src\core\entity.js
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Build\src\core\i18n.js
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Build\src\core\math.js
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Build\src\core\settings.js
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Build\src\input\gamepad-adapter.js
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Build\src\input\gamepad-controls.js
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Build\src\input\keyboard-layout.js
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Build\src\input\player-controls.js
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Build\src\network\AGENTS.md
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Build\src\network\net-core.js
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Build\src\network\net-effects.js
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Build\src\network\net-lobby.js
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Build\src\network\net-sync.js
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Build\src\network\net-ui.js
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Build\src\systems\audio.js
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Build\src\systems\buff.js
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Build\src\systems\fx.js
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Build\src\systems\sprites.js
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Build\src\ui\AGENTS.md
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Build\src\ui\hud.js
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Build\src\ui\mobile.js
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Build\src\__pycache__\build_lookup.cpython-313.pyc
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Build\__pycache__\build.cpython-313.pyc
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Build\__pycache__\build_lookup.cpython-313.pyc
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Character\Knight\T_Character_01.png
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Character\Knight\T_Character_02.png
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Character\Knight\T_Character_03.png
@@ -25,7 +81,20 @@ F:\Jack\Project\Godgrave\Public\Godgrave\Source\Character\Knight\T_Character_06.
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Character\Knight\T_Character_07.png
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Character\Knight\T_Character_08.png
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Character\Knight\T_Character_09.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Character\Knight\T_Character_10.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Character\Knight\T_Character_11.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Character\Knight\T_Character_12.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Character\Knight\T_Character_13.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Character\Knight\T_Character_14.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Character\Knight\Untitled-1_02.png
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Character\Knight\.mayaSwatches\T_Character_02.png_hcm.swatch
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Character\Test\T_CharTest_01.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Character\Test\T_CharTest_02.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Character\Test\T_CharTest_03.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Character\Test\T_CharTest_04.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Character\Test\T_CharTest_05.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Character\Test\T_CharTest_06.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Character\Test\T_CharTest_07.png
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\CharacterSet\body_abyss.png
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\CharacterSet\body_black.png
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\CharacterSet\body_chaos.png
@@ -99,16 +168,78 @@ F:\Jack\Project\Godgrave\Public\Godgrave\Source\CharacterSet\staff_wood.png
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\CharacterSet\sw_cur.png
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\CharacterSet\sw_f.png
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Doc\Doc.txt
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Doc\i18n_En.js
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Doc\Idea.txt
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Doc\Tag.txt
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Env\Editor\AGENTS.md
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Env\Editor\Editor.html
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Env\Editor\MAP.md
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Env\Editor\WorldMapGenerator.html
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Env\Foliadge\T_Env_Bush_01.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Env\Foliadge\T_Env_Bush_02.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Env\Foliadge\T_Env_Bush_03.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Env\Foliadge\T_Env_Bush_04.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Env\Foliadge\T_Env_Rock_01.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Env\Foliadge\T_Env_Rock_02.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Env\Foliadge\T_Env_Rock_03.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Env\Foliadge\T_Env_Rock_04.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Env\Foliadge\T_Env_Rock_05.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Env\Foliadge\T_Env_Rock_06.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Env\Foliadge\T_Env_Rock_07.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Env\Foliadge\T_Env_Rock_08.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Env\Foliadge\T_Env_Rock_09.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Env\Foliadge\T_Env_Stone_01.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Env\Foliadge\T_Env_Stone_02.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Env\Foliadge\T_Env_Stone_03.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Env\Foliadge\T_Env_Stone_04.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Env\Foliadge\T_Env_TreeDead_01.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Env\Foliadge\T_Env_TreeDead_02.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Env\Foliadge\T_Env_TreeLeaf_01.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Env\Foliadge\T_Env_TreeLeaf_02.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Env\Foliadge\T_Env_TreePine_01.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Env\Foliadge\T_Env_TreePine_02.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Env\Foliadge\T_Env_TreePine_03.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Env\Foliadge\T_Env_TreePine_04.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Env\Terrain\TerrainAtlas.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Env\Terrain\TerrainAtlas.psd
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Env\Terrain\TerrainAtlasB.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Env\Terrain\TerrainAtlasD.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Env\Terrain\T_BiomTIle.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Env\Terrain\T_GroundClay_01.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Env\Terrain\T_GroundDarkDirt_01.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Env\Terrain\T_GroundGrassDark_01.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Env\Terrain\T_GroundGrass_01.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Env\Terrain\T_GroundGrass_All.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Env\Terrain\T_GroundLight_01.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Env\Terrain\T_GroundStone_01.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Env\Terrain\Ref\ChatGPT Image 28 èþë. 2026 ã., 20_49_25.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Env\Terrain\Ref\ChatGPT Image 28 èþë. 2026 ã., 20_54_12.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Env\Terrain\Ref\ChatGPT Image 28 èþë. 2026 ã., 21_04_09.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Env\Terrain\Ref\ChatGPT Image 28 èþë. 2026 ã., 21_16_59.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Env\Terrain\Ref\ChatGPT Image 28 èþë. 2026 ã., 21_23_46.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Env\Terrain\Ref\ChatGPT Image 28 èþë. 2026 ã., 21_28_39.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Env\Terrain\Ref\ChatGPT Image 28 èþë. 2026 ã., 22_52_10.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Env\Terrain\Ref\gemini-3.1-flash-lite-image (nano-banana-2-lite)_a_ýòî_èçîìåòðè÷åñêèé_ò.jpeg
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Env\Terrain\Ref\Pack.psd
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Env\Terrain\Ref\TerrainAtlasAB.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Env\Terrain\Ref\TerrainAtlasB — êîïèÿ.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Env\Terrain\Ref\TerrainAtlas_6x6(1).png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Env\Terrain\Ref\TerrainAtlas_6x6.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Env\Terrain\Ref\TerrainAtlasÀÀ.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Env\Terrain\Ref\T_Tile.png
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Font\BloodyDrip-Regular.ttf
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Font\Font.png
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Font\index.html
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Font\MedievalSharp-Regular.ttf
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Music\Battle\Bleak Cold Cathedral.mp3
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Music\Battle\Bleak Cold CathedralC.mp3
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Music\Battle\Dance of the DemonA.mp3
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Music\Battle\Dance of the DemonB.mp3
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Music\Battle\DarkEpicTechno.mp3
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Music\Battle\DarkTechno.mp3
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Music\Battle\EpicBattleA.mp3
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Music\Battle\Fog Factory Siren.mp3
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Music\Battle\Fog Gate.mp3
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Music\Battle\IrishTechno.mp3
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Music\Battle\IrishTechnoB.mp3
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Music\Battle\Iron Creaks and Sirens.mp3
@@ -117,20 +248,33 @@ F:\Jack\Project\Godgrave\Public\Godgrave\Source\Music\Battle\Iron Creaks and Sir
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Music\Battle\MusicCyber.mp3
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Music\Battle\MusicEpic.mp3
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Music\Battle\MusicSad.mp3
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Music\Battle\Rust Belt Echo.mp3
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Music\Battle\Rust in the Boiler Room.mp3
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Music\Battle\TechnoFolk.mp3
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Music\Battle\The Elder Abyss(1).mp3
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Music\Battle\The Elder Abyss.mp3
-F:\Jack\Project\Godgrave\Public\Godgrave\Source\Music\Battle\The Hollowed Throne(1).mp3
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Music\Battle\The Hollow Cathedral.mp3
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Music\Battle\The Hollow CathedralB.mp3
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Music\Battle\The Hollow CathedralD.mp3
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Music\Battle\The Hollow CathedralE.mp3
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Music\Battle\The Hollowed Throne.mp3
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Music\Battle\The Hollowed ThroneB.mp3
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Music\Battle\The Iron Abyss.mp3
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Music\Battle\The Ritual of the Neon Shaman.mp3
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Body.psd
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\CHaracter.psd
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\CharacterConcept.psd
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\CharacterTest.psd
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\ChatGPT Image 10 èþí. 2026 ã., 04_02_29.png
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\ChatGPT Image 10 èþí. 2026 ã., 14_56_20.png
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\ChatGPT Image 15 èþí. 2026 ã., 05_52_11.png
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\ChatGPT Image 15 èþí. 2026 ã., 05_55_18.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\ChatGPT Image 28 èþë. 2026 ã., 14_12_19.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\ChatGPT Image 28 èþë. 2026 ã., 14_17_48.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\ChatGPT Image 28 èþë. 2026 ã., 14_20_04.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\ChatGPT Image 28 èþë. 2026 ã., 14_35_54.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\ChatGPT Image 28 èþë. 2026 ã., 14_39_33.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\ChatGPT Image 28 èþë. 2026 ã., 14_46_04.png
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\ChatGPT Image 9 èþí. 2026 ã., 14_55_39.png
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\ChatGPT Image 9 èþí. 2026 ã., 15_43_43.png
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\ChatGPT Image 9 èþí. 2026 ã., 22_26_10.png
@@ -143,6 +287,100 @@ F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Font.psd
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Heads.psd
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\T_Font.png
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\UI.psd
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Character\T_CharacterRef_01.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Character\T_CharacterRef_02.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Character\T_CharacterRef_03.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Character\T_CharacterRef_04.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Character\T_CharacterRef_05.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Character\T_CharacterRef_06.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Character\T_CharacterRef_07.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Character\T_CharacterRef_08.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Character\T_CharacterRef_09.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Character\T_CharacterRef_10.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Character\T_CharacterRef_11.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Character\T_CharacterRef_12.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Character\T_CharacterRef_13.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Character\T_CharacterRef_14.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Character\T_CharacterRef_15.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Character\T_CharacterRef_16.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Character\T_CharacterRef_17.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Character\T_CharacterRef_18.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Character\T_CharacterRef_19.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Character\T_CharacterRef_20.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Character\T_CharacterRef_21.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Character\T_CharacterRef_22.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Character\T_CharacterRef_23.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Character\T_CharacterRef_24.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Character\T_CharacterRef_25.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Character\T_CharacterRef_26.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Character\T_CharacterRef_27.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Character\T_CharacterRef_28.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Character\T_CharacterRef_29.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Character\T_CharacterRef_30.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Character\T_CharacterRef_31.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Character\T_CharacterRef_32.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Character\T_CharacterRef_33.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Character\T_CharacterRef_34.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Character\T_CharacterRef_35.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Character\T_CharacterRef_36.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Character\T_CharacterRef_37.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Character\T_CharacterRef_38.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Character\T_CharacterRef_39.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Character\T_CharacterRef_40.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Character\T_CharacterRef_41.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Character\T_CharacterRef_42.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Character\T_CharacterRef_43.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Character\T_CharacterRef_44.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Character\T_CharacterRef_45.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Character\T_CharacterRef_46.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Character\T_CharacterRef_47.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Character\T_CharacterRef_48.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Character\T_CharacterRef_49.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Character\T_CharacterRef_50.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Character\T_CharacterRef_51.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Character\T_CharacterRef_52.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Character\T_CharacterRef_53.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Character\T_CharacterRef_54.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Character\T_CharacterRef_55.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Character\T_CharacterRef_56.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Character\T_CharacterRef_57.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Character\T_CharacterRef_58.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Character\T_CharacterRef_59.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Character\T_CharacterRef_60.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Character\T_CharacterRef_61.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Character\T_CharacterRef_62.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Character\T_CharacterRef_63.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Character\T_CharacterRef_64.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Character\T_CharacterRef_65.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Character\T_CharacterRef_66.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Character\T_CharacterRef_67.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Character\T_CharacterRef_68.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Character\T_CharacterRef_69.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Character\T_CharacterRef_70.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Character\T_CharacterRef_71.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Character\T_CharacterRef_72.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Character\T_CharacterRef_73.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Character\T_CharacterRef_74.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Character\T_CharacterRef_75.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Character\T_CharacterRef_76.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Character\T_CharacterRef_77.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Character\T_CharacterRef_78.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Character\T_CharacterRef_79.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Character\T_CharacterRef_80.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\Character\T_CharacterRef_81.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\UI\ChatGPT Image 16 èþë. 2026 ã., 02_41_11.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\UI\ChatGPT Image 16 èþë. 2026 ã., 02_46_35.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\UI\downloadedImage(10).png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\UI\downloadedImage(11).png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\UI\downloadedImage(12).png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\UI\downloadedImage(13).png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\UI\downloadedImage(14).png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\UI\downloadedImage(15).png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\UI\downloadedImage(16).png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\UI\downloadedImage(17).png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\UI\downloadedImage(18).png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\UI\downloadedImage(19).png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Ref\UI\downloadedImage(9).png
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Server\package.json
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Server\server.js
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Sound\Arrow\SFX_ArrowHit_01.mp3
@@ -157,6 +395,13 @@ F:\Jack\Project\Godgrave\Public\Godgrave\Source\Sound\Arrow\SFX_ArrowPush_03.mp3
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Sound\Arrow\SFX_ArrowPush_04.mp3
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Sound\Arrow\SFX_CrossbowReloading_01.mp3
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Sound\Arrow\SFX_CrossbowReloading_02.mp3
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Sound\Bow\BowPush\SFX_BowPush_01.mp3
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Sound\Bow\BowPush\SFX_BowPush_02.mp3
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Sound\Bow\BowPush\SFX_BowPush_03.mp3
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Sound\Bow\BowPush\SFX_BowPush_04.mp3
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Sound\Bow\BowReload\SFX_BowReload_01.mp3
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Sound\Bow\BowReload\SFX_BowReload_02.mp3
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Sound\Bow\BowTension\SFX_BowTension.mp3
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Sound\Damage\Hummer\SFX_DamageHummer_01.mp3
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Sound\Damage\Hummer\SFX_DamageHummer_02.mp3
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Sound\Damage\Hummer\SFX_DamageHummer_03.mp3
@@ -181,13 +426,25 @@ F:\Jack\Project\Godgrave\Public\Godgrave\Source\Sound\HammerSwing\SFX_HammerSwin
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Sound\HammerSwing\SFX_HammerSwing_06.mp3
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Sound\Magic\SFX_MagicEnergy_01.mp3
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Sound\Magic\SFX_MagicEnergy_02.mp3
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Sound\Magic\SFX_MagicExplode_01.mp3
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Sound\Magic\SFX_MagicHit_01.mp3
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Sound\Magic\SFX_MagicHit_02.mp3
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Sound\Magic\SFX_MagicPush_01.mp3
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Sound\Magic\SFX_MagicPush_02.mp3
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Sound\Magic\SFX_MagicPush_03.mp3
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Sound\Other\SFX_Heartbit_01.mp3
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Sound\Other\teleport.mp3
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Sound\Rage\SFX_Rage_01.mp3
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Sound\Ref\bleedingA.mp3
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Sound\Ref\bleedingB.mp3
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Sound\Ref\bleedingC.mp3
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Sound\Ref\chainig.mp3
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Sound\Ref\DarkMagic.mp3
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Sound\Ref\Gate.mp3
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Sound\Ref\openchest.mp3
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Sound\Ref\step.mp3
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Sound\Ref\takeswordA.mp3
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Sound\Ref\takeswordB.mp3
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Sound\Rock\kling_20260710_Text_to_Audio_fantasy_wa_1677_0.mp3
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Sound\Rock\kling_20260710_Text_to_Audio_fantasy_wa_1677_1.mp3
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Sound\Rock\kling_20260710_Text_to_Audio_fantasy_wa_1677_2.mp3
@@ -197,6 +454,7 @@ F:\Jack\Project\Godgrave\Public\Godgrave\Source\Sound\Shield\SFX_Shield_02.mp3
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Sound\Shield\SFX_Shield_03.mp3
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Sound\Shield\SFX_Shield_04.mp3
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Sound\Shield\SFX_Shield_05.mp3
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Sound\ShieldPush\ShieldPush.mp3
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Sound\Sword\SwordClink\SFX_SwordClink_01.mp3
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Sound\Sword\SwordClink\SFX_SwordClink_02.mp3
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Sound\Sword\SwordClink\SFX_SwordClink_03.mp3
@@ -241,10 +499,15 @@ F:\Jack\Project\Godgrave\Public\Godgrave\Source\Talbe\gamepad-controls.js
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Talbe\GamepadTable.txt
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Talbe\REFACTOR_PLAN.md
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Talbe\WeaponTalbe.txt
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Tools\GodgraveLauncher.bat
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Tools\GodgraveLauncher.vbs
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Tools\index.html
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Tools\install_association.reg
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Tools\Patcher.py
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Tools\PatcherDoc.txt
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Tools\PngSplitter.html
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Tools\settings.json
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Tools\TileGenerator.html
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Tools\WavMP3_SilenceSpliter.html
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Tools\backups\Combolast — êîïèÿ_20260711_151343.backup
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Tools\backups\Combolast — êîïèÿ_20260711_151349.backup
@@ -378,6 +641,15 @@ F:\Jack\Project\Godgrave\Public\Godgrave\Source\Weapon\Axe\T_Axe_06.png
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Weapon\Axe\T_Axe_07.png
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Weapon\Axe\T_Axe_08.png
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Weapon\BigSword\T_BigSword_01.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Weapon\Bow\T_Bow_01.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Weapon\Bow\T_Bow_02.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Weapon\Bow\T_Bow_03.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Weapon\Bow\T_Bow_04.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Weapon\Bow\T_Bow_05.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Weapon\Claws\T_Claws_01.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Weapon\Claws\T_Claws_02.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Weapon\Claws\T_Claws_03.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Weapon\Claws\.mayaSwatches\T_Claws_01.png_hcm.swatch
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Weapon\Crossbow\T_Crrossbow_01.png
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Weapon\Crossbow\T_Crrossbow_02.png
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Weapon\Crossbow\T_Crrossbow_03.png
@@ -393,6 +665,13 @@ F:\Jack\Project\Godgrave\Public\Godgrave\Source\Weapon\Flail\Tip\T_Flail_07.png
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Weapon\Flail\Tip\T_Flail_08.png
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Weapon\Flail\Tip\T_Flail_09.png
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Weapon\Flail\Tip\T_Flail_10.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Weapon\Halberd\T_Halberd_01.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Weapon\Halberd\T_Halberd_02.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Weapon\Halberd\T_Halberd_03.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Weapon\Halberd\T_Halberd_04.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Weapon\Halberd\T_Halberd_05.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Weapon\Halberd\T_Halberd_06.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Weapon\Halberd\T_Halberd_07.png
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Weapon\Hammer\T_Hammer_01.png
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Weapon\Hammer\T_Hammer_02.png
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Weapon\Hammer\T_Hammer_03.png
@@ -401,11 +680,29 @@ F:\Jack\Project\Godgrave\Public\Godgrave\Source\Weapon\Hammer\T_Hammer_05.png
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Weapon\Hammer\T_Hammer_06.png
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Weapon\Hammer\T_Hammer_07.png
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Weapon\Knife\T_Knife_01.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Weapon\Magicstaff\T_Magicstaff_01.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Weapon\Magicstaff\T_Magicstaff_02.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Weapon\Magicstaff\T_Magicstaff_03.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Weapon\Magicstaff\T_Magicstaff_04.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Weapon\Magicstaff\T_Magicstaff_05.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Weapon\Magicstaff\T_Magicstaff_06.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Weapon\Magicstaff\T_Magicstaff_07.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Weapon\Magicstaff\T_Magicstaff_08.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Weapon\Magicstaff\T_Magicstaff_09.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Weapon\Rapier\gude-2026-07-13.log
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Weapon\Rapier\T_Rapier_01.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Weapon\Rapier\T_Rapier_02.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Weapon\Rapier\T_Rapier_03.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Weapon\Rapier\T_Rapier_04.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Weapon\Rapier\T_Rapier_05.png
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Weapon\Scythe\T_Scythe_01.png
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Weapon\Scythe\.mayaSwatches\T_Scythe_01.png_hcm.swatch
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Weapon\Shield\T_Shield_01.png
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Weapon\Shield\T_Shield_02.png
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Weapon\Shield\T_Shield_03.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Weapon\ShieldSpike\T_ShieldSpike_01.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Weapon\ShieldSpike\T_ShieldSpike_02.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Weapon\ShieldSpike\T_ShieldSpike_03.png
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Weapon\Spear\T_Spear_01.png
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Weapon\Spear\T_Spear_02.png
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Weapon\Spear\T_Spear_03.png
@@ -445,3 +742,10 @@ F:\Jack\Project\Godgrave\Public\Godgrave\Source\Weapon\Wand\T_Wand_04.png
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Weapon\Wand\T_Wand_05.png
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Weapon\Wand\T_Wand_06.png
 F:\Jack\Project\Godgrave\Public\Godgrave\Source\Weapon\Wand\T_Wand_07.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Weapon\Whip\T_Whip_01.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Weapon\Whip\T_Whip_02.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Weapon\Whip\T_Whip_03.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Weapon\Whip\T_Whip_04.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Weapon\Whip\T_Whip_05.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Weapon\Whip\T_Whip_06.png
+F:\Jack\Project\Godgrave\Public\Godgrave\Source\Weapon\Whip\T_Whip_07.png
