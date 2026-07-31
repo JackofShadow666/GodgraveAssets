@@ -84,87 +84,79 @@ body.play-mode .workspace::after{opacity:1}body.play-mode.hide-vignette .workspa
 body.play-mode .side{display:none}
 body.play-mode .top .secondaryHide{display:flex}
 
-.generatedAtlasGrid{display:grid;grid-template-columns:repeat(6,max-content);gap:12px;align-items:start}.generatedAtlasGrid>*{min-width:0}
-
-.atlasCanvas,.generatedAtlasGrid canvas,#grassAtlasPreview,#clutterAtlasPreview{
-  max-width:none!important;max-height:none!important;width:auto!important;height:auto!important;
-  image-rendering:pixelated;display:block
-}
-.atlasPreviewViewport,.atlas-scroll,.atlasPreview{
-  overflow:auto!important;max-height:520px;max-width:100%
-}
-
-
-#envDebugToggle{position:fixed;right:14px;top:58px;z-index:1003;background:#263746;border:1px solid #60798d;color:#e8f4ff;padding:7px 10px;border-radius:6px}
-#envDebugPanel{position:fixed;right:14px;top:98px;z-index:1002;width:300px;max-height:calc(100vh - 115px);overflow:auto;background:rgba(12,18,24,.97);border:1px solid #60798d;border-radius:8px;padding:12px;box-shadow:0 12px 36px #0009;color:#dce7ef}
-#envDebugPanel.hidden{display:none}
-#envDebugPanel label,#envDebugPanel select,#envDebugPanel input{width:100%;box-sizing:border-box}
-#envDebugPanel .envRow{margin:9px 0}
+.generatedAtlasGrid{display:grid;grid-template-columns:repeat(6,max-content);gap:12px;align-items:start}.generatedAtlasGrid>*{min-width:0}.atlasStage canvas{max-width:none!important;width:auto!important;height:auto!important;image-rendering:pixelated;display:block}.atlasStage{overflow:auto}
 </style>
+
+<style>
+#envTilePanel{
+ position:fixed;right:14px;top:76px;width:330px;max-height:calc(100vh - 92px);
+ overflow:auto;z-index:10020;background:rgba(20,24,28,.97);border:1px solid #59636c;
+ border-radius:9px;padding:10px 12px;box-shadow:0 10px 34px #0009;display:none;
+}
+#envTilePanel.visible{display:block}
+#envTilePanel .envPanelHead{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+#envTilePanel .envPanelGrid{display:grid;gap:8px}
+#envTilePanel label{display:grid;grid-template-columns:1fr auto;gap:5px;align-items:center}
+#envTilePanel input[type=range]{grid-column:1/-1;width:100%}
+#envTilePanel button{cursor:pointer}
+#envTilePanelButton{
+ position:fixed;right:14px;top:14px;z-index:10021;padding:8px 12px;border:1px solid #61707b;
+ border-radius:7px;background:#27323a;color:#fff;font:600 13px system-ui;cursor:pointer;
+}
+body.play-mode #envTilePanelButton{display:none}
+body.play-mode #envTilePanel{display:none!important}
+</style>
+
 </head>
 <body>
 <div class="app">
-<button id="envDebugToggle" type="button">Окружение DEBUG</button>
-<section id="envDebugPanel">
- <div style="display:flex;justify-content:space-between;align-items:center"><b>Отладка окружения</b><button id="envDebugClose" type="button">×</button></div>
- <div class="envRow"><label>Режим
-  <select id="envPanelMode"><option value="atlas">Атлас + биомный тон</option><option value="raw">Атлас без тона</option><option value="color">Только заливка</option><option value="checker">Контрастная сетка</option></select>
- </label></div>
- <div class="envRow"><label>Кадр атласа: <b id="envPanelFrameValue">0</b><input id="envPanelFrame" type="range" min="0" max="31" step="1" value="0"></label></div>
- <div class="envRow"><label>Сила тона: <b id="envPanelTintValue">38%</b><input id="envPanelTint" type="range" min="0" max="100" step="1" value="38"></label></div>
- <div class="envRow"><label>Затемнение: <b id="envPanelDarkValue">20%</b><input id="envPanelDark" type="range" min="0" max="90" step="1" value="20"></label></div><div class="envRow"><label>Забеление: <b id="envPanelWhiteValue">0%</b><input id="envPanelWhite" type="range" min="0" max="100" step="1" value="0"></label></div>
- <div class="envRow" style="font-size:11px;color:#9fb0bd">Панель работает и в редакторе, и в Play. «Контрастная сетка» подтверждает, что сами тайлы окружения отрисовываются.</div>
-</section>
-
-<header class="top"><div class="brand">GODGRAVE — WORLD ISO v8.12</div><button id="gen" class="primary">🛠 Редактирование</button><button id="play">▶ Играть</button><button id="playHere" title="Начать или перенести персонажа в ближайшую к центру камеры проходимую клетку">▶ Играть отсюда</button><button id="worldMapButton">Карта [M]</button><span id="playStatus"></span><button id="exitPlay">В редактор</button><button id="rand" class="random">Случайный seed</button><button id="routes">Маршруты</button><button id="tiles">Тайлы земли</button><button id="tileGenerator">Атласы</button><div class="modeBox"><span>Земля</span><select id="groundRenderMode" title="1 — текстуры GitHub, 2 — подробный автоцвет, 3 — обычный автоцвет, 4 — техническая разметка генераторов, 5 — скрыть землю"><option value="texture">1 · Текстуры GitHub</option><option value="detailed">2 · Автоцвет подробный</option><option value="simple">3 · Автоцвет обычный</option><option value="technical">4 · Техническая разметка</option><option value="hidden">5 · Скрыть землю</option></select></div><label class="check secondaryHide" style="margin:0"><input id="hideFog" type="checkbox"> Без тумана</label><label class="check secondaryHide" style="margin:0"><input id="hideBiomes" type="checkbox"> Без окружения</label><label class="check secondaryHide" style="margin:0" title="Тест: выводит детализированный слой окружения последним, поверх земли, границ и маршрутов"><input id="environmentOnTop" type="checkbox"> Окружение поверх</label><label class="check" style="margin:0"><input id="showInfo" type="checkbox" checked> Инфо</label><button id="settings">JSON</button><button id="png">PNG</button><button id="center">Центр</button><div class="compatHidden"><input id="detail" type="hidden" value="8"><input id="terrainGroundMode" type="checkbox" checked><input id="recolorMissingTiles" type="checkbox"><input id="hideGround" type="checkbox"><input id="groundTileThreshold" type="hidden" value="22"></div></header>
+<header class="top"><div class="brand">GODGRAVE — WORLD ISO v8.48</div><button id="gen" class="primary">🛠 Редактирование</button><button id="play">▶ Играть</button><button id="playHere" title="Начать или перенести персонажа в ближайшую к центру камеры проходимую клетку">▶ Играть отсюда</button><button id="worldMapButton">Карта [M]</button><span id="playStatus"></span><button id="exitPlay">В редактор</button><button id="rand" class="random">Случайный seed</button><button id="routes">Маршруты</button><button id="tiles">Тайлы земли</button><button id="tileGenerator">Атласы</button><div class="modeBox"><span>Земля</span><select id="groundRenderMode" title="1 — текстуры GitHub, 2 — подробный автоцвет, 3 — обычный автоцвет, 4 — техническая разметка генераторов, 5 — скрыть землю"><option value="texture">1 · Текстуры GitHub</option><option value="detailed">2 · Автоцвет подробный</option><option value="simple">3 · Автоцвет обычный</option><option value="technical">4 · Техническая разметка</option><option value="hidden">5 · Скрыть землю</option></select></div><label class="check secondaryHide" style="margin:0"><input id="hideFog" type="checkbox"> Без тумана</label><label class="check secondaryHide" style="margin:0"><input id="hideBiomes" type="checkbox"> Без окружения</label><label class="check secondaryHide" style="margin:0" title="Тест: выводит детализированный слой окружения последним, поверх земли, границ и маршрутов"><input id="environmentOnTop" type="checkbox"> Окружение поверх</label><label class="check" style="margin:0"><input id="showInfo" type="checkbox" checked> Инфо</label><button id="settings">JSON</button><button id="png">PNG</button><button id="center">Центр</button><div class="compatHidden"><input id="detail" type="hidden" value="8"><input id="terrainGroundMode" type="checkbox" checked><input id="recolorMissingTiles" type="checkbox"><input id="hideGround" type="checkbox"><input id="groundTileThreshold" type="hidden" value="22"></div></header>
 <aside class="side">
 <details class="panel" open><summary>ГЕНЕРАЦИЯ</summary><div class="panelBody"><div class="row"><label>Seed</label><input id="seed" type="number" value="928374"></div><div class="pair"><button id="gen2" class="primary">Сгенерировать</button><button id="rand2" class="random">Случайный</button></div></div></details>
 <details class="panel"><summary>КАРТА</summary><div class="panelBody"><div class="row"><label>Ширина, клеток</label><input id="cols" type="number" min="90" max="260" value="256"></div><div class="row"><label>Высота, клеток</label><input id="rows" type="number" min="64" max="256" value="256"></div><div class="row"><label>Размер клетки</label><input id="cell" type="number" min="1" max="12" value="2"></div><div class="valueLine"><span>Прозрачность контура земли</span><b id="groundOutlineOpacityValue">100%</b></div><input id="groundOutlineOpacity" type="range" min="0" max="100" value="100"></div></details>
 <details class="panel"><summary>РЕГИОНЫ</summary><div class="panelBody"><div class="row"><label>Минимум</label><input id="regionsMin" type="number" min="10" max="55" value="33"></div><div class="row"><label>Максимум</label><input id="regionsMax" type="number" min="10" max="55" value="33"></div><div class="row"><label>Мин. размер</label><input id="regionMin" type="number" min="5" max="30" value="11"></div><div class="row"><label>Размер регионов min / max</label><div class="pair"><input id="regionSizeMin" type="number" min="6" max="55" value="10"><input id="regionSizeMax" type="number" min="10" max="80" value="55"></div></div><label class="check"><input id="mix" type="checkbox" checked> Разные алгоритмы по регионам</label><label class="check"><input id="boundaries" type="checkbox"> Показывать границы регионов</label><label class="check"><input id="debugTileFill" type="checkbox"> Debug tile fill</label></div></details>
-<details class="panel"><summary>ВНЕШНЯЯ ЗОНА</summary><div class="panelBody"><div class="row"><label>Распределение биомов</label><select id="outerBiomeMode"><option value="auto" selected>Общий климатический рисунок</option><option value="sectors">Более крупные пояса</option><option value="mixed">Более перемешанные зоны</option></select></div><div class="valueLine"><span>Затемнение окружения</span><b id="environmentDarknessValue">20%</b></div><input id="environmentDarkness" type="range" min="0" max="90" value="20">
-<div class="valueLine"><span>Режим окружения</span></div>
-<select id="environmentRenderMode">
- <option value="atlas">Атлас T_BiomTIle.png</option>
- <option value="color">Биомная заливка</option>
- <option value="raw">Атлас без тонирования</option>
- <option value="checker">Отладочная сетка</option>
-</select>
-<div class="valueLine"><span>Кадр атласа</span><b id="environmentFrameValue">0</b></div>
-<input id="environmentFrame" type="range" min="0" max="15" step="1" value="0">
-<div class="valueLine"><span>Сила биомного тона</span><b id="environmentTintValue">38%</b></div>
-<input id="environmentTint" type="range" min="0" max="100" step="1" value="38">
-<label class="check"><input id="environmentDebugColor" type="checkbox"> Окружение: отладочная биомная раскраска</label><div class="environmentHint">В Play окружение собирается одним буфером на чанк и рисуется сразу за землёй.</div></div></details>
+<details class="panel"><summary>ВНЕШНЯЯ ЗОНА</summary><div class="panelBody"><div class="row"><label>Распределение биомов</label><select id="outerBiomeMode"><option value="auto" selected>Общий климатический рисунок</option><option value="sectors">Более крупные пояса</option><option value="mixed">Более перемешанные зоны</option></select></div><div class="valueLine"><span>Затемнение окружения</span><b id="environmentDarknessValue">20%</b></div><input id="environmentDarkness" type="range" min="0" max="90" value="20"><label class="check"><input id="environmentDebugColor" type="checkbox"> Окружение: отладочная биомная раскраска</label><div class="environmentHint">Каждый биом тайлится своим фрагментом атласа на всю карту, обрезается маской и объединяется в один слой под землёй.</div></div></details>
 <details class="panel" open><summary>ДЕКОРАЦИИ</summary><div class="panelBody"><div class="decorButtons"><button id="spawnDecorations" class="primary">🌲 Сгенерировать</button><button id="regenDecorations">🔄 Перегенерировать</button><button id="clearDecorations" class="danger">🗑 Очистить</button></div><div class="valueLine" style="margin-top:10px"><span>Плотность</span><b id="decorationDensityValue">10%</b></div><input id="decorationDensity" type="range" min="0" max="100" value="10"><div class="valueLine"><span>Размер</span><b id="decorationScaleValue">200%</b></div><input id="decorationScale" type="range" min="50" max="300" value="200"><label class="check"><input id="decorTrees" type="checkbox" checked> Деревья</label><label class="check"><input id="decorBushes" type="checkbox" checked> Кусты</label><label class="check"><input id="decorRocks" type="checkbox" checked> Скалы</label><label class="check"><input id="decorStones" type="checkbox" checked> Камни</label><div class="grassGroup"><label class="check"><input id="decorGrass" type="checkbox" checked> Обычная трава</label><div class="valueLine"><span>Плотность травы</span><b id="grassDensityValue">20%</b></div><input id="grassDensity" type="range" min="0" max="100" value="20"><div class="valueLine"><span>Плотность мелкого декора</span><b id="clutterDensityValue">20%</b></div><input id="clutterDensity" type="range" min="0" max="100" value="20"><label class="check"><input id="decorDenseGrass" type="checkbox" checked> Высокая трава · маскировка</label></div><div class="environmentHint">На клетке появляется 2–3 кучки. Плотная высокая трава заполняет ромб; через 1 секунду персонаж становится прозрачным на 50%.</div></div></details>
 <div class="compatHidden"><input id="scaleBalance" type="range" value="100"><b id="scaleBalanceValue">100</b><input id="fill" type="number" value="45"><input id="smooth" type="number" value="4"><input id="passageMin" type="number" value="2"><input id="passageMax" type="number" value="12"><input id="floorDots" type="checkbox"><input id="regionTint" type="checkbox"><select id="single"><option value="ca">ca</option></select></div>
 <details class="panel"><summary>УПРАВЛЕНИЕ</summary><div class="panelBody"><div class="small">WASD / стрелки — движение<br>M / Tab — миникарта<br>Клик по миникарте — быстрое перемещение<br>Esc — перейти в редактор без повторной генерации геометрии<br>ЛКМ — перемещение камеры редактора<br>Колесо — масштаб</div></div></details>
-
-<details class="panel">
- <summary>Процедурные атласы</summary>
- <button id="refreshAtlasPreview" type="button">Обновить предпросмотр</button>
- <div class="valueLine"><span>Трава 2×2</span><b>4 варианта</b></div>
- <div class="atlasPreviewViewport"><canvas id="grassAtlasPreview"></canvas></div>
- <div class="valueLine"><span>Мелкий декор 6×6</span><b>36 вариантов</b></div>
- <div class="atlasPreviewViewport"><canvas id="clutterAtlasPreview"></canvas></div>
-</details>
 </aside>
-<main class="workspace"><canvas id="map"></canvas><canvas id="routeOverlay"></canvas><div class="startScreen" id="startScreen"><div class="startCard"><b>Мир ещё не построен</b><span>При открытии ничего не строится. Нажми «Редактирование» для полной карты или «Play» для виртуального мира и потоковых чанков.</span></div></div><div class="gameHud" id="gameHud"></div><div class="playerMarker" id="playerMarker"><img id="playerImage" alt="player"><div class="fallback" id="playerFallback"></div></div><div class="worldMapOverlay" id="worldMapOverlay"><div class="worldMapPanel"><div class="worldMapHead"><b>Глобальная карта мира</b><span>Клик — быстрое перемещение</span><label class="miniMapControl">Зум <input id="minimapZoom" type="range" min="100" max="500" value="100"><b id="minimapZoomValue">100%</b></label><label class="check miniMapShade"><input id="minimapShade" type="checkbox" checked> Затемнение окружения</label><button id="closeWorldMap">Закрыть [M]</button></div><canvas id="worldMapCanvas"></canvas><div class="worldMapFoot">Миникарта читает глобальные данные. Детальные чанки загружаются только вокруг персонажа.</div></div></div><div class="tileInspector" id="tileInspector"></div><div class="hud" id="infoHud"><div class="infoHead"><b>Информация и производительность · <span id="editorFps" class="fpsGood">60 FPS</span></b><div class="infoTabs"><button class="infoTab active" data-info-tab="map">Параметры карты</button><button class="infoTab" data-info-tab="generation">Скорость генерации</button><button class="infoTab" data-info-tab="render">Скорость рендеринга</button></div></div><div id="stats"></div></div><div class="playLayers" id="playLayers"><b>Видимость элементов</b><label class="check"><input id="playHideEnvironment" type="checkbox"> Скрыть окружение</label><label class="check"><input id="playHideGround" type="checkbox"> Скрыть плитки земли</label><label class="check"><input id="playHideLowDecor" type="checkbox"> Скрыть траву и мелкий декор</label><label class="check"><input id="playHideLargeDecor" type="checkbox"> Скрыть крупные декорации</label><label class="check"><input id="playHideVignette" type="checkbox"> Скрыть виньетку</label>
-<div class="valueLine"><span>Отсечение чанков земли</span><b id="groundCullMarginValue">-190 px</b></div>
-<input id="groundCullMargin" type="range" min="-800" max="1200" step="10" value="-190">
-<div class="valueLine"><span>Зазор отсечения</span><b id="cameraCullMarginValue">10 px</b></div><input id="cameraCullMargin" type="range" min="-800" max="1200" step="10" value="10"></div><div class="stealthToast" id="stealthToast"></div><div class="loading hidden" id="loading"><div class="loadingBox"><div class="loadingTitle">ГЕНЕРАЦИЯ КАРТЫ</div><div class="loadingStage" id="loadingStage">Подготовка</div><div class="loadingBar"><i></i></div></div></div><div class="hint">Тонкие волнистые тупики ответвляются от тоннелей, лабиринтов и цепочек камер.</div><div class="legend" id="legend"></div><div class="zoom"><button id="plus">+</button><button id="minus">−</button><button id="fit">⌾</button></div></main>
+<main class="workspace"><canvas id="map"></canvas><canvas id="routeOverlay"></canvas><div class="startScreen" id="startScreen"><div class="startCard"><b>Мир ещё не построен</b><span>При открытии ничего не строится. Нажми «Редактирование» для полной карты или «Play» для виртуального мира и потоковых чанков.</span></div></div><div class="gameHud" id="gameHud"></div><div class="playerMarker" id="playerMarker"><img id="playerImage" alt="player"><div class="fallback" id="playerFallback"></div></div><div class="worldMapOverlay" id="worldMapOverlay"><div class="worldMapPanel"><div class="worldMapHead"><b>Глобальная карта мира</b><span>Клик — быстрое перемещение</span><label class="miniMapControl">Зум <input id="minimapZoom" type="range" min="100" max="500" value="100"><b id="minimapZoomValue">100%</b></label><label class="check miniMapShade"><input id="minimapShade" type="checkbox" checked> Затемнение окружения</label><button id="closeWorldMap">Закрыть [M]</button></div><canvas id="worldMapCanvas"></canvas><div class="worldMapFoot">Миникарта читает глобальные данные. Детальные чанки загружаются только вокруг персонажа.</div></div></div><div class="tileInspector" id="tileInspector"></div><div class="hud" id="infoHud"><div class="infoHead"><b>Информация и производительность · <span id="editorFps" class="fpsGood">60 FPS</span></b><div class="infoTabs"><button class="infoTab active" data-info-tab="map">Параметры карты</button><button class="infoTab" data-info-tab="generation">Скорость генерации</button><button class="infoTab" data-info-tab="render">Скорость рендеринга</button></div></div><div id="stats"></div></div><div class="playLayers" id="playLayers"><b>Видимость элементов</b><label class="check"><input id="playHideEnvironment" type="checkbox"> Скрыть окружение</label><label class="check"><input id="environmentSpatialMips" type="checkbox" checked> Пространственные мипы окружения</label><label class="check"><input id="environmentMipDebug" type="checkbox"> Рамки ISO master-чанков окружения</label><label class="check"><input id="playHideGround" type="checkbox"> Скрыть плитки земли</label><label class="check"><input id="playHideLowDecor" type="checkbox"> Скрыть траву и мелкий декор</label><label class="check"><input id="playHideLargeDecor" type="checkbox"> Скрыть крупные декорации</label><label class="check"><input id="playHideVignette" type="checkbox"> Скрыть виньетку</label>
+<div class="valueLine"><span>Отсечение чанков земли</span><b id="groundCullMarginValue">-60 px</b></div>
+<input id="groundCullMargin" type="range" min="-800" max="1200" step="10" value="-60">
+<div class="valueLine"><span>Зазор отсечения</span><b id="cameraCullMarginValue">-30 px</b></div><input id="cameraCullMargin" type="range" min="-800" max="1200" step="10" value="-30"></div><div class="stealthToast" id="stealthToast"></div><div class="loading hidden" id="loading"><div class="loadingBox"><div class="loadingTitle">ГЕНЕРАЦИЯ КАРТЫ</div><div class="loadingStage" id="loadingStage">Подготовка</div><div class="loadingBar"><i></i></div></div></div><div class="hint">Тонкие волнистые тупики ответвляются от тоннелей, лабиринтов и цепочек камер.</div><div class="legend" id="legend"></div><div class="zoom"><button id="plus">+</button><button id="minus">−</button><button id="fit">⌾</button></div></main>
 </div>
 
 <div class="modalBackdrop" id="tileGeneratorModal"><div class="tileModal"><div class="tileModalHead"><h2>Генератор атласов текущей карты</h2><button id="closeTileGenerator">Закрыть</button></div><div class="tileTools"><label>Ширина тайла <input id="generatedTileW" type="number" min="16" max="512" value="128"></label><label>Высота тайла <input id="generatedTileH" type="number" min="8" max="256" value="64"></label><button id="generateTileAtlas" class="primary">Пересобрать листы</button><button id="exportTileAtlas">Экспортировать все PNG</button></div><div class="atlasStage" id="generatedAtlasSheets"></div><div class="modalNote">Создаются отдельные прозрачные листы для всех биомов текущей карты. Подписи типов показаны отдельно над листом и не попадают в экспорт. Шесть колонок всегда сохраняют одну структуру: земля, глина, трава, высокая трава, гравий, камень. Для каждого биома над листом показываются собственные названия этих же ролей. Подписи не попадают в экспорт. Строки: 11 вариантов. Внизу также показываются процедурные атласы травы и мелкого наземного декора: камешки, листья, веточки, мох, грибы, папоротник, тростник и шишки.</div></div></div>
 <script>
 'use strict';
-const BIOME_ENV_TILE_URL='https://raw.githubusercontent.com/JackofShadow666/GodgraveAssets/main/T_BiomTIle.png';
+const BIOME_ENV_TILE_URL='https://raw.githubusercontent.com/JackofShadow666/GodgraveAssets/main/Source/Env/Terrain/T_BiomTIle.png';
 
 const canvas=document.getElementById('map'),ctx=canvas.getContext('2d',{alpha:false}),routeCanvas=document.getElementById('routeOverlay'),routeCtx=routeCanvas.getContext('2d');
-const S={world:null,zoom:1,panX:0,panY:0,drag:false,lx:0,ly:0,routes:null,routesVisible:false,tileView:true,groundMode:'texture',lastPerformance:null,loading:false,loadingStarted:0,envDetailCanvas:null,playMode:false,pendingPlay:false,player:null,gameKeys:new Set(),activeChunks:new Map(),chunkSize:16,chunkRadius:2,lastFrame:0,worldMapOpen:false,buildMode:null,editorDecorationsEnabled:false,decorationChunks:new Map(),environmentChunks:new Map(),environmentDiamondCache:new Map(),editorMaterialized:false,cameraFlight:null,grassAtlas:null,grassTintCache:new Map(),clutterAtlas:new Map(),decorSpriteCache:new Map(),editorCamera:null,worldMapCache:null,worldMapCacheWorld:null,showFrameProfile:false,fps:60,fpsFrames:0,fpsStamp:0,frameProfile:{draw:0,update:0,decor:0,chunks:0,minimap:0,total:0},denseGrassTime:0,playerStealthAlpha:1,lowDecorChunks:new Map(),infoTab:'map',drawCalls:0,visibleDynamic:0,playLayerPanel:false,lastHudReport:'',visibleRenderChunks:[],lastVisibleChunkKey:'',renderLod:'near',visibleTilesDrawn:0,visibleChunksDrawn:0,playCamera:null,minimapZoom:1,stealthState:false,stealthToastTimer:0,playOverviewCache:null,playOverviewWorld:null,mapZoom:1,mapPanX:0,mapPanY:0,mapShaded:true,worldMapCacheKey:null,mapDrag:false,mapDragX:0,mapDragY:0,editorViewPending:null,hasEnteredPlay:false};
+const S={world:null,zoom:1,panX:0,panY:0,drag:false,lx:0,ly:0,routes:null,routesVisible:false,tileView:true,groundMode:'texture',lastPerformance:null,loading:false,loadingStarted:0,envDetailCanvas:null,playMode:false,pendingPlay:false,player:null,gameKeys:new Set(),activeChunks:new Map(),chunkSize:24,chunkRadius:2,lastFrame:0,worldMapOpen:false,buildMode:null,editorDecorationsEnabled:false,decorationChunks:new Map(),environmentChunks:new Map(),environmentDiamondCache:new Map(),editorMaterialized:false,cameraFlight:null,grassAtlas:null,grassTintCache:new Map(),clutterAtlas:new Map(),decorSpriteCache:new Map(),editorCamera:null,worldMapCache:null,worldMapCacheWorld:null,showFrameProfile:false,fps:60,fpsFrames:0,fpsStamp:0,frameProfile:{draw:0,update:0,decor:0,chunks:0,minimap:0,total:0},denseGrassTime:0,playerStealthAlpha:1,lowDecorChunks:new Map(),infoTab:'map',drawCalls:0,visibleDynamic:0,playLayerPanel:false,lastHudReport:'',visibleRenderChunks:[],lastVisibleChunkKey:'',renderLod:'near',visibleTilesDrawn:0,visibleChunksDrawn:0,playCamera:null,minimapZoom:1,stealthState:false,stealthToastTimer:0,playOverviewCache:null,playOverviewWorld:null,mapZoom:1,mapPanX:0,mapPanY:0,mapShaded:true,worldMapCacheKey:null,mapDrag:false,mapDragX:0,mapDragY:0,editorViewPending:null,rawBiomeEnvironmentPattern:null,rawBiomeEnvironmentImage:null,maskedBiomeEnvironmentCanvas:null,maskedBiomeEnvironmentWorld:null,
+environmentSpatialSystem:null,environmentSpatialCache:new Map(),environmentSpatialUse:new Map(),
+environmentSpatialTick:0,environmentSpatialVisible:0,environmentSpatialMip:0,
+environmentSpatialBakeMs:0,environmentSpatialBaked:0,environmentSpatialLockedMip:null,
+environmentMipCache:new Map(),environmentMipUse:new Map(),environmentMipTick:0,
+environmentMipWorld:null,environmentMipLevel:0,environmentMipVisible:0,
+environmentMipBakedThisFrame:0,environmentMipBakeMs:0,environmentIsoMaster:null,environmentTrimOnlyCanvas:null,environmentTrimOnlyWorld:null};
 
 let biomeEnvTileImage=null;
 function getBiomeEnvTileImage(){
  if(biomeEnvTileImage)return biomeEnvTileImage;
- const im=new Image();im.crossOrigin='anonymous';im.src=BIOME_ENV_TILE_URL;im.onload=()=>{S.environmentChunks.clear();draw()};biomeEnvTileImage=im;return im;
+ const im=new Image();
+ im.crossOrigin='anonymous';
+ im.onload=()=>{
+  S.rawBiomeEnvironmentPattern=null;
+  S.rawBiomeEnvironmentImage=null;
+  S.maskedBiomeEnvironmentCanvas=null;
+  S.maskedBiomeEnvironmentWorld=null;
+  S.environmentChunks.clear();
+  draw();
+ };
+ im.onerror=()=>console.error('[Environment] failed to load',BIOME_ENV_TILE_URL);
+ im.src=BIOME_ENV_TILE_URL;
+ biomeEnvTileImage=im;
+ return im;
 }
 const $=id=>document.getElementById(id);
 const UI={
@@ -1076,15 +1068,10 @@ function getGroundDiamond(role,variant){
  const def=GROUND_MATERIALS[role]||GROUND_MATERIALS.earth,target=GROUND_ATLASES[def.atlas];
  if(!target.ready||!target.image)return null;
  variant=((variant%GROUND_ATLAS_ROWS)+GROUND_ATLAS_ROWS)%GROUND_ATLAS_ROWS;
- const img=target.image,iw=img.naturalWidth||img.width,ih=img.naturalHeight||img.height;
- if(iw<GROUND_ATLAS_COLS||ih<GROUND_ATLAS_ROWS)return null;
- const frameW=iw/GROUND_ATLAS_COLS,frameH=ih/GROUND_ATLAS_ROWS;
- if(frameW<=1||frameH<=1)return null;
- const key=def.atlas+'|'+iw+'x'+ih+'|'+def.col+'|'+variant;if(groundDiamondCache.has(key))return groundDiamondCache.get(key);
+ const key=def.atlas+'|'+def.col+'|'+variant;if(groundDiamondCache.has(key))return groundDiamondCache.get(key);
  const c=document.createElement('canvas');c.width=GROUND_TILE_W;c.height=GROUND_TILE_H;const g=c.getContext('2d',{willReadFrequently:true});
- g.imageSmoothingEnabled=false;
- const sx=Math.floor(def.col*frameW),sy=Math.floor(variant*frameH),sw=Math.max(1,Math.floor((def.col+1)*frameW)-sx),sh=Math.max(1,Math.floor((variant+1)*frameH)-sy);
- g.drawImage(img,sx,sy,sw,sh,0,0,GROUND_TILE_W,GROUND_TILE_H);
+ const img=target.image,sx0=Math.round(def.col*img.width/GROUND_ATLAS_COLS),sx1=Math.round((def.col+1)*img.width/GROUND_ATLAS_COLS),sy0=Math.round(variant*img.height/GROUND_ATLAS_ROWS),sy1=Math.round((variant+1)*img.height/GROUND_ATLAS_ROWS);
+ g.drawImage(img,sx0,sy0,sx1-sx0,sy1-sy0,0,0,GROUND_TILE_W,GROUND_TILE_H);
  // Та же очистка, что в основном Terrain Editor: удаляем только почти белый фон, связанный с краями.
  const id=g.getImageData(0,0,GROUND_TILE_W,GROUND_TILE_H),p=id.data,seen=new Uint8Array(GROUND_TILE_W*GROUND_TILE_H),q=new Int32Array(GROUND_TILE_W*GROUND_TILE_H);let h=0,t=0;
  const bg=i=>{const o=i*4,r=p[o],gg=p[o+1],b=p[o+2],mn=Math.min(r,gg,b),mx=Math.max(r,gg,b);return mn>=236&&mx-mn<=12};
@@ -1168,7 +1155,7 @@ function isoVisibleBoundsWithMargin(w,rc,l,marginPx){
  return{x0:Math.max(0,Math.floor(Math.min(...pts.map(p=>p.x)))-pad),y0:Math.max(0,Math.floor(Math.min(...pts.map(p=>p.y)))-pad),x1:Math.min(l.isoCols,Math.ceil(Math.max(...pts.map(p=>p.x)))+pad+1),y1:Math.min(l.isoRows,Math.ceil(Math.max(...pts.map(p=>p.y)))+pad+1)}
 }
 function isoVisibleBounds(w,rc,l=zoomTileLayout(w)){
- return isoVisibleBoundsWithMargin(w,rc,l,MathX.clamp(UI.number('cameraCullMargin',10),-800,1200))
+ return isoVisibleBoundsWithMargin(w,rc,l,MathX.clamp(UI.number('cameraCullMargin',-30),-800,1200))
 }
 function isoDiamondVisible(p,l,rc){
  const left=S.panX+p.px*S.zoom,right=S.panX+(p.px+l.diamondW)*S.zoom,top=S.panY+p.py*S.zoom,bottom=S.panY+(p.py+l.diamondH)*S.zoom;
@@ -1208,7 +1195,7 @@ function makeIsoRasterCanvas(w,source,alpha=1){
 function makeIsoTextureCanvas(w,source,alpha=1){
  if(!source)return null;
  const l=isoLayout(w),c=document.createElement('canvas');c.width=Math.ceil(l.originX+l.isoWidth+l.diamondW);c.height=Math.ceil(l.originY+l.isoHeight+l.diamondH);
- const g=c.getContext('2d',{alpha:true});g.save();g.globalAlpha=alpha;g.imageSmoothingEnabled=false;
+ const g=c.getContext('2d',{alpha:true});g.save();g.globalAlpha=alpha;g.imageSmoothingEnabled=true;g.imageSmoothingQuality='high';
  const a=l.isoCols/source.width*l.diamondW*.5,b=l.isoCols/source.width*l.diamondH*.5,cx=-l.isoRows/source.height*l.diamondW*.5,d=l.isoRows/source.height*l.diamondH*.5;
  g.setTransform(a,b,cx,d,l.originX,l.originY);g.drawImage(source,0,0);g.restore();return c;
 }
@@ -1223,40 +1210,766 @@ function makeIsoBoundaryCanvas(w){
 const biomePatternCells=new Map();
 function getBiomePatternCell(type){
  if(!BIOME_ATLAS.ready||!BIOME_ATLAS.image)return null;
- if(biomePatternCells.has(type))return biomePatternCells.get(type);
- const [cx,cy]=biomeAtlasCell(type),img=BIOME_ATLAS.image,tw=Math.floor(img.naturalWidth/3),th=Math.floor(img.naturalHeight/3),c=document.createElement('canvas');
- c.width=tw;c.height=th;c.getContext('2d').drawImage(img,cx*tw,cy*th,tw,th,0,0,tw,th);biomePatternCells.set(type,c);return c;
+ const key=type+'|exact-trim-v825';
+ if(biomePatternCells.has(key))return biomePatternCells.get(key);
+
+ const [cx,cy]=biomeAtlasCell(type),img=BIOME_ATLAS.image;
+ const sw=Math.floor(img.naturalWidth/3),sh=Math.floor(img.naturalHeight/3);
+
+ // Use only this biome's atlas trim. A one-pixel inset prevents neighbour
+ // colours from bleeding into the repeating pattern during linear filtering.
+ const inset=Math.min(1,Math.floor(Math.min(sw,sh)/8));
+ const tw=Math.max(1,sw-inset*2),th=Math.max(1,sh-inset*2);
+ const c=document.createElement('canvas');
+ c.width=tw;c.height=th;
+ const g=c.getContext('2d',{alpha:true});
+ g.imageSmoothingEnabled=false;
+ g.drawImage(img,cx*sw+inset,cy*sh+inset,tw,th,0,0,tw,th);
+
+ biomePatternCells.set(key,c);
+ return c;
+}
+
+
+
+const ENV_MIP_BASE_COLS=7;
+const ENV_MIP_BASE_ROWS=8;
+const ENV_MIP_MAX_LEVEL=3;
+const ENV_MIP_CACHE_LIMITS=[56,40,48,64];
+
+function clearEnvironmentMipCache(){
+ S.environmentMipCache.clear();
+ S.environmentMipUse.clear();
+ S.environmentMipWorld=null;S.environmentIsoMaster=null;
+ S.environmentMipTick=0;
+ S.environmentMipVisible=0;
+ S.environmentMipBakedThisFrame=0;
+ S.environmentMipBakeMs=0;
+}
+
+function environmentMipGrid(level){
+ const div=1<<level;
+ return {
+  cols:ENV_MIP_BASE_COLS*div,
+  rows:ENV_MIP_BASE_ROWS*div
+ };
+}
+
+function environmentMipLevelForZoom(){
+ const forced=$('envMipModePanel')?.value||'auto';
+ if(forced!=='auto')return MathX.clamp(+forced,0,3);
+ if(!UI.checked('environmentSpatialMips',true))return 0;
+ if(S.zoom>=10)return 3;
+ if(S.zoom>=4.5)return 2;
+ if(S.zoom>=1.8)return 1;
+ return 0;
+}
+
+function environmentMipCacheKey(w,level,cx,cy){
+ return [
+  w.seed,level,cx,cy,
+  UI.number('environmentDarkness',20),
+  UI.checked('hideFog',false)?1:0,
+  $('envMaskModePanel')?.value||'biomes',
+  $('envMaskBiomePanel')?.value||'0',
+  $('envPatternScalePanel')?.value||'100'
+ ].join('|');
+}
+
+function environmentMipTouch(key,level){
+ S.environmentMipUse.set(key,++S.environmentMipTick);
+ const limit=ENV_MIP_CACHE_LIMITS[level]||48;
+ let count=0;
+ for(const k of S.environmentMipCache.keys())if(k.split('|')[1]==String(level))count++;
+ if(count<=limit)return;
+
+ let oldestKey=null,oldest=Infinity;
+ for(const [k,tick] of S.environmentMipUse){
+  if(k.split('|')[1]!==String(level))continue;
+  if(tick<oldest){oldest=tick;oldestKey=k}
+ }
+ if(oldestKey!==null){
+  S.environmentMipCache.delete(oldestKey);
+  S.environmentMipUse.delete(oldestKey);
+ }
+}
+
+function environmentChunkSourceRect(w,level,cx,cy){
+ const master=w.isoEnvironmentMasterCanvas||w.isoEnvironmentDetailCanvas||S.environmentIsoMaster;
+ if(!master)return null;
+ const grid=environmentMipGrid(level);
+
+ const x0=Math.floor(cx*master.width/grid.cols);
+ const y0=Math.floor(cy*master.height/grid.rows);
+ const x1=Math.floor((cx+1)*master.width/grid.cols);
+ const y1=Math.floor((cy+1)*master.height/grid.rows);
+
+ return {
+  sx:x0,
+  sy:y0,
+  sw:Math.max(1,x1-x0),
+  sh:Math.max(1,y1-y0),
+  grid,
+  masterWidth:master.width,
+  masterHeight:master.height
+ };
+}
+
+function environmentChunkIsoBounds(w,rect){
+ return {
+  x:rect.sx,
+  y:rect.sy,
+  w:rect.sw,
+  h:rect.sh,
+  flat:false,
+  master:true
+ };
+}
+
+function bakeEnvironmentMipChunk(){return null;}
+
+function environmentIsoToSource(w,wx,wy){
+ const hi=w.lodCascade?.[8],l=isoLayout(w);
+ if(!hi)return {x:0,y:0};
+ const a=l.isoCols/hi.w*l.diamondW*.5;
+ const b=l.isoCols/hi.w*l.diamondH*.5;
+ const c=-l.isoRows/hi.h*l.diamondW*.5;
+ const d=l.isoRows/hi.h*l.diamondH*.5;
+ const det=a*d-b*c;
+ if(Math.abs(det)<1e-9)return {x:0,y:0};
+ const px=wx-l.originX,py=wy-l.originY;
+ return {
+  x:(d*px-c*py)/det,
+  y:(-b*px+a*py)/det
+ };
+}
+
+function visibleEnvironmentMipChunks(){return null;}
+
+function drawSpatialMipEnvironment(){return false;}
+
+function getMaskedBiomeEnvironmentCanvas(){return null;}
+
+const ENV_BASE_COLS=7;
+const ENV_BASE_ROWS=8;
+const ENV_MAX_MIP=6;
+// Mip 6 produces 448×512 possible cells: one spatial chunk per source-mask pixel.
+const ENV_BAKE_SCALE=[1,2,4,8,12,16,24];
+const ENV_CACHE_LIMIT=[56,40,48,64,48,32,24];
+
+function clearEnvironmentSpatialSystem(){
+ S.environmentSpatialSystem=null;
+ S.environmentSpatialCache.clear();
+ S.environmentSpatialUse.clear();
+ S.environmentSpatialTick=0;
+ S.environmentSpatialVisible=0;
+ S.environmentSpatialMip=0;
+ S.environmentSpatialBakeMs=0;
+ S.environmentSpatialBaked=0;
+}
+
+function environmentExactBounds(w){
+ const l=isoLayout(w);
+ const mapCanvas=w.isoBiomeNoFogCanvas||w.isoBiomeCanvas||w.isoGroundCanvas||w.isoTechnicalCanvas;
+ if(!mapCanvas)return null;
+ const points=[
+  isoDiamondPoint(w,0,0,l),
+  isoDiamondPoint(w,l.isoCols-1,0,l),
+  isoDiamondPoint(w,0,l.isoRows-1,l),
+  isoDiamondPoint(w,l.isoCols-1,l.isoRows-1,l)
+ ];
+ const minX=Math.max(0,Math.floor(Math.min(...points.map(p=>p.px))));
+ const minY=Math.max(0,Math.floor(Math.min(...points.map(p=>p.py))));
+ const maxX=Math.min(mapCanvas.width,Math.ceil(Math.max(...points.map(p=>p.px))+l.diamondW));
+ const maxY=Math.min(mapCanvas.height,Math.ceil(Math.max(...points.map(p=>p.py))+l.diamondH));
+ return {x:minX,y:minY,width:Math.max(1,maxX-minX),height:Math.max(1,maxY-minY),canvasWidth:mapCanvas.width,canvasHeight:mapCanvas.height};
+}
+
+function prepareEnvironmentSpatialSystem(w){
+ const maskBlur=MathX.clamp(+$('envMaskBlurPanel')?.value||0,0,24);
+ if(
+  S.environmentSpatialSystem?.world===w &&
+  S.environmentSpatialSystem?.maskBlur===maskBlur
+ )return S.environmentSpatialSystem;
+ if(!BIOME_ATLAS.ready||!w.lodCascade?.[8]||!w.biomeTypeMasks?.base)return null;
+
+ const bounds=environmentExactBounds(w);
+ if(!bounds)return null;
+ const hi=w.lodCascade[8],base=w.biomeTypeMasks.base,l=isoLayout(w);
+ const a=l.isoCols/hi.w*l.diamondW*.5;
+ const b=l.isoCols/hi.w*l.diamondH*.5;
+ const c=-l.isoRows/hi.h*l.diamondW*.5;
+ const d=l.isoRows/hi.h*l.diamondH*.5;
+
+ // Project masks once into the exact ISO map-bound coordinate space.
+ const masks=[];
+ for(let type=0;type<9;type++){
+  const flat=document.createElement('canvas');
+  flat.width=hi.w;flat.height=hi.h;
+  const fg=flat.getContext('2d');
+  const id=fg.createImageData(hi.w,hi.h),pixels=id.data;
+  let any=false;
+  for(let i=0;i<base.length;i++){
+   const mapped=Math.min(base[i],8);
+   if(mapped!==type)continue;
+   any=true;
+   const p=i*4;
+   pixels[p]=pixels[p+1]=pixels[p+2]=255;
+   pixels[p+3]=255;
+  }
+  if(!any){masks.push(null);continue}
+  fg.putImageData(id,0,0);
+
+  let maskSource=flat;
+  if(maskBlur>0){
+   const blurred=document.createElement('canvas');
+   blurred.width=hi.w;
+   blurred.height=hi.h;
+   const bg=blurred.getContext('2d',{alpha:true});
+   bg.filter=`blur(${maskBlur}px)`;
+   bg.drawImage(flat,0,0);
+   bg.filter='none';
+   maskSource=blurred;
+  }
+
+  const projected=document.createElement('canvas');
+  projected.width=bounds.width;
+  projected.height=bounds.height;
+  const pg=projected.getContext('2d',{alpha:true});
+  pg.imageSmoothingEnabled=true;
+  pg.imageSmoothingQuality='high';
+  pg.setTransform(a,b,c,d,l.originX-bounds.x,l.originY-bounds.y);
+  pg.drawImage(maskSource,0,0);
+  masks.push(projected);
+ }
+
+ S.environmentSpatialSystem={world:w,bounds,masks,maskWidth:bounds.width,maskHeight:bounds.height,maskBlur};
+ S.environmentSpatialCache.clear();
+ S.environmentSpatialUse.clear();
+ return S.environmentSpatialSystem;
+}
+
+function environmentSpatialGrid(level){
+ const div=1<<level;
+ return {cols:ENV_BASE_COLS*div,rows:ENV_BASE_ROWS*div};
+}
+
+function environmentSpatialMip(system,rc){
+ if(!$('envSpatialMipsPanel')?.checked){
+  S.environmentSpatialLockedMip=null;
+  return 0;
+ }
+
+ if($('envMipLockPanel')?.checked){
+  if(S.environmentSpatialLockedMip===null){
+   S.environmentSpatialLockedMip=MathX.clamp(
+    S.environmentSpatialMip||0,
+    0,
+    ENV_MAX_MIP
+   );
+  }
+  return S.environmentSpatialLockedMip;
+ }
+
+ S.environmentSpatialLockedMip=null;
+ const targetPx=Math.max(
+  180,
+  Math.min(rc.width,rc.height)*.72
+ );
+
+ let bestLevel=0;
+ let bestError=Infinity;
+
+ for(let level=0;level<=ENV_MAX_MIP;level++){
+  const grid=environmentSpatialGrid(level);
+  const squareWorld=Math.max(
+   1,
+   Math.ceil(system.bounds.width/grid.cols)
+  );
+  const squareScreen=squareWorld*Math.max(.001,S.zoom);
+  const error=Math.abs(
+   Math.log(Math.max(.0001,squareScreen/targetPx))
+  );
+
+  if(error<bestError){
+   bestError=error;
+   bestLevel=level;
+  }
+ }
+
+ return bestLevel;
+}
+
+function environmentSpatialTouch(key,level){
+ S.environmentSpatialUse.set(key,++S.environmentSpatialTick);
+ const limit=ENV_CACHE_LIMIT[level]||48;
+ let count=0;
+ for(const item of S.environmentSpatialCache.values())if(item.level===level)count++;
+ if(count<=limit)return;
+
+ let oldestKey=null,oldest=Infinity;
+ for(const [candidate,tick] of S.environmentSpatialUse){
+  const item=S.environmentSpatialCache.get(candidate);
+  if(!item||item.level!==level)continue;
+  if(tick<oldest){oldest=tick;oldestKey=candidate}
+ }
+ if(oldestKey!==null){
+  S.environmentSpatialCache.delete(oldestKey);
+  S.environmentSpatialUse.delete(oldestKey);
+ }
+}
+
+function environmentSpatialRect(system,level,cx,cy){
+ const grid=environmentSpatialGrid(level);
+
+ // A single integer side length is shared by every chunk on this mip.
+ // Ceil fits the map width and permits a small controlled overflow.
+ const squareSize=Math.max(
+  1,
+  Math.ceil(system.bounds.width/grid.cols)
+ );
+
+ const totalGridWidth=squareSize*grid.cols;
+ const totalGridHeight=squareSize*grid.rows;
+
+ // Fixed integer origins. No per-row or per-column rounding is allowed.
+ const gridLeft=Math.floor((system.bounds.width-totalGridWidth)*.5);
+ const gridTop=Math.floor((system.bounds.height-totalGridHeight)*.5);
+
+ const x=gridLeft+cx*squareSize;
+ const y=gridTop+cy*squareSize;
+
+ // Masks still come from the original complete projected-mask rectangle.
+ const sourceX0=Math.floor(cx*system.bounds.width/grid.cols);
+ const sourceY0=Math.floor(cy*system.bounds.height/grid.rows);
+ const sourceX1=Math.floor((cx+1)*system.bounds.width/grid.cols);
+ const sourceY1=Math.floor((cy+1)*system.bounds.height/grid.rows);
+
+ return {
+  x,
+  y,
+  w:squareSize,
+  h:squareSize,
+  sourceX:sourceX0,
+  sourceY:sourceY0,
+  sourceW:Math.max(1,sourceX1-sourceX0),
+  sourceH:Math.max(1,sourceY1-sourceY0),
+  squareSize,
+  gridLeft,
+  gridTop,
+  totalGridWidth,
+  totalGridHeight,
+  grid
+ };
+}
+
+function drawImageCover(g,image,dx,dy,dw,dh){
+ if(!image||dw<=0||dh<=0)return;
+
+ // Environment trims are expected to be square. Use a centred square crop
+ // from the source so the destination is never stretched into a rectangle.
+ const side=Math.min(image.width,image.height);
+ const sx=(image.width-side)*.5;
+ const sy=(image.height-side)*.5;
+
+ g.drawImage(
+  image,
+  sx,sy,side,side,
+  dx,dy,dw,dh
+ );
+}
+
+function bakeEnvironmentSpatialChunk(w,level,cx,cy){
+ const system=prepareEnvironmentSpatialSystem(w);
+ if(!system)return null;
+ const scaleValue=+$('envPatternScalePanel')?.value||100;
+ const stampMode=$('envMaskStampPanel')?.checked===true?1:0;
+ const forceMask=$('envForceMaskPanel')?.checked===true?1:0;
+ const maskBlur=+$('envMaskBlurPanel')?.value||0;
+ const key=[
+  w.seed,level,cx,cy,scaleValue,stampMode,forceMask,maskBlur,
+  'global-mask-source-crop-v49'
+ ].join('|');
+ const cached=S.environmentSpatialCache.get(key);
+ if(cached){environmentSpatialTouch(key,level);return cached}
+
+ const started=performance.now();
+ const rect=environmentSpatialRect(system,level,cx,cy);
+ const bakeScale=ENV_BAKE_SCALE[level]||1;
+ const referenceTrim=getEnvironmentDebugTrim(0);
+ const nativeSize=Math.max(
+  2,
+  referenceTrim?.width||256,
+  referenceTrim?.height||256
+ );
+
+ // Every mip keeps at least one native atlas trim worth of pixels.
+ // Earlier Mip 0–2 were baked below native resolution and looked pixelated.
+ const effectiveScale=Math.max(
+  bakeScale,
+  nativeSize/Math.max(1,rect.w)
+ );
+
+ const squarePixels=Math.max(
+  nativeSize,
+  Math.round(rect.w*effectiveScale)
+ );
+ const width=squarePixels;
+ const height=squarePixels;
+
+ const coverage=[];
+
+ // Every chunk samples the same projected global mask through the normalized
+ // source partition. The baked output remains a rigid square, but mask pixels
+ // are partitioned by sourceX/sourceY/sourceW/sourceH so mip/grid rounding
+ // cannot shift biome borders independently for neighbouring chunks.
+ const sampleSize=rect.w;
+
+ for(let biome=0;biome<system.masks.length;biome++){
+  const mask=system.masks[biome];
+  if(!mask)continue;
+
+  const squareMask=document.createElement('canvas');
+  squareMask.width=sampleSize;
+  squareMask.height=sampleSize;
+  const smg=squareMask.getContext('2d',{alpha:true});
+
+  const sourceX=MathX.clamp(rect.sourceX,0,system.maskWidth);
+  const sourceY=MathX.clamp(rect.sourceY,0,system.maskHeight);
+  const sourceRight=MathX.clamp(rect.sourceX+rect.sourceW,0,system.maskWidth);
+  const sourceBottom=MathX.clamp(rect.sourceY+rect.sourceH,0,system.maskHeight);
+  const sourceW=Math.max(0,sourceRight-sourceX);
+  const sourceH=Math.max(0,sourceBottom-sourceY);
+
+  if(sourceW>0&&sourceH>0){
+   smg.imageSmoothingEnabled=!stampMode;
+   if(smg.imageSmoothingEnabled)smg.imageSmoothingQuality='high';
+   smg.drawImage(
+    mask,
+    sourceX,sourceY,sourceW,sourceH,
+    0,0,sampleSize,sampleSize
+   );
+  }
+
+  const image=smg.getImageData(0,0,sampleSize,sampleSize);
+  let sum=0,min=255,nonZero=0;
+
+  for(let i=3;i<image.data.length;i+=4){
+   const alpha=image.data[i];
+   sum+=alpha;
+   if(alpha<min)min=alpha;
+   if(alpha>2)nonZero++;
+  }
+
+  if(!nonZero)continue;
+
+  coverage.push({
+   biome,
+   image,
+   squareMask,
+   avg:sum/(image.data.length/4),
+   min,
+   nonZero
+  });
+ }
+
+ const out=document.createElement('canvas');
+ out.width=width;out.height=height;
+ const og=out.getContext('2d',{alpha:true});
+ if(!coverage.length){
+  const empty={canvas:out,x:system.bounds.x+rect.x,y:system.bounds.y+rect.y,w:rect.w,h:rect.h,level};
+  S.environmentSpatialCache.set(key,empty);
+  environmentSpatialTouch(key,level);
+  return empty;
+ }
+
+ coverage.sort((left,right)=>right.avg-left.avg);
+ const primary=coverage[0];
+ const drawFullTrim=(biome,target=og)=>{
+  const trim=getEnvironmentDebugTrim(Math.min(biome,8));
+  if(!trim)return;
+  target.imageSmoothingEnabled=true;
+  target.imageSmoothingQuality='high';
+  drawImageCover(target,trim,0,0,width,height);
+ };
+
+ const forceAllMasks=$('envForceMaskPanel')?.checked===true;
+
+ const drawBiomeThroughExactMask=(item)=>{
+  const trim=getEnvironmentDebugTrim(Math.min(item.biome,8));
+  if(!trim||!item.squareMask)return;
+
+  const layer=document.createElement('canvas');
+  layer.width=width;
+  layer.height=height;
+  const lg=layer.getContext('2d',{alpha:true});
+  lg.imageSmoothingEnabled=true;
+  lg.imageSmoothingQuality='high';
+  drawImageCover(lg,trim,0,0,width,height);
+
+  const fullMask=document.createElement('canvas');
+  fullMask.width=width;
+  fullMask.height=height;
+  const fmg=fullMask.getContext('2d',{alpha:true});
+  fmg.imageSmoothingEnabled=!stampMode;
+  if(fmg.imageSmoothingEnabled)fmg.imageSmoothingQuality='high';
+  fmg.drawImage(
+   item.squareMask,
+   0,0,item.squareMask.width,item.squareMask.height,
+   0,0,width,height
+  );
+
+  lg.globalCompositeOperation='destination-in';
+  lg.drawImage(fullMask,0,0);
+  lg.globalCompositeOperation='source-over';
+  og.drawImage(layer,0,0);
+ };
+
+ if(forceAllMasks){
+  // Debug/reference mode: every biome, including the dominant and solid one,
+  // is drawn only through its exact crop from the shared projected mask.
+  for(const item of coverage)drawBiomeThroughExactMask(item);
+ }else if(coverage.length===1||primary.min>=250){
+  // Fast path for fully solid chunks.
+  drawFullTrim(primary.biome);
+ }else{
+  // Dominant biome remains the unmasked base for speed.
+  drawFullTrim(primary.biome);
+
+  for(let index=1;index<coverage.length;index++){
+   const item=coverage[index];
+   const trim=getEnvironmentDebugTrim(Math.min(item.biome,8));
+   if(!trim||!item.squareMask)continue;
+
+   // Every biome uses the same full-square texture space.
+   const layer=document.createElement('canvas');
+   layer.width=width;
+   layer.height=height;
+   const lg=layer.getContext('2d',{alpha:true});
+   lg.imageSmoothingEnabled=true;
+   lg.imageSmoothingQuality='high';
+   drawImageCover(lg,trim,0,0,width,height);
+
+   // item.squareMask is an exact crop from the shared global projected mask.
+   // Geometry never changes between mip levels.
+   const fullMask=document.createElement('canvas');
+   fullMask.width=width;
+   fullMask.height=height;
+   const fmg=fullMask.getContext('2d',{alpha:true});
+
+   fmg.imageSmoothingEnabled=!stampMode;
+   if(fmg.imageSmoothingEnabled)fmg.imageSmoothingQuality='high';
+
+   fmg.drawImage(
+    item.squareMask,
+    0,0,item.squareMask.width,item.squareMask.height,
+    0,0,width,height
+   );
+
+   lg.globalCompositeOperation='destination-in';
+   lg.drawImage(fullMask,0,0);
+   lg.globalCompositeOperation='source-over';
+   og.drawImage(layer,0,0);
+  }
+ }
+
+ const result={
+  canvas:out,
+  x:system.bounds.x+rect.x,
+  y:system.bounds.y+rect.y,
+  w:rect.w,
+  h:rect.h,
+  level,cx,cy
+ };
+ S.environmentSpatialCache.set(key,result);
+ environmentSpatialTouch(key,level);
+ S.environmentSpatialBaked++;
+ S.environmentSpatialBakeMs+=performance.now()-started;
+ return result;
+}
+
+function visibleEnvironmentSpatialChunks(w,rc,level){
+ const system=prepareEnvironmentSpatialSystem(w);
+ if(!system)return [];
+
+ const grid=environmentSpatialGrid(level);
+ const marginPx=+$('envCullPanel')?.value||0;
+ const z=Math.max(.001,S.zoom);
+ const marginWorld=marginPx/z;
+
+ const left=(-S.panX)/z-system.bounds.x-marginWorld;
+ const top=(-S.panY)/z-system.bounds.y-marginWorld;
+ const right=(rc.width-S.panX)/z-system.bounds.x+marginWorld;
+ const bottom=(rc.height-S.panY)/z-system.bounds.y+marginWorld;
+
+ const squareSize=Math.max(1,Math.ceil(system.bounds.width/grid.cols));
+ const totalGridWidth=squareSize*grid.cols;
+ const totalGridHeight=squareSize*grid.rows;
+ const gridLeft=Math.floor((system.bounds.width-totalGridWidth)*.5);
+ const gridTop=Math.floor((system.bounds.height-totalGridHeight)*.5);
+
+ const minX=Math.max(
+  0,
+  Math.floor((left-gridLeft)/squareSize)-1
+ );
+ const maxX=Math.min(
+  grid.cols-1,
+  Math.floor((right-gridLeft)/squareSize)+1
+ );
+ const minY=Math.max(
+  0,
+  Math.floor((top-gridTop)/squareSize)-1
+ );
+ const maxY=Math.min(
+  grid.rows-1,
+  Math.floor((bottom-gridTop)/squareSize)+1
+ );
+
+ const visible=[];
+
+ for(let cy=minY;cy<=maxY;cy++){
+  for(let cx=minX;cx<=maxX;cx++){
+   const x=gridLeft+cx*squareSize;
+   const y=gridTop+cy*squareSize;
+
+   if(
+    x+squareSize<left||
+    y+squareSize<top||
+    x>right||
+    y>bottom
+   )continue;
+
+   visible.push({cx,cy});
+  }
+ }
+
+ return visible;
+}
+
+function drawRawBiomeEnvironment(g,w,rc=canvas.getBoundingClientRect()){
+ const system=prepareEnvironmentSpatialSystem(w);
+ if(!system)return false;
+
+ const level=environmentSpatialMip(system,rc);
+ const visible=visibleEnvironmentSpatialChunks(w,rc,level);
+ S.environmentSpatialMip=level;
+ S.environmentSpatialVisible=visible.length;
+ S.environmentSpatialBakeMs=0;
+ S.environmentSpatialBaked=0;
+
+ const dark=MathX.clamp(+$('envDarkPanel')?.value||20,0,90);
+ const brightness=MathX.clamp(+$('envBrightPanel')?.value||100,20,250);
+ const saturation=MathX.clamp(+$('envSaturationPanel')?.value||100,0,250);
+ const alpha=MathX.clamp(+$('envAlphaPanel')?.value||100,0,100)/100;
+ const debug=$('envChunkBoundsPanel')?.checked===true;
+ const smoothing=S.zoom<1;
+ const bleed=smoothing?.5/Math.max(.001,S.zoom):0;
+
+ g.save();
+ g.globalAlpha=alpha;
+ g.filter=`brightness(${Math.max(0,brightness-dark)}%) saturate(${saturation}%)`;
+ g.imageSmoothingEnabled=smoothing;
+ if(smoothing)g.imageSmoothingQuality='high';
+
+ for(const {cx,cy} of visible){
+  const item=bakeEnvironmentSpatialChunk(w,level,cx,cy);
+  if(!item)continue;
+  const visualSize=item.w;
+  g.drawImage(
+   item.canvas,
+   0,0,item.canvas.width,item.canvas.height,
+   item.x-bleed,
+   item.y-bleed,
+   visualSize+bleed*2,
+   visualSize+bleed*2
+  );
+  S.drawCalls++;
+
+  if(debug){
+   g.save();
+   g.filter='none';
+   g.globalAlpha=1;
+   g.imageSmoothingEnabled=false;
+   g.lineWidth=1/Math.max(.001,S.zoom);
+   g.strokeStyle='rgba(0,255,255,.95)';
+   g.strokeRect(item.x,item.y,item.w,item.w);
+   g.restore();
+  }
+ }
+ g.restore();
+
+ if($('envChunkStats')){
+  $('envChunkStats').textContent=
+   `Mip ${level}/${ENV_MAX_MIP}${$('envMipLockPanel')?.checked?' · LOCK':''} · visible ${visible.length} · cache ${S.environmentSpatialCache.size}\n`+
+   `grid ${environmentSpatialGrid(level).cols}×${environmentSpatialGrid(level).rows} · `+
+   `side ${Math.ceil(system.bounds.width/environmentSpatialGrid(level).cols)} world px · RIGID SQUARE\n`+
+   `${$('envMaskStampPanel')?.checked?'MASK EXACT / NEAREST':'MASK EXACT / SMOOTH'} · `+
+   `${$('envForceMaskPanel')?.checked?'ALL MASKED':'FAST SOLID'} · blur ${+$('envMaskBlurPanel')?.value||0}px\n`+
+   `baked ${S.environmentSpatialBaked} · ${S.environmentSpatialBakeMs.toFixed(1)} ms`;
+ }
+ w.environmentPerformance={
+  mode:'spatial-mips-local-masks',
+  bounds:system.bounds,
+  mip:level,
+  visible:visible.length,
+  cache:S.environmentSpatialCache.size,
+  bakeMs:S.environmentSpatialBakeMs
+ };
+ return true;
+}
+
+
+function environmentMaskRandom(seed){
+ return function(){
+  let t=seed+=0x6D2B79F5;
+  t=Math.imul(t^t>>>15,t|1);
+  t^=t+Math.imul(t^t>>>7,t|61);
+  return((t^t>>>14)>>>0)/4294967296;
+ };
+}
+function getEnvironmentDebugTrim(index){
+ if(!BIOME_ATLAS.ready||!BIOME_ATLAS.image)return null;
+ const img=BIOME_ATLAS.image;
+ const cellIndex=MathX.clamp(index|0,0,8);
+ const col=cellIndex%3,row=Math.floor(cellIndex/3);
+ const cellW=Math.floor(img.naturalWidth/3);
+ const cellH=Math.floor(img.naturalHeight/3);
+ const inset=1;
+ const sw=Math.max(1,cellW-inset*2);
+ const sh=Math.max(1,cellH-inset*2);
+
+ const key=`debug-trim-${cellIndex}-${img.naturalWidth}x${img.naturalHeight}`;
+ if(biomePatternCells.has(key))return biomePatternCells.get(key);
+
+ const trim=document.createElement('canvas');
+ trim.width=sw;trim.height=sh;
+ const g=trim.getContext('2d',{alpha:true});
+ g.imageSmoothingEnabled=false;
+ g.drawImage(
+  img,
+  col*cellW+inset,row*cellH+inset,sw,sh,
+  0,0,sw,sh
+ );
+ biomePatternCells.set(key,trim);
+ return trim;
 }
 function buildDetailedEnvironmentTexture(w){
- const totalStart=performance.now();
- if(!BIOME_ATLAS.ready||!BIOME_ATLAS.image||!w.lodCascade?.[8])return {canvas:null,ms:0,maskMs:0,patternMs:0,isoMs:0,scale:0};
- const hi=w.lodCascade[8],base=w.biomeTypeMasks?.base;if(!base)return {canvas:null,ms:0,maskMs:0,patternMs:0,isoMs:0,scale:0};
- const scale=2,sw=hi.w*scale,sh=hi.h*scale;
- const source=document.createElement('canvas');source.width=sw;source.height=sh;
- const sg=source.getContext('2d',{alpha:true});sg.clearRect(0,0,sw,sh);
- const maskLarge=document.createElement('canvas');maskLarge.width=sw;maskLarge.height=sh;
- const lg=maskLarge.getContext('2d',{alpha:true});
- const maskStart=performance.now(),masks=[];
- for(let type=0;type<=8;type++){
-  const c=document.createElement('canvas');c.width=hi.w;c.height=hi.h;const cg=c.getContext('2d'),id=cg.createImageData(hi.w,hi.h),d=id.data;let used=false;
-  for(let i=0;i<base.length;i++)if(base[i]===type){d[i*4+3]=255;used=true}
-  if(used){cg.putImageData(id,0,0);masks[type]=c}else masks[type]=null;
- }
- const maskMs=performance.now()-maskStart,patternStart=performance.now(),ox=(w.seed>>>3)&255,oy=(w.seed>>>11)&255;
- for(let type=0;type<=8;type++){
-  const mask=masks[type],cell=getBiomePatternCell(type);if(!mask||!cell)continue;
-  lg.setTransform(1,0,0,1,0,0);lg.globalCompositeOperation='copy';lg.clearRect(0,0,sw,sh);lg.imageSmoothingEnabled=false;lg.drawImage(mask,0,0,sw,sh);
-  lg.globalCompositeOperation='source-in';lg.fillStyle=lg.createPattern(cell,'repeat');lg.save();lg.translate(-(ox%cell.width),-(oy%cell.height));lg.fillRect(0,0,sw+cell.width,sh+cell.height);lg.restore();
-  lg.globalCompositeOperation='source-over';sg.drawImage(maskLarge,0,0);
- }
- const patternMs=performance.now()-patternStart,isoStart=performance.now(),canvas=makeIsoTextureCanvas(w,source,1),isoMs=performance.now()-isoStart;
- return {canvas,ms:performance.now()-totalStart,maskMs,patternMs,isoMs,scale};
+ const started=performance.now();
+ clearEnvironmentSpatialSystem();
+ const system=prepareEnvironmentSpatialSystem(w);
+ return {
+  canvas:null,
+  flat:null,
+  ms:performance.now()-started,
+  maskMs:performance.now()-started,
+  patternMs:0,
+  isoMs:performance.now()-started,
+  scale:1,
+  mode:'spatial-mips-local-masks',
+  bounds:system?.bounds||null
+ };
 }
-function drawDetailedEnvironmentScreen(g,w,rc){
- if(S.zoom<4||!w.isoEnvironmentDetailCanvas)return;
- const dark=Math.max(0,Math.min(60,UI.number('environmentDarkness',20)));
- g.save();g.translate(S.panX,S.panY);g.scale(S.zoom,S.zoom);g.filter=`brightness(${100-dark}%)`;g.globalAlpha=.94;g.imageSmoothingEnabled=true;g.imageSmoothingQuality='high';g.drawImage(w.isoEnvironmentDetailCanvas,0,0);g.restore();
-}
+function drawDetailedEnvironmentScreen(){return false;}
 function rebuildIsoLayerCache(w){
  const totalStart=performance.now(),steps=[];
  const run=(name,fn)=>{const t=performance.now(),value=fn();steps.push({name,ms:performance.now()-t});return value};
@@ -1268,11 +1981,12 @@ function rebuildIsoLayerCache(w){
  w.isoTileGroundCanvas=w.isoTileGroundDetailedCanvas;
  w.isoGroundOutlineCanvas=run('ISO · контур земли',()=>makeIsoRasterCanvas(w,w.groundOutlineCanvas,1));
  w.isoBoundaryCanvas=run('ISO · границы регионов',()=>makeIsoBoundaryCanvas(w));
- // v8: старая полноразмерная texture окружения больше не строится.
- // На дальнем LOD используется уже готовая общая biome texture, а на близком —
- // только реальные ромбы terrain-atlas в видимых чанках.
+ const environment=run('Окружение · spatial mip masks',()=>buildDetailedEnvironmentTexture(w));
  w.isoEnvironmentDetailCanvas=null;
- steps.push({name:'Окружение · старый полноэкранный слой отключён',ms:0});
+ w.environmentFlatCanvas=null;
+ S.environmentTrimOnlyCanvas=null;
+ S.environmentTrimOnlyWorld=null;
+ w.environmentPerformance=environment;
  const tileCache=run('Карта клеток + seeds декораций',()=>buildZoomTileCache(w));w.zoomTileCache=tileCache;w.cellDataMap=tileCache;
  w.isoPerformance={total:performance.now()-totalStart,steps};
 }
@@ -1346,49 +2060,21 @@ function buildZoomTileCache(w){
  w.cellDataMap=result;
  return result;
 }
-
-function groundChunkCanvas16(w,cx,cy){
- if(!(S.groundChunkCache instanceof Map))S.groundChunkCache=new Map();
- const cache=w.zoomTileCache||(w.zoomTileCache=buildZoomTileCache(w)),l=cache.l,size=16;
- const key=[cx,cy,S.groundMode,w.seed,w.zoomTileCacheVersion||0].join('|');
- if(S.groundChunkCache.has(key))return S.groundChunkCache.get(key);
- const x0=cx*size,y0=cy*size,x1=Math.min(l.isoCols,x0+size),y1=Math.min(l.isoRows,y0+size);
- if(x0>=x1||y0>=y1)return null;
- const corners=[isoDiamondPoint(w,x0,y0,l),isoDiamondPoint(w,x1-1,y0,l),isoDiamondPoint(w,x0,y1-1,l),isoDiamondPoint(w,x1-1,y1-1,l)];
- const minX=Math.floor(Math.min(...corners.map(p=>p.px))-l.diamondW),maxX=Math.ceil(Math.max(...corners.map(p=>p.px))+l.diamondW*2);
- const minY=Math.floor(Math.min(...corners.map(p=>p.py))-l.diamondH),maxY=Math.ceil(Math.max(...corners.map(p=>p.py))+l.diamondH*2);
- const cv=document.createElement('canvas');cv.width=Math.max(1,maxX-minX);cv.height=Math.max(1,maxY-minY);
- const g=cv.getContext('2d',{alpha:true});g.imageSmoothingEnabled=true;g.imageSmoothingQuality='high';
- for(let sum=x0+y0;sum<=x1+y1-2;sum++){
-  const yy0=Math.max(y0,sum-(x1-1)),yy1=Math.min(y1-1,sum-x0);
-  for(let y=yy0;y<=yy1;y++){
+function drawZoomGroundDiamonds(g,w,rc){
+ const cache=w.zoomTileCache||(w.zoomTileCache=buildZoomTileCache(w)),l=cache.l,diamondW=l.diamondW,diamondH=l.diamondH;
+ if(S.groundMode==='technical'||!S.tileView||(!S.playMode&&S.zoom<22)||!groundAtlasesReady())return false;
+ const vb=isoVisibleBoundsWithMargin(w,rc,l,MathX.clamp(UI.number('groundCullMargin',-60),-800,1200));let drawn=0;
+ g.save();g.imageSmoothingEnabled=true;g.imageSmoothingQuality='high';
+ for(let sum=vb.x0+vb.y0;sum<vb.x1+vb.y1-1;sum++){
+  const yMin=Math.max(vb.y0,sum-(vb.x1-1)),yMax=Math.min(vb.y1-1,sum-vb.x0);
+  for(let y=yMin;y<=yMax;y++){
    const x=sum-y,i=y*l.isoCols+x;if(!cache.active[i])continue;
-   const type=cache.type[i],rid=S.groundMode==='simple'?cache.roleSimple[i]:cache.roleDetailed[i],role=MATERIAL_ID_ROLES[rid];
-   const tile=getDisplayedGroundDiamond(role,cache.variant[i],type,S.groundMode);if(!tile)continue;
-   const p=isoDiamondPoint(w,x,y,l);g.globalAlpha=cache.alpha[i]/255;
-   g.drawImage(tile,p.px-minX,p.py-minY,l.diamondW,l.diamondH);
+   const type=cache.type[i],rid=S.groundMode==='simple'?cache.roleSimple[i]:cache.roleDetailed[i],role=MATERIAL_ID_ROLES[rid],tile=getDisplayedGroundDiamond(role,cache.variant[i],type,S.groundMode);if(!tile)continue;
+   const p=isoDiamondPoint(w,x,y,l);if(!isoDiamondVisible(p,l,rc))continue;
+   g.globalAlpha=cache.alpha[i]/255;g.drawImage(tile,p.px,p.py,diamondW,diamondH);drawn++;S.drawCalls++;S.visibleTilesDrawn++;
   }
  }
- g.globalAlpha=1;
- const centerCellX=(x0+x1-1)*.5,centerCellY=(y0+y1-1)*.5,center=isoDiamondPoint(w,centerCellX,centerCellY,l);
- const out={canvas:cv,x:minX,y:minY,centerX:center.px+l.diamondW*.5,centerY:center.py+l.diamondH*.5};
- S.groundChunkCache.set(key,out);return out
-}
-function drawZoomGroundDiamonds(g,w,rc){
- if(S.groundMode==='technical'||!S.tileView||(!S.playMode&&S.zoom<22)||!groundAtlasesReady())return false;
- const l=zoomTileLayout(w),size=16,maxCX=Math.max(0,Math.ceil(l.isoCols/size)-1),maxCY=Math.max(0,Math.ceil(l.isoRows/size)-1);
- const margin=MathX.clamp(UI.number('groundCullMargin',-190),-800,1200);
- const left=-margin,right=rc.width+margin,top=-margin,bottom=rc.height+margin;
- let drawn=0;
- g.save();g.imageSmoothingEnabled=true;g.imageSmoothingQuality='high';
- for(let cy=0;cy<=maxCY;cy++)for(let cx=0;cx<=maxCX;cx++){
-  const item=groundChunkCanvas16(w,cx,cy);if(!item)continue;
-  const sx=S.panX+item.centerX*S.zoom,sy=S.panY+item.centerY*S.zoom;
-  if(sx<left||sx>right||sy<top||sy>bottom)continue;
-  g.drawImage(item.canvas,item.x,item.y);
-  drawn++;S.drawCalls++;S.visibleChunksDrawn++;
- }
- g.restore();return drawn>0
+ g.globalAlpha=1;g.restore();return drawn>0;
 }
 function drawTileFillDebug(g,w){
  if(!chk('debugTileFill'))return;
@@ -1441,7 +2127,7 @@ function loadBiomeAtlas(){
   const c=document.createElement('canvas');c.width=img.naturalWidth;c.height=img.naturalHeight;
   const g=c.getContext('2d',{willReadFrequently:true});g.drawImage(img,0,0);
   BIOME_ATLAS.image=img;BIOME_ATLAS.canvas=c;BIOME_ATLAS.ctx=g;
-  BIOME_ATLAS.data=g.getImageData(0,0,c.width,c.height);BIOME_ATLAS.ready=true;
+  BIOME_ATLAS.data=g.getImageData(0,0,c.width,c.height);BIOME_ATLAS.ready=true;clearEnvironmentSpatialSystem();biomePatternCells.clear();S.maskedBiomeEnvironmentCanvas=null;S.maskedBiomeEnvironmentWorld=null;clearEnvironmentMipCache();
   // Карта строится только явной кнопкой Редактирование или Play.
  };
  img.onerror=()=>{
@@ -2113,7 +2799,7 @@ function generate(preserveCamera=false,playPlanOnly=false){
  mark('Проверка связности и ремонт геометрии');
  const refined=refineWorld(floor,connector,loopConnector,deadEnds,owner,1,seed);
  let open=0,deadOpen=0;for(let y=0;y<refined.floor.length;y++)for(let x=0;x<refined.floor[0].length;x++){open+=refined.floor[y][x];deadOpen+=refined.deadEnds[y][x]}
- S.envDetailCanvas=null;S.worldMapCache=null;S.worldMapCacheWorld=null;S.world={seed,cols:refined.floor[0].length,rows:refined.floor.length,baseCols:cols,baseRows:rows,cell:num('cell')/refined.factor,floor:refined.floor,connector:refined.connector,loopConnector:refined.loopConnector,deadEnds:refined.deadEnds,owner:refined.owner,seeds,stats,open,deadOpen,detail:8,connections,loopConnections,connectorBranches,baseMaskPerformance,playPlanOnly:!!playPlanOnly};mark('Финальное уточнение LOD 8');buildCascadeLOD(S.world,!playPlanOnly);if(playPlanOnly){mark('Виртуальный план: биомы, материалы и коллизии');preparePlayPlan(S.world);S.routes=buildRouteNetwork(S.world);mark('Разметка маршрутов и миникарты')}else{mark('Биомные маски и 2D-текстуры');rebuildIsoLayerCache(S.world);mark('Быстрый ISO-пререндер и окружение');S.routes=null;if(S.routesVisible){S.routes=buildRouteNetwork(S.world);mark('Расчёт маршрутов')}}const total=performance.now()-perfStart;const timings=perfMarks.map(({name,ms})=>({name,ms}));const longest=timings.reduce((a,b)=>!a||b.ms>a.ms?b:a,null);S.lastPerformance={total,timings,longest,generatedAt:new Date()};if(view)restoreView(view);else fit();updateStats();draw();buildLegend();setLoading(false);$('startScreen')?.classList.add('hidden');if(playPlanOnly||S.pendingPlay){const atCamera=!!S.pendingPlayAtCamera;S.pendingPlay=false;S.pendingPlayAtCamera=false;enterPlayMode(true,atCamera)}
+ S.envDetailCanvas=null;S.rawBiomeEnvironmentPattern=null;S.rawBiomeEnvironmentImage=null;S.maskedBiomeEnvironmentCanvas=null;S.maskedBiomeEnvironmentWorld=null;clearEnvironmentMipCache();S.worldMapCache=null;S.worldMapCacheWorld=null;S.world={seed,cols:refined.floor[0].length,rows:refined.floor.length,baseCols:cols,baseRows:rows,cell:num('cell')/refined.factor,floor:refined.floor,connector:refined.connector,loopConnector:refined.loopConnector,deadEnds:refined.deadEnds,owner:refined.owner,seeds,stats,open,deadOpen,detail:8,connections,loopConnections,connectorBranches,baseMaskPerformance,playPlanOnly:!!playPlanOnly};mark('Финальное уточнение LOD 8');buildCascadeLOD(S.world,!playPlanOnly);if(playPlanOnly){mark('Виртуальный план: биомы, материалы и коллизии');preparePlayPlan(S.world);S.routes=buildRouteNetwork(S.world);mark('Разметка маршрутов и миникарты')}else{mark('Биомные маски и 2D-текстуры');rebuildIsoLayerCache(S.world);mark('Быстрый ISO-пререндер и окружение');S.routes=null;if(S.routesVisible){S.routes=buildRouteNetwork(S.world);mark('Расчёт маршрутов')}}const total=performance.now()-perfStart;const timings=perfMarks.map(({name,ms})=>({name,ms}));const longest=timings.reduce((a,b)=>!a||b.ms>a.ms?b:a,null);S.lastPerformance={total,timings,longest,generatedAt:new Date()};if(view)restoreView(view);else fit();updateStats();draw();buildLegend();setLoading(false);$('startScreen')?.classList.add('hidden');if(playPlanOnly||S.pendingPlay){const atCamera=!!S.pendingPlayAtCamera;S.pendingPlay=false;S.pendingPlayAtCamera=false;enterPlayMode(true,atCamera)}
  }catch(err){setLoading(true,'Ошибка генерации');throw err}
 }
 function buildLegend(){
@@ -2141,7 +2827,7 @@ function updateStats(){
  if(maskPerf)generationRows.push('',`Биомы и материалы: ${(maskPerf.total||0).toFixed(1)} мс`,...(maskPerf.steps||[]).map(t=>`${t.name}: ${t.ms.toFixed(1)} мс`));
  if(isoPerf)generationRows.push('',`ISO-пререндер: ${isoPerf.total.toFixed(1)} мс`,...isoPerf.steps.map(t=>`${t.name}: ${t.ms.toFixed(1)} мс`));
  const p=S.frameProfile;
- const renderHtml=`<b>${Math.round(S.fps)} FPS · ${p.total.toFixed(1)} ms</b><br>Render ${p.draw.toFixed(1)} · Decor ${p.decor.toFixed(1)}<br>Logic ${p.update.toFixed(1)} · Chunks ${p.chunks.toFixed(1)}<br>Map ${p.minimap.toFixed(1)} · Calls ${S.drawCalls||0}<br>LOD ${S.renderLod} · Tiles ${S.visibleTilesDrawn||0} · Chunks ${S.visibleChunksDrawn||0}<br>Active ${S.activeChunks.size} · Dyn ${S.visibleDynamic||0}<br>Env cache ${S.environmentChunks.size} · Low cache ${S.lowDecorChunks.size}`;
+ const renderHtml=`<b>${Math.round(S.fps)} FPS · ${p.total.toFixed(1)} ms</b><br>Render ${p.draw.toFixed(1)} · Decor ${p.decor.toFixed(1)}<br>Logic ${p.update.toFixed(1)} · Chunks ${p.chunks.toFixed(1)}<br>Map ${p.minimap.toFixed(1)} · Calls ${S.drawCalls||0}<br>LOD ${S.renderLod} · Tiles ${S.visibleTilesDrawn||0} · Chunks ${S.visibleChunksDrawn||0}<br>Active ${S.activeChunks.size} · Dyn ${S.visibleDynamic||0}<br>Env mip ${S.environmentMipLevel} · visible ${S.environmentMipVisible} · cache ${S.environmentMipCache.size}<br>Env bake ${S.environmentMipBakedThisFrame} / ${S.environmentMipBakeMs.toFixed(1)} ms · Low cache ${S.lowDecorChunks.size}`;
  const html=S.infoTab==='generation'?generationRows.join('<br>'):S.infoTab==='render'?renderHtml:mapHtml;
  UI.text('editorFps',Math.round(S.fps)+' FPS');
  const ef=$('editorFps');if(ef)ef.className=S.fps>=50?'fpsGood':S.fps>=30?'fpsWarn':'fpsBad';
@@ -2225,41 +2911,44 @@ function getEnvironmentDiamond(type,variant,dw,dh){
  S.environmentDiamondCache.set(key,cv);return cv;
 }
 function environmentChunkCanvas(w,cx,cy){
- const legacyDebug=UI.checked('environmentDebugColor',false),mode=legacyDebug?'color':($('envPanelMode')?.value||'atlas');
- const tintStrength=MathX.clamp(+$('envPanelTint')?.value||38,0,100)/100,dark=MathX.clamp(+$('envPanelDark')?.value||20,0,90)/100,white=MathX.clamp(+$('envPanelWhite')?.value||0,0,100)/100;
- const key=[cx,cy,mode,Math.round(tintStrength*100),Math.round(dark*100),Math.round(white*100),'full-image-v811'].join('|');
+ const key='DEBUG_RAW_T_BIOM_TILE';
  if(S.environmentChunks.has(key))return S.environmentChunks.get(key);
- const c=w.cellDataMap,l=c.l,pad=1,x0=Math.max(0,cx*S.chunkSize-pad),y0=Math.max(0,cy*S.chunkSize-pad),x1=Math.min(l.isoCols,(cx+1)*S.chunkSize+pad),y1=Math.min(l.isoRows,(cy+1)*S.chunkSize+pad);
- const pts=[isoDiamondPoint(w,x0,y0,l),isoDiamondPoint(w,x1,y0,l),isoDiamondPoint(w,x0,y1,l),isoDiamondPoint(w,x1,y1,l)],minX=Math.floor(Math.min(...pts.map(p=>p.px))-l.diamondW),maxX=Math.ceil(Math.max(...pts.map(p=>p.px))+l.diamondW*2),minY=Math.floor(Math.min(...pts.map(p=>p.py))-l.diamondH),maxY=Math.ceil(Math.max(...pts.map(p=>p.py))+l.diamondH*2);
- const cv=document.createElement('canvas');cv.width=Math.max(1,maxX-minX);cv.height=Math.max(1,maxY-minY);
- const g=cv.getContext('2d',{alpha:true}),pal=[[70,101,71],[122,118,109],[45,49,58],[74,113,70],[61,66,72],[131,151,162],[165,176,180],[95,134,102],[176,144,86],[128,106,77]],src=getBiomeEnvTileImage();
- g.imageSmoothingEnabled=true;g.imageSmoothingQuality='high';
- for(let sum=x0+y0;sum<x1+y1-1;sum++){const yy0=Math.max(y0,sum-(x1-1)),yy1=Math.min(y1-1,sum-x0);for(let y=yy0;y<=yy1;y++){
-  const x=sum-y,i=y*l.isoCols+x;if(c.active[i])continue;
-  const b=isoCellHighBounds(w,x,y,l),type=smoothOuterBiomeTypeNoFog(w,Math.floor((b.sx0+b.sx1)*.5),Math.floor((b.sy0+b.sy1)*.5)),col=pal[type]||pal[0],p=isoDiamondPoint(w,x,y,l),dx=p.px-minX,dy=p.py-minY;
-  g.save();g.beginPath();g.moveTo(dx+l.diamondW*.5,dy);g.lineTo(dx+l.diamondW,dy+l.diamondH*.5);g.lineTo(dx+l.diamondW*.5,dy+l.diamondH);g.lineTo(dx,dy+l.diamondH*.5);g.closePath();g.clip();
-  if(mode==='checker'){
-   g.fillStyle=((x+y)&1)?'#ff35dd':'#35e8ff';g.fillRect(dx,dy,l.diamondW,l.diamondH);
-  }else if(mode==='color'||!src.complete||!src.naturalWidth){
-   g.fillStyle=`rgb(${col[0]},${col[1]},${col[2]})`;g.fillRect(dx,dy,l.diamondW,l.diamondH);
-  }else{
-   // Full source image is scaled onto every complete diamond. No frame crop and no UV pixel lookup.
-   g.drawImage(src,0,0,src.naturalWidth,src.naturalHeight,dx,dy,l.diamondW,l.diamondH);
-   if(mode!=='raw'&&tintStrength>0){g.globalCompositeOperation='multiply';g.globalAlpha=tintStrength;g.fillStyle=`rgb(${col[0]},${col[1]},${col[2]})`;g.fillRect(dx,dy,l.diamondW,l.diamondH)}
+ const l=zoomTileLayout(w),img=getBiomeEnvTileImage();
+ const pts=[
+  isoDiamondPoint(w,0,0,l),
+  isoDiamondPoint(w,Math.max(0,l.isoCols-1),0,l),
+  isoDiamondPoint(w,0,Math.max(0,l.isoRows-1),l),
+  isoDiamondPoint(w,Math.max(0,l.isoCols-1),Math.max(0,l.isoRows-1),l)
+ ];
+ const minX=Math.floor(Math.min(...pts.map(p=>p.px))-l.diamondW);
+ const maxX=Math.ceil(Math.max(...pts.map(p=>p.px))+l.diamondW*2);
+ const minY=Math.floor(Math.min(...pts.map(p=>p.py))-l.diamondH);
+ const maxY=Math.ceil(Math.max(...pts.map(p=>p.py))+l.diamondH*2);
+ const cv=document.createElement('canvas');
+ cv.width=Math.max(1,maxX-minX);
+ cv.height=Math.max(1,maxY-minY);
+ const g=cv.getContext('2d',{alpha:true});
+ if(img&&img.complete&&img.naturalWidth){
+  g.imageSmoothingEnabled=true;
+  g.imageSmoothingQuality='high';
+  const p=g.createPattern(img,'repeat');
+  if(p){
+    g.fillStyle=p;
+    g.fillRect(0,0,cv.width,cv.height);
   }
-  g.globalCompositeOperation='source-over';
-  if(dark>0){g.globalAlpha=dark;g.fillStyle='#000';g.fillRect(dx,dy,l.diamondW,l.diamondH)}
-  if(white>0){g.globalAlpha=white;g.fillStyle='#fff';g.fillRect(dx,dy,l.diamondW,l.diamondH)}
-  g.restore();
- }}
- const out={canvas:cv,x:minX,y:minY};S.environmentChunks.set(key,out);return out
+ }else{
+  g.fillStyle='#ff00ff';
+  g.fillRect(0,0,cv.width,cv.height);
+ }
+ const out={canvas:cv,x:minX,y:minY};
+ S.environmentChunks.set(key,out);
+ return out
 }
 
 function visibleGroundChunkCoords(w,rc,margin=0){
- const l=zoomTileLayout(w),size=16,signedPx=MathX.clamp(UI.number('groundCullMargin',-190),-800,1200),vb=isoVisibleBoundsWithMargin(w,rc,l,signedPx);
+ const l=zoomTileLayout(w),signedPx=MathX.clamp(UI.number('groundCullMargin',-60),-800,1200),vb=isoVisibleBoundsWithMargin(w,rc,l,signedPx),size=S.chunkSize;
  let minX=Math.floor(vb.x0/size)-margin,maxX=Math.floor(Math.max(vb.x0,vb.x1-1)/size)+margin,minY=Math.floor(vb.y0/size)-margin,maxY=Math.floor(Math.max(vb.y0,vb.y1-1)/size)+margin;
- const maxCX=Math.max(0,Math.ceil(l.isoCols/size)-1),maxCY=Math.max(0,Math.ceil(l.isoRows/size)-1);
- minX=MathX.clamp(minX,0,maxCX);maxX=MathX.clamp(maxX,0,maxCX);minY=MathX.clamp(minY,0,maxCY);maxY=MathX.clamp(maxY,0,maxCY);
+ minX=Math.max(0,minX);minY=Math.max(0,minY);maxX=Math.min(Math.ceil(l.isoCols/size)-1,maxX);maxY=Math.min(Math.ceil(l.isoRows/size)-1,maxY);
  const out=[];for(let cy=minY;cy<=maxY;cy++)for(let cx=minX;cx<=maxX;cx++)out.push({x:cx,y:cy});return out
 }
 function visibleChunkCoords(w,rc,margin=0){
@@ -2271,13 +2960,8 @@ function visibleChunkCoords(w,rc,margin=0){
 function trimCanvasCache(cache,maxEntries){
  while(cache.size>maxEntries){const first=cache.keys().next().value;cache.delete(first)}
 }
-function drawChunkEnvironment(g,w){
- if(!S.playMode)return;
- const rc=canvas.getBoundingClientRect(),chunks=visibleChunkCoords(w,rc,1);
- for(const ch of chunks){const e=environmentChunkCanvas(w,ch.x,ch.y);if(!e?.canvas)continue;g.drawImage(e.canvas,e.x,e.y);S.drawCalls++;S.visibleChunksDrawn++}
- trimCanvasCache(S.environmentChunks,Math.max(24,chunks.length*3));
-}
-function drawZoomEnvironmentTiles(g,w,rc){return false;}
+function drawChunkEnvironment(){return false;}
+function drawZoomEnvironmentTiles(){return false;}
 function renderLodFor(w){
  const l=zoomTileLayout(w),tilePx=l.diamondW*S.zoom;
  if(tilePx<7)return 'far';
@@ -2309,9 +2993,6 @@ function buildPlayOverviewTexture(w){
 function drawWorldTextureLod(g,w,hideEnvironment=false,hideGround=false){
  g.save();g.imageSmoothingEnabled=true;g.imageSmoothingQuality='high';
  let drew=false;
- const candidates=[UI.checked('hideFog')?w.isoBiomeNoFogCanvas:w.isoBiomeCanvas,w.isoBiomeNoFogCanvas,w.isoBiomeCanvas];
- const envTex=candidates.find(cv=>cv&&cv.width>1&&cv.height>1);
- if(!hideEnvironment&&envTex){const dark=MathX.clamp(UI.number('environmentDarkness',20),0,60);g.filter=`brightness(${100-dark}%)`;g.drawImage(envTex,0,0);g.filter='none';S.drawCalls++;drew=true}
  const ground=S.groundMode==='technical'?w.isoColorGroundCanvas:S.groundMode==='simple'?w.isoTileGroundSimpleCanvas:w.isoTileGroundDetailedCanvas;
  if(!hideGround&&S.groundMode!=='hidden'&&ground&&ground.width>1&&ground.height>1){g.drawImage(ground,0,0);S.drawCalls++;drew=true}
  if(!drew){
@@ -2335,14 +3016,17 @@ function draw(){
 
  ctx.save();ctx.translate(S.panX,S.panY);ctx.scale(S.zoom,S.zoom);
 
- if((lod==='far'||lod==='mid')&&!S.playMode){
-  drawWorldTextureLod(ctx,w,UI.checked('playHideEnvironment'),UI.checked('playHideGround'));
-  if(chk('boundaries')&&w.isoBoundaryCanvas){ctx.drawImage(w.isoBoundaryCanvas,0,0);S.drawCalls++}
+ const envHidden=UI.checked('hideBiomes',false)||(S.playMode&&UI.checked('playHideEnvironment',false));
+ if(!envHidden)drawRawBiomeEnvironment(ctx,w,rc);
+ if(lod==='far'||lod==='mid'){
+  // The detailed masked environment is shared by Editor and Play at every LOD.
+  drawWorldTextureLod(ctx,w,true,UI.checked('playHideGround'));
+  if(chk('boundaries')&&w.isoBoundaryCanvas&&!S.playMode){ctx.drawImage(w.isoBoundaryCanvas,0,0);S.drawCalls++}
+  if(S.playMode)drawPlayerOnly(ctx,w);
  }else{
   // Near uses tiled rendering only.
   // Tile LOD is exclusive: never draw the giant map/environment textures.
   ctx.imageSmoothingEnabled=false;
-  if(S.playMode&&!UI.checked('playHideEnvironment')&&!UI.checked('hideBiomes'))drawChunkEnvironment(ctx,w);
   if(S.groundMode!=='hidden'&&!UI.checked('playHideGround')){
    const diamonds=drawZoomGroundDiamonds(ctx,w,rc);
    if(!diamonds&&!S.playMode){
@@ -2367,7 +3051,7 @@ function fitZoom(){if(!S.world)return 1;const r=canvas.getBoundingClientRect(),p
 function fit(){if(!S.world)return;const r=canvas.getBoundingClientRect(),l=isoLayout(S.world);S.zoom=fitZoom();S.panX=(r.width-l.isoWidth*S.zoom)/2-l.originX*S.zoom;S.panY=(r.height-l.isoHeight*S.zoom)/2-l.originY*S.zoom}
 function randomGen(){$('seed').value=Math.floor(Math.random()*2147483647);requestGenerate(!!S.world)}
 $('gen').onclick=$('gen2').onclick=()=>{S.buildMode='editor';S.pendingPlay=false;requestGenerate(false)};$('rand').onclick=$('rand2').onclick=randomGen;$('center').onclick=$('fit').onclick=()=>{fit();draw()};$('plus').onclick=()=>zoomAt(canvas.clientWidth/2,canvas.clientHeight/2,1.25);$('minus').onclick=()=>zoomAt(canvas.clientWidth/2,canvas.clientHeight/2,1/1.25);$('png').onclick=()=>{if(!S.world)return;const a=document.createElement('a');a.download=`godgrave_multi_cave_${S.world.seed}.png`;a.href=canvas.toDataURL('image/png');a.click()};
-$('settings').onclick=()=>{const data={version:'8.12',savedAt:new Date().toISOString(),settings:{}};document.querySelectorAll('input,select').forEach(el=>data.settings[el.id]=el.type==='checkbox'?el.checked:el.value);const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`godgrave_cave_settings_${$('seed').value}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(url),500)};
+$('settings').onclick=()=>{const data={version:'8.26',savedAt:new Date().toISOString(),settings:{}};document.querySelectorAll('input,select').forEach(el=>data.settings[el.id]=el.type==='checkbox'?el.checked:el.value);const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`godgrave_cave_settings_${$('seed').value}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(url),500)};
 function zoomAt(mx,my,factor){const wx=(mx-S.panX)/S.zoom,wy=(my-S.panY)/S.zoom;S.zoom=Math.max(.01,S.zoom*factor);S.panX=mx-wx*S.zoom;S.panY=my-wy*S.zoom;if(S.world)updateStats();draw()}
 
 function bfsFloor(w,start,targets=null){
@@ -2427,8 +3111,8 @@ function describeIsoPoint(clientX,clientY){
 }
 function usedBiomeTypesForCurrentMap(){const w=S.world,found=new Set();if(!w)return [0,1,3,5,6,7,8];const hi=w.lodCascade?.[8];if(!hi)return [0,1,3,5,6,7,8];const step=Math.max(1,Math.floor(Math.sqrt((hi.w*hi.h)/60000)));for(let y=0;y<hi.h;y+=step)for(let x=0;x<hi.w;x+=step)found.add(smoothOuterBiomeTypeNoFog(w,x,y));return [...found].filter(v=>v!==2).sort((a,b)=>a-b)}
 function exportGeneratedCanvas(c,name){const a=document.createElement('a');a.download=name;a.href=c.toDataURL('image/png');a.click()}
-function generateSyntheticTileAtlas(){const host=$('generatedAtlasSheets'),tw=Math.max(16,Math.min(512,+$('generatedTileW').value||128)),th=Math.max(8,Math.min(256,+$('generatedTileH').value||64)),roles=['earth','clay','grass','tallGrass','gravel','stone'];host.innerHTML='';for(const type of usedBiomeTypesForCurrentMap()){const wrap=document.createElement('div'),title=document.createElement('div'),labelRow=document.createElement('div'),out=document.createElement('canvas'),labels=biomeRoleLabels(type);wrap.style.marginBottom='18px';title.style.cssText='display:flex;align-items:center;gap:10px;margin:0 0 7px;color:#dce7ef;font:12px ui-monospace,monospace';title.innerHTML='<b>'+(BIOME_NAMES[type]||('Биом '+type))+'</b><span>6 колонок × 11 строк</span>';labelRow.className='atlasLabels';labelRow.style.gridTemplateColumns='repeat('+roles.length+','+tw+'px)';labelRow.innerHTML=roles.map(r=>'<span title="'+labels[r]+'">'+labels[r]+'</span>').join('');out.width=tw*roles.length;out.height=th*GROUND_ATLAS_ROWS;out.dataset.biome=type;const g=out.getContext('2d');g.clearRect(0,0,out.width,out.height);const pal=biomeTilePalette(type);for(let col=0;col<roles.length;col++)for(let row=0;row<GROUND_ATLAS_ROWS;row++){const base=getGroundDiamond(roles[col],row)||getGroundDiamond('earth',row);if(base)g.drawImage(recolorCanvasPixels(base,pal[roles[col]]||pal.earth,tw,th),col*tw,row*th)}const btn=document.createElement('button');btn.textContent='PNG';btn.onclick=()=>exportGeneratedCanvas(out,'godgrave_'+(BIOME_NAMES[type]||('biome_'+type)).toLowerCase().replace(/\s+/g,'_')+'.png');title.appendChild(btn);wrap.append(title,labelRow,out);host.appendChild(wrap)}const grassWrap=document.createElement('div'),grassTitle=document.createElement('div'),grassOut=document.createElement('canvas'),grass=buildGrassAtlas();grassWrap.style.marginBottom='18px';grassTitle.style.cssText='display:flex;align-items:center;gap:10px;margin:0 0 7px;color:#dce7ef;font:12px ui-monospace,monospace';grassTitle.innerHTML='<b>Процедурные травинки</b><span>4 вариации · сетка 2×2</span>';grassOut.width=grass.width;grassOut.height=grass.height;grassOut.style.cssText='display:block;max-width:none;width:'+grass.width+'px;height:'+grass.height+'px;image-rendering:pixelated';grassOut.getContext('2d').drawImage(grass,0,0);const gb=document.createElement('button');gb.textContent='PNG';gb.onclick=()=>exportGeneratedCanvas(grassOut,'godgrave_grass_2x2.png');grassTitle.appendChild(gb);grassWrap.append(grassTitle,grassOut);host.appendChild(grassWrap);const clutterWrap=document.createElement('div'),clutterTitle=document.createElement('div'),clutterOut=document.createElement('canvas'),clutter=buildClutterAtlas();clutterWrap.style.marginBottom='18px';clutterTitle.style.cssText='display:flex;align-items:center;gap:10px;margin:0 0 7px;color:#dce7ef;font:12px ui-monospace,monospace';clutterTitle.innerHTML='<b>Мелкий наземный декор</b><span>6×6: листья · камни · ветки · грибы · мох · смешанный</span>';clutterOut.width=clutter.width;clutterOut.height=clutter.height;clutterOut.style.cssText='display:block;max-width:none;width:'+clutter.width+'px;height:'+clutter.height+'px;image-rendering:pixelated';clutterOut.getContext('2d').drawImage(clutter,0,0);const cb=document.createElement('button');cb.textContent='PNG';cb.onclick=()=>exportGeneratedCanvas(clutterOut,'godgrave_small_clutter_6x6.png');clutterTitle.appendChild(cb);clutterWrap.append(clutterTitle,clutterOut);host.appendChild(clutterWrap);host.dataset.ready='1'}
-$('tileGenerator').onclick=()=>{$('tileGeneratorModal').classList.add('visible');generateSyntheticTileAtlas()};$('closeTileGenerator').onclick=()=>$('tileGeneratorModal').classList.remove('visible');$('tileGeneratorModal').addEventListener('mousedown',e=>{if(e.target===$('tileGeneratorModal'))$('tileGeneratorModal').classList.remove('visible')});$('generateTileAtlas').onclick=generateSyntheticTileAtlas;$('exportTileAtlas').onclick=()=>{if($('generatedAtlasSheets').dataset.ready!=='1')generateSyntheticTileAtlas();[...$('generatedAtlasSheets').querySelectorAll('canvas')].forEach((c,i)=>setTimeout(()=>exportGeneratedCanvas(c,'godgrave_biome_'+c.dataset.biome+'_'+c.width+'x'+c.height+'.png'),i*180))};function setGroundMode(mode){if(S.groundChunkCache)S.groundChunkCache.clear();S.groundMode=mode;$('groundRenderMode').value=mode;$('hideGround').checked=mode==='hidden';$('terrainGroundMode').checked=mode!=='technical';$('recolorMissingTiles').checked=mode==='detailed'||mode==='simple';buildLegend();if(S.world)updateStats();draw()}$('groundRenderMode').addEventListener('change',e=>setGroundMode(e.target.value));
+function generateSyntheticTileAtlas(){const host=$('generatedAtlasSheets'),tw=Math.max(16,Math.min(512,+$('generatedTileW').value||128)),th=Math.max(8,Math.min(256,+$('generatedTileH').value||64)),roles=['earth','clay','grass','tallGrass','gravel','stone'];host.innerHTML='';for(const type of usedBiomeTypesForCurrentMap()){const wrap=document.createElement('div'),title=document.createElement('div'),labelRow=document.createElement('div'),out=document.createElement('canvas'),labels=biomeRoleLabels(type);wrap.style.marginBottom='18px';title.style.cssText='display:flex;align-items:center;gap:10px;margin:0 0 7px;color:#dce7ef;font:12px ui-monospace,monospace';title.innerHTML='<b>'+(BIOME_NAMES[type]||('Биом '+type))+'</b><span>6 колонок × 11 строк</span>';labelRow.className='atlasLabels';labelRow.style.gridTemplateColumns='repeat('+roles.length+','+tw+'px)';labelRow.innerHTML=roles.map(r=>'<span title="'+labels[r]+'">'+labels[r]+'</span>').join('');out.width=tw*roles.length;out.height=th*GROUND_ATLAS_ROWS;out.dataset.biome=type;const g=out.getContext('2d');g.clearRect(0,0,out.width,out.height);const pal=biomeTilePalette(type);for(let col=0;col<roles.length;col++)for(let row=0;row<GROUND_ATLAS_ROWS;row++){const base=getGroundDiamond(roles[col],row)||getGroundDiamond('earth',row);if(base)g.drawImage(recolorCanvasPixels(base,pal[roles[col]]||pal.earth,tw,th),col*tw,row*th)}const btn=document.createElement('button');btn.textContent='PNG';btn.onclick=()=>exportGeneratedCanvas(out,'godgrave_'+(BIOME_NAMES[type]||('biome_'+type)).toLowerCase().replace(/\s+/g,'_')+'.png');title.appendChild(btn);wrap.append(title,labelRow,out);host.appendChild(wrap)}const grassWrap=document.createElement('div'),grassTitle=document.createElement('div'),grassOut=document.createElement('canvas'),grass=buildGrassAtlas();grassWrap.style.marginBottom='18px';grassTitle.style.cssText='display:flex;align-items:center;gap:10px;margin:0 0 7px;color:#dce7ef;font:12px ui-monospace,monospace';grassTitle.innerHTML='<b>Процедурные травинки</b><span>4 вариации · сетка 2×2</span>';grassOut.width=grass.width;grassOut.height=grass.height;grassOut.getContext('2d').drawImage(grass,0,0);const gb=document.createElement('button');gb.textContent='PNG';gb.onclick=()=>exportGeneratedCanvas(grassOut,'godgrave_grass_2x2.png');grassTitle.appendChild(gb);grassWrap.append(grassTitle,grassOut);host.appendChild(grassWrap);const clutterWrap=document.createElement('div'),clutterTitle=document.createElement('div'),clutterOut=document.createElement('canvas'),clutter=buildClutterAtlas();clutterWrap.style.marginBottom='18px';clutterTitle.style.cssText='display:flex;align-items:center;gap:10px;margin:0 0 7px;color:#dce7ef;font:12px ui-monospace,monospace';clutterTitle.innerHTML='<b>Мелкий наземный декор</b><span>6×6: листья · камни · ветки · грибы · мох · смешанный</span>';clutterOut.width=clutter.width;clutterOut.height=clutter.height;clutterOut.getContext('2d').drawImage(clutter,0,0);const cb=document.createElement('button');cb.textContent='PNG';cb.onclick=()=>exportGeneratedCanvas(clutterOut,'godgrave_small_clutter_6x6.png');clutterTitle.appendChild(cb);clutterWrap.append(clutterTitle,clutterOut);host.appendChild(clutterWrap);host.dataset.ready='1'}
+$('tileGenerator').onclick=()=>{$('tileGeneratorModal').classList.add('visible');generateSyntheticTileAtlas()};$('closeTileGenerator').onclick=()=>$('tileGeneratorModal').classList.remove('visible');$('tileGeneratorModal').addEventListener('mousedown',e=>{if(e.target===$('tileGeneratorModal'))$('tileGeneratorModal').classList.remove('visible')});$('generateTileAtlas').onclick=generateSyntheticTileAtlas;$('exportTileAtlas').onclick=()=>{if($('generatedAtlasSheets').dataset.ready!=='1')generateSyntheticTileAtlas();[...$('generatedAtlasSheets').querySelectorAll('canvas')].forEach((c,i)=>setTimeout(()=>exportGeneratedCanvas(c,'godgrave_biome_'+c.dataset.biome+'_'+c.width+'x'+c.height+'.png'),i*180))};function setGroundMode(mode){S.groundMode=mode;$('groundRenderMode').value=mode;$('hideGround').checked=mode==='hidden';$('terrainGroundMode').checked=mode!=='technical';$('recolorMissingTiles').checked=mode==='detailed'||mode==='simple';buildLegend();if(S.world)updateStats();draw()}$('groundRenderMode').addEventListener('change',e=>setGroundMode(e.target.value));
 
 $('tiles').onclick=()=>{S.tileView=!S.tileView;updateTileButton();if(S.world)updateStats();draw()};
 $('routes').onclick=()=>{S.routesVisible=!S.routesVisible;if(S.routesVisible&&!S.routes&&S.world)S.routes=buildRouteNetwork(S.world);$('routes').textContent=S.routesVisible?'Маршруты: вкл':'Маршруты: выкл';draw()};
@@ -2437,25 +3121,182 @@ UI.onMany(['boundaries','floorDots','hideFog','hideBiomes','environmentOnTop','d
 UI.on('environmentDarkness','input',()=>{UI.text('environmentDarknessValue',UI.value('environmentDarkness',20)+'%');S.environmentChunks.clear();S.environmentDiamondCache.clear();draw()});
 UI.on('environmentDebugColor','change',()=>{S.environmentChunks.clear();draw()});
 
+function setEnvironmentTilePanelVisible(force){
+ const panel=$('envTilePanel');
+ if(!panel)return;
+ const visible=force===undefined?!panel.classList.contains('visible'):!!force;
+ panel.classList.toggle('visible',visible);
+}
+function syncEnvironmentTilePanel(){
+ const pairs=[
+  ['envDarkPanel','environmentDarkness'],
+  ['envBrightPanel','envPanelBrightness'],
+  ['envSaturationPanel','envPanelSaturation'],
+  ['envWhitePanel','envPanelWhite'],
+  ['envTintPanel','envPanelTint']
+ ];
+ for(const [panelId,sourceId] of pairs){
+  const panel=$(panelId),source=$(sourceId);
+  if(panel&&source)panel.value=source.value;
+ }
+ if($('envSpatialPanel')&&$('environmentSpatialMips'))
+  $('envSpatialPanel').checked=$('environmentSpatialMips').checked;
+ if($('envDebugPanel')&&$('environmentMipDebug'))
+  $('envDebugPanel').checked=$('environmentMipDebug').checked;
+ updateEnvironmentPanelOutputs();
+ updateEnvironmentTrimPreview();
+}
+function updateEnvironmentPanelOutputs(){
+ const entries=[
+  ['envDarkPanel','envDarkOut','%'],
+  ['envBrightPanel','envBrightOut','%'],
+  ['envSaturationPanel','envSaturationOut','%'],
+  ['envAlphaPanel','envAlphaOut','%'],
+  ['envPatternScalePanel','envPatternScaleOut','%'],
+  ['envCullPanel','envCullOut',' px'],
+  ['envMaskBlurPanel','envMaskBlurOut',' px']
+ ];
 
-function invalidateEnvironmentDebug(){S.environmentChunks.clear();S.environmentDiamondCache.clear();draw()}
-$('envDebugToggle').onclick=()=>$('envDebugPanel').classList.toggle('hidden');
-$('envDebugClose').onclick=()=>$('envDebugPanel').classList.add('hidden');
-$('envPanelMode').onchange=invalidateEnvironmentDebug;
-$('envPanelFrame').oninput=()=>{$('envPanelFrameValue').textContent=$('envPanelFrame').value;invalidateEnvironmentDebug()};
-$('envPanelTint').oninput=()=>{$('envPanelTintValue').textContent=$('envPanelTint').value+'%';invalidateEnvironmentDebug()};
-$('envPanelDark').oninput=()=>{$('envPanelDarkValue').textContent=$('envPanelDark').value+'%';invalidateEnvironmentDebug()};
-$('envPanelWhite').oninput=()=>{$('envPanelWhiteValue').textContent=$('envPanelWhite').value+'%';invalidateEnvironmentDebug()};
+ for(const [inputId,outputId,suffix] of entries){
+  const input=$(inputId);
+  const output=$(outputId);
+  if(!input||!output)continue;
+  const value=String(input.value);
+  output.value=value+suffix;
+  output.textContent=value+suffix;
+  output.innerText=value+suffix;
+ }
 
-UI.on('environmentRenderMode','change',()=>{S.environmentChunks.clear();draw()});
-UI.on('environmentFrame','input',()=>{$('environmentFrameValue').textContent=UI.number('environmentFrame',0);S.environmentChunks.clear();draw()});
-UI.on('environmentTint','input',()=>{$('environmentTintValue').textContent=UI.number('environmentTint',38)+'%';S.environmentChunks.clear();draw()});
-UI.on('refreshAtlasPreview','click',refreshProceduralAtlasPreviews);
+ updateEnvironmentTrimPreview();
+}
+function invalidateEnvironmentFromPanel(){
+ clearEnvironmentMipCache();
+ if(S.world){
+  S.world.isoEnvironmentMasterCanvas=null;
+  rebuildIsoLayerCache(S.world);
+ }
+ draw();
+}
+function updateEnvironmentTrimPreview(){
+ const preview=$('envTrimPreview');
+ if(preview){
+  const g=preview.getContext('2d');
+  g.clearRect(0,0,preview.width,preview.height);
+  for(let index=0;index<9;index++){
+   const trim=getEnvironmentDebugTrim(index);
+   if(!trim)continue;
+   const cw=preview.width/3,ch=preview.height/3;
+   g.drawImage(trim,0,0,trim.width,trim.height,(index%3)*cw,Math.floor(index/3)*ch,cw,ch);
+  }
+ }
+ const system=S.world?prepareEnvironmentSpatialSystem(S.world):null;
+ if($('envBoundsInfo')){
+  const b=system?.bounds;
+  $('envBoundsInfo').textContent=b
+   ? `ISO bounds\nx ${b.x} · y ${b.y}\n${b.width}×${b.height}\nbase 7×8 · квадраты по ширине · высота может выходить за боунд`
+   : 'ISO bounds: —';
+ }
+ if($('envTrimInfo'))$('envTrimInfo').textContent='9 trims · локальные ISO-маски · lazy bake';
+}
+
+function rebuildTrimOnlyEnvironmentNow(){
+ clearEnvironmentSpatialSystem();
+ if(S.world)prepareEnvironmentSpatialSystem(S.world);
+ updateEnvironmentTrimPreview();
+ draw();
+}
+function bindEnvironmentTilePanel(){
+ const button=$('envTilePanelButton');
+ const close=$('envTilePanelClose');
+
+ if(button)button.onclick=()=>{
+  updateEnvironmentPanelOutputs();
+  setEnvironmentTilePanelVisible();
+ };
+ if(close)close.onclick=()=>setEnvironmentTilePanelVisible(false);
+
+ const cacheRebuildIds=[
+  'envPatternScalePanel',
+  'envSpatialMipsPanel',
+  'envMaskStampPanel',
+  'envForceMaskPanel',
+  'envMaskBlurPanel'
+ ];
+
+ for(const id of cacheRebuildIds){
+  const element=$(id);
+  if(!element)continue;
+
+  const handler=()=>{
+   updateEnvironmentPanelOutputs();
+   clearEnvironmentSpatialSystem();
+   if(S.world)prepareEnvironmentSpatialSystem(S.world);
+   draw();
+  };
+
+  element.oninput=handler;
+  element.onchange=handler;
+ }
+
+ const redrawOnlyIds=[
+  'envDarkPanel',
+  'envBrightPanel',
+  'envSaturationPanel',
+  'envAlphaPanel',
+  'envChunkBoundsPanel',
+  'envCullPanel'
+ ];
+
+ for(const id of redrawOnlyIds){
+  const element=$(id);
+  if(!element)continue;
+
+  const handler=()=>{
+   updateEnvironmentPanelOutputs();
+   draw();
+  };
+
+  element.oninput=handler;
+  element.onchange=handler;
+ }
+
+ if($('envMipLockPanel')){
+  $('envMipLockPanel').onchange=()=>{
+   S.environmentSpatialLockedMip=$('envMipLockPanel').checked
+    ? MathX.clamp(S.environmentSpatialMip||0,0,ENV_MAX_MIP)
+    : null;
+   updateEnvironmentPanelOutputs();
+   draw();
+  };
+ }
+
+ if($('envClearCachePanel')){
+  $('envClearCachePanel').textContent='Перестроить чанки';
+  $('envClearCachePanel').onclick=()=>{
+   clearEnvironmentSpatialSystem();
+   if(S.world)prepareEnvironmentSpatialSystem(S.world);
+   updateEnvironmentPanelOutputs();
+   draw();
+  };
+ }
+
+ updateEnvironmentPanelOutputs();
+}
+document.addEventListener('keydown',e=>{
+ if(e.code==='KeyG'&&!e.ctrlKey&&!e.metaKey&&!e.altKey&&!S.playMode){
+  const tag=(e.target?.tagName||'').toLowerCase();
+  if(tag==='input'||tag==='textarea'||tag==='select')return;
+  e.preventDefault();
+  syncEnvironmentTilePanel();
+  setEnvironmentTilePanelVisible();
+ }
+});
+setTimeout(bindEnvironmentTilePanel,0);
 
 UI.on('groundOutlineOpacity','input',()=>{UI.text('groundOutlineOpacityValue',UI.value('groundOutlineOpacity',100)+'%');draw()});
 UI.on('groundOutlineOpacity','input',()=>{UI.text('groundOutlineOpacityValue',UI.value('groundOutlineOpacity',100)+'%');draw()});
 UI.on('groundTileThreshold','input',()=>{if(S.world)updateStats();draw()});
-UI.on('showInfo','input',()=>UI.toggle('infoHud','hidden',!UI.checked('showInfo')));window.addEventListener('keydown',e=>{if(['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName))return;const k=e.key.toLowerCase();if(e.code==='Space'){e.preventDefault();$('showInfo').checked=!$('showInfo').checked;$('infoHud').classList.toggle('hidden',!$('showInfo').checked);return}if(e.code==='Digit1'||e.code==='Numpad1'){e.preventDefault();setGroundMode('texture');return}if(e.code==='Digit2'||e.code==='Numpad2'){e.preventDefault();setGroundMode('detailed');return}if(e.code==='Digit3'||e.code==='Numpad3'){e.preventDefault();setGroundMode('simple');return}if(e.code==='Digit4'||e.code==='Numpad4'){e.preventDefault();setGroundMode('technical');return}if(e.code==='Digit5'||e.code==='Numpad5'){e.preventDefault();setGroundMode('hidden');return}if(k==='e'||k==='у'){S.buildMode='editor';requestGenerate(false)}if(k==='r'||k==='к')randomGen();if(k==='c'||k==='с'){fit();draw()}});canvas.addEventListener('wheel',e=>{e.preventDefault();const r=canvas.getBoundingClientRect();zoomAt(e.clientX-r.left,e.clientY-r.top,Math.exp(-e.deltaY*.0012))},{passive:false});canvas.onmousedown=e=>{if(S.playMode)return;if(e.button!==0)return;S.drag=true;S.lx=e.clientX;S.ly=e.clientY;canvas.classList.add('drag')};window.onmousemove=e=>{if(!S.drag)return;S.panX+=e.clientX-S.lx;S.panY+=e.clientY-S.ly;S.lx=e.clientX;S.ly=e.clientY;draw()};window.onmouseup=()=>{S.drag=false;canvas.classList.remove('drag')};canvas.oncontextmenu=e=>{e.preventDefault();if(!S.playMode)describeIsoPoint(e.clientX,e.clientY)};canvas.ondblclick=()=>{if(!S.playMode){fit();draw()}};let lastViewportW=canvas.getBoundingClientRect().width,lastViewportH=canvas.getBoundingClientRect().height;window.onresize=()=>{const r=canvas.getBoundingClientRect(),dx=r.width-lastViewportW,dy=r.height-lastViewportH;if(!S.restoringEditorCamera){S.panX+=dx*.5;S.panY+=dy*.5}lastViewportW=r.width;lastViewportH=r.height;draw()};
+UI.on('showInfo','input',()=>UI.toggle('infoHud','hidden',!UI.checked('showInfo')));window.addEventListener('keydown',e=>{if(['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName))return;const k=e.key.toLowerCase();if(e.code==='Space'){e.preventDefault();$('showInfo').checked=!$('showInfo').checked;$('infoHud').classList.toggle('hidden',!$('showInfo').checked);return}if(e.code==='Digit1'||e.code==='Numpad1'){e.preventDefault();setGroundMode('texture');return}if(e.code==='Digit2'||e.code==='Numpad2'){e.preventDefault();setGroundMode('detailed');return}if(e.code==='Digit3'||e.code==='Numpad3'){e.preventDefault();setGroundMode('simple');return}if(e.code==='Digit4'||e.code==='Numpad4'){e.preventDefault();setGroundMode('technical');return}if(e.code==='Digit5'||e.code==='Numpad5'){e.preventDefault();setGroundMode('hidden');return}if(k==='e'||k==='у'){S.buildMode='editor';requestGenerate(false)}if(k==='r'||k==='к')randomGen();if(k==='c'||k==='с'){fit();draw()}});canvas.addEventListener('wheel',e=>{e.preventDefault();const r=canvas.getBoundingClientRect();zoomAt(e.clientX-r.left,e.clientY-r.top,Math.exp(-e.deltaY*.0012))},{passive:false});canvas.onmousedown=e=>{if(S.playMode)return;if(e.button!==0)return;S.drag=true;S.lx=e.clientX;S.ly=e.clientY;canvas.classList.add('drag')};window.onmousemove=e=>{if(!S.drag)return;S.panX+=e.clientX-S.lx;S.panY+=e.clientY-S.ly;S.lx=e.clientX;S.ly=e.clientY;draw()};window.onmouseup=()=>{S.drag=false;canvas.classList.remove('drag')};canvas.oncontextmenu=e=>{e.preventDefault();if(!S.playMode)describeIsoPoint(e.clientX,e.clientY)};canvas.ondblclick=()=>{if(!S.playMode){fit();draw()}};let lastViewportW=canvas.getBoundingClientRect().width,lastViewportH=canvas.getBoundingClientRect().height;window.onresize=()=>{const r=canvas.getBoundingClientRect(),dx=r.width-lastViewportW,dy=r.height-lastViewportH;S.panX+=dx*.5;S.panY+=dy*.5;lastViewportW=r.width;lastViewportH=r.height;draw()};
 
 
 // v5.0 — игровой режим. Глобальный мир остаётся компактным планом, а активность
@@ -2474,25 +3315,19 @@ function getDecorationImage(path){let im=DECORATION_IMAGES.get(path);if(im)retur
 function hashU32(a,b,c){return MathX.hash2(a,b,c)}
 function decorEnabled(kind){if(kind==='tree'||kind==='dead')return UI.checked('decorTrees',true);if(kind==='bush')return UI.checked('decorBushes',true);if(kind==='rock')return UI.checked('decorRocks',true);if(kind==='stone')return UI.checked('decorStones',true);if(kind==='grass')return UI.checked('decorGrass',true);if(kind==='denseGrass')return UI.checked('decorDenseGrass',true);return true}
 function decorationTint(kind,type){const swamp=type===0,snow=type===5||type===6||type===7,desert=type===8,rock=kind==='rock'||kind==='stone';if(desert&&kind==='grass')return 'sepia(.88) saturate(1.65) hue-rotate(350deg) brightness(1.12)';if(snow)return rock?'saturate(.62) brightness(1.22) hue-rotate(168deg)':'saturate(.58) brightness(1.16) hue-rotate(170deg)';if(swamp)return rock?'saturate(.72) brightness(.83) hue-rotate(25deg)':'saturate(.78) brightness(.80) hue-rotate(22deg)';if(desert)return rock?'sepia(.22) saturate(.82) brightness(1.04)':'sepia(.52) saturate(1.08) brightness(1.06)';return rock?'saturate(.92) brightness(.96)':'saturate(.96) brightness(.98)'}
-
-function refreshProceduralAtlasPreviews(){
- const grass=buildGrassAtlas(),clutter=buildClutterAtlas(4);
- const gp=$('grassAtlasPreview'),cp=$('clutterAtlasPreview');
- if(gp){gp.width=grass.width;gp.height=grass.height;gp.getContext('2d').drawImage(grass,0,0)}
- if(cp){cp.width=clutter.width;cp.height=clutter.height;cp.getContext('2d').drawImage(clutter,0,0)}
-}
 function buildGrassAtlas(){
  if(S.grassAtlas)return S.grassAtlas;
- const cellW=64,cellH=48,variants=4,cols=2,rows=2,cv=document.createElement('canvas');cv.width=cellW*cols;cv.height=cellH*rows;
- const g=cv.getContext('2d');g.clearRect(0,0,cv.width,cv.height);g.lineCap='round';
- for(let v=0;v<variants;v++){
-  const ox=(v%cols)*cellW,oy=Math.floor(v/cols)*cellH,rnd=n=>((hashU32(v,n,0x51ed270b)&65535)/65535),tufts=2+(v%2);
+ const cellW=64,cellH=48,cols=2,rows=2,cv=document.createElement('canvas');cv.width=cellW*cols;cv.height=cellH*rows;
+ const g=cv.getContext('2d');g.clearRect(0,0,cv.width,cv.height);g.lineCap='round';g.lineJoin='round';
+ for(let v=0;v<4;v++){
+  const ox=(v%2)*cellW,oy=Math.floor(v/2)*cellH,rnd=n=>((hashU32(v,n,0x51ed270b)&65535)/65535),tufts=2+(v===1||v===3?1:0);
   for(let t=0;t<tufts;t++){
-   const center=ox+12+t*(40/Math.max(1,tufts-1))+(rnd(t+4)-.5)*5,blades=3+(hashU32(v,t,77)%3);
+   const center=ox+10+t*(44/Math.max(1,tufts-1))+(rnd(t+4)-.5)*4,blades=4+((v+t)%4);
    for(let b=0;b<blades;b++){
-    const x=center+(b-(blades-1)/2)*2.4+(rnd(t*11+b)-.5)*2,y=oy+46,h=10+rnd(t*17+b+60)*10,lean=(rnd(t*23+b+90)-.5)*7;
-    g.strokeStyle=`rgba(240,245,225,${.72+rnd(t*29+b+120)*.25})`;g.lineWidth=.9+rnd(t*31+b+150)*.8;
-    g.beginPath();g.moveTo(x,y);g.quadraticCurveTo(x+lean*.3,y-h*.55,x+lean,y-h);g.stroke();
+    const x=center+(b-(blades-1)/2)*(v===2?1.8:2.5)+(rnd(t*11+b)-.5)*2,y=oy+46,h=(v===0?9:v===1?15:v===2?12:18)+rnd(t*17+b+60)*(v===3?10:7),lean=(rnd(t*23+b+90)-.5)*(v===2?12:8);
+    g.strokeStyle=`rgba(240,245,225,${.68+rnd(t*29+b+120)*.3})`;g.lineWidth=.8+rnd(t*31+b+150)*(v===3?1.25:.8);
+    g.beginPath();g.moveTo(x,y);g.quadraticCurveTo(x+lean*.25,y-h*.56,x+lean,y-h);g.stroke();
+    if(v===3&&b%2===0){g.lineWidth=.65;g.beginPath();g.moveTo(x+lean*.45,y-h*.55);g.lineTo(x+lean*.75+2,y-h*.67);g.stroke()}
    }
   }
  }
@@ -2535,30 +3370,16 @@ function biomeClutterPalette(type){
 }
 function buildClutterAtlas(type=4){
  if(!(S.clutterAtlas instanceof Map))S.clutterAtlas=new Map();if(S.clutterAtlas.has(type))return S.clutterAtlas.get(type);
- const cellW=128,cellH=88,cols=6,rows=6,variants=36,cv=document.createElement('canvas');cv.width=cellW*cols;cv.height=cellH*rows;
+ const cellW=128,cellH=88,cols=6,rows=6,cv=document.createElement('canvas');cv.width=cellW*cols;cv.height=cellH*rows;
  const g=cv.getContext('2d'),pal=biomeClutterPalette(type),rnd=(v,n)=>((hashU32(type*977+v*131,n*313+17,0x7f4a7c15)&65535)/65535);
- function leaf(x,y,s,r){g.fillStyle=r>.5?pal.leaf2:pal.leaf;g.beginPath();g.ellipse(x,y,s,s*.38,r*6.28,0,Math.PI*2);g.fill();g.strokeStyle='rgba(25,22,14,.34)';g.lineWidth=.7;g.beginPath();g.moveTo(x-Math.cos(r*6.28)*s*.75,y-Math.sin(r*6.28)*s*.75);g.lineTo(x+Math.cos(r*6.28)*s*.75,y+Math.sin(r*6.28)*s*.75);g.stroke()}
- function stone(x,y,s,r){g.fillStyle=r>.58?pal.stone2:pal.stone;g.beginPath();g.ellipse(x,y,s*(.72+r*.38),s*(.42+r*.25),r*3.1,0,Math.PI*2);g.fill();g.fillStyle='rgba(255,255,255,.16)';g.beginPath();g.ellipse(x-s*.18,y-s*.15,s*.24,s*.12,r*2,0,Math.PI*2);g.fill()}
- function twig(x,y,s,r){const a=r*6.28,x2=x+Math.cos(a)*s,y2=y+Math.sin(a)*s;g.strokeStyle=pal.wood;g.lineCap='round';g.lineWidth=Math.max(1.4,s*.12);g.beginPath();g.moveTo(x,y);g.quadraticCurveTo((x+x2)/2+Math.sin(a)*s*.16,(y+y2)/2-Math.cos(a)*s*.16,x2,y2);g.stroke();for(let q=0;q<2;q++){const t=.35+q*.3,px=x+(x2-x)*t,py=y+(y2-y)*t,ba=a+(q?1:-1)*.72;g.lineWidth=Math.max(1,s*.07);g.beginPath();g.moveTo(px,py);g.lineTo(px+Math.cos(ba)*s*.28,py+Math.sin(ba)*s*.28);g.stroke()}}
- function mushroom(x,y,s,r){g.fillStyle='#d8c7a5';g.fillRect(x-s*.09,y,s*.18,s*.62);g.fillStyle=r>.66?'#a94f42':r>.33?'#c08a50':'#ddd0ad';g.beginPath();g.ellipse(x,y,s*.55,s*.32,0,Math.PI,Math.PI*2);g.fill();g.fillStyle='rgba(255,255,255,.3)';g.beginPath();g.arc(x-s*.18,y-s*.08,s*.07,0,Math.PI*2);g.arc(x+s*.13,y-s*.12,s*.055,0,Math.PI*2);g.fill()}
- function moss(x,y,s,r,v){g.fillStyle=r>.5?pal.leaf2:pal.leaf;for(let k=0;k<8;k++){const a=k*.785+r*4,rr=s*(.18+.2*rnd(v,k+900));g.beginPath();g.arc(x+Math.cos(a)*s*.42,y+Math.sin(a)*s*.24,rr,0,Math.PI*2);g.fill()}}
- const rowNames=['leaf','stone','twig','mushroom','moss','mixed'];
- for(let v=0;v<variants;v++){
-  const col=v%cols,row=Math.floor(v/cols),ox=col*cellW,oy=row*cellH,kind=rowNames[row];
-  g.save();g.clearRect(ox,oy,cellW,cellH);g.translate(ox,oy);g.lineJoin='round';
-  const count=kind==='mushroom'?18+col*2:kind==='mixed'?18+col:12+col*2;
-  for(let i=0;i<count;i++){
-   const x=9+rnd(v,i*7+2)*110,y=20+rnd(v,i*7+3)*57,r=rnd(v,i*7+4),s=3+rnd(v,i*7+5)*7;
-   let k=kind;
-   if(kind==='mixed')k=['leaf','stone','twig','mushroom','moss'][Math.floor(rnd(v,i*11+70)*5)];
-   if(k==='leaf')leaf(x,y,s*1.15,r);
-   else if(k==='stone')stone(x,y,s,r);
-   else if(k==='twig')twig(x,y,s*3.1,r);
-   else if(k==='mushroom')mushroom(x,y,s*1.7,r); // roughly 3x larger than old caps/stems
-   else moss(x,y,s*1.45,r,v);
-  }
-  g.restore();
- }
+ const tone=(hex,k)=>{const n=parseInt(hex.slice(1),16),r=MathX.clamp(((n>>16)&255)*k,0,255)|0,gg=MathX.clamp(((n>>8)&255)*k,0,255)|0,b=MathX.clamp((n&255)*k,0,255)|0;return `rgb(${r},${gg},${b})`};
+ function leaf(x,y,s,r,style){const a=r*6.28;g.fillStyle=style%3===0?pal.leaf:style%3===1?pal.leaf2:tone(pal.leaf,.72+(.5*r));g.beginPath();if(style===0)g.ellipse(x,y,s,s*.38,a,0,Math.PI*2);else if(style===1){g.moveTo(x+Math.cos(a)*s,y+Math.sin(a)*s);for(let k=1;k<8;k++){const aa=a+k*Math.PI/4,rr=k%2?s*.43:s;g.lineTo(x+Math.cos(aa)*rr,y+Math.sin(aa)*rr)}g.closePath()}else if(style===2){g.moveTo(x+Math.cos(a)*s,y+Math.sin(a)*s);g.quadraticCurveTo(x+Math.cos(a+1.5)*s*.45,y+Math.sin(a+1.5)*s*.45,x-Math.cos(a)*s*.7,y-Math.sin(a)*s*.7);g.quadraticCurveTo(x+Math.cos(a-1.5)*s*.45,y+Math.sin(a-1.5)*s*.45,x+Math.cos(a)*s,y+Math.sin(a)*s);g.closePath()}else{g.ellipse(x,y,s*.25,s,a,0,Math.PI*2)}g.fill();g.strokeStyle='rgba(25,22,14,.38)';g.lineWidth=.65;g.beginPath();g.moveTo(x-Math.cos(a)*s*.7,y-Math.sin(a)*s*.7);g.lineTo(x+Math.cos(a)*s*.72,y+Math.sin(a)*s*.72);g.stroke()}
+ function stone(x,y,s,r,style){const k=[.55,.72,.9,1.08,1.28,1.45][style%6];g.fillStyle=tone(style&1?pal.stone2:pal.stone,k);g.beginPath();if(style%3===0)g.ellipse(x,y,s*(.7+r*.5),s*(.38+r*.28),r*3.1,0,Math.PI*2);else{const pts=5+style%3;for(let q=0;q<pts;q++){const a=r*6.28+q*Math.PI*2/pts,rr=s*(.62+rnd(style,q+700)*.48);q?g.lineTo(x+Math.cos(a)*rr,y+Math.sin(a)*rr*.58):g.moveTo(x+Math.cos(a)*rr,y+Math.sin(a)*rr*.58)}g.closePath()}g.fill();g.fillStyle='rgba(255,255,255,.18)';g.beginPath();g.ellipse(x-s*.2,y-s*.16,s*.25,s*.11,r*2,0,Math.PI*2);g.fill()}
+ function twig(x,y,s,r,style){const a=r*6.28,x2=x+Math.cos(a)*s,y2=y+Math.sin(a)*s,k=[.58,.72,.86,1,1.18,1.38][style%6];g.strokeStyle=tone(pal.wood,k);g.lineCap='round';g.lineWidth=Math.max(1.1,s*(style%2?.14:.09));g.beginPath();g.moveTo(x,y);g.quadraticCurveTo((x+x2)/2+Math.sin(a)*s*.2,(y+y2)/2-Math.cos(a)*s*.2,x2,y2);g.stroke();const branches=1+style%4;for(let q=0;q<branches;q++){const t=.24+q*.58/Math.max(1,branches-1),px=x+(x2-x)*t,py=y+(y2-y)*t,ba=a+(q&1?1:-1)*(.55+.16*style);g.lineWidth=Math.max(.8,s*.06);g.beginPath();g.moveTo(px,py);g.lineTo(px+Math.cos(ba)*s*(.2+.05*style),py+Math.sin(ba)*s*(.2+.05*style));g.stroke()}}
+ function mushroom(x,y,s,r,style){const stem='#d8cfb7';g.fillStyle=stem;if(style===4){g.beginPath();g.moveTo(x-s*.08,y+s*.55);g.lineTo(x+s*.08,y+s*.55);g.lineTo(x+s*.04,y-s*.05);g.lineTo(x-s*.03,y-s*.05);g.closePath();g.fill()}else g.fillRect(x-s*.08,y,s*.16,s*(style===1?.42:.62));if(style===0){g.fillStyle='#b63c32';g.beginPath();g.ellipse(x,y,s*.62,s*.34,0,Math.PI,Math.PI*2);g.fill();g.fillStyle='#f3e9d2';for(let q=0;q<4;q++){g.beginPath();g.arc(x+(q-1.5)*s*.2,y-s*(.08+(q&1)*.08),s*.055,0,Math.PI*2);g.fill()}}else if(style===1){g.fillStyle='#d18a35';for(let q=-1;q<=1;q++){g.beginPath();g.moveTo(x+q*s*.22,y);g.lineTo(x+q*s*.22-s*.16,y-s*.28);g.lineTo(x+q*s*.22+s*.16,y-s*.28);g.closePath();g.fill()}}else if(style===2){g.fillStyle='#8d6546';g.beginPath();g.ellipse(x,y,s*.5,s*.3,0,Math.PI,Math.PI*2);g.fill()}else if(style===3){g.fillStyle='#ece5d4';g.beginPath();g.ellipse(x,y,s*.34,s*.6,0,Math.PI,Math.PI*2);g.fill();g.strokeStyle='#777';g.lineWidth=.7;for(let q=-2;q<=2;q++){g.beginPath();g.moveTo(x,y);g.lineTo(x+q*s*.11,y-s*.48);g.stroke()}}else if(style===4){g.fillStyle='#d7a73e';g.beginPath();g.arc(x,y,s*.42,Math.PI,Math.PI*2);g.fill()}else{g.fillStyle='#b48a61';g.beginPath();g.ellipse(x,y,s*.7,s*.28,0,Math.PI,Math.PI*2);g.fill();g.fillStyle='#9d704d';g.beginPath();g.arc(x-s*.25,y-s*.1,s*.22,Math.PI,Math.PI*2);g.arc(x+s*.2,y-s*.08,s*.18,Math.PI,Math.PI*2);g.fill()}}
+ function moss(x,y,s,r,style,v){const cols=[pal.leaf,pal.leaf2,'#5f7f46','#879b52','#687760','#9a8d55'];for(let k=0;k<10+style;k++){const a=k*.73+r*5,rr=s*(.12+.22*rnd(v,k+900));g.fillStyle=cols[(style+k)%cols.length];g.beginPath();g.arc(x+Math.cos(a)*s*(.25+.2*rnd(v,k+1000)),y+Math.sin(a)*s*(.13+.16*rnd(v,k+1100)),rr,0,Math.PI*2);g.fill()}g.strokeStyle='rgba(230,245,190,.22)';g.lineWidth=.5;for(let k=0;k<4;k++){g.beginPath();g.moveTo(x+(rnd(v,k+1200)-.5)*s,y);g.lineTo(x+(rnd(v,k+1300)-.5)*s,y-s*(.2+.4*rnd(v,k+1400)));g.stroke()}}
+ const kinds=['leaf','stone','twig','mushroom','moss','mixed'];
+ for(let v=0;v<36;v++){const col=v%6,row=Math.floor(v/6),ox=col*cellW,oy=row*cellH,kind=kinds[row];g.save();g.clearRect(ox,oy,cellW,cellH);g.translate(ox,oy);g.lineJoin='round';const count=kind==='mushroom'?5+col:kind==='mixed'?12+col:11+col*2;for(let i=0;i<count;i++){const x=10+rnd(v,i*7+2)*108,y=20+rnd(v,i*7+3)*57,r=rnd(v,i*7+4),s=3+rnd(v,i*7+5)*7,style=col;let k=kind;if(k==='mixed')k=kinds[Math.floor(rnd(v,i*11+70)*5)];if(k==='leaf')leaf(x,y,s*1.15,r,style);else if(k==='stone')stone(x,y,s,r,style);else if(k==='twig')twig(x,y,s*3.1,r,style);else if(k==='mushroom')mushroom(x,y,s*1.8,r,style);else moss(x,y,s*1.5,r,style,v)}g.restore()}
  S.clutterAtlas.set(type,cv);return cv
 }
 function decorFootprint(kind){return kind==='tree'||kind==='dead'?1.9:kind==='rock'?1.35:kind==='bush'?1.05:kind==='stone'?.7:.45}
@@ -2586,7 +3407,7 @@ function ensureDecorationChunk(w,cx,cy){
 }
 function visibleDecorationObjects(w,rc){
  if(!S.playMode&&!S.editorDecorationsEnabled)return[];
- const l=zoomTileLayout(w),screenPad=MathX.clamp(UI.number('cameraCullMargin',10),-800,1200),sourceBounds=isoVisibleBoundsWithMargin(w,rc,l,Math.max(0,screenPad)+Math.max(l.diamondW,l.diamondH)*S.zoom*3),a=[],extraChunks=2;
+ const l=zoomTileLayout(w),screenPad=MathX.clamp(UI.number('cameraCullMargin',-30),-800,1200),sourceBounds=isoVisibleBoundsWithMargin(w,rc,l,Math.max(0,screenPad)+Math.max(l.diamondW,l.diamondH)*S.zoom*3),a=[],extraChunks=2;
  const q=[],minCY=Math.floor(sourceBounds.y0/S.chunkSize)-extraChunks,maxCY=Math.floor(Math.max(sourceBounds.y0,sourceBounds.y1-1)/S.chunkSize)+extraChunks,minCX=Math.floor(sourceBounds.x0/S.chunkSize)-extraChunks,maxCX=Math.floor(Math.max(sourceBounds.x0,sourceBounds.x1-1)/S.chunkSize)+extraChunks;
  for(let cy=minCY;cy<=maxCY;cy++)for(let cx=minCX;cx<=maxCX;cx++)q.push({x:cx,y:cy});
  const globalScale=MathX.clamp(UI.number('decorationScale',200),50,300)/100;
@@ -2628,11 +3449,11 @@ function lowDecorationChunkCanvas(w,cx,cy){
   g.beginPath();g.moveTo(baseX,baseY-clipH*.5);g.lineTo(baseX+clipW*.5,baseY);g.lineTo(baseX,baseY+clipH*.5);g.lineTo(baseX-clipW*.5,baseY);g.closePath();g.clip();
   g.translate(baseX,baseY);g.scale(d.mirror?-1:1,1);
   if(d.kind==='grass'){
-   const im=getTintedGrassAtlas(d.tintType,d.materialRole||'grass'),h=l.diamondH*.82*d.scale*globalScale,ww=h*2.25,sx=(d.variant||0)*64;
-   g.drawImage(im,sx,0,64,48,-ww/2,-h,ww,h);
+   const im=getTintedGrassAtlas(d.tintType,d.materialRole||'grass'),h=l.diamondH*.82*d.scale*globalScale,ww=h*2.25,v=(d.variant||0)&3,sx=(v%2)*64,sy=Math.floor(v/2)*48;
+   g.drawImage(im,sx,sy,64,48,-ww/2,-h,ww,h);
   }else{
-   const im=buildClutterAtlas(d.tintType),h=l.diamondH*.42*d.scale*globalScale,ww=l.diamondW*.62*d.scale*globalScale,sx=(d.variant||0)*128;
-   g.drawImage(im,sx,0,128,88,-ww/2,-h,ww,h);
+   const im=buildClutterAtlas(d.tintType),h=l.diamondH*.42*d.scale*globalScale,ww=l.diamondW*.62*d.scale*globalScale,v=(d.variant||0)%36,sx=(v%6)*128,sy=Math.floor(v/6)*88;
+   g.drawImage(im,sx,sy,128,88,-ww/2,-h,ww,h);
   }
   g.restore();
  }
@@ -2709,41 +3530,33 @@ function cameraTargetOnPlayer(zoom=S.zoom){const r=canvas.getBoundingClientRect(
 function centerCameraOnPlayer(immediate=true){if(!S.world||!S.player)return;const target=cameraTargetOnPlayer();if(immediate){S.panX=target.panX;S.panY=target.panY}else S.cameraFlight={fromX:S.panX,fromY:S.panY,fromZoom:S.zoom,toX:target.panX,toY:target.panY,toZoom:target.zoom,start:performance.now(),duration:850}}
 function nearestPlayableCell(x,y,maxRadius=80){const c=S.world?.cellDataMap||S.world?.zoomTileCache;if(!c)return firstPlayableCell(S.world);const l=c.l,tx=MathX.clamp(Math.floor(x),0,l.isoCols-1),ty=MathX.clamp(Math.floor(y),0,l.isoRows-1);for(let r=0;r<=maxRadius;r++)for(let yy=Math.max(0,ty-r);yy<=Math.min(l.isoRows-1,ty+r);yy++)for(let xx=Math.max(0,tx-r);xx<=Math.min(l.isoCols-1,tx+r);xx++){if(Math.abs(xx-tx)!==r&&Math.abs(yy-ty)!==r)continue;if(c.active[yy*l.isoCols+xx]&&!decorationBlocksPlayer(xx+.5,yy+.5))return{x:xx+.5,y:yy+.5}}return firstPlayableCell(S.world)}
 function cameraCenterCell(){const r=canvas.getBoundingClientRect(),l=zoomTileLayout(S.world),wx=(r.width*.5-S.panX)/Math.max(.001,S.zoom),wy=(r.height*.5-S.panY)/Math.max(.001,S.zoom),dx=wx-(l.originX+l.diamondW*.5),dy=wy-(l.originY+l.diamondH*.5);return{x:dx/l.diamondW+dy/l.diamondH,y:dy/l.diamondH-dx/l.diamondW}}
-function playZoomFor15Tiles(){
- const r=canvas.getBoundingClientRect(),l=isoLayout(S.world),targetTiles=20;
- return MathX.clamp(r.width/Math.max(1,targetTiles*l.diamondW),.04,8)
-}
+function playZoomFor15Tiles(){const r=canvas.getBoundingClientRect(),l=zoomTileLayout(S.world),usable=Math.max(320,r.width-40);return MathX.clamp(usable/Math.max(.01,l.diamondW*15),.75,64)}
 function updatePlayButtons(){const btn=$('play');if(btn)btn.textContent=S.player?'▶ Продолжить':'▶ Играть'}
 function enterPlayMode(planAlreadyBuilt=false,startAtCamera=false){
  if(!S.world||!S.world.virtualPlanReady){S.pendingPlay=true;S.pendingPlayAtCamera=startAtCamera;S.buildMode='play';setLoading(true,'Создание виртуального мира');requestAnimationFrame(()=>setTimeout(()=>generate(false,true),0));return}
- if(!S.playMode)S.editorCamera=Object.freeze({zoom:S.zoom,panX:S.panX,panY:S.panY});
- const hadPlayer=!!S.player,firstPlay=!S.hasEnteredPlay;
+ if(!S.playMode)S.editorCamera={zoom:S.zoom,panX:S.panX,panY:S.panY};
+ const hadPlayer=!!S.player;
  if(startAtCamera){const c=cameraCenterCell(),p=nearestPlayableCell(c.x,c.y);S.player={x:p.x,y:p.y,dir:1,speed:8.5};S.playCamera=null}
  else if(!S.player){const p=firstPlayableCell(S.world);S.player={x:p.x,y:p.y,dir:1,speed:8.5}}
  S.playMode=true;document.body.classList.add('play-mode');updatePlayButtons();S.cameraFlight=null;$('playStatus').textContent='WASD · M карта · Space ms';
  requestAnimationFrame(()=>{
-  const r=canvas.getBoundingClientRect(),l=isoLayout(S.world);
-  if(!firstPlay&&hadPlayer&&!startAtCamera&&S.playCamera){
+  if(hadPlayer&&!startAtCamera&&S.playCamera){
    S.zoom=S.playCamera.zoom;S.panX=S.playCamera.panX;S.panY=S.playCamera.panY;
   }else{
-   const z=playZoomFor15Tiles(),p=isoDiamondPoint(S.world,S.player.x,S.player.y,l);
-   S.zoom=z;S.panX=r.width*.5-p.x*z;S.panY=r.height*.58-p.y*z;S.playCamera=null;
+   const r=canvas.getBoundingClientRect(),l=zoomTileLayout(S.world),z=playZoomFor15Tiles(),p=isoDiamondPoint(S.world,S.player.x,S.player.y,l);
+   S.zoom=z;S.panX=r.width*.5-p.x*z;S.panY=r.height*.58-p.y*z;
   }
-  S.hasEnteredPlay=true;refreshActiveChunks();draw();
+  refreshActiveChunks();draw();
  });
 }
 function materializeEditorFromSession(){if(!S.world||!S.world.playPlanOnly)return;setLoading(true,'Подготовка редактора из текущей сессии');buildCascadeLOD(S.world,true);rebuildIsoLayerCache(S.world);S.world.playPlanOnly=false;S.editorMaterialized=true;setLoading(false)}
 function exitPlayMode(){
  if(S.playMode)S.playCamera={zoom:S.zoom,panX:S.panX,panY:S.panY};
- const saved=S.editorCamera?{zoom:S.editorCamera.zoom,panX:S.editorCamera.panX,panY:S.editorCamera.panY}:null;
- S.playMode=false;S.worldMapOpen=false;S.gameKeys.clear();
- document.body.classList.remove('play-mode');$('worldMapOverlay').classList.remove('visible');
+ const saved=S.editorCamera?Object.freeze({...S.editorCamera}):null;
+ S.playMode=false;S.worldMapOpen=false;S.gameKeys.clear();document.body.classList.remove('play-mode');$('worldMapOverlay').classList.remove('visible');
  materializeEditorFromSession();S.editorDecorationsEnabled=true;S.cameraFlight=null;
- const restore=()=>{
-  if(saved){S.zoom=saved.zoom;S.panX=saved.panX;S.panY=saved.panY}
-  updatePlayButtons();draw();
- };
- restore();requestAnimationFrame(restore);setTimeout(restore,50)
+ const apply=()=>{if(saved){S.zoom=saved.zoom;S.panX=saved.panX;S.panY=saved.panY}updatePlayButtons();draw()};
+ apply();requestAnimationFrame(()=>{apply();requestAnimationFrame(apply)});setTimeout(apply,60)
 }
 function toggleWorldMap(){if(!S.playMode||!S.world)return;S.worldMapOpen=!S.worldMapOpen;$('worldMapOverlay').classList.toggle('visible',S.worldMapOpen);if(S.worldMapOpen)drawWorldMap()}
 function buildWorldMapCache(){
@@ -2803,7 +3616,7 @@ function updatePlay(dt){
 }
 function buildHudReport(){
  if(!S.world||!S.player)return'';const i=playerCellIndex(S.player.x,S.player.y),c=S.world.cellDataMap||S.world.zoomTileCache,biome=i>=0?BIOME_NAMES[c.type[i]]:'—',role=i>=0?MATERIAL_ID_ROLES[c.roleDetailed[i]]:'—',p=S.frameProfile,cx=Math.floor(S.player.x/S.chunkSize),cy=Math.floor(S.player.y/S.chunkSize);
- return `Godgrave World v8.12
+ return `Godgrave World v8.8
 FPS: ${S.fps.toFixed(1)}
 Frame: ${p.total.toFixed(2)} ms
 Render: ${p.draw.toFixed(2)} ms
@@ -2816,7 +3629,12 @@ Draw calls: ${S.drawCalls||0}
 Visible tile draws: ${S.visibleTilesDrawn||0}
 Visible chunk draws: ${S.visibleChunksDrawn||0}
 Active chunks: ${S.activeChunks.size}
-Environment cache: ${S.environmentChunks.size}
+Environment mip: ${S.environmentMipLevel}
+Environment master: ${w.isoEnvironmentMasterCanvas?.width||0}×${w.isoEnvironmentMasterCanvas?.height||0}
+Environment visible chunks: ${S.environmentMipVisible}
+Environment cache: ${S.environmentMipCache.size}
+Environment baked/frame: ${S.environmentMipBakedThisFrame}
+Environment bake ms: ${S.environmentMipBakeMs.toFixed(2)}
 Low decor cache: ${S.lowDecorChunks.size}
 Dynamic visible: ${S.visibleDynamic||0}
 Player chunk: ${cx}, ${cy}
@@ -2885,8 +3703,8 @@ if(worldMapCanvasEl){
 
 UI.on('minimapZoom','input',()=>{S.mapZoom=MathX.clamp(UI.number('minimapZoom',100)/100,1,5);$('minimapZoomValue').textContent=Math.round(S.mapZoom*100)+'%';if(S.worldMapOpen)drawWorldMap()});
 UI.on('minimapShade','change',()=>{S.mapShaded=UI.checked('minimapShade',true);S.worldMapCache=null;S.worldMapCacheKey=null;if(S.worldMapOpen)drawWorldMap()});
-UI.on('cameraCullMargin','input',()=>{$('cameraCullMarginValue').textContent=UI.number('cameraCullMargin',10)+' px';draw()});
-UI.on('groundCullMargin','input',()=>{$('groundCullMarginValue').textContent=UI.number('groundCullMargin',-190)+' px';draw()});
+UI.on('cameraCullMargin','input',()=>{$('cameraCullMarginValue').textContent=UI.number('cameraCullMargin',-30)+' px';draw()});
+UI.on('groundCullMargin','input',()=>{$('groundCullMarginValue').textContent=UI.number('groundCullMargin',-60)+' px';draw()});
 
 window.addEventListener('keydown',e=>{if(!S.playMode)return;if(e.code==='Space'){e.preventDefault();S.showFrameProfile=true;draw();return}const arrows={ArrowUp:'KeyW',ArrowDown:'KeyS',ArrowLeft:'KeyA',ArrowRight:'KeyD'};if(e.code==='KeyM'||e.key?.toLowerCase()==='m'||e.key?.toLowerCase()==='ь'||e.code==='Tab'){e.preventDefault();e.stopPropagation();toggleWorldMap();return}if(e.code==='Escape'){e.preventDefault();if(S.worldMapOpen)toggleWorldMap();else exitPlayMode();return}const code=arrows[e.code]||e.code;if(['KeyW','KeyA','KeyS','KeyD'].includes(code)){e.preventDefault();S.gameKeys.add(code)}},true);
 window.addEventListener('keyup',e=>{if(e.code==='Space'){S.showFrameProfile=false;draw();return}const arrows={ArrowUp:'KeyW',ArrowDown:'KeyS',ArrowLeft:'KeyA',ArrowRight:'KeyD'};S.gameKeys.delete(arrows[e.code]||e.code)},true);
@@ -2896,6 +3714,57 @@ UI.on('scaleBalance','input',()=>UI.text('scaleBalanceValue',UI.value('scaleBala
 UI.initButtonClasses();
 setGroundMode('texture');updateTileButton();loadGroundAtlas('B');loadGroundAtlas('D');loadBiomeAtlas();
 </script>
+
+<button id="envTilePanelButton" type="button" title="Настройки плашек окружения (G)">Плашки окружения · G</button>
+<section id="envTilePanel" aria-label="Настройки тестовой текстуры окружения">
+ <div class="envPanelHead">
+  <strong>Тест окружения · один trim</strong>
+  <button id="envTilePanelClose" type="button">✕</button>
+ </div>
+ <div class="envPanelGrid">
+  <label>Trim атласа
+   <select id="envMaskBiomePanel">
+    <option value="0">0</option><option value="1">1</option><option value="2">2</option>
+    <option value="3">3</option><option value="4">4</option><option value="5">5</option>
+    <option value="6">6</option><option value="7">7</option><option value="8">8</option>
+   </select>
+  </label>
+  <label>Размер паттерна <output id="envPatternScaleOut">100%</output>
+   <input id="envPatternScalePanel" type="range" min="10" max="500" step="5" value="100">
+  </label>
+  <label>Затемнение <output id="envDarkOut">20%</output>
+   <input id="envDarkPanel" type="range" min="0" max="90" step="1" value="20">
+  </label>
+  <label>Яркость <output id="envBrightOut">100%</output>
+   <input id="envBrightPanel" type="range" min="20" max="250" step="1" value="100">
+  </label>
+  <label>Насыщенность <output id="envSaturationOut">100%</output>
+   <input id="envSaturationPanel" type="range" min="0" max="250" step="1" value="100">
+  </label>
+  <label>Прозрачность <output id="envAlphaOut">100%</output>
+   <input id="envAlphaPanel" type="range" min="0" max="100" step="1" value="100">
+  </label>
+  <label><span>Пространственные мипы</span><input id="envSpatialMipsPanel" type="checkbox" checked></label>
+  <label><span>Зафиксировать текущий Mip</span><input id="envMipLockPanel" type="checkbox"></label>
+  <label><span>Рамки чанков</span><input id="envChunkBoundsPanel" type="checkbox"></label>
+  <label><span>Маска без фильтрации</span><input id="envMaskStampPanel" type="checkbox"></label>
+  <label><span>Все чанки через маску</span><input id="envForceMaskPanel" type="checkbox"></label>
+  <label>Плавность границы маски <output id="envMaskBlurOut">2 px</output>
+   <input id="envMaskBlurPanel" type="range" min="0" max="24" step="1" value="2">
+  </label>
+  <label>Отсечение <output id="envCullOut">0 px</output>
+   <input id="envCullPanel" type="range" min="-300" max="800" step="10" value="0">
+  </label>
+  <div id="envChunkStats" style="font:11px/1.45 ui-monospace;opacity:.85">Mip — · чанки —</div>
+  <div style="display:grid;grid-template-columns:96px 1fr;gap:8px;align-items:center">
+   <canvas id="envTrimPreview" width="96" height="96" style="width:96px;height:96px;border:1px solid #65717b;background:#111"></canvas>
+   <div id="envBoundsInfo" style="font:11px/1.45 ui-monospace;opacity:.8">ISO bounds: —</div>
+  </div>
+  <div id="envTrimInfo" style="font:12px ui-monospace;opacity:.8">Атлас 3×3 · trim 0</div>
+  <button id="envClearCachePanel" type="button">Перестроить тестовый слой</button>
+ </div>
+</section>
+
 </body></html>
 
 <style>
