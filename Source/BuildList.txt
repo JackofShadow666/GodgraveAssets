@@ -1,5 +1,5 @@
 ; –°–ø–∏—Å–æ–∫ —Ñ–∞–π–ª–æ–≤ –∏–∑ –ø–∞–ø–æ–∫ Music –∏ Sound
-; –°–æ–∑–¥–∞–Ω–æ: 31.07.2026 17:50:46
+; –°–æ–∑–¥–∞–Ω–æ: 04.08.2026 2:41:02
 ; –ö–æ—Ä–Ω–µ–≤–∞—è –ø–∞–ø–∫–∞: F:\Jack\Project\Godgrave\Public\Godgrave\Source
 
 === –ü–∞–ø–∫–∞: Music ===
@@ -313,6 +313,14 @@ Source\Env\Editor\AGENTS.md
 Source\Env\Editor\Editor.html
 Source\Env\Editor\MAP.md
 Source\Env\Editor\WorldMapGenerator.html
+Source\Env\Editor\WorldMapGeneratorOLD.html
+Source\Env\Foliadge\ChatGPT Image 4 ‡‚„. 2026 „., 01_12_14.png
+Source\Env\Foliadge\ChatGPT Image 4 ‡‚„. 2026 „., 01_12_36 (1).png
+Source\Env\Foliadge\ChatGPT Image 4 ‡‚„. 2026 „., 01_12_36 (2).png
+Source\Env\Foliadge\ChatGPT Image 4 ‡‚„. 2026 „., 01_12_41.png
+Source\Env\Foliadge\ChatGPT Image 4 ‡‚„. 2026 „., 01_12_49.png
+Source\Env\Foliadge\ChatGPT Image 4 ‡‚„. 2026 „., 01_12_57.png
+Source\Env\Foliadge\ChatGPT Image 4 ‡‚„. 2026 „., 01_13_10.png
 Source\Env\Foliadge\T_Env_Bush_01.png
 Source\Env\Foliadge\T_Env_Bush_02.png
 Source\Env\Foliadge\T_Env_Bush_03.png
@@ -334,10 +342,13 @@ Source\Env\Foliadge\T_Env_TreeDead_01.png
 Source\Env\Foliadge\T_Env_TreeDead_02.png
 Source\Env\Foliadge\T_Env_TreeLeaf_01.png
 Source\Env\Foliadge\T_Env_TreeLeaf_02.png
+Source\Env\Foliadge\T_Env_TreePine.png
 Source\Env\Foliadge\T_Env_TreePine_01.png
 Source\Env\Foliadge\T_Env_TreePine_02.png
 Source\Env\Foliadge\T_Env_TreePine_03.png
 Source\Env\Foliadge\T_Env_TreePine_04.png
+Source\Env\Foliadge\T_Env_Tree_Swamp.json
+Source\Env\Foliadge\T_Env_Tree_Swamp.png
 Source\Env\Terrain\TerrainAtlas.png
 Source\Env\Terrain\TerrainAtlas.psd
 Source\Env\Terrain\TerrainAtlasB.png
