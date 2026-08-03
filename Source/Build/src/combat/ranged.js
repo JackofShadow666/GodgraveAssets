@@ -1538,7 +1538,7 @@ function updateCrossbowReloadSound(ent){
 // Updates all projectiles: movement, blocking by blade/shield, damage to entities.
 function updateProjectiles(dt){
   const step = $.M.step(dt);
-  const BOUND_L = 40, BOUND_R = W-80, BOUND_T = 40, BOUND_B = H-40;
+  const BOUND_L = 40, BOUND_R = WORLD_W-80, BOUND_T = 40, BOUND_B = WORLD_H-40;
   for(let i = PROJECTILES.length-1; i >= 0; i--){
     const w = PROJECTILES[i];
     w.x += w.vx*step; w.y += w.vy*step;
@@ -1861,7 +1861,7 @@ function updateCrossbowBotAI(dt, bot){
     } else {
       if(prevMode !== 'wander') bot._cbWanderTarget = null;
       if(bot._cbWanderTarget == null || Math.hypot(bot._cbWanderTarget.x-bot.x, bot._cbWanderTarget.y-bot.y) < 40){
-        bot._cbWanderTarget = { x: randRange(60, W-100), y: randRange(60, H-60) };
+        bot._cbWanderTarget = { x: randRange(60, WORLD_W-100), y: randRange(60, WORLD_H-60) };
       }
       const wdx = bot._cbWanderTarget.x-bot.x, wdy = bot._cbWanderTarget.y-bot.y;
       const wl = Math.hypot(wdx,wdy) || 1;
@@ -1870,7 +1870,7 @@ function updateCrossbowBotAI(dt, bot){
     }
     // ─── WALL AVOIDANCE ──────────────────────────────────────────────
     const WALL_MARGIN = 130;
-    const _bl=40, _br=W-80, _bt=40, _bb=H-40;
+    const _bl=40, _br=WORLD_W-80, _bt=40, _bb=WORLD_H-40;
     const dL=bot.x-_bl, dR=_br-bot.x, dT=bot.y-_bt, dB=_bb-bot.y;
     let wallX=0, wallY=0;
     if(dL<WALL_MARGIN) wallX += (WALL_MARGIN-dL)/WALL_MARGIN;
@@ -1907,8 +1907,8 @@ function updateCrossbowBotAI(dt, bot){
   bot.vy = $.M.lerpDT(bot.vy, my*maxV, 0.16, dt);
   bot.vx = $.M.clamp(bot.vx,-15,15); bot.vy = $.M.clamp(bot.vy,-15,15);
   const step = $.M.step(dt);
-  bot.x = $.M.clamp(bot.x+bot.vx*step, 40, W-80);
-  bot.y = $.M.clamp(bot.y+bot.vy*step, 40, H-40);
+  bot.x = $.M.clamp(bot.x+bot.vx*step, 40, WORLD_W-80);
+  bot.y = $.M.clamp(bot.y+bot.vy*step, 40, WORLD_H-40);
   resolveBoxCollision(bot);
 
 // The rest of updateCrossbowBotAI is handled by updateDummy(), so we don't
@@ -2045,8 +2045,8 @@ if(magicAI.state === 'charging'){
   bot.vx = $.M.lerpDT(bot.vx, 0, 0.9, dt);
   bot.vy = $.M.lerpDT(bot.vy, 0, 0.9, dt);
   const step = $.M.step(dt);
-  bot.x = $.M.clamp(bot.x + bot.vx*step, 40, W-80);
-  bot.y = $.M.clamp(bot.y + bot.vy*step, 40, H-40);
+  bot.x = $.M.clamp(bot.x + bot.vx*step, 40, WORLD_W-80);
+  bot.y = $.M.clamp(bot.y + bot.vy*step, 40, WORLD_H-40);
   bot.angle = aimAngle;
   drainStamina(bot, 15 * dt);
   
@@ -2213,8 +2213,8 @@ bot.vy = $.M.lerpDT(bot.vy, my*maxV, 0.2, dt);
 bot.vx = $.M.clamp(bot.vx,-15,15); bot.vy = $.M.clamp(bot.vy,-15,15);
 if(!bot._wandCharging){
   const step = $.M.step(dt);
-  bot.x = $.M.clamp(bot.x+bot.vx*step, 40, W-80);
-  bot.y = $.M.clamp(bot.y+bot.vy*step, 40, H-40);
+  bot.x = $.M.clamp(bot.x+bot.vx*step, 40, WORLD_W-80);
+  bot.y = $.M.clamp(bot.y+bot.vy*step, 40, WORLD_H-40);
 }
 
 // ─── FIRE LOGIC ──────────────────────────────────────────────────────────

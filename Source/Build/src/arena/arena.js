@@ -26,8 +26,8 @@ function pickArenaBackground(){
 
 function buildArena(){
   arenaCanvas = document.createElement('canvas');
-  arenaCanvas.width  = W;
-  arenaCanvas.height = H;
+  arenaCanvas.width  = WORLD_W;
+  arenaCanvas.height = WORLD_H;
   arenaCtx = arenaCanvas.getContext('2d');
   const ac = arenaCtx;
 
@@ -48,15 +48,15 @@ function buildArena(){
     const imgBrightness = 0.3 + t * 1.3;
     ac.filter = `brightness(${imgBrightness})`;
     const ir = arenaBgImg.naturalWidth / arenaBgImg.naturalHeight;
-    const cr = W / H;
+    const cr = WORLD_W / WORLD_H;
     let dw, dh, dx, dy;
-    if(ir > cr){ dh = H; dw = H*ir; dx = (W-dw)/2; dy = 0; }
-    else { dw = W; dh = W/ir; dx = 0; dy = (H-dh)/2; }
+    if(ir > cr){ dh = WORLD_H; dw = WORLD_H*ir; dx = (WORLD_W-dw)/2; dy = 0; }
+    else { dw = WORLD_W; dh = WORLD_W/ir; dx = 0; dy = (WORLD_H-dh)/2; }
     ac.drawImage(arenaBgImg, dx, dy, dw, dh);
     ac.restore();
   } else {
     ac.fillStyle = `rgb(${bgR},${bgG},${bgB})`;
-    ac.fillRect(0,0,W,H);
+    ac.fillRect(0,0,WORLD_W,WORLD_H);
   }
 
   // Сетка — отдельный ползунок яркости/прозрачности
@@ -74,20 +74,31 @@ function buildArena(){
   }
   ac.strokeStyle=`rgba(${Math.min(255,Math.round(gridR*gridBright))},${Math.min(255,Math.round(gridG*gridBright))},${Math.min(255,Math.round(gridB*gridBright))},${gridAlpha})`;
   ac.lineWidth=1;
-  for(let x=0;x<W;x+=55){ ac.beginPath(); ac.moveTo(x,0); ac.lineTo(x,H); ac.stroke(); }
-  for(let y=0;y<H;y+=55){ ac.beginPath(); ac.moveTo(0,y); ac.lineTo(W,y); ac.stroke(); }
+  for(let x=0;x<WORLD_W;x+=55){ ac.beginPath(); ac.moveTo(x,0); ac.lineTo(x,WORLD_H); ac.stroke(); }
+  for(let y=0;y<WORLD_H;y+=55){ ac.beginPath(); ac.moveTo(0,y); ac.lineTo(WORLD_W,y); ac.stroke(); }
 
   // Виньетка по краям (затемнение) — оставляем как было
-  const v=ac.createRadialGradient(W/2,H/2,H*0.2,W/2,H/2,H*0.85);
-  v.addColorStop(0,'transparent'); v.addColorStop(1,'rgba(0,0,0,0.55)');
-  ac.fillStyle=v; ac.fillRect(0,0,W,H);
-
   arenaDirty = false;
 }
 
 function drawArena(){
   if(arenaDirty || !arenaCanvas) buildArena();
   ctx.drawImage(arenaCanvas, 0, 0);
+}
+
+function drawScreenVignette(){
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  const cx = W / 2;
+  const cy = H / 2;
+  const inner = Math.min(W, H) * 0.34;
+  const outer = Math.hypot(W, H) * 0.62;
+  const v = ctx.createRadialGradient(cx, cy, inner, cx, cy, outer);
+  v.addColorStop(0, 'rgba(0,0,0,0)');
+  v.addColorStop(1, 'rgba(0,0,0,0.55)');
+  ctx.fillStyle = v;
+  ctx.fillRect(0, 0, W, H);
+  ctx.restore();
 }
 
 // ── ЛЁГКИЙ AI ДЛЯ "НЕ-УМНЫХ" БОТОВ (все, кроме текущего D) ────────────────────
@@ -140,8 +151,8 @@ botUpdateExhaustion(bot, dt);
   }
   bot.vx = $.M.clamp(bot.vx,-15,15); bot.vy = $.M.clamp(bot.vy,-15,15);
   const step = $.M.step(dt);
-  bot.x = $.M.clamp(bot.x+bot.vx*step, 40, W-80);
-  bot.y = $.M.clamp(bot.y+bot.vy*step, 40, H-40);
+  bot.x = $.M.clamp(bot.x+bot.vx*step, 40, WORLD_W-80);
+  bot.y = $.M.clamp(bot.y+bot.vy*step, 40, WORLD_H-40);
   resolveBoxCollision(bot);
 
   bot._atkCD = (bot._atkCD||0) - dt;
@@ -180,8 +191,8 @@ botUpdateExhaustion(bot, dt);
     bot._dvy = -Math.sin(angToPlayer)*8;
   }
   //if(bot._dvx||bot._dvy){
-  //  bot.x = $.M.clamp(bot.x+bot._dvx, 40, W-80);
-  //  bot.y = $.M.clamp(bot.y+bot._dvy, 40, H-40);
+  //  bot.x = $.M.clamp(bot.x+bot._dvx, 40, WORLD_W-80);
+  //  bot.y = $.M.clamp(bot.y+bot._dvy, 40, WORLD_H-40);
   //  bot._dvx = $.M.decay(bot._dvx, 0.85, dt);
   //  bot._dvy = $.M.decay(bot._dvy, 0.85, dt);
   //  if(Math.hypot(bot._dvx,bot._dvy)<0.3){ bot._dvx=0; bot._dvy=0; }
@@ -218,8 +229,8 @@ function updateDummy(dt, bot){
     bot.vx = $.M.lerpDT(bot.vx, 0, 0.9, dt);
     bot.vy = $.M.lerpDT(bot.vy, 0, 0.9, dt);
     const step = $.M.step(dt);
-    bot.x = $.M.clamp(bot.x + bot.vx * step, 40, W-80);
-    bot.y = $.M.clamp(bot.y + bot.vy * step, 40, H-40);
+    bot.x = $.M.clamp(bot.x + bot.vx * step, 40, WORLD_W-80);
+    bot.y = $.M.clamp(bot.y + bot.vy * step, 40, WORLD_H-40);
     return;
   }
   
@@ -242,8 +253,8 @@ function updateDummy(dt, bot){
     bot.vx = $.M.lerpDT(bot.vx, (dx/d) * maxV, 0.22, dt);
     bot.vy = $.M.lerpDT(bot.vy, (dy/d) * maxV, 0.22, dt);
     const step = $.M.step(dt);
-    bot.x = $.M.clamp(bot.x + bot.vx*step, 40, W-80);
-    bot.y = $.M.clamp(bot.y + bot.vy*step, 40, H-40);
+    bot.x = $.M.clamp(bot.x + bot.vx*step, 40, WORLD_W-80);
+    bot.y = $.M.clamp(bot.y + bot.vy*step, 40, WORLD_H-40);
     return;
   }
   
@@ -308,8 +319,8 @@ function updateDummy(dt, bot){
     }
     bot.vx = $.M.clamp(bot.vx, -15, 15); bot.vy = $.M.clamp(bot.vy, -15, 15);
     const step = $.M.step(dt);
-    bot.x = $.M.clamp(bot.x + bot.vx*step, 40, W-80);
-    bot.y = $.M.clamp(bot.y + bot.vy*step, 40, H-40);
+    bot.x = $.M.clamp(bot.x + bot.vx*step, 40, WORLD_W-80);
+    bot.y = $.M.clamp(bot.y + bot.vy*step, 40, WORLD_H-40);
     resolveBoxCollision(bot);
   }
 
@@ -974,7 +985,8 @@ function drawSword(pivX, pivY, angle){
   const meleePoseActive = $.A.meleeHold(P, mDown);
   let shapeRot = 0;
   if(!meleePoseActive){
-    const dx = mX - W/2, dy = mY - H/2;
+    const ms = worldToScreen(mX, mY);
+    const dx = ms.x - W/2, dy = ms.y - H/2;
     const halfDiag = Math.hypot(W, H) / 2;
     const t = $.M.clamp((dx - dy) / halfDiag, -1, 1);
     const amplitude = sv('srot') * Math.PI / 180;
@@ -1276,8 +1288,11 @@ function _drawDummySword(){
   // хит-флеш бота
   if(dummyOn && bot.hitFlash > GameTime){
     const flashAlphaD = Math.min(0.25, (bot.hitFlash - GameTime) / 0.25 * 0.25);
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.fillStyle=`rgba(255,40,40,${flashAlphaD})`;
     ctx.fillRect(0,0,W,H);
+    ctx.restore();
   }
 }
 
@@ -1289,10 +1304,11 @@ function _drawDummySword(){
 
 function drawCursor(){
   if(window._keyboardCrosshairVisible === false) return;
+  const cx = mouseScreenX, cy = mouseScreenY;
   ctx.strokeStyle=mDown?'rgba(220,160,60,0.85)':'rgba(100,190,255,0.65)'; ctx.lineWidth=1.5;
-  ctx.beginPath(); ctx.moveTo(mX-9,mY); ctx.lineTo(mX+9,mY); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(mX,mY-9); ctx.lineTo(mX,mY+9); ctx.stroke();
-  ctx.beginPath(); ctx.arc(mX,mY,5,0,Math.PI*2); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx-9,cy); ctx.lineTo(cx+9,cy); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx,cy-9); ctx.lineTo(cx,cy+9); ctx.stroke();
+  ctx.beginPath(); ctx.arc(cx,cy,5,0,Math.PI*2); ctx.stroke();
 
   // debug удалён
 

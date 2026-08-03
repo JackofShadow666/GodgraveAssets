@@ -46,7 +46,7 @@ First read for most `src/` tasks. Use it to avoid broad project searches.
 
 ## Core
 
-- `src/core/engine.js`: canvas, viewport, base input state, global runtime primitives.
+- `src/core/engine.js`: canvas, viewport, world/camera coordinates, base input state, global runtime primitives.
 - `src/core/settings.js`: settings definitions/bindings, saved values, `sv(...)` access.
 - `src/core/math.js`: geometry, interpolation, angle/vector helpers.
 - `src/core/entity.js`: entity helpers/shared structure.
@@ -81,7 +81,7 @@ First read for most `src/` tasks. Use it to avoid broad project searches.
 - Local PvP/control slots/factions: `src/input/player-controls.js` and `src/combat/factions.js` together.
 - Mobile-only bug: `src/ui/mobile.js`, then the gameplay file it triggers.
 - Online-only bug: relevant `src/network/net-*.js`, then the gameplay owner file.
-- Arena/camera/character drawing: `src/arena/arena.js`, then `src/main.js`.
+- Arena/camera/character drawing: `src/core/engine.js` for world/camera coordinates, then `src/arena/arena.js`, then `src/main.js`.
 - Visual effects/blood/hit text: `src/systems/fx.js`, then `src/network/net-effects.js` if online differs.
 - Audio/music/sfx: `src/systems/audio.js`.
 - Sprites/assets/missing image: `src/systems/sprites.js`, then `src/core/i18n.js` for missing-file text.

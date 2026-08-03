@@ -2764,6 +2764,15 @@ function drawFXEffects(){
     if(fx.followEntity){
       const piv = $.POS.pivot(fx.followEntity);
       fx_x = piv.x; fx_y = piv.y;
+      if(fx.followShield && typeof shieldCenter === 'function'){
+        const cursorX = fx.cursorX !== undefined ? fx.cursorX : (typeof mX !== 'undefined' ? mX : piv.x);
+        const sc = shieldCenter(fx.followEntity, cursorX);
+        if(sc){
+          fx_x = sc.x; fx_y = sc.y;
+          if(fx.followEntity.shield===3) fx_x += sc.side * (fx.followEntity._shieldW || 0) * 0.2;
+          if(fx.followEntity.shield===2) fx_x += sc.side * (fx.followEntity._shieldW || 0) * 0.2;
+        }
+      }
     }
     if(fx.type === 'blood'){
       fxDrawBlood(ctx,p,fx_x,fx_y,fx.angle);
@@ -3435,6 +3444,7 @@ const SFX_FOLDERS = {
   rage:           'Source/Sound/Rage/',
   bladeblind:     'Source/Sound/Shield/',
   shieldblock:    'Source/Sound/Shield/',
+  shieldPush:     'Source/Sound/ShieldPush/',
   uiHover:        'Source/Sound/Ui/',   // фильтр: Hover
   uiTap:          'Source/Sound/Ui/',   // фильтр: без Hover/Note/Death/Win/Pickup
   uiNote:         'Source/Sound/Ui/',   // фильтр: Note
@@ -3478,7 +3488,7 @@ let audioDBReady = false;
 // ?? КЛЮЧ ДЛЯ localStorage
 // ====================================================================
 const ASSETS_CACHE_KEY = 'godgrave_assets_list_v1';
-const ASSETS_VERSION = '1.0';
+const ASSETS_VERSION = '1.1';
 
 async function loadAudioDB() {
   // ====================================================================
@@ -3726,6 +3736,7 @@ $.S = $.S || {
   clashHard(){ return window['playSound']('clashHard'); },
   rage(){ return window['playSound']('rage'); },
   block(){ return window['playSound']('shieldblock'); },
+  shieldPush(){ return window['playSound']('shieldPush'); },
   dodge(){ return window['playSound']('dodgeSound'); },
   death(){ return window['playSound']('death'); },
   victory(){ return window['playSound']('victory'); },
@@ -8075,7 +8086,7 @@ function openSafeCounterWindow(defender){
     defender._safeCounterUntil = GameTime + SAFE_COUNTER_WINDOW;
   }
 }
-function blockStaminaCost(attacker, ignoreLmbExemption = false){
+function blockStaminaCost(attacker, ignoreLmbExemption = false, blockType = 'weapon'){
   // A successful block gives its defender 1.5 seconds to make a counterattack.
   // If that counterattack is blocked too, it costs no stamina.
   if(attacker && cb('safecounter') && (attacker._safeCounterUntil || 0) >= GameTime){
@@ -8084,7 +8095,8 @@ function blockStaminaCost(attacker, ignoreLmbExemption = false){
   }
   // Default cost: 2/3 of stamblock, scaled for bots.
   if(!ignoreLmbExemption && attacker === P && mDown) return 0;
-  return sv('stamblock') * (2 / 3) * (isBot(attacker) ? 1.2 : 1);
+  const shieldPlayerMult = blockType === 'shield' && attacker === P ? (1 / 3) : 1;
+  return sv('stamblock') * (2 / 3) * (isBot(attacker) ? 1.2 : 1) * shieldPlayerMult;
 }
 function disbalanceComboDebug(ent, text, col = '#ffcc44'){
   if(!cb('unbcombodbg') || ent !== P) return;
@@ -8703,7 +8715,7 @@ if (defender === D && attacker === P && typeof AI !== 'undefined' && AI.enabled 
                   _bl = Math.hypot(_bvx, _bvy) || 1;
             attacker.vx -= _bvx / _bl * 3;
             attacker.vy -= _bvy / _bl * 3;
-            const blockCost = blockStaminaCost(attacker);
+            const blockCost = blockStaminaCost(attacker, false, 'shield');
             drainStamina(attacker, blockCost);
             if(attacker.stamina <= 0 && !isExhausted(attacker)){
               applyExhaust(attacker);
@@ -12985,6 +12997,11 @@ function updateChargeShake(ent, dt){
     chargeStart = ent._bowChargeStart || 0;
     chargeTime = BOW_RELOAD;
     intensityMult = 0.8;
+  } else if(ent._shieldDashCharging) {
+    isCharging = true;
+    chargeStart = ent._shieldDashChargeStart || 0;
+    chargeTime = ent._shieldDashChargeMax || 3.0;
+    intensityMult = 1.6;
   }
   
   if(isCharging && chargeTime > 0) {
@@ -13533,11 +13550,26 @@ function drawShield(ent, cursorX){
   const _shBackMult = held ? 1.0 : 0.85;
   const _shWf = shW * _shExhMult * _shBackMult;
   const _shHf = shH * _shExhMult * _shBackMult;
+  const _dashCharging = ent._shieldDashCharging && held;
+  const _dashChargePower = Math.max(0, Math.min(1, ent._shieldDashChargePower || 0));
   ctx.save();
   ctx.globalAlpha = ent._shieldAlpha;
   ctx.translate(sc.x, sc.y + _shExhOffY);
+  if(_dashCharging){
+    const shake = (1 + _dashChargePower * 2.5);
+    ctx.translate(
+      (ent._chargeShakeX || 0) * shake,
+      (ent._chargeShakeY || 0) * shake
+    );
+    ctx.rotate((ent._chargeShakeAngle || 0) * 1.5);
+  }
   ctx.rotate(shieldAngle);
   if(imgReady){
+    if(_dashCharging){
+      ctx.shadowColor = '#60ccff';
+      ctx.shadowBlur = _dashChargePower * 50;
+    }
+    if(_dashCharging) ctx.globalAlpha = ent._shieldAlpha * (0.45 + _dashChargePower * 0.55);
     ctx.drawImage(img, -_shWf/2, -_shHf/2, _shWf, _shHf);
   } else {
     ctx.fillStyle = 'rgba(100,180,255,0.5)';
@@ -13946,6 +13978,10 @@ function update(dt){
   if(keys['a']||keys['ф']) mx=-1; if(keys['d']||keys['в']) mx=1;
   if(keys['w']||keys['ц']) my=-1; if(keys['s']||keys['ы']) my=1;
   if(mx||my){ const l=Math.hypot(mx,my); mx/=l; my/=l; }
+  if(P._shieldDashCharging){
+    mx = 0; my = 0;
+    P.vx = 0; P.vy = 0;
+  }
   
 // Stamina regeneration
 if(window.IS_MOBILE && GameTime < (P._shieldHeldUntil || 0) && P.shield>0 && !isExhausted(P) && P.stamina>0) P._shieldHeld = true;
@@ -14108,7 +14144,7 @@ const exhMult = getMod(P, 'moveSlow', 1);
   
   if(P._dvx||P._dvy){
     const impulseStep = decayingImpulseStep(dt);
-    if(P.shield>0 && typeof shieldDef==='function' && shieldDef(P)
+    if(P.shield>0 && (P._shieldDashBashActiveUntil||0) > GameTime && typeof shieldDef==='function' && shieldDef(P)
        && typeof shieldHeld==='function' && shieldHeld(P)
        && typeof D!=='undefined' && dummyOn){
       const _dodgeDist = Math.hypot(D.x-P.x, D.y-P.y);
@@ -14120,8 +14156,10 @@ const exhMult = getMod(P, 'moveSlow', 1);
       const _toward = _movDir_x*_toD_x + _movDir_y*_toD_y;
       if(_dodgeDist < 70 && _toward > 0.3 && !(P._shieldBodyHitCD > GameTime)){
         P._shieldBodyHitCD = GameTime + 0.5;
-        D.vx += _toD_x*5; D.vy += _toD_y*5;
+        const _chargePower = Math.max(0, Math.min(1, P._shieldDashChargePower || 0));
+        D.vx += _toD_x*(5 + _chargePower*5); D.vy += _toD_y*(5 + _chargePower*5);
         if(!isUnbalanced(D)) applyDisbalance(D, P);
+        P._shieldDashBashActiveUntil = 0;
         P.rage = Math.max(0, (P.rage||0) - 20);
         
         const _shDefBash = shieldDef(P);
@@ -14145,6 +14183,7 @@ const exhMult = getMod(P, 'moveSlow', 1);
           if(D.hp<=0 && typeof handleCombatDeath==='function') handleCombatDeath(D);
         }
         $.FX.hit({x:D.x,y:D.y-30,t: _spiked?(window.I18N?window.I18N.t('main.spikedBash'):'???? SPIKE BASH!'):(window.I18N?window.I18N.t('main.bash'):'?? BASH!'),life:45,big:true,col:'#60ccff'});
+        if(typeof FX_EFFECTS!=='undefined') FX_EFFECTS.push({type:'shieldwave', x:P.x, y:P.y, t:0, duration:22, angle:Math.atan2(_toD_y, _toD_x), followEntity:P, followShield:true, cursorX:mX});
         playSound?.('shieldblock');
         if(typeof triggerHitstop==='function') triggerHitstop(3,3);
       }
@@ -14468,10 +14507,15 @@ if (hasMod(P, 'weaponRecoil')) {
   const _flickPrevAngle = P._flickPrevAngle;
   P._realAngVel = _flickPrevAngle === undefined ? 0 : $.M.angDiff(_flickAimAngle, _flickPrevAngle) / Math.max(dt, 0.001);
   P._flickPrevAngle = _flickAimAngle;
+  const orbitSwingPenaltyReady = () => GameTime - (P._lastOrbitSwingPenaltyTime || -99) >= 1.3;
+  const markOrbitSwingPenalty = () => { P._lastOrbitSwingPenaltyTime = GameTime; };
   const _orbitDetected1 = updateOrbitDetect(P.angle, dt);
   if(_orbitDetected1 && !isExhausted(P) && $.NOT(P, 'flail')){
-    drainStamina(P, sv('stamorbit'));
-    if(P.stamina <= 0 && !isExhausted(P)) applyExhaust(P);
+    if(orbitSwingPenaltyReady()){
+      drainStamina(P, sv('stamorbit'));
+      markOrbitSwingPenalty();
+      if(P.stamina <= 0 && !isExhausted(P)) applyExhaust(P);
+    }
     $.FX.hit({x: rc.x + P.pvX, y: rc.y + P.pvY - 30, t:(window.I18N ? window.I18N.t('main.orbit') : 'ORBIT'), life:35,big:false,col:'#ff8840'});
     $.S.play('whoosh');
   }
@@ -14511,8 +14555,11 @@ if (hasMod(P, 'weaponRecoil')) {
               const costMult = Math.max(0.3, 1 / (1 + (botCount - 1) * 0.25));
               staminaCost = staminaCost * costMult;
             }
-            drainStamina(P, staminaCost*0.8);
-            if(P.stamina <= 0 && !isExhausted(P)) applyExhaust(P);
+            if(orbitSwingPenaltyReady()){
+              drainStamina(P, staminaCost*0.8);
+              markOrbitSwingPenalty();
+              if(P.stamina <= 0 && !isExhausted(P)) applyExhaust(P);
+            }
           }
           P._swingCD = GameTime + 1.0;
         }
@@ -14935,8 +14982,9 @@ window.addEventListener('keydown', e=>{
     return;
   }
   setKeyState(e, true);
-  if(e.code==='Space' && !e.repeat && typeof window.doDodge==='function'){
-    window.doDodge(true);
+  if(e.code==='Space' && !e.repeat){
+    if(typeof window.beginDodgePress==='function') window.beginDodgePress('Space');
+    else if(typeof window.doDodge==='function') window.doDodge(true);
   }
   if(k==='t'||k==='т'||k==='е') toggleDummy();  // T/т/е (rus. "е" is same physical key as T) = PAUSE
   if(k==='e'||k==='у'){ if(typeof tryManualPickup==='function') tryManualPickup(P); } // E/у = PICK UP WEAPON
@@ -14998,7 +15046,10 @@ if(k==='v'||k==='м'){ // bot weapon switch
   }
   if(lockBrowserKeys) e.preventDefault();
 });
-window.addEventListener('keyup',   e=>{ setKeyState(e, false); });
+window.addEventListener('keyup',   e=>{
+  setKeyState(e, false);
+  if(e.code==='Space' && typeof window.endDodgePress==='function') window.endDodgePress('Space');
+});
 window.addEventListener('resize',  ()=>{
   W=canvas.width = window.innerWidth;
   H=canvas.height = window.innerHeight;
@@ -15449,31 +15500,42 @@ window.doRestart=function(){
 
 
   // fireDodge — works on all devices (PC + mobile)
-  window.fireDodge=function(dx, dy, bypassCooldown){
+  window.fireDodge=function(dx, dy, bypassCooldown, chargedPower){
     if(typeof P==='undefined') return;
     if(!bypassCooldown&&window._dodgeCooldownMob>0) return;
     const len=Math.hypot(dx,dy)||1;
-    const force=8;
+    const charge = Math.max(0, Math.min(1, chargedPower || 0));
+    const force=8 + charge * 7;
     P._dvx=(dx/len)*force;
     P._dvy=(dy/len)*force;
     // "Active dodge" window — during it, swings don't cost stamina
-    P._dodgeActiveUntil = GameTime + 0.3;
+    P._dodgeActiveUntil = GameTime + 0.3 + charge * 0.12;
+    if(charge >= 0.5){
+      P._shieldDashBashActiveUntil = P._dodgeActiveUntil + 0.15;
+      P._shieldDashChargePower = charge;
+      P._shieldDashDirX = dx / len;
+      P._shieldDashDirY = dy / len;
+    }
     if((typeof shieldHeld === 'function' && shieldHeld(P)) || GameTime < (P._shieldHeldUntil || 0)){
       holdPlayerShieldUntil(P._dodgeActiveUntil + 0.5);
     }
     // Dodge cooldown: if shield is on the same side as sword — cooldown is 3x longer
     const _dodgeSameSide = typeof shieldDef==='function' && shieldDef(P) && shieldSameSideAsSword(P);
     window._dodgeCooldownMob = _dodgeSameSide ? 0.8*3 : 0.8;
-    if(P.stamina!==undefined) drainStamina(P, 30);
+    if(P.stamina!==undefined) drainStamina(P, 30 + charge * 15);
     if(typeof spawnDust==='function')
-      for(let i=0;i<8;i++) spawnDust(P.x+Math.random()*24-12,P.y+Math.random()*12,-dx/len*8,-dy/len*8);
+      for(let i=0;i<8 + Math.round(charge * 10);i++) spawnDust(P.x+Math.random()*24-12,P.y+Math.random()*12,-dx/len*(8 + charge*5),-dy/len*(8 + charge*5));
     $.S.play('dodgeSound');
     if(typeof DODGE_TRAIL==='undefined') window.DODGE_TRAIL=[];
-    window._dodgeTrailFrames=12;
-    if(typeof hitFX!=='undefined') $.FX.hit({x:P.x,y:P.y-30,t:(window.I18N ? window.I18N.t('common.dodge') : 'DODGE'),life:35,big:false,col:'rgba(200,200,200,0.6)'});
+    window._dodgeTrailFrames=12 + Math.round(charge * 12);
+    if(typeof hitFX!=='undefined') $.FX.hit({x:P.x,y:P.y-30,t:charge>=0.5?(window.I18N ? window.I18N.t('runtime.fxShieldBash') : 'SHIELD BASH'):(window.I18N ? window.I18N.t('common.dodge') : 'DODGE'),life:35,big:charge>=0.5,col:charge>=0.5?'#60ccff':'rgba(200,200,200,0.6)'});
+    if(charge > 0 && typeof FX_EFFECTS!=='undefined'){
+      FX_EFFECTS.push({type:'shieldwave', x:P.x, y:P.y, t:0, duration:24, angle:Math.atan2(dy, dx), followEntity:P, followShield:true, cursorX:mX});
+      FX_EFFECTS.push({type:'shieldwave', x:P.x, y:P.y, t:0, duration:18, angle:Math.atan2(dy, dx), followEntity:P, followShield:true, cursorX:mX});
+    }
     // Dodge with shield in the correct hand → bladeblind + knockback
     // Only if moving TOWARD the target (not running away)
-    if(typeof shieldDef==='function' && shieldDef(P) && typeof shieldHeld==='function' && shieldHeld(P)){
+    if(false && typeof shieldDef==='function' && shieldDef(P) && typeof shieldHeld==='function' && shieldHeld(P)){
       const _dt2=(typeof D!=='undefined'&&dummyOn)?D:null;
       if(_dt2){
         const _ax=_dt2.x-P.x, _ay=_dt2.y-P.y;
@@ -17331,18 +17393,94 @@ function onPvpReset(msg){
 
 (function(){
   let _pcDodgeCooldown = 0;
+  const CHARGE_MAX = 3.0;
+  const CHARGE_MIN = 0.18;
+
+  function dodgeVector(){
+    let dvx=0, dvy=0;
+    const kd=keys['d']||keys['D']||keys['РІ']||keys['Р’'];
+    const ka=keys['a']||keys['A']||keys['С„']||keys['Р¤'];
+    const ks=keys['s']||keys['S']||keys['С‹']||keys['Р«']||keys['С–'];
+    const kw=keys['w']||keys['W']||keys['С†']||keys['Р¦'];
+    if(kd) dvx=1; else if(ka) dvx=-1;
+    if(ks) dvy=1; else if(kw) dvy=-1;
+    if(dvx===0&&dvy===0 && typeof P!=='undefined'){
+      const pivX=(typeof rootCenter==='function'?$.POS.root().x:P.x)+P.pvX;
+      const pivY=(typeof rootCenter==='function'?$.POS.root().y:P.y)+P.pvY;
+      dvx=mX-pivX; dvy=mY-pivY;
+    }
+    return {x:dvx, y:dvy};
+  }
+
+  function canChargeShieldDash(){
+    return typeof P!=='undefined' && P.shield>0 && !isExhausted(P) &&
+      typeof shieldHeld==='function' && shieldHeld(P) && P.stamina>0;
+  }
+
+  window.beginDodgePress = function(source){
+    if(typeof gamePaused !== 'undefined' && gamePaused) return;
+    if(_pcDodgeCooldown > 0) return;
+    if(canChargeShieldDash()){
+      P._shieldDashCharging = true;
+      P._shieldDashChargeStart = GameTime;
+      P._shieldDashChargeSource = source || 'dodge';
+      P._shieldDashChargeMax = CHARGE_MAX;
+      P._shieldDashBashActiveUntil = 0;
+      if(!P._shieldDashChargeSound && typeof playControllableSound === 'function'){
+        P._shieldDashChargeSound = playControllableSound('shieldPush');
+      }
+      return;
+    }
+    _pcDodgeCooldown = 0.8;
+    if(typeof window.doDodge === 'function') window.doDodge(true);
+  };
+
+  window.endDodgePress = function(source){
+    if(typeof P==='undefined') return;
+    if(!P._shieldDashCharging || (source && P._shieldDashChargeSource !== source)) return;
+    const held = Math.max(0, Math.min(CHARGE_MAX, GameTime - (P._shieldDashChargeStart || GameTime)));
+    const charge = held >= CHARGE_MIN ? held / CHARGE_MAX : 0;
+    P._shieldDashCharging = false;
+    P._shieldDashChargeStart = 0;
+    P._shieldDashChargeSource = null;
+    if(typeof fadeOutSound === 'function') fadeOutSound(P._shieldDashChargeSound, 0.18);
+    P._shieldDashChargeSound = null;
+    _pcDodgeCooldown = 0.8;
+    const dir = dodgeVector();
+    if(typeof window.fireDodge === 'function') window.fireDodge(dir.x, dir.y, true, charge);
+  };
 
   window.addEventListener('keydown', e => {
     if(e.key !== 'Shift') return;
     if(e.repeat) return;
-    if(typeof gamePaused !== 'undefined' && gamePaused) return;
-    if(_pcDodgeCooldown > 0) return;
-    _pcDodgeCooldown = 0.8;
-    if(typeof window.doDodge === 'function') window.doDodge(true);
+    window.beginDodgePress('Shift');
+  });
+
+  window.addEventListener('keyup', e => {
+    if(e.key !== 'Shift') return;
+    window.endDodgePress('Shift');
   });
 
   window._dodgeTick = function(rawDt){
     if(_pcDodgeCooldown > 0) _pcDodgeCooldown -= rawDt;
+    if(typeof P !== 'undefined' && P._shieldDashCharging){
+      if(!canChargeShieldDash()){
+        P._shieldDashCharging = false;
+        if(typeof fadeOutSound === 'function') fadeOutSound(P._shieldDashChargeSound, 0.18);
+        P._shieldDashChargeSound = null;
+      } else {
+        const held = Math.max(0, Math.min(CHARGE_MAX, GameTime - (P._shieldDashChargeStart || GameTime)));
+        P._shieldDashChargePower = held / CHARGE_MAX;
+        const rc = typeof rootCenter==='function' ? $.POS.root() : {x:P.x, y:P.y};
+        const awayX = rc.x - mX;
+        const awayY = rc.y - mY;
+        const awayLen = Math.hypot(awayX, awayY) || 1;
+        const retreat = (9 + P._shieldDashChargePower * 15) * rawDt;
+        P.vx = 0; P.vy = 0;
+        P.x = $.M.clamp(P.x + awayX / awayLen * retreat, 40, W-80);
+        P.y = $.M.clamp(P.y + awayY / awayLen * retreat, 40, H-40);
+      }
+    }
     if(typeof window._dodgeCooldownMob !== 'undefined' && window._dodgeCooldownMob > 0){
       window._dodgeCooldownMob -= rawDt;
     }
@@ -17731,7 +17869,10 @@ function onPvpReset(msg){
   // а не через синтетическую клавишу (для них либо нет отдельной клавиши,
   // либо публичная функция — самый прямой и стабильный путь).
   const PUBLIC_API_ACTIONS = {
-    dodge:       () => window.doDodge && window.doDodge(),
+    dodge:       () => {
+      if (window.beginDodgePress) window.beginDodgePress('GamepadDodge');
+      else if (window.doDodge) window.doDodge(true);
+    },
     zoneToggle:  () => window.toggleZone && window.toggleZone(),
     spawnBot:    () => window.toggleAI && window.toggleAI(),
     musicToggle: () => window.toggleMusic && window.toggleMusic(),
@@ -17744,7 +17885,7 @@ function onPvpReset(msg){
     axes: { move: { x: 0, y: 1 }, aim: { x: 2, y: 3 } },
     buttons: {
       attack:      { index: 7,  type: 'trigger', action: 'attack' },
-      shieldFlip:  { index: 6,  type: 'trigger', action: 'shieldFlip' },
+      shield:      { index: 6,  type: 'trigger', action: 'shield' },
       dodge:       { index: 0,  action: 'dodge' },
       spawnBot:    { index: 1,  action: 'spawnBot' },
       musicToggle: { index: 2,  action: 'musicToggle' },
@@ -17772,6 +17913,7 @@ function onPvpReset(msg){
   let prevButtonState = {};
   let audioActivated = false;
   let canvasEl = null;
+  let dodgeHeld = false;
 
   function getCanvas() {
     if (canvasEl && document.body.contains(canvasEl)) return canvasEl;
@@ -18484,6 +18626,9 @@ function onPvpReset(msg){
       dispatchMouseButton('mouseup', lastAimClientX, lastAimClientY);
       attackHeld = false;
     }
+    if (shieldHeld) {
+      setGamepadShieldHeld(false);
+    }
     if (isVirtualKeyboardOpen()) {
       closeVirtualKeyboard(false);
     }
@@ -18544,7 +18689,7 @@ function onPvpReset(msg){
       };
 
       const KNOWN_ACTIONS = new Set([
-        'attack','dodge','swapWeapon','shieldFlip','shieldType','swordStyle',
+        'attack','dodge','swapWeapon','shield','shieldFlip','shieldType','swordStyle',
         'throwWeapon','zoneToggle','spawnBot','musicToggle','pause'
       ]);
 
@@ -18566,6 +18711,11 @@ function onPvpReset(msg){
             parsed.buttons[key] = { index, type, action: key };
           }
         }
+      }
+
+      if (!parsed.buttons.shield && parsed.buttons.shieldFlip && parsed.buttons.shieldFlip.index === 6) {
+        parsed.buttons.shield = { index: 6, type: parsed.buttons.shieldFlip.type || 'trigger', action: 'shield' };
+        delete parsed.buttons.shieldFlip;
       }
 
       if (Object.keys(parsed.buttons).length) {
@@ -18660,8 +18810,22 @@ function onPvpReset(msg){
   let lastAimClientX = window.innerWidth / 2;
   let lastAimClientY = window.innerHeight / 2;
   let attackHeld = false;
+  let shieldHeld = false;
   let _lastPollT = performance.now();
   let _menuStickSmoothX = 0, _menuStickSmoothY = 0;
+
+  function setGamepadShieldHeld(held) {
+    shieldHeld = held;
+    if (typeof P === 'undefined') return;
+    if (!held) {
+      P._shieldHeld = false;
+      return;
+    }
+    const exhausted = typeof isExhausted === 'function' && isExhausted(P);
+    if (!isAnyMenuOpen() && P.shield > 0 && !exhausted && P.stamina > 0) {
+      P._shieldHeld = true;
+    }
+  }
 
   // ── ОСНОВНОЙ ЦИКЛ ─────────────────────────────────────────────────────
   function pollGamepad() {
@@ -18677,6 +18841,7 @@ function onPvpReset(msg){
     if (!gp) return;
 
     const menuOpen = isAnyMenuOpen();
+    if (menuOpen && shieldHeld) setGamepadShieldHeld(false);
 
     // ── РЕЖИМ ВИРТУАЛЬНОЙ КЛАВИАТУРЫ ─────────────────────────────────────
     // Отдельная ветка: пока клавиатура открыта, геймпад полностью
@@ -18930,6 +19095,14 @@ function onPvpReset(msg){
       const pressed = btn.pressed || btn.value > 0.5;
       const wasPressed = !!prevButtonState[key];
 
+      if (def.type === 'trigger' && def.action === 'shield' && !pressed && shieldHeld) {
+        setGamepadShieldHeld(false);
+      }
+      if (def.action === 'dodge' && !pressed && dodgeHeld) {
+        dodgeHeld = false;
+        if (window.endDodgePress) window.endDodgePress('GamepadDodge');
+      }
+
       if (!inputSuppressed) {
         if (def.type === 'trigger') {
           if (def.action === 'attack') {
@@ -18941,7 +19114,20 @@ function onPvpReset(msg){
               dispatchMouseButton('mouseup', lastAimClientX, lastAimClientY);
               attackHeld = false;
             }
+          } else if (def.action === 'shield') {
+            if (pressed !== wasPressed) {
+              setGamepadShieldHeld(pressed);
+              if (pressed) activateAudio();
+            } else if (pressed && shieldHeld) {
+              setGamepadShieldHeld(true);
+            }
           } else if (pressed && !wasPressed) {
+            ACTIONS[def.action] && ACTIONS[def.action]();
+            activateAudio();
+          }
+        } else if (def.action === 'dodge') {
+          if (pressed && !wasPressed) {
+            dodgeHeld = true;
             ACTIONS[def.action] && ACTIONS[def.action]();
             activateAudio();
           }

@@ -84,10 +84,10 @@ _hitCount: 0,
   });
 }
 
-const P = makeEntity(W/2 - 80, H/2, 0.8, '#1e4a72', {
+const P = makeEntity(WORLD_W/2 - 80, WORLD_H/2, 0.8, '#1e4a72', {
   stamRegen: 28
 });
-let D = makeEntity(W/2 + 110, H/2, 0.8, '#4a1a10', {
+let D = makeEntity(WORLD_W/2 + 110, WORLD_H/2, 0.8, '#4a1a10', {
   stamRegen: 28
 });
 const trailPts = [];
@@ -99,10 +99,10 @@ const BOXES = [];
 function initBoxes(){
   BOXES.length = 0;
   BOXES.push(
-    { x: W/2+120, y: H/2-60,  w: 55, h: 55 },
-    { x: W/2-180, y: H/2+80,  w: 55, h: 55 },
-    { x: W/2+60,  y: H/2+130, w: 70, h: 40 },
-    { x: W/2-80,  y: H/2-130, w: 40, h: 70 }
+    { x: WORLD_W/2+120, y: WORLD_H/2-60,  w: 55, h: 55 },
+    { x: WORLD_W/2-180, y: WORLD_H/2+80,  w: 55, h: 55 },
+    { x: WORLD_W/2+60,  y: WORLD_H/2+130, w: 70, h: 40 },
+    { x: WORLD_W/2-80,  y: WORLD_H/2-130, w: 40, h: 70 }
   );
 }
 
@@ -262,6 +262,7 @@ function updateDisbalanceCombo(attacker, defender){
 function swordHit(entA, entB){
   const attacker = entA.isAttacker ? entA : entB;
   const defender = entA.isAttacker ? entB : entA;
+  if(entA === P || entB === P) P._cameraCombatUntil = GameTime + 8;
   openSafeCounterWindow(defender);
   const disbalanceTriggered = updateDisbalanceCombo(attacker, defender);
   if(disbalanceTriggered) return;
@@ -1224,7 +1225,7 @@ function dstyleCb(id){
 
 // ─── RESET PLAYER STATE ──────────────────────────────────────────────
 // ─── RESET / RESTART ──────────────────────────────────────────────────
-function resetPlayerState() {
+function resetPlayerState(options = {}) {
     // Clear dropped weapons
     if (typeof DROPPED_WEAPONS !== 'undefined') {
         DROPPED_WEAPONS.length = 0;
@@ -1320,8 +1321,13 @@ function resetPlayerState() {
     // P._shieldFlipped = false;
     
     // ─── RESET POSITION ────────────────────────────────────────────
-    P.x = W * 0.15;
-    P.y = H * 0.8;
+    if (!options.skipPosition) {
+        const spawn = typeof factionSpawnPoint === 'function'
+            ? factionSpawnPoint('left')
+            : { x: W * 0.15, y: H * 0.8 };
+        P.x = spawn.x;
+        P.y = spawn.y;
+    }
 }
 
 function clearEntityChargeState(ent) {
@@ -1375,13 +1381,19 @@ function resetBotRoundState(bot, index, totalBots, enableAI) {
     bot._recovering = false;
     bot._recoverProgress = 0;
     bot._defeated = false;
+    if (window._manualBotWeaponType !== undefined) bot._manualWeaponType = window._manualBotWeaponType;
+    if (bot._manualWeaponType !== undefined && typeof setWeapon === 'function') setWeapon(bot, bot._manualWeaponType);
     if (bot.hasWeapon === false && typeof setWeapon === 'function') setWeapon(bot, bot.weaponType);
     const ang = totalBots > 0 ? (index / totalBots) * Math.PI * 2 : 0;
-    const bx = $.M.clamp(W / 2 + 110 + Math.cos(ang) * 140, 60, W - 100);
-    const by = $.M.clamp(H / 2 + Math.sin(ang) * 140, 60, H - 60);
+    const spawn = typeof factionSpawnPoint === 'function'
+        ? factionSpawnPoint('right', index, totalBots)
+        : { x: P.x + 520, y: P.y + Math.sin(ang) * 120 };
+    const bx = spawn.x;
+    const by = spawn.y;
     if (typeof assignRandomSkin === 'function') assignRandomSkin(bot);
     if (typeof placeBotPendingReveal === 'function') placeBotPendingReveal(bot, bx, by);
     else { bot.x = bx; bot.y = by; }
+    if (typeof P !== 'undefined') P._cameraCombatUntil = GameTime + 8;
     if (bot._aiState) {
         bot._aiState.enabled = enableAI;
         bot._aiState._fakeMDown = false;
@@ -1408,7 +1420,7 @@ window.restartCombatRound = function(options = {}) {
         enableAI = true
     } = options;
     if (resetScore && typeof resetWins === 'function') resetWins();
-    resetPlayerState();
+    resetPlayerState({ skipPosition: true });
     if (keepPlayerSide) {
         P.x = playerWon ? W * 0.15 : W * 0.82;
         P.y = H * 0.6;
@@ -1428,6 +1440,8 @@ window.restartCombatRound = function(options = {}) {
             AI = preferredMain._aiState;
         }
     }
+    if (!keepPlayerSide && typeof applyDuelSpawnLayout === 'function') applyDuelSpawnLayout();
+    else if (typeof snapCameraBetweenEntities === 'function') snapCameraBetweenEntities(P, D);
     DEATH.dDead = false;
     DEATH.pDead = false;
     DEATH.fadeIn = false;
@@ -1483,6 +1497,7 @@ function triggerDeath(ent, isBot){
   DEATH.deathCross.push({x:bc.x, y:bc.y, timer:2.0, isBot});
   DEATH.fadeAlpha = 0;
   DEATH.fadeIn = true;
+  if(typeof P !== 'undefined') P._cameraCombatUntil = GameTime + 8;
   if(typeof NET_SYNC!=='undefined'&&$.NET.active()) $.NET.send({type:'freeze'});
   $.S.play('death');
 
@@ -1533,6 +1548,8 @@ function drawDeathCrosses(){
   if(DEATH.fadeIn || DEATH.fadeAlpha > 0){
     if(DEATH.fadeIn) DEATH.fadeAlpha = Math.min(0.78, DEATH.fadeAlpha + 0.022);
     else DEATH.fadeAlpha = Math.max(0, DEATH.fadeAlpha - 0.03);
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.fillStyle = `rgba(0,0,0,${DEATH.fadeAlpha})`;
     ctx.fillRect(0, 0, W, H);
     // ─── VICTORY/DEFEAT TEXT ──────────────────────────────────────
@@ -1549,6 +1566,7 @@ function drawDeathCrosses(){
       ctx.fillText(DEATH.text, W/2, H/2);
       ctx.restore();
     }
+    ctx.restore();
   }
   for(const dc of DEATH.deathCross){
     ctx.save();

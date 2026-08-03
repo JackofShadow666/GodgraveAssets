@@ -47,6 +47,7 @@ function contact(a, b){
   if(!a || !b) return;
   const aPlayer = isPlayer(a);
   const bPlayer = isPlayer(b);
+  if(a === P || b === P) P._cameraCombatUntil = GameTime + 8;
   if(!aPlayer && bPlayer){ a._lastPlayerTarget = b; a._lastPlayerContactAt = GameTime; }
   if(!bPlayer && aPlayer){ b._lastPlayerTarget = a; b._lastPlayerContactAt = GameTime; }
 }
@@ -188,8 +189,8 @@ function contact(a, b){
     const step = Math.min(0.18, 0.5 / Math.max(1, total));
     const start = 0.5 - (step * (total - 1)) / 2;
     return {
-      x: $.M.clamp(W * 0.18 + slot * 24, 60, W - 100),
-      y: $.M.clamp(H * (start + slot * step), 60, H - 60)
+      x: $.M.clamp(WORLD_W * 0.18 + slot * 24, 60, WORLD_W - 100),
+      y: $.M.clamp(WORLD_H * (start + slot * step), 60, WORLD_H - 60)
     };
   }
 
@@ -224,8 +225,8 @@ function contact(a, b){
       clearEntityState(ent);
       if(ent.hasWeapon === false && typeof setWeapon === 'function') setWeapon(ent, ent.weaponType || 0);
       const angle = index / Math.max(1, all.length) * Math.PI * 2;
-      ent.x = $.M.clamp(W / 2 + Math.cos(angle) * 180, 60, W - 100);
-      ent.y = $.M.clamp(H / 2 + Math.sin(angle) * 150, 60, H - 60);
+      ent.x = $.M.clamp(WORLD_W / 2 + Math.cos(angle) * 180, 60, WORLD_W - 100);
+      ent.y = $.M.clamp(WORLD_H / 2 + Math.sin(angle) * 150, 60, WORLD_H - 60);
     });
     DEATH.pDead = false;
     DEATH.dDead = false;

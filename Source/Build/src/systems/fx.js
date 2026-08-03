@@ -254,10 +254,13 @@ function fxDrawBlood(ctx, p, x, y, angle){
 function fxDrawFlash(ctx, p){
   // Flash — полноэкранный (без масштаба, как в библиотеке)
   const intensity = Math.min(0.85, p * 1.2);
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.fillStyle = `rgba(255,255,250,${intensity*0.85})`;
   ctx.fillRect(0,0,canvas.width,canvas.height);
   ctx.fillStyle = `rgba(255,255,255,${intensity*0.25})`;
   ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.restore();
 }
 
 function fxDrawCross(ctx, p, x, y){

@@ -149,6 +149,7 @@ function pickWeightedBotWeaponType(){
 
 function maybeSetRandomBotWeapon(bot, force = false){
   if(!bot || typeof setWeapon !== 'function' || (!force && !cb('botrandomweapon'))) return;
+  if(!force && window._manualBotWeaponType !== undefined) return;
   setWeapon(bot, pickWeightedBotWeaponType());
 }
 
@@ -262,11 +263,18 @@ function applyBotCount(){
   while(ALL_BOTS.length < target){
     const idx = ALL_BOTS.length;
     const ang = (idx / target) * Math.PI * 2;
-    const spawnX = $.M.clamp(W/2 + 110 + Math.cos(ang)*140, 60, W-100);
-    const spawnY = $.M.clamp(H/2 + Math.sin(ang)*140, 60, H-60);
+    const spawn = typeof factionSpawnPoint === 'function'
+      ? factionSpawnPoint('right', idx, target)
+      : { x: P.x + 520, y: P.y + Math.sin(ang) * 120 };
+    const spawnX = spawn.x;
+    const spawnY = spawn.y;
     const nb = makeEntity(spawnX, spawnY, 0.8, '#4a1a10', { stamRegen: 28 });
     nb._aiState = freshAIState();
     maybeSetRandomBotWeapon(nb);
+    if(window._manualBotWeaponType !== undefined){
+      nb._manualWeaponType = window._manualBotWeaponType;
+      setWeapon(nb, nb._manualWeaponType);
+    }
     // Если игра сейчас на паузе (T/Е) — новый бот тоже должен родиться замороженным
     const localPvpActive = typeof LocalPlayerControls!=='undefined' && LocalPlayerControls.isLocalPvP();
     if(!localPvpActive && typeof AI!=='undefined' && AI && AI.enabled===false) nb._aiState.enabled = false;
@@ -291,6 +299,7 @@ function applyBotCount(){
     // иначе он несколько кадров "невидим", но уже стоит на арене и может получать урон.
     placeBotPendingReveal(nb, spawnX, spawnY);
     ALL_BOTS.push(nb);
+    if(typeof P !== 'undefined') P._cameraCombatUntil = GameTime + 8;
   }
   
   while(ALL_BOTS.length > target){
@@ -674,8 +683,8 @@ function duelUpdate(dt){
     if(distFromCenter > duelRad && GameTime >= DUEL.nextMoveCD){
       const r = duelRad * 0.7;
       const ang = Math.random() * Math.PI * 2;
-      AI._duelTargX = $.M.clamp(DUEL.cx + Math.cos(ang)*r*Math.random(), 60, W-100);
-      AI._duelTargY = $.M.clamp(DUEL.cy + Math.sin(ang)*r*Math.random(), 60, H-60);
+      AI._duelTargX = $.M.clamp(DUEL.cx + Math.cos(ang)*r*Math.random(), 60, WORLD_W-100);
+      AI._duelTargY = $.M.clamp(DUEL.cy + Math.sin(ang)*r*Math.random(), 60, WORLD_H-60);
       AI._duelPull = true;
       DUEL.nextMoveCD = GameTime + rf(0.5,1.5);
     }
@@ -936,7 +945,7 @@ function estimateThrowRange(def){
       if(ai._weaponSeekTimer === undefined) ai._weaponSeekTimer = rf(3,5);
       ai._weaponSeekTimer -= dt;
       if(ai._weaponSeekTimer <= 0){
-        setWeapon(bot, 1); // 1 = кинжал
+        setWeapon(bot, bot._manualWeaponType !== undefined ? bot._manualWeaponType : 1); // 1 = кинжал
         ai._weaponSeekTimer = undefined;
         k.w=k.a=k.s=k.d=false;
         return;
@@ -1601,8 +1610,8 @@ if(ai._contactCD > 0 && ai.phase === 'attack' && ai._contactCD <= GameTime){
       ai._fakeMDown = false;
       ai._harassOrbitAng += ai._harassOrbitDir * 0.025;
       const orbitR = Math.max(60*cscl, distToPlayer);
-      const tx = $.M.clamp(pBodyC.x + Math.cos(ai._harassOrbitAng)*orbitR, 60, W-100);
-      const ty = $.M.clamp(pBodyC.y + Math.sin(ai._harassOrbitAng)*orbitR, 60, H-60);
+      const tx = $.M.clamp(pBodyC.x + Math.cos(ai._harassOrbitAng)*orbitR, 60, WORLD_W-100);
+      const ty = $.M.clamp(pBodyC.y + Math.sin(ai._harassOrbitAng)*orbitR, 60, WORLD_H-60);
       k.a=(tx-bBodyC.x)<-5; k.d=(tx-bBodyC.x)>5;
       k.w=(ty-bBodyC.y)<-5; k.s=(ty-bBodyC.y)>5;
       if(!ai._spinActive) aiPointMouse(bBodyC, pBodyC.x, pBodyC.y, false, ai);
@@ -1645,8 +1654,8 @@ if(!ai._feintActive){
       } else {
         ai._circling = false;
         const pt = aiRetreatPoint();
-        ai._retreatTargX = $.M.clamp(pt.x, 60, W-100);
-        ai._retreatTargY = $.M.clamp(pt.y, 60, H-60);
+        ai._retreatTargX = $.M.clamp(pt.x, 60, WORLD_W-100);
+        ai._retreatTargY = $.M.clamp(pt.y, 60, WORLD_H-60);
         ai._retreatMoveCD = GameTime + rf(1,2);
       }
     }
@@ -1654,8 +1663,8 @@ if(!ai._feintActive){
     if(ai._circling){
       const orbitDist = distToPlayer;
       ai._circleAng += ai._circleDir * 0.018;
-      const targX = $.M.clamp(pBodyC.x + Math.cos(ai._circleAng) * orbitDist, 60, W-100);
-      const targY = $.M.clamp(pBodyC.y + Math.sin(ai._circleAng) * orbitDist, 60, H-60);
+      const targX = $.M.clamp(pBodyC.x + Math.cos(ai._circleAng) * orbitDist, 60, WORLD_W-100);
+      const targY = $.M.clamp(pBodyC.y + Math.sin(ai._circleAng) * orbitDist, 60, WORLD_H-60);
       k.a = (targX - bBodyC.x) < -5; k.d = (targX - bBodyC.x) > 5;
       k.w = (targY - bBodyC.y) < -5; k.s = (targY - bBodyC.y) > 5;
     } else {

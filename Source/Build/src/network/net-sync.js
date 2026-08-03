@@ -55,8 +55,8 @@ var NET_SYNC = (function(){
   function qaDec(v){ return v/65535*Math.PI*2; }
 
   function buildDelta(p){
-    const nx=qEnc(p.x,W), ny=qEnc(p.y,H);
-    const vx=qEnc((p.vx||0)+W,W*2), vy=qEnc((p.vy||0)+H,H*2);
+    const nx=qEnc(p.x,WORLD_W), ny=qEnc(p.y,WORLD_H);
+    const vx=qEnc((p.vx||0)+WORLD_W,WORLD_W*2), vy=qEnc((p.vy||0)+WORLD_H,WORLD_H*2);
     const angle=qaEnc(p.angle||0);
     const vel=Math.round((p.vel||0)*100);
     const hp=Math.round(p.hp||0), stamina=Math.round(p.stamina||0), rage=Math.round(p.rage||0);
@@ -331,13 +331,13 @@ function onPvpReset(msg){
     const ping=NET_CORE.getPing()/2000;
     if(msg.t==='s'){
       if(msg.x!=null){
-        _cur.x=qDec(msg.x,W); _cur.y=qDec(msg.y,H);
+        _cur.x=qDec(msg.x,WORLD_W); _cur.y=qDec(msg.y,WORLD_H);
         // Первый пакет — мгновенно ставим D на позицию (нет рывка)
         if(_buf.length===0&&typeof D!=='undefined'){
           D.x=_cur.x; D.y=_cur.y;
         }
       }
-      if(msg.u!=null){ _cur.vx=qDec(msg.u,W*2)-W; _cur.vy=qDec(msg.v,H*2)-H; }
+      if(msg.u!=null){ _cur.vx=qDec(msg.u,WORLD_W*2)-WORLD_W; _cur.vy=qDec(msg.v,WORLD_H*2)-WORLD_H; }
       if(msg.a!=null){ _cur.angle=qaDec(msg.a); }
       if(msg.l!=null){ _cur.vel=msg.l/100; }
       if(msg.h!=null){ _cur.hp=msg.h; }

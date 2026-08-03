@@ -180,8 +180,8 @@ const exhMult = getMod(P, 'moveSlow', 1);
     const mLR = 40;
     const mT  = 30;
     const mB  = 35;
-    if((P.x<mLR&&P.vx<0)||(P.x>W-mLR-80&&P.vx>0)) P.vx*=0.5;
-    if((P.y<mT &&P.vy<0)||(P.y>H-mB -40&&P.vy>0))  P.vy*=0.5;
+    if((P.x<mLR&&P.vx<0)||(P.x>WORLD_W-mLR-80&&P.vx>0)) P.vx*=0.5;
+    if((P.y<mT &&P.vy<0)||(P.y>WORLD_H-mB -40&&P.vy>0))  P.vy*=0.5;
   })();
   P.vx = $.M.clamp(P.vx, -15, 15); P.vy = $.M.clamp(P.vy, -15, 15);
   
@@ -232,7 +232,7 @@ const exhMult = getMod(P, 'moveSlow', 1);
       }
     }
     const _preX=P.x+P.vx*step+(P._dvx||0)*impulseStep;
-    P.x=$.M.clamp(_preX, 40, W-80);
+    P.x=$.M.clamp(_preX, 40, WORLD_W-80);
     if(Math.abs(_preX-P.x)>2 && Math.abs(P._dvx||0)>1){
       const _rc=$.POS.root();
       const _td=Math.hypot(mX-_rc.x,mY-_rc.y)||1;
@@ -240,7 +240,7 @@ const exhMult = getMod(P, 'moveSlow', 1);
       P._dvy=(mY-_rc.y)/_td*Math.abs(P._dvy||0)*0.5;
     }
     const _preY=P.y+P.vy*step+(P._dvy||0)*impulseStep;
-    P.y=$.M.clamp(_preY, 40, H-40);
+    P.y=$.M.clamp(_preY, 40, WORLD_H-40);
     if(Math.abs(_preY-P.y)>2 && Math.abs(P._dvy||0)>1 && Math.abs(P._dvx||0)<2){
       const _rc2=$.POS.root();
       const _td2=Math.hypot(mX-_rc2.x,mY-_rc2.y)||1;
@@ -251,8 +251,8 @@ const exhMult = getMod(P, 'moveSlow', 1);
     P._dvx*=decay; P._dvy*=decay;
     if(Math.hypot(P._dvx,P._dvy)<0.1){ P._dvx=0; P._dvy=0; }
   } else {
-    P.x=$.M.clamp(P.x+P.vx*step, 40, W-80);
-    P.y=$.M.clamp(P.y+P.vy*step, 40, H-40);
+    P.x=$.M.clamp(P.x+P.vx*step, 40, WORLD_W-80);
+    P.y=$.M.clamp(P.y+P.vy*step, 40, WORLD_H-40);
   }
   resolveBoxCollision(P);
 
@@ -290,6 +290,7 @@ const exhMult = getMod(P, 'moveSlow', 1);
   };
 
   // --- body offset ---
+  updateCamera(rawDt);
   const rc = $.POS.root();
   const dzone = csv('dzone');
   const rawMouseDist = Math.hypot(mX - rc.x, mY - rc.y);
@@ -783,7 +784,9 @@ if(dummyOn&&isUnbalanced(D)) drawUnbalancedStars(D);
     const pivX = rc.x + P.pvX;
     const pivY = rc.y + P.pvY;
     window._shakeApplied = typeof window._applyScreenShake==='function' ? window._applyScreenShake() : false;
+    ctx.setTransform(CAM_SCALE, 0, 0, CAM_SCALE, -CAM_X * CAM_SCALE, -CAM_Y * CAM_SCALE);
     drawArena();
+    if(typeof drawScreenVignette === 'function') drawScreenVignette();
     
     if(typeof drawBloodPools==='function') drawBloodPools();
     if(typeof DODGE_TRAIL!=='undefined'&&DODGE_TRAIL.length){
@@ -846,14 +849,15 @@ if(dummyOn&&isUnbalanced(D)) drawUnbalancedStars(D);
     }
     if(P.shield>0 && !isShieldSuppressed(P)) drawShield(P, mX);
     
-    drawCursor();
     drawBlood();
     drawFXEffects();
     drawDustFX(rawDt);
     drawDeathCrosses();
     drawFX();
     
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
     if(typeof drawZone==='function') drawZone();
+    drawCursor();
     if(typeof window._restoreScreenShake==='function') window._restoreScreenShake(window._shakeApplied);
   }
 
@@ -865,7 +869,12 @@ if(dummyOn&&isUnbalanced(D)) drawUnbalancedStars(D);
 }
 
 // -- INPUT --------------------------------------------------------------------------
-canvas.addEventListener('mousemove', e=>{ const r=canvas.getBoundingClientRect(); mX=e.clientX-r.left; mY=e.clientY-r.top; });
+canvas.addEventListener('mousemove', e=>{
+  const r=canvas.getBoundingClientRect();
+  mouseScreenX=e.clientX-r.left;
+  mouseScreenY=e.clientY-r.top;
+  updateMouseWorld();
+});
 canvas.addEventListener('mousedown', e=>{
   if(e.button===0){ mDown=true; P._shieldHeld=false; return; }
   if(e.button===2 && !window.IS_MOBILE){
@@ -1057,6 +1066,8 @@ if(k==='v'||k==='м'){ // bot weapon switch
   if(D.hasWeapon !== false){
     const next=(D.weaponType+1)%WEAPON_TYPES.length; 
     setWeapon(D,next);
+    D._manualWeaponType = next;
+    window._manualBotWeaponType = next;
     // ?? ERROR PROTECTION
     const weaponName = WEAPON_TYPES[next] ? WEAPON_TYPES[next].name : (window.I18N?window.I18N.t('main.unknownWeapon'):'UNKNOWN');
     $.FX.hit({x:D.x,y:D.y-40,t:(window.I18N?window.I18N.t('main.weaponBot',{name:weaponName}):('WEAPON: '+weaponName)),life:60,big:false,col:'#ffaa44'});
@@ -1094,8 +1105,7 @@ window.addEventListener('keyup',   e=>{
   if(e.code==='Space' && typeof window.endDodgePress==='function') window.endDodgePress('Space');
 });
 window.addEventListener('resize',  ()=>{
-  W=canvas.width = window.innerWidth;
-  H=canvas.height = window.innerHeight;
+  applyCamScale();
   applyCanvasSmoothing();
   initBoxes(); arenaDirty=true;
 });
@@ -1133,12 +1143,10 @@ function toggleAI(){
   b.textContent=window.I18N?window.I18N.buttonText('dtoggle', dummyOn?'on':'off'):(dummyOn?'ON':'OFF');
   b.classList.toggle('on',dummyOn);
   if(dummyOn){
-    // ?? SINGLE PLAYER RESET
-    resetPlayerState();
-    
     // Full Entity D reset
     D.hp=100; D.stamina=100; D.exhausted=0; D.unbalanced=0;
-    D.x=W/2+110; D.y=H/2; D.vx=0; D.vy=0;
+    const dSpawn = typeof factionSpawnPoint === 'function' ? factionSpawnPoint('right') : { x:P.x+190, y:P.y };
+    D.x=dSpawn.x; D.y=dSpawn.y; D.vx=0; D.vy=0;
     D.bx=0; D.by=0; D.pvX=0; D.pvY=-8; D.tpX=0; D.tpY=-8;
     D.angle=0; D.vel=0; D._hitCD=-1;
     D.atkPts=0; D.isAttacker=false;
@@ -1166,6 +1174,7 @@ function toggleAI(){
     
     // Spawn bots
     if(typeof applyBotCount==='function') applyBotCount();
+    if(typeof applyDuelSpawnLayout === 'function') applyDuelSpawnLayout();
     
     // ?? RESET STATUSES FOR ALL BOTS (except the first one)
     for(let i = 1; i < ALL_BOTS.length; i++){
@@ -1211,6 +1220,9 @@ function toggleAI(){
 
 loadAudioDB(); // start loading in background
 initBoxes();
+if(typeof applyBotCount === 'function') applyBotCount();
+if(typeof applyDuelSpawnLayout === 'function') applyDuelSpawnLayout();
+else if(typeof snapCameraToTarget === 'function') snapCameraToTarget();
 
 // ---------------------------------------------------------------------------------
 

@@ -86,6 +86,7 @@
 'slider.gamepadStamFlick': 'Флик геймпада: расход выносливости',
 'slider.gameSpeed': 'Скорость игры (×)',
 'slider.cameraZoom': 'Приближение камеры (клетки)',
+'slider.cameraLerp': 'Отставание камеры',
 'slider.musicVolume': 'Громкость музыки',
 'slider.botCount': 'Количество ботов',
 'slider.botSpeed': 'Скорость бота (× от игрока)',
@@ -147,6 +148,7 @@
 'checkbox.flickDetect': 'Обнаружение флика (быстрая смена направления)',
 'checkbox.debugBrowser': 'Отладка: разблокировать ПКМ и клавиши браузера',
 'checkbox.debugClash': 'Отладка: выводить данные столкновений (консоль)',
+'checkbox.followCamera': 'Камера закреплена на игроке',
 
 // ─── SELECT LABELS ──────────────────────────────────────────────
 'select.gamepadSlot': 'Управление геймпадом 1',
@@ -654,6 +656,7 @@
         spindur: 'Длительность круга',
         gamespeed: 'Скорость игры',
         camrows: 'Масштаб камеры',
+        camlerp: 'Отставание камеры',
         musicvol: 'Громкость музыки',
         botcount: 'Количество ботов',
         botspd: 'Скорость ботов',

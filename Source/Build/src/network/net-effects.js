@@ -86,8 +86,8 @@
         const awayLen = Math.hypot(awayX, awayY) || 1;
         const retreat = (9 + P._shieldDashChargePower * 15) * rawDt;
         P.vx = 0; P.vy = 0;
-        P.x = $.M.clamp(P.x + awayX / awayLen * retreat, 40, W-80);
-        P.y = $.M.clamp(P.y + awayY / awayLen * retreat, 40, H-40);
+        P.x = $.M.clamp(P.x + awayX / awayLen * retreat, 40, WORLD_W-80);
+        P.y = $.M.clamp(P.y + awayY / awayLen * retreat, 40, WORLD_H-40);
       }
     }
     if(typeof window._dodgeCooldownMob !== 'undefined' && window._dodgeCooldownMob > 0){
@@ -348,25 +348,23 @@
 
   window.drawZone = function(){
     if(!_zoneActive) return;
-    const c = getZoneCenter();
-    const r = getZoneRadius();
     const fadeProgress = Math.min(1, Math.max(0, (_zoneTimer - ZONE_GRACE) / ZONE_FADE));
     const maxAlpha = 0.72;
     const alpha = fadeProgress * maxAlpha;
     if(alpha < 0.01) return;
 
     ctx.save();
-    const grad = ctx.createRadialGradient(c.x, c.y, r * 0.75, c.x, c.y, Math.max(W, H));
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    const cx = W / 2;
+    const cy = H / 2;
+    const inner = Math.min(W, H) * 0.38;
+    const outer = Math.hypot(W, H) * 0.62;
+    const grad = ctx.createRadialGradient(cx, cy, inner, cx, cy, outer);
     grad.addColorStop(0, 'rgba(0,0,0,0)');
-    grad.addColorStop(0.3, `rgba(0,0,0,${alpha * 0.5})`);
+    grad.addColorStop(0.55, `rgba(0,0,0,${alpha * 0.45})`);
     grad.addColorStop(1, `rgba(0,0,0,${alpha})`);
     ctx.fillStyle = grad;
-    ctx.fillRect(-10, -10, W + 20, H + 20);
-    ctx.beginPath();
-    ctx.arc(c.x, c.y, r, 0, Math.PI * 2);
-    ctx.strokeStyle = `rgba(255,255,255,${alpha * 0.15})`;
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
+    ctx.fillRect(0, 0, W, H);
     ctx.restore();
   };
 

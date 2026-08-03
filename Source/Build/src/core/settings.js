@@ -108,6 +108,7 @@ bindSlider('flailspeedmult');
 bindSlider('flailsag');
 bindSlider('dzone');
 document.getElementById('sl-camrows')?.addEventListener('input', () => { applyCamScale(); arenaDirty = true; });
+document.getElementById('cb-followcam')?.addEventListener('change', () => { snapCameraToTarget(); arenaDirty = true; });
 document.getElementById('sl-botcount')?.addEventListener('input', function(){
   document.getElementById('vl-botcount').textContent = this.value;
   const count=Math.max(0,Number(this.value)||0);
@@ -190,6 +191,7 @@ bindSlider('unbcombo');
 bindSlider('stamreg');
 bindSlider('gamespeed');
 bindSlider('camrows');
+bindSlider('camlerp');
 bindSlider('botspd');
 bindSlider('botdodgechance');
 bindSlider('botdodgetoward');

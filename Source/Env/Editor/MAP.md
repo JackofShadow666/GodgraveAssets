@@ -1,4 +1,4 @@
 # Editor Map
 
-- `Editor.html` - основной HTML-редактор террейна Godgrave: материалы, атласы, кисти, туман, персонажи, экспорт.
-- `WorldMapGenerator.html` - автономный HTML-генератор пиксельной карты мира по цветным зонам: процедурная форма, мосты, пустоты, точки текстуры, экспорт PNG.
+- `Editor.html` - main Godgrave terrain editor: materials, atlases, brushes, fog, characters, export.
+- `WorldMapGenerator.html` - standalone PixiJS world map generator: CPU generation data, PixiJS rendering for terrain, biomes, boundaries, routes, decorations, player, minimap, PixiJS atlas previews and PNG export without the legacy Canvas 2D pipeline.

@@ -13,19 +13,7 @@
     const portrait = window.innerHeight > window.innerWidth;
     document.body.classList.toggle('is-portrait', portrait);
     if(!portrait){
-      // Camera "zoomed out": aim for ~14 cells (55px) vertically, like on PC.
-      // Increase the INTERNAL canvas resolution (logical world) beyond
-      // the physical screen size — browser scales it down via CSS,
-      // visually achieving "zoom out" without distorting object proportions.
-      const targetRows = sv('camrows'); // adjustable cell count (55px) vertically
-      const targetWorldH = targetRows * 55;
-      const camScale = Math.max(1, targetWorldH / window.innerHeight);
-      window.CAM_SCALE = camScale;
-
-      H = Math.round(window.innerHeight * camScale);
-      W = Math.round(window.innerWidth  * camScale);
-      canvas.width  = W;
-      canvas.height = H;
+      applyCamScale();
       applyCanvasSmoothing();
       arenaDirty = true;
       initBoxes();
@@ -135,6 +123,8 @@
     if(typeof D==='undefined' || typeof setWeapon!=='function') return;
     if(D.hasWeapon === false) return;
     D.weaponType = (D.weaponType+1)%WEAPON_TYPES.length; setWeapon(D, D.weaponType);
+    D._manualWeaponType = D.weaponType;
+    window._manualBotWeaponType = D.weaponType;
   }, {passive: false});
 
   // ── MENU (pause/restart/settings) ──────────────────────────────────────
@@ -261,7 +251,8 @@ window.doRestart=function(){
     if(typeof applyBotCount==='function') applyBotCount();
     D.hp=100; D.stamina=0; D.rage=0; D._hadExhaustion=false;
     D.exhausted=0; D.unbalanced=0; D.vx=0; D.vy=0;
-    D.x=W*0.8; D.y=H*0.2;
+    const dSpawn = typeof factionSpawnPoint === 'function' ? factionSpawnPoint('right') : { x:P.x+190, y:P.y-120 };
+    D.x=dSpawn.x; D.y=dSpawn.y;
     D._wasExhausted = false;
     D._recovering = false;
     D._recoverProgress = 0;
@@ -287,6 +278,7 @@ window.doRestart=function(){
   }
   
   DEATH.dDead=false; DEATH.pDead=false; DEATH.fadeIn=false; DEATH.fadeAlpha=0; DEATH.text='';
+  if(typeof applyDuelSpawnLayout === 'function') applyDuelSpawnLayout();
   menuOverlay.classList.remove('open');
   pausedByMenu = false;
   uiMenuPaused = false;
@@ -650,7 +642,7 @@ if(_spiked2 && typeof GameTime!=='undefined'){
     // at the same angle, distance doesn't depend on finger offset strength (only direction)
     if(dist > 8){ // dead zone to prevent micro-touch jitter
       const rc = $.POS.root();
-      const aimRadius = Math.min(W,H)*0.35;
+      const aimRadius = Math.min(W,H) / CAM_SCALE * 0.35;
       mX = rc.x + Math.cos(angle)*aimRadius;
       mY = rc.y + Math.sin(angle)*aimRadius;
     }
@@ -738,7 +730,7 @@ if(_spiked2 && typeof GameTime!=='undefined'){
     updateSwordKnob(nx,ny);
 
     const rc = $.POS.root();
-    const aimRadius = Math.min(W,H)*0.35;
+    const aimRadius = Math.min(W,H) / CAM_SCALE * 0.35;
     const normX = nx/SWORD_R, normY = ny/SWORD_R;
     if(Math.hypot(normX,normY) > 0.05){
       mX = rc.x + normX*aimRadius;

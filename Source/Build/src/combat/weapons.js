@@ -533,7 +533,7 @@ function bounceWeapon(w, nx, ny, restitution){
 function updateDroppedWeapons(dt){
   const step = $.M.step(dt);
   const PICKUP_R = 45;
-  const BOUND_L = 40, BOUND_R = W - 80, BOUND_T = 40, BOUND_B = H - 40;
+  const BOUND_L = 40, BOUND_R = WORLD_W - 80, BOUND_T = 40, BOUND_B = WORLD_H - 40;
 
   for(let i = DROPPED_WEAPONS.length - 1; i >= 0; i--){
     const w = DROPPED_WEAPONS[i];
@@ -623,7 +623,7 @@ if(bounced){
             applyShieldBlockFX(w.x, w.y, null, null, {waveAngle: Math.atan2(w.vy, w.vx)});
           } else {
             const strongHit = flySpdPre > 6;
-            $.FX.hit({x:w.x, y:w.y-8, t:'✦', life:18, big:strongHit, col:'#ffdd88'});
+            $.FX.hit({x:w.x, y:w.y-8, t:(window.I18N ? window.I18N.t('combat.clash') : 'CLASH!'), life:28, big:strongHit, col:'#ccccaa'});
             $.S.play(strongHit ? 'clashHard' : 'clash');
             if(typeof triggerHitstop === 'function') triggerHitstop(strongHit?3:2, strongHit?3:1.5);
             addRage(ent, clashRageGain());

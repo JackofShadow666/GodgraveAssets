@@ -38,30 +38,207 @@ const _isMobileUA = /Android|iPhone|iPad|iPod|Mobile/i.test(_ua);
 window.IS_MOBILE = _isTouchDevice && _isMobileUA;
 if(window.IS_MOBILE) document.body.classList.add('is-mobile');
 
-let W = canvas.width  = window.IS_MOBILE ? window.innerWidth  : window.innerWidth; // панель по умолчанию скрыта
+let W = canvas.width  = window.innerWidth;
 let H = canvas.height = window.innerHeight;
+let WORLD_W = W, WORLD_H = H;
+let CAM_X = 0, CAM_Y = 0;
+let CAM_SCALE = 1;
+let CAM_FOLLOW_SPEED = 0.25;
+let mouseScreenX = W / 2, mouseScreenY = H / 2;
 
-// Применяет масштаб камеры (camrows) и на десктопе, и на мобиле
-function applyCamScale(){
-  // Дебаг-панель — оверлей поверх игры, не резервирует место и не сдвигает канвас/HUD
-  const baseW = window.innerWidth;
-  const baseH = window.innerHeight;
-  if(!window.IS_MOBILE){
-    const rows = parseFloat(document.getElementById('sl-camrows')?.value || 14);
-    const targetWorldH = rows * 55; // кол-во клеток * px на клетку
-    // scale > 1 = zoom out (canvas больше экрана, сжимается через CSS)
-    // scale < 1 = zoom in (canvas меньше экрана, растягивается через CSS — больше деталей)
-    const scale = targetWorldH / baseH;
-    W = Math.max(100, Math.round(baseW * scale));
-    H = Math.max(100, Math.round(baseH * scale));
-    canvas.width = W; canvas.height = H;
-    canvas.style.width  = baseW + 'px';
-    canvas.style.height = baseH + 'px';
-    canvas.style.position = 'absolute';
-    canvas.style.left = '0'; canvas.style.top = '0';
-    window.CAM_SCALE = scale;
-  }
+function updateWorldSize(){
+  const aspect = Math.max(0.1, window.innerWidth / Math.max(1, window.innerHeight));
+  const minWorldH = Math.max(window.innerHeight * 3, 55 * 42);
+  WORLD_H = Math.round(minWorldH);
+  WORLD_W = Math.round(Math.max(window.innerWidth * 3, minWorldH * aspect));
 }
+
+function updateCameraScale(){
+  const rows = parseFloat(document.getElementById('sl-camrows')?.value || 14);
+  const visibleH = Math.max(55 * 4, rows * 55);
+  CAM_SCALE = Math.max(0.05, H / visibleH);
+  window.CAM_SCALE = CAM_SCALE;
+}
+
+function clampCamera(){
+  const viewW = W / CAM_SCALE;
+  const viewH = H / CAM_SCALE;
+  CAM_X = $.M ? $.M.clamp(CAM_X, 0, Math.max(0, WORLD_W - viewW)) : Math.max(0, Math.min(CAM_X, Math.max(0, WORLD_W - viewW)));
+  CAM_Y = $.M ? $.M.clamp(CAM_Y, 0, Math.max(0, WORLD_H - viewH)) : Math.max(0, Math.min(CAM_Y, Math.max(0, WORLD_H - viewH)));
+}
+
+function screenToWorld(x, y){
+  return { x: CAM_X + x / CAM_SCALE, y: CAM_Y + y / CAM_SCALE };
+}
+
+function worldToScreen(x, y){
+  return { x: (x - CAM_X) * CAM_SCALE, y: (y - CAM_Y) * CAM_SCALE };
+}
+
+function updateMouseWorld(){
+  const p = screenToWorld(mouseScreenX, mouseScreenY);
+  mX = p.x;
+  mY = p.y;
+}
+
+function updateCamera(dt){
+  updateCameraScale();
+  if(!cb('followcam')){
+    CAM_X = (WORLD_W - W / CAM_SCALE) / 2;
+    CAM_Y = (WORLD_H - H / CAM_SCALE) / 2;
+    clampCamera();
+    updateMouseWorld();
+    return;
+  }
+  const target = cameraTargetPoint();
+  const targetX = target.x - (W / CAM_SCALE) / 2;
+  const targetY = target.y - (H / CAM_SCALE) / 2;
+  const spd = cameraFollowSpeed(dt || 1 / 60);
+  CAM_X = $.M.lerpDT(CAM_X, targetX, spd, dt || 1 / 60);
+  CAM_Y = $.M.lerpDT(CAM_Y, targetY, spd, dt || 1 / 60);
+  keepCameraContainingPlayer();
+  clampCamera();
+  updateMouseWorld();
+}
+
+// Применяет размер viewport и масштаб зоны видимости.
+function cameraTargetPoint(){
+  if(typeof P === 'undefined') return { x: WORLD_W / 2, y: WORLD_H / 2 };
+  const combatBot = cameraCombatBot();
+  if(combatBot){
+    const bp = entityCameraPoint(combatBot);
+    return { x: (P.x + bp.x) * 0.5, y: (P.y + bp.y) * 0.5 };
+  }
+  return { x: P.x + 5, y: P.y - 8 };
+}
+
+function cameraCombatBot(){
+  if(typeof P === 'undefined' || (P._cameraCombatUntil || 0) <= GameTime) return null;
+  if(typeof DEATH !== 'undefined' && DEATH && (DEATH.fadeIn || DEATH.pDead || DEATH.dDead)){
+    if(typeof D !== 'undefined' && D && !D._awaitingReveal) return D;
+  }
+  if(typeof D !== 'undefined' && D && D.hp > 0 && !D._defeated) return D;
+  if(typeof ALL_BOTS !== 'undefined'){
+    for(const bot of ALL_BOTS){
+      if(bot && bot.hp > 0 && !bot._defeated) return bot;
+    }
+  }
+  return null;
+}
+
+function entityCameraPoint(ent){
+  if(!ent) return { x: WORLD_W / 2, y: WORLD_H / 2 };
+  return {
+    x: isFinite(ent._pendingSpawnX) ? ent._pendingSpawnX : ent.x,
+    y: isFinite(ent._pendingSpawnY) ? ent._pendingSpawnY : ent.y
+  };
+}
+
+function cameraFollowSpeed(dt){
+  const normal = Math.max(0.003, sv('camlerp') || 0.25);
+  const desired = cameraCombatBot() ? 0.003 : normal;
+  CAM_FOLLOW_SPEED = $.M.lerpDT(CAM_FOLLOW_SPEED, desired, 0.08, dt || 1 / 60);
+  return CAM_FOLLOW_SPEED;
+}
+
+function keepCameraContainingPlayer(){
+  if(typeof P === 'undefined') return;
+  const viewW = W / CAM_SCALE;
+  const viewH = H / CAM_SCALE;
+  const marginX = 18;
+  const marginY = 18;
+  if(P.x < CAM_X + marginX) CAM_X = P.x - marginX;
+  if(P.x > CAM_X + viewW - marginX) CAM_X = P.x - viewW + marginX;
+  if(P.y < CAM_Y + marginY) CAM_Y = P.y - marginY;
+  if(P.y > CAM_Y + viewH - marginY) CAM_Y = P.y - viewH + marginY;
+}
+
+function factionSpawnPoint(side, index = 0, total = 1){
+  const viewW = W / CAM_SCALE;
+  const viewH = H / CAM_SCALE;
+  const centerX = WORLD_W / 2;
+  const centerY = WORLD_H / 2;
+  const edgeGap = CELL_PX * 4;
+  const offsetX = Math.max(CELL_PX * 7, viewW / 2 - edgeGap);
+  const spreadY = Math.min(180, viewH * 0.2);
+  const row = index - (Math.max(1, total) - 1) / 2;
+  const dir = side === 'right' ? 1 : -1;
+  return {
+    x: $.M.clamp(centerX + dir * offsetX, 60, WORLD_W - 100),
+    y: $.M.clamp(centerY + row * spreadY, 60, WORLD_H - 60)
+  };
+}
+
+function snapCameraToPoint(x, y){
+  updateCameraScale();
+  CAM_X = x - (W / CAM_SCALE) / 2;
+  CAM_Y = y - (H / CAM_SCALE) / 2;
+  clampCamera();
+  updateMouseWorld();
+}
+
+function snapCameraBetweenEntities(a, b){
+  updateCameraScale();
+  const ap = entityCameraPoint(a);
+  const bp = entityCameraPoint(b);
+  const ax = isFinite(ap.x) ? ap.x : WORLD_W / 2;
+  const ay = isFinite(ap.y) ? ap.y : WORLD_H / 2;
+  const bx = isFinite(bp.x) ? bp.x : ax;
+  const by = isFinite(bp.y) ? bp.y : ay;
+  CAM_X = ((ax + bx) * 0.5) - (W / CAM_SCALE) / 2;
+  CAM_Y = ((ay + by) * 0.5) - (H / CAM_SCALE) / 2;
+  clampCamera();
+  updateMouseWorld();
+}
+
+function applyDuelSpawnLayout(){
+  if(typeof P === 'undefined') return null;
+  const pSpawn = factionSpawnPoint('left');
+  P.x = pSpawn.x;
+  P.y = pSpawn.y;
+  let mainBot = null;
+  if(typeof D !== 'undefined' && D) mainBot = D;
+  else if(typeof ALL_BOTS !== 'undefined' && ALL_BOTS.length) mainBot = ALL_BOTS[0];
+  if(mainBot){
+    const bSpawn = factionSpawnPoint('right');
+    mainBot.x = bSpawn.x;
+    mainBot.y = bSpawn.y;
+    mainBot._pendingSpawnX = bSpawn.x;
+    mainBot._pendingSpawnY = bSpawn.y;
+  }
+  if(typeof P !== 'undefined') P._cameraCombatUntil = GameTime + 8;
+  if(mainBot) snapCameraBetweenEntities(P, mainBot);
+  else snapCameraToTarget();
+  return mainBot;
+}
+
+function snapCameraToTarget(){
+  updateCameraScale();
+  if(!cb('followcam')){
+    CAM_X = (WORLD_W - W / CAM_SCALE) / 2;
+    CAM_Y = (WORLD_H - H / CAM_SCALE) / 2;
+  } else {
+    CAM_X = (typeof P !== 'undefined' ? P.x + 5 : WORLD_W / 2) - (W / CAM_SCALE) / 2;
+    CAM_Y = (typeof P !== 'undefined' ? P.y - 8 : WORLD_H / 2) - (H / CAM_SCALE) / 2;
+  }
+  clampCamera();
+  updateMouseWorld();
+}
+
+function applyCamScale(){
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+  canvas.style.width  = W + 'px';
+  canvas.style.height = H + 'px';
+  canvas.style.position = 'fixed';
+  canvas.style.left = '0'; canvas.style.top = '0';
+  updateWorldSize();
+  updateCameraScale();
+  clampCamera();
+  updateMouseWorld();
+}
+updateWorldSize();
+updateCameraScale();
 
 const keys = {};
 window.addEventListener('blur', () => {
@@ -212,13 +389,13 @@ $.POS = $.POS || {
 };
 
 $.PHY = $.PHY || {
-  move(ent, dt, minX = 40, maxX = W - 80, minY = 40, maxY = H - 40){
+  move(ent, dt, minX = 40, maxX = WORLD_W - 80, minY = 40, maxY = WORLD_H - 40){
     const step = $.M.step(dt);
     ent.x = $.M.clamp(ent.x + ent.vx * step, minX, maxX);
     ent.y = $.M.clamp(ent.y + ent.vy * step, minY, maxY);
     return ent;
   },
-  moveSimple(ent, step, minX = 40, maxX = W - 80, minY = 40, maxY = H - 40){
+  moveSimple(ent, step, minX = 40, maxX = WORLD_W - 80, minY = 40, maxY = WORLD_H - 40){
     ent.x = $.M.clamp(ent.x + ent.vx * step, minX, maxX);
     ent.y = $.M.clamp(ent.y + ent.vy * step, minY, maxY);
     return ent;
@@ -228,7 +405,7 @@ $.PHY = $.PHY || {
     ent._dvy = vy;
     return ent;
   },
-  updateDodge(ent, dt, minX = 40, maxX = W - 80, minY = 40, maxY = H - 40){
+  updateDodge(ent, dt, minX = 40, maxX = WORLD_W - 80, minY = 40, maxY = WORLD_H - 40){
     if(!ent || (!ent._dvx && !ent._dvy)) return ent;
     const step = decayingImpulseStep(dt);
     ent.x = $.M.clamp(ent.x + ent._dvx * step, minX, maxX);

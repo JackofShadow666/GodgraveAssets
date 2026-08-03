@@ -322,8 +322,8 @@ function botUpdateExhaustion(bot, dt){
 function botUpdateDodge(bot, dt){
   if(bot._dvx || bot._dvy){
     const step = decayingImpulseStep(dt);
-    bot.x = $.M.clamp(bot.x + bot._dvx * step, 40, W-80);
-    bot.y = $.M.clamp(bot.y + bot._dvy * step, 40, H-40);
+    bot.x = $.M.clamp(bot.x + bot._dvx * step, 40, WORLD_W-80);
+    bot.y = $.M.clamp(bot.y + bot._dvy * step, 40, WORLD_H-40);
     const decay = Math.pow(0.01, dt);
     bot._dvx *= decay;
     bot._dvy *= decay;
