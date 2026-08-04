@@ -1,5 +1,5 @@
 ; Список файлов из папок Music и Sound
-; Создано: 04.08.2026 6:24:49
+; Создано: 04.08.2026 6:52:36
 ; Корневая папка: F:\Jack\Project\Godgrave\Public\Godgrave\Source
 
 === Папка: Music ===
@@ -321,6 +321,8 @@ Source\Env\Foliadge\ChatGPT Image 4 ���. 2026 �., 01_12_41.png
 Source\Env\Foliadge\ChatGPT Image 4 ���. 2026 �., 01_12_49.png
 Source\Env\Foliadge\ChatGPT Image 4 ���. 2026 �., 01_12_57.png
 Source\Env\Foliadge\ChatGPT Image 4 ���. 2026 �., 01_13_10.png
+Source\Env\Foliadge\T_Env_Bush.json
+Source\Env\Foliadge\T_Env_Bush.png
 Source\Env\Foliadge\T_Env_Bush_01.png
 Source\Env\Foliadge\T_Env_Bush_02.png
 Source\Env\Foliadge\T_Env_Bush_03.png
@@ -329,6 +331,8 @@ Source\Env\Foliadge\T_Env_Grass_Wood.json
 Source\Env\Foliadge\T_Env_Grass_Wood.png
 Source\Env\Foliadge\T_Env_Rock.json
 Source\Env\Foliadge\T_Env_Rock.png
+Source\Env\Foliadge\T_Env_RockSnow.json
+Source\Env\Foliadge\T_Env_RockSnow.png
 Source\Env\Foliadge\T_Env_Rock_01.png
 Source\Env\Foliadge\T_Env_Rock_02.png
 Source\Env\Foliadge\T_Env_Rock_03.png
