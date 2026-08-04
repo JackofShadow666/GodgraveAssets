@@ -1,5 +1,5 @@
 ; –°–ø–∏—Å–æ–∫ —Ñ–∞–π–ª–æ–≤ –∏–∑ –ø–∞–ø–æ–∫ Music –∏ Sound
-; –°–æ–∑–¥–∞–Ω–æ: 05.08.2026 1:05:32
+; –°–æ–∑–¥–∞–Ω–æ: 05.08.2026 1:35:27
 ; –ö–æ—Ä–Ω–µ–≤–∞—è –ø–∞–ø–∫–∞: F:\Jack\Project\Godgrave\Public\Godgrave\Source
 
 === –ü–∞–ø–∫–∞: Music ===
@@ -317,16 +317,11 @@ Source\Env\Editor\WorldMapGeneratorOLD.html
 Source\Env\Foliadge\ChatGPT Image 4 ‡‚„. 2026 „., 01_12_14.png
 Source\Env\Foliadge\ChatGPT Image 4 ‡‚„. 2026 „., 01_12_36 (1).png
 Source\Env\Foliadge\ChatGPT Image 4 ‡‚„. 2026 „., 01_12_36 (2).png
-Source\Env\Foliadge\ChatGPT Image 4 ‡‚„. 2026 „., 01_12_41.png
 Source\Env\Foliadge\ChatGPT Image 4 ‡‚„. 2026 „., 01_12_49.png
 Source\Env\Foliadge\ChatGPT Image 4 ‡‚„. 2026 „., 01_12_57.png
 Source\Env\Foliadge\ChatGPT Image 4 ‡‚„. 2026 „., 01_13_10.png
 Source\Env\Foliadge\T_Env_Bush.json
 Source\Env\Foliadge\T_Env_Bush.png
-Source\Env\Foliadge\T_Env_Bush_01.png
-Source\Env\Foliadge\T_Env_Bush_02.png
-Source\Env\Foliadge\T_Env_Bush_03.png
-Source\Env\Foliadge\T_Env_Bush_04.png
 Source\Env\Foliadge\T_Env_Bush_Desert.json
 Source\Env\Foliadge\T_Env_Bush_Desert.png
 Source\Env\Foliadge\T_Env_Decal_Bones.json
@@ -361,32 +356,12 @@ Source\Env\Foliadge\T_Env_Plant_DesertB.json
 Source\Env\Foliadge\T_Env_Plant_DesertB.png
 Source\Env\Foliadge\T_Env_Rock.json
 Source\Env\Foliadge\T_Env_Rock.png
+Source\Env\Foliadge\T_Env_RockDesert.json
+Source\Env\Foliadge\T_Env_RockDesert.png
 Source\Env\Foliadge\T_Env_RockSnow.json
 Source\Env\Foliadge\T_Env_RockSnow.png
-Source\Env\Foliadge\T_Env_Rock_01.png
-Source\Env\Foliadge\T_Env_Rock_02.png
-Source\Env\Foliadge\T_Env_Rock_03.png
-Source\Env\Foliadge\T_Env_Rock_04.png
-Source\Env\Foliadge\T_Env_Rock_05.png
-Source\Env\Foliadge\T_Env_Rock_06.png
-Source\Env\Foliadge\T_Env_Rock_07.png
-Source\Env\Foliadge\T_Env_Rock_08.png
-Source\Env\Foliadge\T_Env_Rock_09.png
 Source\Env\Foliadge\T_Env_Stone.json
 Source\Env\Foliadge\T_Env_Stone.png
-Source\Env\Foliadge\T_Env_Stone_01.png
-Source\Env\Foliadge\T_Env_Stone_02.png
-Source\Env\Foliadge\T_Env_Stone_03.png
-Source\Env\Foliadge\T_Env_Stone_04.png
-Source\Env\Foliadge\T_Env_TreeDead_01.png
-Source\Env\Foliadge\T_Env_TreeDead_02.png
-Source\Env\Foliadge\T_Env_TreeLeaf_01.png
-Source\Env\Foliadge\T_Env_TreeLeaf_02.png
-Source\Env\Foliadge\T_Env_TreePine.png
-Source\Env\Foliadge\T_Env_TreePine_01.png
-Source\Env\Foliadge\T_Env_TreePine_02.png
-Source\Env\Foliadge\T_Env_TreePine_03.png
-Source\Env\Foliadge\T_Env_TreePine_04.png
 Source\Env\Foliadge\T_Env_Tree_Dead.json
 Source\Env\Foliadge\T_Env_Tree_Dead.png
 Source\Env\Foliadge\T_Env_Tree_Snow.json
@@ -404,6 +379,7 @@ Source\Env\Terrain\TerrainAtlas.psd
 Source\Env\Terrain\TerrainAtlasB.png
 Source\Env\Terrain\TerrainAtlasD.png
 Source\Env\Terrain\TerrainAtlasE.png
+Source\Env\Terrain\TerrainAtlasF.png
 Source\Env\Terrain\T_BiomTIle.png
 Source\Env\Terrain\T_GroundClay_01.png
 Source\Env\Terrain\T_GroundDarkDirt_01.png
