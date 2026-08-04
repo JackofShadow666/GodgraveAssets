@@ -1,4 +1,8 @@
+почемуто декорации которые вне земли не имеют колизии
 
+
+давай прикрутим это вкл выкл и настройки @pixi/filter-glow, @pixi/filter-bloom
+Vertex Shader для растительности
 T_Env_Tree_WoodA
 T_Env_Tree_WoodB
 T_Env_Tree_WoodC

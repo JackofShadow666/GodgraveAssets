@@ -360,6 +360,8 @@ body.is-mobile:not(.is-portrait) #mob-throw-btn{display:flex;}
     <div class="sec" id="sec-mobile-cam"><div class="sec-title" data-i18n="sec.mobileCam"></div>
       <div data-slider="gamespeed,slider.gameSpeed,1,.1,2,.05"></div>
       <div data-slider="camrows,slider.cameraZoom,14,6,24,1"></div>
+      <div data-checkbox="followcam,checkbox.followCamera,true"></div>
+      <div data-slider="camlerp,slider.cameraLerp,.25,.003,.8,.001"></div>
       <div data-slider="musicvol,slider.musicVolume,.5,0,1,.05"></div>
       <div data-slider="botcount,slider.botCount,1,0,10,1"></div>
       <div data-checkbox="botrandomweapon,checkbox.botRandomWeapon,false"></div>
@@ -709,7 +711,7 @@ body.is-mobile:not(.is-portrait) #mob-throw-btn{display:flex;}
       'sl-gamepadflickwindow','vl-gamepadflickwindow','sl-gamepadflickminvel','vl-gamepadflickminvel',
       'sl-gamepadflickminamp','vl-gamepadflickminamp','sl-gamepadflickcount','vl-gamepadflickcount',
       'sl-gamepadflickmaxmult','vl-gamepadflickmaxmult','sl-gamepadstamflick','vl-gamepadstamflick',
-      'sl-gamespeed','vl-gamespeed','sl-camrows','vl-camrows','sl-musicvol','vl-musicvol',
+      'sl-gamespeed','vl-gamespeed','sl-camrows','vl-camrows','sl-camlerp','vl-camlerp','sl-musicvol','vl-musicvol',
       'sl-botcount','vl-botcount','sl-botspd','vl-botspd','sl-botdodgechance','vl-botdodgechance',
       'sl-botdodgetoward','vl-botdodgetoward','sl-botscale','vl-botscale','sl-botswordscale','vl-botswordscale',
       'sl-globalspd','vl-globalspd','sl-swthresh','vl-swthresh','sl-stamblock','vl-stamblock',
@@ -838,6 +840,7 @@ body.is-mobile:not(.is-portrait) #mob-throw-btn{display:flex;}
 'slider.gamepadStamFlick': 'Флик геймпада: расход выносливости',
 'slider.gameSpeed': 'Скорость игры (×)',
 'slider.cameraZoom': 'Приближение камеры (клетки)',
+'slider.cameraLerp': 'Отставание камеры',
 'slider.musicVolume': 'Громкость музыки',
 'slider.botCount': 'Количество ботов',
 'slider.botSpeed': 'Скорость бота (× от игрока)',
@@ -899,6 +902,7 @@ body.is-mobile:not(.is-portrait) #mob-throw-btn{display:flex;}
 'checkbox.flickDetect': 'Обнаружение флика (быстрая смена направления)',
 'checkbox.debugBrowser': 'Отладка: разблокировать ПКМ и клавиши браузера',
 'checkbox.debugClash': 'Отладка: выводить данные столкновений (консоль)',
+'checkbox.followCamera': 'Камера закреплена на игроке',
 
 // ─── SELECT LABELS ──────────────────────────────────────────────
 'select.gamepadSlot': 'Управление геймпадом 1',
@@ -1406,6 +1410,7 @@ body.is-mobile:not(.is-portrait) #mob-throw-btn{display:flex;}
         spindur: 'Длительность круга',
         gamespeed: 'Скорость игры',
         camrows: 'Масштаб камеры',
+        camlerp: 'Отставание камеры',
         musicvol: 'Громкость музыки',
         botcount: 'Количество ботов',
         botspd: 'Скорость ботов',
@@ -1689,30 +1694,207 @@ const _isMobileUA = /Android|iPhone|iPad|iPod|Mobile/i.test(_ua);
 window.IS_MOBILE = _isTouchDevice && _isMobileUA;
 if(window.IS_MOBILE) document.body.classList.add('is-mobile');
 
-let W = canvas.width  = window.IS_MOBILE ? window.innerWidth  : window.innerWidth; // панель по умолчанию скрыта
+let W = canvas.width  = window.innerWidth;
 let H = canvas.height = window.innerHeight;
+let WORLD_W = W, WORLD_H = H;
+let CAM_X = 0, CAM_Y = 0;
+let CAM_SCALE = 1;
+let CAM_FOLLOW_SPEED = 0.25;
+let mouseScreenX = W / 2, mouseScreenY = H / 2;
 
-// Применяет масштаб камеры (camrows) и на десктопе, и на мобиле
-function applyCamScale(){
-  // Дебаг-панель — оверлей поверх игры, не резервирует место и не сдвигает канвас/HUD
-  const baseW = window.innerWidth;
-  const baseH = window.innerHeight;
-  if(!window.IS_MOBILE){
-    const rows = parseFloat(document.getElementById('sl-camrows')?.value || 14);
-    const targetWorldH = rows * 55; // кол-во клеток * px на клетку
-    // scale > 1 = zoom out (canvas больше экрана, сжимается через CSS)
-    // scale < 1 = zoom in (canvas меньше экрана, растягивается через CSS — больше деталей)
-    const scale = targetWorldH / baseH;
-    W = Math.max(100, Math.round(baseW * scale));
-    H = Math.max(100, Math.round(baseH * scale));
-    canvas.width = W; canvas.height = H;
-    canvas.style.width  = baseW + 'px';
-    canvas.style.height = baseH + 'px';
-    canvas.style.position = 'absolute';
-    canvas.style.left = '0'; canvas.style.top = '0';
-    window.CAM_SCALE = scale;
-  }
+function updateWorldSize(){
+  const aspect = Math.max(0.1, window.innerWidth / Math.max(1, window.innerHeight));
+  const minWorldH = Math.max(window.innerHeight * 3, 55 * 42);
+  WORLD_H = Math.round(minWorldH);
+  WORLD_W = Math.round(Math.max(window.innerWidth * 3, minWorldH * aspect));
 }
+
+function updateCameraScale(){
+  const rows = parseFloat(document.getElementById('sl-camrows')?.value || 14);
+  const visibleH = Math.max(55 * 4, rows * 55);
+  CAM_SCALE = Math.max(0.05, H / visibleH);
+  window.CAM_SCALE = CAM_SCALE;
+}
+
+function clampCamera(){
+  const viewW = W / CAM_SCALE;
+  const viewH = H / CAM_SCALE;
+  CAM_X = $.M ? $.M.clamp(CAM_X, 0, Math.max(0, WORLD_W - viewW)) : Math.max(0, Math.min(CAM_X, Math.max(0, WORLD_W - viewW)));
+  CAM_Y = $.M ? $.M.clamp(CAM_Y, 0, Math.max(0, WORLD_H - viewH)) : Math.max(0, Math.min(CAM_Y, Math.max(0, WORLD_H - viewH)));
+}
+
+function screenToWorld(x, y){
+  return { x: CAM_X + x / CAM_SCALE, y: CAM_Y + y / CAM_SCALE };
+}
+
+function worldToScreen(x, y){
+  return { x: (x - CAM_X) * CAM_SCALE, y: (y - CAM_Y) * CAM_SCALE };
+}
+
+function updateMouseWorld(){
+  const p = screenToWorld(mouseScreenX, mouseScreenY);
+  mX = p.x;
+  mY = p.y;
+}
+
+function updateCamera(dt){
+  updateCameraScale();
+  if(!cb('followcam')){
+    CAM_X = (WORLD_W - W / CAM_SCALE) / 2;
+    CAM_Y = (WORLD_H - H / CAM_SCALE) / 2;
+    clampCamera();
+    updateMouseWorld();
+    return;
+  }
+  const target = cameraTargetPoint();
+  const targetX = target.x - (W / CAM_SCALE) / 2;
+  const targetY = target.y - (H / CAM_SCALE) / 2;
+  const spd = cameraFollowSpeed(dt || 1 / 60);
+  CAM_X = $.M.lerpDT(CAM_X, targetX, spd, dt || 1 / 60);
+  CAM_Y = $.M.lerpDT(CAM_Y, targetY, spd, dt || 1 / 60);
+  keepCameraContainingPlayer();
+  clampCamera();
+  updateMouseWorld();
+}
+
+// Применяет размер viewport и масштаб зоны видимости.
+function cameraTargetPoint(){
+  if(typeof P === 'undefined') return { x: WORLD_W / 2, y: WORLD_H / 2 };
+  const combatBot = cameraCombatBot();
+  if(combatBot){
+    const bp = entityCameraPoint(combatBot);
+    return { x: (P.x + bp.x) * 0.5, y: (P.y + bp.y) * 0.5 };
+  }
+  return { x: P.x + 5, y: P.y - 8 };
+}
+
+function cameraCombatBot(){
+  if(typeof P === 'undefined' || (P._cameraCombatUntil || 0) <= GameTime) return null;
+  if(typeof DEATH !== 'undefined' && DEATH && (DEATH.fadeIn || DEATH.pDead || DEATH.dDead)){
+    if(typeof D !== 'undefined' && D && !D._awaitingReveal) return D;
+  }
+  if(typeof D !== 'undefined' && D && D.hp > 0 && !D._defeated) return D;
+  if(typeof ALL_BOTS !== 'undefined'){
+    for(const bot of ALL_BOTS){
+      if(bot && bot.hp > 0 && !bot._defeated) return bot;
+    }
+  }
+  return null;
+}
+
+function entityCameraPoint(ent){
+  if(!ent) return { x: WORLD_W / 2, y: WORLD_H / 2 };
+  return {
+    x: isFinite(ent._pendingSpawnX) ? ent._pendingSpawnX : ent.x,
+    y: isFinite(ent._pendingSpawnY) ? ent._pendingSpawnY : ent.y
+  };
+}
+
+function cameraFollowSpeed(dt){
+  const normal = Math.max(0.003, sv('camlerp') || 0.25);
+  const desired = cameraCombatBot() ? 0.003 : normal;
+  CAM_FOLLOW_SPEED = $.M.lerpDT(CAM_FOLLOW_SPEED, desired, 0.08, dt || 1 / 60);
+  return CAM_FOLLOW_SPEED;
+}
+
+function keepCameraContainingPlayer(){
+  if(typeof P === 'undefined') return;
+  const viewW = W / CAM_SCALE;
+  const viewH = H / CAM_SCALE;
+  const marginX = 18;
+  const marginY = 18;
+  if(P.x < CAM_X + marginX) CAM_X = P.x - marginX;
+  if(P.x > CAM_X + viewW - marginX) CAM_X = P.x - viewW + marginX;
+  if(P.y < CAM_Y + marginY) CAM_Y = P.y - marginY;
+  if(P.y > CAM_Y + viewH - marginY) CAM_Y = P.y - viewH + marginY;
+}
+
+function factionSpawnPoint(side, index = 0, total = 1){
+  const viewW = W / CAM_SCALE;
+  const viewH = H / CAM_SCALE;
+  const centerX = WORLD_W / 2;
+  const centerY = WORLD_H / 2;
+  const edgeGap = CELL_PX * 4;
+  const offsetX = Math.max(CELL_PX * 7, viewW / 2 - edgeGap);
+  const spreadY = Math.min(180, viewH * 0.2);
+  const row = index - (Math.max(1, total) - 1) / 2;
+  const dir = side === 'right' ? 1 : -1;
+  return {
+    x: $.M.clamp(centerX + dir * offsetX, 60, WORLD_W - 100),
+    y: $.M.clamp(centerY + row * spreadY, 60, WORLD_H - 60)
+  };
+}
+
+function snapCameraToPoint(x, y){
+  updateCameraScale();
+  CAM_X = x - (W / CAM_SCALE) / 2;
+  CAM_Y = y - (H / CAM_SCALE) / 2;
+  clampCamera();
+  updateMouseWorld();
+}
+
+function snapCameraBetweenEntities(a, b){
+  updateCameraScale();
+  const ap = entityCameraPoint(a);
+  const bp = entityCameraPoint(b);
+  const ax = isFinite(ap.x) ? ap.x : WORLD_W / 2;
+  const ay = isFinite(ap.y) ? ap.y : WORLD_H / 2;
+  const bx = isFinite(bp.x) ? bp.x : ax;
+  const by = isFinite(bp.y) ? bp.y : ay;
+  CAM_X = ((ax + bx) * 0.5) - (W / CAM_SCALE) / 2;
+  CAM_Y = ((ay + by) * 0.5) - (H / CAM_SCALE) / 2;
+  clampCamera();
+  updateMouseWorld();
+}
+
+function applyDuelSpawnLayout(){
+  if(typeof P === 'undefined') return null;
+  const pSpawn = factionSpawnPoint('left');
+  P.x = pSpawn.x;
+  P.y = pSpawn.y;
+  let mainBot = null;
+  if(typeof D !== 'undefined' && D) mainBot = D;
+  else if(typeof ALL_BOTS !== 'undefined' && ALL_BOTS.length) mainBot = ALL_BOTS[0];
+  if(mainBot){
+    const bSpawn = factionSpawnPoint('right');
+    mainBot.x = bSpawn.x;
+    mainBot.y = bSpawn.y;
+    mainBot._pendingSpawnX = bSpawn.x;
+    mainBot._pendingSpawnY = bSpawn.y;
+  }
+  if(typeof P !== 'undefined') P._cameraCombatUntil = GameTime + 8;
+  if(mainBot) snapCameraBetweenEntities(P, mainBot);
+  else snapCameraToTarget();
+  return mainBot;
+}
+
+function snapCameraToTarget(){
+  updateCameraScale();
+  if(!cb('followcam')){
+    CAM_X = (WORLD_W - W / CAM_SCALE) / 2;
+    CAM_Y = (WORLD_H - H / CAM_SCALE) / 2;
+  } else {
+    CAM_X = (typeof P !== 'undefined' ? P.x + 5 : WORLD_W / 2) - (W / CAM_SCALE) / 2;
+    CAM_Y = (typeof P !== 'undefined' ? P.y - 8 : WORLD_H / 2) - (H / CAM_SCALE) / 2;
+  }
+  clampCamera();
+  updateMouseWorld();
+}
+
+function applyCamScale(){
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+  canvas.style.width  = W + 'px';
+  canvas.style.height = H + 'px';
+  canvas.style.position = 'fixed';
+  canvas.style.left = '0'; canvas.style.top = '0';
+  updateWorldSize();
+  updateCameraScale();
+  clampCamera();
+  updateMouseWorld();
+}
+updateWorldSize();
+updateCameraScale();
 
 const keys = {};
 window.addEventListener('blur', () => {
@@ -1863,13 +2045,13 @@ $.POS = $.POS || {
 };
 
 $.PHY = $.PHY || {
-  move(ent, dt, minX = 40, maxX = W - 80, minY = 40, maxY = H - 40){
+  move(ent, dt, minX = 40, maxX = WORLD_W - 80, minY = 40, maxY = WORLD_H - 40){
     const step = $.M.step(dt);
     ent.x = $.M.clamp(ent.x + ent.vx * step, minX, maxX);
     ent.y = $.M.clamp(ent.y + ent.vy * step, minY, maxY);
     return ent;
   },
-  moveSimple(ent, step, minX = 40, maxX = W - 80, minY = 40, maxY = H - 40){
+  moveSimple(ent, step, minX = 40, maxX = WORLD_W - 80, minY = 40, maxY = WORLD_H - 40){
     ent.x = $.M.clamp(ent.x + ent.vx * step, minX, maxX);
     ent.y = $.M.clamp(ent.y + ent.vy * step, minY, maxY);
     return ent;
@@ -1879,7 +2061,7 @@ $.PHY = $.PHY || {
     ent._dvy = vy;
     return ent;
   },
-  updateDodge(ent, dt, minX = 40, maxX = W - 80, minY = 40, maxY = H - 40){
+  updateDodge(ent, dt, minX = 40, maxX = WORLD_W - 80, minY = 40, maxY = WORLD_H - 40){
     if(!ent || (!ent._dvx && !ent._dvy)) return ent;
     const step = decayingImpulseStep(dt);
     ent.x = $.M.clamp(ent.x + ent._dvx * step, minX, maxX);
@@ -2264,6 +2446,7 @@ bindSlider('flailspeedmult');
 bindSlider('flailsag');
 bindSlider('dzone');
 document.getElementById('sl-camrows')?.addEventListener('input', () => { applyCamScale(); arenaDirty = true; });
+document.getElementById('cb-followcam')?.addEventListener('change', () => { snapCameraToTarget(); arenaDirty = true; });
 document.getElementById('sl-botcount')?.addEventListener('input', function(){
   document.getElementById('vl-botcount').textContent = this.value;
   const count=Math.max(0,Number(this.value)||0);
@@ -2346,6 +2529,7 @@ bindSlider('unbcombo');
 bindSlider('stamreg');
 bindSlider('gamespeed');
 bindSlider('camrows');
+bindSlider('camlerp');
 bindSlider('botspd');
 bindSlider('botdodgechance');
 bindSlider('botdodgetoward');
@@ -2664,10 +2848,13 @@ function fxDrawBlood(ctx, p, x, y, angle){
 function fxDrawFlash(ctx, p){
   // Flash — полноэкранный (без масштаба, как в библиотеке)
   const intensity = Math.min(0.85, p * 1.2);
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.fillStyle = `rgba(255,255,250,${intensity*0.85})`;
   ctx.fillRect(0,0,canvas.width,canvas.height);
   ctx.fillStyle = `rgba(255,255,255,${intensity*0.25})`;
   ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.restore();
 }
 
 function fxDrawCross(ctx, p, x, y){
@@ -4158,8 +4345,8 @@ function botUpdateExhaustion(bot, dt){
 function botUpdateDodge(bot, dt){
   if(bot._dvx || bot._dvy){
     const step = decayingImpulseStep(dt);
-    bot.x = $.M.clamp(bot.x + bot._dvx * step, 40, W-80);
-    bot.y = $.M.clamp(bot.y + bot._dvy * step, 40, H-40);
+    bot.x = $.M.clamp(bot.x + bot._dvx * step, 40, WORLD_W-80);
+    bot.y = $.M.clamp(bot.y + bot._dvy * step, 40, WORLD_H-40);
     const decay = Math.pow(0.01, dt);
     bot._dvx *= decay;
     bot._dvy *= decay;
@@ -4759,7 +4946,7 @@ function bounceWeapon(w, nx, ny, restitution){
 function updateDroppedWeapons(dt){
   const step = $.M.step(dt);
   const PICKUP_R = 45;
-  const BOUND_L = 40, BOUND_R = W - 80, BOUND_T = 40, BOUND_B = H - 40;
+  const BOUND_L = 40, BOUND_R = WORLD_W - 80, BOUND_T = 40, BOUND_B = WORLD_H - 40;
 
   for(let i = DROPPED_WEAPONS.length - 1; i >= 0; i--){
     const w = DROPPED_WEAPONS[i];
@@ -4849,7 +5036,7 @@ if(bounced){
             applyShieldBlockFX(w.x, w.y, null, null, {waveAngle: Math.atan2(w.vy, w.vx)});
           } else {
             const strongHit = flySpdPre > 6;
-            $.FX.hit({x:w.x, y:w.y-8, t:'✦', life:18, big:strongHit, col:'#ffdd88'});
+            $.FX.hit({x:w.x, y:w.y-8, t:(window.I18N ? window.I18N.t('combat.clash') : 'CLASH!'), life:28, big:strongHit, col:'#ccccaa'});
             $.S.play(strongHit ? 'clashHard' : 'clash');
             if(typeof triggerHitstop === 'function') triggerHitstop(strongHit?3:2, strongHit?3:1.5);
             addRage(ent, clashRageGain());
@@ -6994,7 +7181,7 @@ function updateCrossbowReloadSound(ent){
 // Updates all projectiles: movement, blocking by blade/shield, damage to entities.
 function updateProjectiles(dt){
   const step = $.M.step(dt);
-  const BOUND_L = 40, BOUND_R = W-80, BOUND_T = 40, BOUND_B = H-40;
+  const BOUND_L = 40, BOUND_R = WORLD_W-80, BOUND_T = 40, BOUND_B = WORLD_H-40;
   for(let i = PROJECTILES.length-1; i >= 0; i--){
     const w = PROJECTILES[i];
     w.x += w.vx*step; w.y += w.vy*step;
@@ -7317,7 +7504,7 @@ function updateCrossbowBotAI(dt, bot){
     } else {
       if(prevMode !== 'wander') bot._cbWanderTarget = null;
       if(bot._cbWanderTarget == null || Math.hypot(bot._cbWanderTarget.x-bot.x, bot._cbWanderTarget.y-bot.y) < 40){
-        bot._cbWanderTarget = { x: randRange(60, W-100), y: randRange(60, H-60) };
+        bot._cbWanderTarget = { x: randRange(60, WORLD_W-100), y: randRange(60, WORLD_H-60) };
       }
       const wdx = bot._cbWanderTarget.x-bot.x, wdy = bot._cbWanderTarget.y-bot.y;
       const wl = Math.hypot(wdx,wdy) || 1;
@@ -7326,7 +7513,7 @@ function updateCrossbowBotAI(dt, bot){
     }
     // ─── WALL AVOIDANCE ──────────────────────────────────────────────
     const WALL_MARGIN = 130;
-    const _bl=40, _br=W-80, _bt=40, _bb=H-40;
+    const _bl=40, _br=WORLD_W-80, _bt=40, _bb=WORLD_H-40;
     const dL=bot.x-_bl, dR=_br-bot.x, dT=bot.y-_bt, dB=_bb-bot.y;
     let wallX=0, wallY=0;
     if(dL<WALL_MARGIN) wallX += (WALL_MARGIN-dL)/WALL_MARGIN;
@@ -7363,8 +7550,8 @@ function updateCrossbowBotAI(dt, bot){
   bot.vy = $.M.lerpDT(bot.vy, my*maxV, 0.16, dt);
   bot.vx = $.M.clamp(bot.vx,-15,15); bot.vy = $.M.clamp(bot.vy,-15,15);
   const step = $.M.step(dt);
-  bot.x = $.M.clamp(bot.x+bot.vx*step, 40, W-80);
-  bot.y = $.M.clamp(bot.y+bot.vy*step, 40, H-40);
+  bot.x = $.M.clamp(bot.x+bot.vx*step, 40, WORLD_W-80);
+  bot.y = $.M.clamp(bot.y+bot.vy*step, 40, WORLD_H-40);
   resolveBoxCollision(bot);
 
 // The rest of updateCrossbowBotAI is handled by updateDummy(), so we don't
@@ -7501,8 +7688,8 @@ if(magicAI.state === 'charging'){
   bot.vx = $.M.lerpDT(bot.vx, 0, 0.9, dt);
   bot.vy = $.M.lerpDT(bot.vy, 0, 0.9, dt);
   const step = $.M.step(dt);
-  bot.x = $.M.clamp(bot.x + bot.vx*step, 40, W-80);
-  bot.y = $.M.clamp(bot.y + bot.vy*step, 40, H-40);
+  bot.x = $.M.clamp(bot.x + bot.vx*step, 40, WORLD_W-80);
+  bot.y = $.M.clamp(bot.y + bot.vy*step, 40, WORLD_H-40);
   bot.angle = aimAngle;
   drainStamina(bot, 15 * dt);
   
@@ -7669,8 +7856,8 @@ bot.vy = $.M.lerpDT(bot.vy, my*maxV, 0.2, dt);
 bot.vx = $.M.clamp(bot.vx,-15,15); bot.vy = $.M.clamp(bot.vy,-15,15);
 if(!bot._wandCharging){
   const step = $.M.step(dt);
-  bot.x = $.M.clamp(bot.x+bot.vx*step, 40, W-80);
-  bot.y = $.M.clamp(bot.y+bot.vy*step, 40, H-40);
+  bot.x = $.M.clamp(bot.x+bot.vx*step, 40, WORLD_W-80);
+  bot.y = $.M.clamp(bot.y+bot.vy*step, 40, WORLD_H-40);
 }
 
 // ─── FIRE LOGIC ──────────────────────────────────────────────────────────
@@ -7975,10 +8162,10 @@ _hitCount: 0,
   });
 }
 
-const P = makeEntity(W/2 - 80, H/2, 0.8, '#1e4a72', {
+const P = makeEntity(WORLD_W/2 - 80, WORLD_H/2, 0.8, '#1e4a72', {
   stamRegen: 28
 });
-let D = makeEntity(W/2 + 110, H/2, 0.8, '#4a1a10', {
+let D = makeEntity(WORLD_W/2 + 110, WORLD_H/2, 0.8, '#4a1a10', {
   stamRegen: 28
 });
 const trailPts = [];
@@ -7990,10 +8177,10 @@ const BOXES = [];
 function initBoxes(){
   BOXES.length = 0;
   BOXES.push(
-    { x: W/2+120, y: H/2-60,  w: 55, h: 55 },
-    { x: W/2-180, y: H/2+80,  w: 55, h: 55 },
-    { x: W/2+60,  y: H/2+130, w: 70, h: 40 },
-    { x: W/2-80,  y: H/2-130, w: 40, h: 70 }
+    { x: WORLD_W/2+120, y: WORLD_H/2-60,  w: 55, h: 55 },
+    { x: WORLD_W/2-180, y: WORLD_H/2+80,  w: 55, h: 55 },
+    { x: WORLD_W/2+60,  y: WORLD_H/2+130, w: 70, h: 40 },
+    { x: WORLD_W/2-80,  y: WORLD_H/2-130, w: 40, h: 70 }
   );
 }
 
@@ -8153,6 +8340,7 @@ function updateDisbalanceCombo(attacker, defender){
 function swordHit(entA, entB){
   const attacker = entA.isAttacker ? entA : entB;
   const defender = entA.isAttacker ? entB : entA;
+  if(entA === P || entB === P) P._cameraCombatUntil = GameTime + 8;
   openSafeCounterWindow(defender);
   const disbalanceTriggered = updateDisbalanceCombo(attacker, defender);
   if(disbalanceTriggered) return;
@@ -9115,7 +9303,7 @@ function dstyleCb(id){
 
 // ─── RESET PLAYER STATE ──────────────────────────────────────────────
 // ─── RESET / RESTART ──────────────────────────────────────────────────
-function resetPlayerState() {
+function resetPlayerState(options = {}) {
     // Clear dropped weapons
     if (typeof DROPPED_WEAPONS !== 'undefined') {
         DROPPED_WEAPONS.length = 0;
@@ -9211,8 +9399,13 @@ function resetPlayerState() {
     // P._shieldFlipped = false;
     
     // ─── RESET POSITION ────────────────────────────────────────────
-    P.x = W * 0.15;
-    P.y = H * 0.8;
+    if (!options.skipPosition) {
+        const spawn = typeof factionSpawnPoint === 'function'
+            ? factionSpawnPoint('left')
+            : { x: W * 0.15, y: H * 0.8 };
+        P.x = spawn.x;
+        P.y = spawn.y;
+    }
 }
 
 function clearEntityChargeState(ent) {
@@ -9266,13 +9459,19 @@ function resetBotRoundState(bot, index, totalBots, enableAI) {
     bot._recovering = false;
     bot._recoverProgress = 0;
     bot._defeated = false;
+    if (window._manualBotWeaponType !== undefined) bot._manualWeaponType = window._manualBotWeaponType;
+    if (bot._manualWeaponType !== undefined && typeof setWeapon === 'function') setWeapon(bot, bot._manualWeaponType);
     if (bot.hasWeapon === false && typeof setWeapon === 'function') setWeapon(bot, bot.weaponType);
     const ang = totalBots > 0 ? (index / totalBots) * Math.PI * 2 : 0;
-    const bx = $.M.clamp(W / 2 + 110 + Math.cos(ang) * 140, 60, W - 100);
-    const by = $.M.clamp(H / 2 + Math.sin(ang) * 140, 60, H - 60);
+    const spawn = typeof factionSpawnPoint === 'function'
+        ? factionSpawnPoint('right', index, totalBots)
+        : { x: P.x + 520, y: P.y + Math.sin(ang) * 120 };
+    const bx = spawn.x;
+    const by = spawn.y;
     if (typeof assignRandomSkin === 'function') assignRandomSkin(bot);
     if (typeof placeBotPendingReveal === 'function') placeBotPendingReveal(bot, bx, by);
     else { bot.x = bx; bot.y = by; }
+    if (typeof P !== 'undefined') P._cameraCombatUntil = GameTime + 8;
     if (bot._aiState) {
         bot._aiState.enabled = enableAI;
         bot._aiState._fakeMDown = false;
@@ -9299,7 +9498,7 @@ window.restartCombatRound = function(options = {}) {
         enableAI = true
     } = options;
     if (resetScore && typeof resetWins === 'function') resetWins();
-    resetPlayerState();
+    resetPlayerState({ skipPosition: true });
     if (keepPlayerSide) {
         P.x = playerWon ? W * 0.15 : W * 0.82;
         P.y = H * 0.6;
@@ -9319,6 +9518,8 @@ window.restartCombatRound = function(options = {}) {
             AI = preferredMain._aiState;
         }
     }
+    if (!keepPlayerSide && typeof applyDuelSpawnLayout === 'function') applyDuelSpawnLayout();
+    else if (typeof snapCameraBetweenEntities === 'function') snapCameraBetweenEntities(P, D);
     DEATH.dDead = false;
     DEATH.pDead = false;
     DEATH.fadeIn = false;
@@ -9374,6 +9575,7 @@ function triggerDeath(ent, isBot){
   DEATH.deathCross.push({x:bc.x, y:bc.y, timer:2.0, isBot});
   DEATH.fadeAlpha = 0;
   DEATH.fadeIn = true;
+  if(typeof P !== 'undefined') P._cameraCombatUntil = GameTime + 8;
   if(typeof NET_SYNC!=='undefined'&&$.NET.active()) $.NET.send({type:'freeze'});
   $.S.play('death');
 
@@ -9424,6 +9626,8 @@ function drawDeathCrosses(){
   if(DEATH.fadeIn || DEATH.fadeAlpha > 0){
     if(DEATH.fadeIn) DEATH.fadeAlpha = Math.min(0.78, DEATH.fadeAlpha + 0.022);
     else DEATH.fadeAlpha = Math.max(0, DEATH.fadeAlpha - 0.03);
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.fillStyle = `rgba(0,0,0,${DEATH.fadeAlpha})`;
     ctx.fillRect(0, 0, W, H);
     // ─── VICTORY/DEFEAT TEXT ──────────────────────────────────────
@@ -9440,6 +9644,7 @@ function drawDeathCrosses(){
       ctx.fillText(DEATH.text, W/2, H/2);
       ctx.restore();
     }
+    ctx.restore();
   }
   for(const dc of DEATH.deathCross){
     ctx.save();
@@ -9817,6 +10022,7 @@ function contact(a, b){
   if(!a || !b) return;
   const aPlayer = isPlayer(a);
   const bPlayer = isPlayer(b);
+  if(a === P || b === P) P._cameraCombatUntil = GameTime + 8;
   if(!aPlayer && bPlayer){ a._lastPlayerTarget = b; a._lastPlayerContactAt = GameTime; }
   if(!bPlayer && aPlayer){ b._lastPlayerTarget = a; b._lastPlayerContactAt = GameTime; }
 }
@@ -9958,8 +10164,8 @@ function contact(a, b){
     const step = Math.min(0.18, 0.5 / Math.max(1, total));
     const start = 0.5 - (step * (total - 1)) / 2;
     return {
-      x: $.M.clamp(W * 0.18 + slot * 24, 60, W - 100),
-      y: $.M.clamp(H * (start + slot * step), 60, H - 60)
+      x: $.M.clamp(WORLD_W * 0.18 + slot * 24, 60, WORLD_W - 100),
+      y: $.M.clamp(WORLD_H * (start + slot * step), 60, WORLD_H - 60)
     };
   }
 
@@ -9994,8 +10200,8 @@ function contact(a, b){
       clearEntityState(ent);
       if(ent.hasWeapon === false && typeof setWeapon === 'function') setWeapon(ent, ent.weaponType || 0);
       const angle = index / Math.max(1, all.length) * Math.PI * 2;
-      ent.x = $.M.clamp(W / 2 + Math.cos(angle) * 180, 60, W - 100);
-      ent.y = $.M.clamp(H / 2 + Math.sin(angle) * 150, 60, H - 60);
+      ent.x = $.M.clamp(WORLD_W / 2 + Math.cos(angle) * 180, 60, WORLD_W - 100);
+      ent.y = $.M.clamp(WORLD_H / 2 + Math.sin(angle) * 150, 60, WORLD_H - 60);
     });
     DEATH.pDead = false;
     DEATH.dDead = false;
@@ -10230,6 +10436,7 @@ function pickWeightedBotWeaponType(){
 
 function maybeSetRandomBotWeapon(bot, force = false){
   if(!bot || typeof setWeapon !== 'function' || (!force && !cb('botrandomweapon'))) return;
+  if(!force && window._manualBotWeaponType !== undefined) return;
   setWeapon(bot, pickWeightedBotWeaponType());
 }
 
@@ -10343,11 +10550,18 @@ function applyBotCount(){
   while(ALL_BOTS.length < target){
     const idx = ALL_BOTS.length;
     const ang = (idx / target) * Math.PI * 2;
-    const spawnX = $.M.clamp(W/2 + 110 + Math.cos(ang)*140, 60, W-100);
-    const spawnY = $.M.clamp(H/2 + Math.sin(ang)*140, 60, H-60);
+    const spawn = typeof factionSpawnPoint === 'function'
+      ? factionSpawnPoint('right', idx, target)
+      : { x: P.x + 520, y: P.y + Math.sin(ang) * 120 };
+    const spawnX = spawn.x;
+    const spawnY = spawn.y;
     const nb = makeEntity(spawnX, spawnY, 0.8, '#4a1a10', { stamRegen: 28 });
     nb._aiState = freshAIState();
     maybeSetRandomBotWeapon(nb);
+    if(window._manualBotWeaponType !== undefined){
+      nb._manualWeaponType = window._manualBotWeaponType;
+      setWeapon(nb, nb._manualWeaponType);
+    }
     // Если игра сейчас на паузе (T/Е) — новый бот тоже должен родиться замороженным
     const localPvpActive = typeof LocalPlayerControls!=='undefined' && LocalPlayerControls.isLocalPvP();
     if(!localPvpActive && typeof AI!=='undefined' && AI && AI.enabled===false) nb._aiState.enabled = false;
@@ -10372,6 +10586,7 @@ function applyBotCount(){
     // иначе он несколько кадров "невидим", но уже стоит на арене и может получать урон.
     placeBotPendingReveal(nb, spawnX, spawnY);
     ALL_BOTS.push(nb);
+    if(typeof P !== 'undefined') P._cameraCombatUntil = GameTime + 8;
   }
   
   while(ALL_BOTS.length > target){
@@ -10755,8 +10970,8 @@ function duelUpdate(dt){
     if(distFromCenter > duelRad && GameTime >= DUEL.nextMoveCD){
       const r = duelRad * 0.7;
       const ang = Math.random() * Math.PI * 2;
-      AI._duelTargX = $.M.clamp(DUEL.cx + Math.cos(ang)*r*Math.random(), 60, W-100);
-      AI._duelTargY = $.M.clamp(DUEL.cy + Math.sin(ang)*r*Math.random(), 60, H-60);
+      AI._duelTargX = $.M.clamp(DUEL.cx + Math.cos(ang)*r*Math.random(), 60, WORLD_W-100);
+      AI._duelTargY = $.M.clamp(DUEL.cy + Math.sin(ang)*r*Math.random(), 60, WORLD_H-60);
       AI._duelPull = true;
       DUEL.nextMoveCD = GameTime + rf(0.5,1.5);
     }
@@ -11017,7 +11232,7 @@ function estimateThrowRange(def){
       if(ai._weaponSeekTimer === undefined) ai._weaponSeekTimer = rf(3,5);
       ai._weaponSeekTimer -= dt;
       if(ai._weaponSeekTimer <= 0){
-        setWeapon(bot, 1); // 1 = кинжал
+        setWeapon(bot, bot._manualWeaponType !== undefined ? bot._manualWeaponType : 1); // 1 = кинжал
         ai._weaponSeekTimer = undefined;
         k.w=k.a=k.s=k.d=false;
         return;
@@ -11682,8 +11897,8 @@ if(ai._contactCD > 0 && ai.phase === 'attack' && ai._contactCD <= GameTime){
       ai._fakeMDown = false;
       ai._harassOrbitAng += ai._harassOrbitDir * 0.025;
       const orbitR = Math.max(60*cscl, distToPlayer);
-      const tx = $.M.clamp(pBodyC.x + Math.cos(ai._harassOrbitAng)*orbitR, 60, W-100);
-      const ty = $.M.clamp(pBodyC.y + Math.sin(ai._harassOrbitAng)*orbitR, 60, H-60);
+      const tx = $.M.clamp(pBodyC.x + Math.cos(ai._harassOrbitAng)*orbitR, 60, WORLD_W-100);
+      const ty = $.M.clamp(pBodyC.y + Math.sin(ai._harassOrbitAng)*orbitR, 60, WORLD_H-60);
       k.a=(tx-bBodyC.x)<-5; k.d=(tx-bBodyC.x)>5;
       k.w=(ty-bBodyC.y)<-5; k.s=(ty-bBodyC.y)>5;
       if(!ai._spinActive) aiPointMouse(bBodyC, pBodyC.x, pBodyC.y, false, ai);
@@ -11726,8 +11941,8 @@ if(!ai._feintActive){
       } else {
         ai._circling = false;
         const pt = aiRetreatPoint();
-        ai._retreatTargX = $.M.clamp(pt.x, 60, W-100);
-        ai._retreatTargY = $.M.clamp(pt.y, 60, H-60);
+        ai._retreatTargX = $.M.clamp(pt.x, 60, WORLD_W-100);
+        ai._retreatTargY = $.M.clamp(pt.y, 60, WORLD_H-60);
         ai._retreatMoveCD = GameTime + rf(1,2);
       }
     }
@@ -11735,8 +11950,8 @@ if(!ai._feintActive){
     if(ai._circling){
       const orbitDist = distToPlayer;
       ai._circleAng += ai._circleDir * 0.018;
-      const targX = $.M.clamp(pBodyC.x + Math.cos(ai._circleAng) * orbitDist, 60, W-100);
-      const targY = $.M.clamp(pBodyC.y + Math.sin(ai._circleAng) * orbitDist, 60, H-60);
+      const targX = $.M.clamp(pBodyC.x + Math.cos(ai._circleAng) * orbitDist, 60, WORLD_W-100);
+      const targY = $.M.clamp(pBodyC.y + Math.sin(ai._circleAng) * orbitDist, 60, WORLD_H-60);
       k.a = (targX - bBodyC.x) < -5; k.d = (targX - bBodyC.x) > 5;
       k.w = (targY - bBodyC.y) < -5; k.s = (targY - bBodyC.y) > 5;
     } else {
@@ -12516,8 +12731,8 @@ function pickArenaBackground(){
 
 function buildArena(){
   arenaCanvas = document.createElement('canvas');
-  arenaCanvas.width  = W;
-  arenaCanvas.height = H;
+  arenaCanvas.width  = WORLD_W;
+  arenaCanvas.height = WORLD_H;
   arenaCtx = arenaCanvas.getContext('2d');
   const ac = arenaCtx;
 
@@ -12538,15 +12753,15 @@ function buildArena(){
     const imgBrightness = 0.3 + t * 1.3;
     ac.filter = `brightness(${imgBrightness})`;
     const ir = arenaBgImg.naturalWidth / arenaBgImg.naturalHeight;
-    const cr = W / H;
+    const cr = WORLD_W / WORLD_H;
     let dw, dh, dx, dy;
-    if(ir > cr){ dh = H; dw = H*ir; dx = (W-dw)/2; dy = 0; }
-    else { dw = W; dh = W/ir; dx = 0; dy = (H-dh)/2; }
+    if(ir > cr){ dh = WORLD_H; dw = WORLD_H*ir; dx = (WORLD_W-dw)/2; dy = 0; }
+    else { dw = WORLD_W; dh = WORLD_W/ir; dx = 0; dy = (WORLD_H-dh)/2; }
     ac.drawImage(arenaBgImg, dx, dy, dw, dh);
     ac.restore();
   } else {
     ac.fillStyle = `rgb(${bgR},${bgG},${bgB})`;
-    ac.fillRect(0,0,W,H);
+    ac.fillRect(0,0,WORLD_W,WORLD_H);
   }
 
   // Сетка — отдельный ползунок яркости/прозрачности
@@ -12564,20 +12779,31 @@ function buildArena(){
   }
   ac.strokeStyle=`rgba(${Math.min(255,Math.round(gridR*gridBright))},${Math.min(255,Math.round(gridG*gridBright))},${Math.min(255,Math.round(gridB*gridBright))},${gridAlpha})`;
   ac.lineWidth=1;
-  for(let x=0;x<W;x+=55){ ac.beginPath(); ac.moveTo(x,0); ac.lineTo(x,H); ac.stroke(); }
-  for(let y=0;y<H;y+=55){ ac.beginPath(); ac.moveTo(0,y); ac.lineTo(W,y); ac.stroke(); }
+  for(let x=0;x<WORLD_W;x+=55){ ac.beginPath(); ac.moveTo(x,0); ac.lineTo(x,WORLD_H); ac.stroke(); }
+  for(let y=0;y<WORLD_H;y+=55){ ac.beginPath(); ac.moveTo(0,y); ac.lineTo(WORLD_W,y); ac.stroke(); }
 
   // Виньетка по краям (затемнение) — оставляем как было
-  const v=ac.createRadialGradient(W/2,H/2,H*0.2,W/2,H/2,H*0.85);
-  v.addColorStop(0,'transparent'); v.addColorStop(1,'rgba(0,0,0,0.55)');
-  ac.fillStyle=v; ac.fillRect(0,0,W,H);
-
   arenaDirty = false;
 }
 
 function drawArena(){
   if(arenaDirty || !arenaCanvas) buildArena();
   ctx.drawImage(arenaCanvas, 0, 0);
+}
+
+function drawScreenVignette(){
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  const cx = W / 2;
+  const cy = H / 2;
+  const inner = Math.min(W, H) * 0.34;
+  const outer = Math.hypot(W, H) * 0.62;
+  const v = ctx.createRadialGradient(cx, cy, inner, cx, cy, outer);
+  v.addColorStop(0, 'rgba(0,0,0,0)');
+  v.addColorStop(1, 'rgba(0,0,0,0.55)');
+  ctx.fillStyle = v;
+  ctx.fillRect(0, 0, W, H);
+  ctx.restore();
 }
 
 // ── ЛЁГКИЙ AI ДЛЯ "НЕ-УМНЫХ" БОТОВ (все, кроме текущего D) ────────────────────
@@ -12630,8 +12856,8 @@ botUpdateExhaustion(bot, dt);
   }
   bot.vx = $.M.clamp(bot.vx,-15,15); bot.vy = $.M.clamp(bot.vy,-15,15);
   const step = $.M.step(dt);
-  bot.x = $.M.clamp(bot.x+bot.vx*step, 40, W-80);
-  bot.y = $.M.clamp(bot.y+bot.vy*step, 40, H-40);
+  bot.x = $.M.clamp(bot.x+bot.vx*step, 40, WORLD_W-80);
+  bot.y = $.M.clamp(bot.y+bot.vy*step, 40, WORLD_H-40);
   resolveBoxCollision(bot);
 
   bot._atkCD = (bot._atkCD||0) - dt;
@@ -12670,8 +12896,8 @@ botUpdateExhaustion(bot, dt);
     bot._dvy = -Math.sin(angToPlayer)*8;
   }
   //if(bot._dvx||bot._dvy){
-  //  bot.x = $.M.clamp(bot.x+bot._dvx, 40, W-80);
-  //  bot.y = $.M.clamp(bot.y+bot._dvy, 40, H-40);
+  //  bot.x = $.M.clamp(bot.x+bot._dvx, 40, WORLD_W-80);
+  //  bot.y = $.M.clamp(bot.y+bot._dvy, 40, WORLD_H-40);
   //  bot._dvx = $.M.decay(bot._dvx, 0.85, dt);
   //  bot._dvy = $.M.decay(bot._dvy, 0.85, dt);
   //  if(Math.hypot(bot._dvx,bot._dvy)<0.3){ bot._dvx=0; bot._dvy=0; }
@@ -12708,8 +12934,8 @@ function updateDummy(dt, bot){
     bot.vx = $.M.lerpDT(bot.vx, 0, 0.9, dt);
     bot.vy = $.M.lerpDT(bot.vy, 0, 0.9, dt);
     const step = $.M.step(dt);
-    bot.x = $.M.clamp(bot.x + bot.vx * step, 40, W-80);
-    bot.y = $.M.clamp(bot.y + bot.vy * step, 40, H-40);
+    bot.x = $.M.clamp(bot.x + bot.vx * step, 40, WORLD_W-80);
+    bot.y = $.M.clamp(bot.y + bot.vy * step, 40, WORLD_H-40);
     return;
   }
   
@@ -12732,8 +12958,8 @@ function updateDummy(dt, bot){
     bot.vx = $.M.lerpDT(bot.vx, (dx/d) * maxV, 0.22, dt);
     bot.vy = $.M.lerpDT(bot.vy, (dy/d) * maxV, 0.22, dt);
     const step = $.M.step(dt);
-    bot.x = $.M.clamp(bot.x + bot.vx*step, 40, W-80);
-    bot.y = $.M.clamp(bot.y + bot.vy*step, 40, H-40);
+    bot.x = $.M.clamp(bot.x + bot.vx*step, 40, WORLD_W-80);
+    bot.y = $.M.clamp(bot.y + bot.vy*step, 40, WORLD_H-40);
     return;
   }
   
@@ -12798,8 +13024,8 @@ function updateDummy(dt, bot){
     }
     bot.vx = $.M.clamp(bot.vx, -15, 15); bot.vy = $.M.clamp(bot.vy, -15, 15);
     const step = $.M.step(dt);
-    bot.x = $.M.clamp(bot.x + bot.vx*step, 40, W-80);
-    bot.y = $.M.clamp(bot.y + bot.vy*step, 40, H-40);
+    bot.x = $.M.clamp(bot.x + bot.vx*step, 40, WORLD_W-80);
+    bot.y = $.M.clamp(bot.y + bot.vy*step, 40, WORLD_H-40);
     resolveBoxCollision(bot);
   }
 
@@ -13464,7 +13690,8 @@ function drawSword(pivX, pivY, angle){
   const meleePoseActive = $.A.meleeHold(P, mDown);
   let shapeRot = 0;
   if(!meleePoseActive){
-    const dx = mX - W/2, dy = mY - H/2;
+    const ms = worldToScreen(mX, mY);
+    const dx = ms.x - W/2, dy = ms.y - H/2;
     const halfDiag = Math.hypot(W, H) / 2;
     const t = $.M.clamp((dx - dy) / halfDiag, -1, 1);
     const amplitude = sv('srot') * Math.PI / 180;
@@ -13766,8 +13993,11 @@ function _drawDummySword(){
   // хит-флеш бота
   if(dummyOn && bot.hitFlash > GameTime){
     const flashAlphaD = Math.min(0.25, (bot.hitFlash - GameTime) / 0.25 * 0.25);
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.fillStyle=`rgba(255,40,40,${flashAlphaD})`;
     ctx.fillRect(0,0,W,H);
+    ctx.restore();
   }
 }
 
@@ -13779,10 +14009,11 @@ function _drawDummySword(){
 
 function drawCursor(){
   if(window._keyboardCrosshairVisible === false) return;
+  const cx = mouseScreenX, cy = mouseScreenY;
   ctx.strokeStyle=mDown?'rgba(220,160,60,0.85)':'rgba(100,190,255,0.65)'; ctx.lineWidth=1.5;
-  ctx.beginPath(); ctx.moveTo(mX-9,mY); ctx.lineTo(mX+9,mY); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(mX,mY-9); ctx.lineTo(mX,mY+9); ctx.stroke();
-  ctx.beginPath(); ctx.arc(mX,mY,5,0,Math.PI*2); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx-9,cy); ctx.lineTo(cx+9,cy); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx,cy-9); ctx.lineTo(cx,cy+9); ctx.stroke();
+  ctx.beginPath(); ctx.arc(cx,cy,5,0,Math.PI*2); ctx.stroke();
 
   // debug удалён
 
@@ -14137,8 +14368,8 @@ const exhMult = getMod(P, 'moveSlow', 1);
     const mLR = 40;
     const mT  = 30;
     const mB  = 35;
-    if((P.x<mLR&&P.vx<0)||(P.x>W-mLR-80&&P.vx>0)) P.vx*=0.5;
-    if((P.y<mT &&P.vy<0)||(P.y>H-mB -40&&P.vy>0))  P.vy*=0.5;
+    if((P.x<mLR&&P.vx<0)||(P.x>WORLD_W-mLR-80&&P.vx>0)) P.vx*=0.5;
+    if((P.y<mT &&P.vy<0)||(P.y>WORLD_H-mB -40&&P.vy>0))  P.vy*=0.5;
   })();
   P.vx = $.M.clamp(P.vx, -15, 15); P.vy = $.M.clamp(P.vy, -15, 15);
   
@@ -14189,7 +14420,7 @@ const exhMult = getMod(P, 'moveSlow', 1);
       }
     }
     const _preX=P.x+P.vx*step+(P._dvx||0)*impulseStep;
-    P.x=$.M.clamp(_preX, 40, W-80);
+    P.x=$.M.clamp(_preX, 40, WORLD_W-80);
     if(Math.abs(_preX-P.x)>2 && Math.abs(P._dvx||0)>1){
       const _rc=$.POS.root();
       const _td=Math.hypot(mX-_rc.x,mY-_rc.y)||1;
@@ -14197,7 +14428,7 @@ const exhMult = getMod(P, 'moveSlow', 1);
       P._dvy=(mY-_rc.y)/_td*Math.abs(P._dvy||0)*0.5;
     }
     const _preY=P.y+P.vy*step+(P._dvy||0)*impulseStep;
-    P.y=$.M.clamp(_preY, 40, H-40);
+    P.y=$.M.clamp(_preY, 40, WORLD_H-40);
     if(Math.abs(_preY-P.y)>2 && Math.abs(P._dvy||0)>1 && Math.abs(P._dvx||0)<2){
       const _rc2=$.POS.root();
       const _td2=Math.hypot(mX-_rc2.x,mY-_rc2.y)||1;
@@ -14208,8 +14439,8 @@ const exhMult = getMod(P, 'moveSlow', 1);
     P._dvx*=decay; P._dvy*=decay;
     if(Math.hypot(P._dvx,P._dvy)<0.1){ P._dvx=0; P._dvy=0; }
   } else {
-    P.x=$.M.clamp(P.x+P.vx*step, 40, W-80);
-    P.y=$.M.clamp(P.y+P.vy*step, 40, H-40);
+    P.x=$.M.clamp(P.x+P.vx*step, 40, WORLD_W-80);
+    P.y=$.M.clamp(P.y+P.vy*step, 40, WORLD_H-40);
   }
   resolveBoxCollision(P);
 
@@ -14247,6 +14478,7 @@ const exhMult = getMod(P, 'moveSlow', 1);
   };
 
   // --- body offset ---
+  updateCamera(rawDt);
   const rc = $.POS.root();
   const dzone = csv('dzone');
   const rawMouseDist = Math.hypot(mX - rc.x, mY - rc.y);
@@ -14740,7 +14972,9 @@ if(dummyOn&&isUnbalanced(D)) drawUnbalancedStars(D);
     const pivX = rc.x + P.pvX;
     const pivY = rc.y + P.pvY;
     window._shakeApplied = typeof window._applyScreenShake==='function' ? window._applyScreenShake() : false;
+    ctx.setTransform(CAM_SCALE, 0, 0, CAM_SCALE, -CAM_X * CAM_SCALE, -CAM_Y * CAM_SCALE);
     drawArena();
+    if(typeof drawScreenVignette === 'function') drawScreenVignette();
     
     if(typeof drawBloodPools==='function') drawBloodPools();
     if(typeof DODGE_TRAIL!=='undefined'&&DODGE_TRAIL.length){
@@ -14803,14 +15037,15 @@ if(dummyOn&&isUnbalanced(D)) drawUnbalancedStars(D);
     }
     if(P.shield>0 && !isShieldSuppressed(P)) drawShield(P, mX);
     
-    drawCursor();
     drawBlood();
     drawFXEffects();
     drawDustFX(rawDt);
     drawDeathCrosses();
     drawFX();
     
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
     if(typeof drawZone==='function') drawZone();
+    drawCursor();
     if(typeof window._restoreScreenShake==='function') window._restoreScreenShake(window._shakeApplied);
   }
 
@@ -14822,7 +15057,12 @@ if(dummyOn&&isUnbalanced(D)) drawUnbalancedStars(D);
 }
 
 // -- INPUT --------------------------------------------------------------------------
-canvas.addEventListener('mousemove', e=>{ const r=canvas.getBoundingClientRect(); mX=e.clientX-r.left; mY=e.clientY-r.top; });
+canvas.addEventListener('mousemove', e=>{
+  const r=canvas.getBoundingClientRect();
+  mouseScreenX=e.clientX-r.left;
+  mouseScreenY=e.clientY-r.top;
+  updateMouseWorld();
+});
 canvas.addEventListener('mousedown', e=>{
   if(e.button===0){ mDown=true; P._shieldHeld=false; return; }
   if(e.button===2 && !window.IS_MOBILE){
@@ -15014,6 +15254,8 @@ if(k==='v'||k==='м'){ // bot weapon switch
   if(D.hasWeapon !== false){
     const next=(D.weaponType+1)%WEAPON_TYPES.length; 
     setWeapon(D,next);
+    D._manualWeaponType = next;
+    window._manualBotWeaponType = next;
     // ?? ERROR PROTECTION
     const weaponName = WEAPON_TYPES[next] ? WEAPON_TYPES[next].name : (window.I18N?window.I18N.t('main.unknownWeapon'):'UNKNOWN');
     $.FX.hit({x:D.x,y:D.y-40,t:(window.I18N?window.I18N.t('main.weaponBot',{name:weaponName}):('WEAPON: '+weaponName)),life:60,big:false,col:'#ffaa44'});
@@ -15051,8 +15293,7 @@ window.addEventListener('keyup',   e=>{
   if(e.code==='Space' && typeof window.endDodgePress==='function') window.endDodgePress('Space');
 });
 window.addEventListener('resize',  ()=>{
-  W=canvas.width = window.innerWidth;
-  H=canvas.height = window.innerHeight;
+  applyCamScale();
   applyCanvasSmoothing();
   initBoxes(); arenaDirty=true;
 });
@@ -15090,12 +15331,10 @@ function toggleAI(){
   b.textContent=window.I18N?window.I18N.buttonText('dtoggle', dummyOn?'on':'off'):(dummyOn?'ON':'OFF');
   b.classList.toggle('on',dummyOn);
   if(dummyOn){
-    // ?? SINGLE PLAYER RESET
-    resetPlayerState();
-    
     // Full Entity D reset
     D.hp=100; D.stamina=100; D.exhausted=0; D.unbalanced=0;
-    D.x=W/2+110; D.y=H/2; D.vx=0; D.vy=0;
+    const dSpawn = typeof factionSpawnPoint === 'function' ? factionSpawnPoint('right') : { x:P.x+190, y:P.y };
+    D.x=dSpawn.x; D.y=dSpawn.y; D.vx=0; D.vy=0;
     D.bx=0; D.by=0; D.pvX=0; D.pvY=-8; D.tpX=0; D.tpY=-8;
     D.angle=0; D.vel=0; D._hitCD=-1;
     D.atkPts=0; D.isAttacker=false;
@@ -15123,6 +15362,7 @@ function toggleAI(){
     
     // Spawn bots
     if(typeof applyBotCount==='function') applyBotCount();
+    if(typeof applyDuelSpawnLayout === 'function') applyDuelSpawnLayout();
     
     // ?? RESET STATUSES FOR ALL BOTS (except the first one)
     for(let i = 1; i < ALL_BOTS.length; i++){
@@ -15168,6 +15408,9 @@ function toggleAI(){
 
 loadAudioDB(); // start loading in background
 initBoxes();
+if(typeof applyBotCount === 'function') applyBotCount();
+if(typeof applyDuelSpawnLayout === 'function') applyDuelSpawnLayout();
+else if(typeof snapCameraToTarget === 'function') snapCameraToTarget();
 
 // ---------------------------------------------------------------------------------
 
@@ -15191,19 +15434,7 @@ requestAnimationFrame(loop);
     const portrait = window.innerHeight > window.innerWidth;
     document.body.classList.toggle('is-portrait', portrait);
     if(!portrait){
-      // Camera "zoomed out": aim for ~14 cells (55px) vertically, like on PC.
-      // Increase the INTERNAL canvas resolution (logical world) beyond
-      // the physical screen size — browser scales it down via CSS,
-      // visually achieving "zoom out" without distorting object proportions.
-      const targetRows = sv('camrows'); // adjustable cell count (55px) vertically
-      const targetWorldH = targetRows * 55;
-      const camScale = Math.max(1, targetWorldH / window.innerHeight);
-      window.CAM_SCALE = camScale;
-
-      H = Math.round(window.innerHeight * camScale);
-      W = Math.round(window.innerWidth  * camScale);
-      canvas.width  = W;
-      canvas.height = H;
+      applyCamScale();
       applyCanvasSmoothing();
       arenaDirty = true;
       initBoxes();
@@ -15313,6 +15544,8 @@ requestAnimationFrame(loop);
     if(typeof D==='undefined' || typeof setWeapon!=='function') return;
     if(D.hasWeapon === false) return;
     D.weaponType = (D.weaponType+1)%WEAPON_TYPES.length; setWeapon(D, D.weaponType);
+    D._manualWeaponType = D.weaponType;
+    window._manualBotWeaponType = D.weaponType;
   }, {passive: false});
 
   // ── MENU (pause/restart/settings) ──────────────────────────────────────
@@ -15439,7 +15672,8 @@ window.doRestart=function(){
     if(typeof applyBotCount==='function') applyBotCount();
     D.hp=100; D.stamina=0; D.rage=0; D._hadExhaustion=false;
     D.exhausted=0; D.unbalanced=0; D.vx=0; D.vy=0;
-    D.x=W*0.8; D.y=H*0.2;
+    const dSpawn = typeof factionSpawnPoint === 'function' ? factionSpawnPoint('right') : { x:P.x+190, y:P.y-120 };
+    D.x=dSpawn.x; D.y=dSpawn.y;
     D._wasExhausted = false;
     D._recovering = false;
     D._recoverProgress = 0;
@@ -15465,6 +15699,7 @@ window.doRestart=function(){
   }
   
   DEATH.dDead=false; DEATH.pDead=false; DEATH.fadeIn=false; DEATH.fadeAlpha=0; DEATH.text='';
+  if(typeof applyDuelSpawnLayout === 'function') applyDuelSpawnLayout();
   menuOverlay.classList.remove('open');
   pausedByMenu = false;
   uiMenuPaused = false;
@@ -15828,7 +16063,7 @@ if(_spiked2 && typeof GameTime!=='undefined'){
     // at the same angle, distance doesn't depend on finger offset strength (only direction)
     if(dist > 8){ // dead zone to prevent micro-touch jitter
       const rc = $.POS.root();
-      const aimRadius = Math.min(W,H)*0.35;
+      const aimRadius = Math.min(W,H) / CAM_SCALE * 0.35;
       mX = rc.x + Math.cos(angle)*aimRadius;
       mY = rc.y + Math.sin(angle)*aimRadius;
     }
@@ -15916,7 +16151,7 @@ if(_spiked2 && typeof GameTime!=='undefined'){
     updateSwordKnob(nx,ny);
 
     const rc = $.POS.root();
-    const aimRadius = Math.min(W,H)*0.35;
+    const aimRadius = Math.min(W,H) / CAM_SCALE * 0.35;
     const normX = nx/SWORD_R, normY = ny/SWORD_R;
     if(Math.hypot(normX,normY) > 0.05){
       mX = rc.x + normX*aimRadius;
@@ -16767,8 +17002,8 @@ var NET_SYNC = (function(){
   function qaDec(v){ return v/65535*Math.PI*2; }
 
   function buildDelta(p){
-    const nx=qEnc(p.x,W), ny=qEnc(p.y,H);
-    const vx=qEnc((p.vx||0)+W,W*2), vy=qEnc((p.vy||0)+H,H*2);
+    const nx=qEnc(p.x,WORLD_W), ny=qEnc(p.y,WORLD_H);
+    const vx=qEnc((p.vx||0)+WORLD_W,WORLD_W*2), vy=qEnc((p.vy||0)+WORLD_H,WORLD_H*2);
     const angle=qaEnc(p.angle||0);
     const vel=Math.round((p.vel||0)*100);
     const hp=Math.round(p.hp||0), stamina=Math.round(p.stamina||0), rage=Math.round(p.rage||0);
@@ -17043,13 +17278,13 @@ function onPvpReset(msg){
     const ping=NET_CORE.getPing()/2000;
     if(msg.t==='s'){
       if(msg.x!=null){
-        _cur.x=qDec(msg.x,W); _cur.y=qDec(msg.y,H);
+        _cur.x=qDec(msg.x,WORLD_W); _cur.y=qDec(msg.y,WORLD_H);
         // Первый пакет — мгновенно ставим D на позицию (нет рывка)
         if(_buf.length===0&&typeof D!=='undefined'){
           D.x=_cur.x; D.y=_cur.y;
         }
       }
-      if(msg.u!=null){ _cur.vx=qDec(msg.u,W*2)-W; _cur.vy=qDec(msg.v,H*2)-H; }
+      if(msg.u!=null){ _cur.vx=qDec(msg.u,WORLD_W*2)-WORLD_W; _cur.vy=qDec(msg.v,WORLD_H*2)-WORLD_H; }
       if(msg.a!=null){ _cur.angle=qaDec(msg.a); }
       if(msg.l!=null){ _cur.vel=msg.l/100; }
       if(msg.h!=null){ _cur.hp=msg.h; }
@@ -17477,8 +17712,8 @@ function onPvpReset(msg){
         const awayLen = Math.hypot(awayX, awayY) || 1;
         const retreat = (9 + P._shieldDashChargePower * 15) * rawDt;
         P.vx = 0; P.vy = 0;
-        P.x = $.M.clamp(P.x + awayX / awayLen * retreat, 40, W-80);
-        P.y = $.M.clamp(P.y + awayY / awayLen * retreat, 40, H-40);
+        P.x = $.M.clamp(P.x + awayX / awayLen * retreat, 40, WORLD_W-80);
+        P.y = $.M.clamp(P.y + awayY / awayLen * retreat, 40, WORLD_H-40);
       }
     }
     if(typeof window._dodgeCooldownMob !== 'undefined' && window._dodgeCooldownMob > 0){
@@ -17739,25 +17974,23 @@ function onPvpReset(msg){
 
   window.drawZone = function(){
     if(!_zoneActive) return;
-    const c = getZoneCenter();
-    const r = getZoneRadius();
     const fadeProgress = Math.min(1, Math.max(0, (_zoneTimer - ZONE_GRACE) / ZONE_FADE));
     const maxAlpha = 0.72;
     const alpha = fadeProgress * maxAlpha;
     if(alpha < 0.01) return;
 
     ctx.save();
-    const grad = ctx.createRadialGradient(c.x, c.y, r * 0.75, c.x, c.y, Math.max(W, H));
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    const cx = W / 2;
+    const cy = H / 2;
+    const inner = Math.min(W, H) * 0.38;
+    const outer = Math.hypot(W, H) * 0.62;
+    const grad = ctx.createRadialGradient(cx, cy, inner, cx, cy, outer);
     grad.addColorStop(0, 'rgba(0,0,0,0)');
-    grad.addColorStop(0.3, `rgba(0,0,0,${alpha * 0.5})`);
+    grad.addColorStop(0.55, `rgba(0,0,0,${alpha * 0.45})`);
     grad.addColorStop(1, `rgba(0,0,0,${alpha})`);
     ctx.fillStyle = grad;
-    ctx.fillRect(-10, -10, W + 20, H + 20);
-    ctx.beginPath();
-    ctx.arc(c.x, c.y, r, 0, Math.PI * 2);
-    ctx.strokeStyle = `rgba(255,255,255,${alpha * 0.15})`;
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
+    ctx.fillRect(0, 0, W, H);
     ctx.restore();
   };
 
