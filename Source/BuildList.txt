@@ -1,5 +1,5 @@
 ; Список файлов из папок Music и Sound
-; Создано: 05.08.2026 1:35:27
+; Создано: 05.08.2026 11:55:58
 ; Корневая папка: F:\Jack\Project\Godgrave\Public\Godgrave\Source
 
 === Папка: Music ===
@@ -374,6 +374,8 @@ Source\Env\Foliadge\T_Env_Tree_WoodB.json
 Source\Env\Foliadge\T_Env_Tree_WoodB.png
 Source\Env\Foliadge\T_Env_Tree_WoodC.json
 Source\Env\Foliadge\T_Env_Tree_WoodC.png
+Source\Env\FX\T_Cloud.json
+Source\Env\FX\T_Cloud.png
 Source\Env\Terrain\TerrainAtlas.png
 Source\Env\Terrain\TerrainAtlas.psd
 Source\Env\Terrain\TerrainAtlasB.png
