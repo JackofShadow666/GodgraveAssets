@@ -1900,8 +1900,8 @@ function syncPostFxLabels(){
   bloomStrengthY:[uiNum('bloomStrengthY',2),'',2],
   bloomQuality:[uiNum('bloomQuality',4),'',0],
   postFxResolution:[uiNum('postFxResolution',.75),'×',2],
-  cgBrightness:[uiNum('cgBrightness',0),'',2],
-  cgContrast:[uiNum('cgContrast',0),'',2],
+  cgBrightness:[effectiveColorGradeSettings().brightness,'',2],
+  cgContrast:[effectiveColorGradeSettings().contrast,'',2],
   cgSaturation:[uiNum('cgSaturation',1),'',2],
   cgHue:[uiNum('cgHue',0),'°',0],
   sepiaStrength:[uiNum('sepiaStrength',.18),'',2],
@@ -1991,6 +1991,20 @@ function effectiveInvertSettings(){
 function effectiveGlowSettings(){
  if(uiCheck('enableGlow',false))return{color:$('glowColor')?.value||'#161616',distance:Math.max(0,uiNum('glowDistance',40)),outer:Math.max(0,uiNum('glowOuterStrength',1.9)),inner:Math.max(0,uiNum('glowInnerStrength',2.3)),manual:true};
  return{color:'#161616',distance:40,outer:dayGlowOuterAt(S.dayTime??14),inner:2.3,manual:false};
+}
+function dayNoonFactor(h=S.dayTime??14){
+ const d=Math.abs(dayWrapHour(h)-12);
+ const dist=Math.min(d,24-d);
+ return smootherStep01(clamp(1-dist/5.5,0,1));
+}
+function effectiveColorGradeSettings(){
+ const noon=dayNoonFactor();
+ return{
+  brightness:uiNum('cgBrightness',.12)+.14*noon,
+  contrast:uiNum('cgContrast',0)+(-.41)*noon,
+  saturation:Math.max(0,uiNum('cgSaturation',1.22)),
+  hue:uiNum('cgHue',0)
+ };
 }
 function updateDayNight(dt){
  if(!Number.isFinite(S.dayTime))S.dayTime=14;
@@ -2527,7 +2541,7 @@ function applyColorMatrixSettings(cm){
  if(!cm)return null;
  cm.reset();
  if(uiCheck('enableColorGrade',false)){
-  const b=uiNum('cgBrightness',.12),cOff=uiNum('cgContrast',0),c=Math.max(0,1+cOff),sat=Math.max(0,uiNum('cgSaturation',1.22)),h=uiNum('cgHue',0);
+  const grade=effectiveColorGradeSettings(),b=grade.brightness,cOff=grade.contrast,c=Math.max(0,1+cOff),sat=grade.saturation,h=grade.hue;
   if(Math.abs(b)>0.001){try{cm.brightness(1+b,true)}catch(_){}}
   if(Math.abs(cOff)>0.001){try{cm.contrast(c,true)}catch(_){}}
   if(Math.abs(sat-1)>0.001){try{cm.saturate(sat-1,true)}catch(_){}}
@@ -5097,7 +5111,7 @@ function addVoidBiomeDecor(chunk,x,y,biome,base,c,globalScale){
   sp.position.set(p.x,p.y+c*.04);
   const mirrorX=(kind==='rock'||kind==='stone')?1:(hash2(x,y,S.world.seed^i)<.5?-1:1);
   sp.scale.set(mirrorX*scale,scale);
-  sp.zIndex=p.y;
+  sp.zIndex=sp.position.y;
   {
    sp.tint=S.groundMode==='detailed'
     ?decorTintForBiome(biome,kind,kind==='rock'||kind==='stone')
@@ -5420,7 +5434,7 @@ function buildChunkDecor(chunk){
    sp.position.set(p.x,p.y+c*.08);
    const mirrorX=(kind==='rock'||kind==='stone')?1:(((base>>>29)&1)?-1:1);
    sp.scale.set(mirrorX*baseScale,baseScale);
-   sp.zIndex=p.y;
+   sp.zIndex=sp.position.y;
    sp.tint=S.groundMode==='detailed'
     ?decorTintForBiome(biome,kind,kind==='rock'||kind==='stone')
     :0xffffff;sp._waterDecorDryTint=sp.tint;addOptimizedWaterDecor(chunk,sp,biome,kind,x+.5,y+.5);if(!(biome===0||biome===5))addWaterGradientOverlay(chunk,sp,biome);
@@ -5448,7 +5462,7 @@ function buildChunkDecor(chunk){
     sp.scale.set(((base>>>28)&1?-1:1)*(sc/7),sc/7);
     sp.tint=picked.isPlant?(S.groundMode==='detailed'?(isSnowBiome(biome)?snowDecorTint(biome):isDesertBiome(biome)?mixColors(0xffffff,grassTintForBiome(biome,n),.5):grassTintForBiome(biome,n)):0xffffff):(isSnowBiome(biome)?snowDecorTint(biome):isDesertBiome(biome)?mixColors(0xffffff,grassTintForTile(biome,role,n+grassIndex),.5):grassTintForTile(biome,role,n+grassIndex));
     sp.alpha=.96;
-    sp.zIndex=p.y+(picked.isDesertPlantB ? -1.5 : (uiCheck('enableFoliageWindShader',false)?-1.5:-1))+n*.001;
+    sp.zIndex=sp.position.y+(picked.isDesertPlantB ? -.8 : (uiCheck('enableFoliageWindShader',false)?-.8:-1))+n*.001;
     sp._waterDecorDryTint=sp.tint;addOptimizedWaterDecor(chunk,sp,biome,picked.isDesertPlantB?'desertPlantB':'grass',x+gp.x,y+gp.y,!picked.isDesertPlantB);
    }
   }
@@ -5468,7 +5482,7 @@ function buildChunkDecor(chunk){
    sp.scale.set(sc/7);
    sp.tint=densePick.isPlant?(S.groundMode==='detailed'?(isSnowBiome(biome)?snowDecorTint(biome):isDesertBiome(biome)?mixColors(0xffffff,grassTintForBiome(biome,denseIndex+3),.5):grassTintForBiome(biome,denseIndex+3)):0xffffff):(isSnowBiome(biome)?snowDecorTint(biome):isDesertBiome(biome)?mixColors(0xffffff,grassTintForTile(biome,role,denseIndex+3),.5):grassTintForTile(biome,role,denseIndex+3));
    sp.alpha=.97;
-   sp.zIndex=p.y-1.5;
+   sp.zIndex=sp.position.y-.8;
    sp._waterDecorDryTint=sp.tint;addOptimizedWaterDecor(chunk,sp,biome,densePick.isDesertPlantB?'desertPlantB':'denseGrass',x+gp.x,y+gp.y,!densePick.isDesertPlantB);
   }
   const clutterBase=(role==='grass'||role==='tallGrass')
