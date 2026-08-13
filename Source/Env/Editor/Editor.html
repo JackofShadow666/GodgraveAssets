@@ -473,8 +473,8 @@ body:not(.mobile-ui) #miniHost img{
 <div class="row"><label class="rangeLabel">Размер пикселя <b id="pixelSizeValue" class="rangeValue">4 px</b></label><input id="pixelSize" type="range" min="1" max="32" step="1" value="4"></div>
 <label class="check"><input id="enableDistort" type="checkbox" checked> Дисторсия объектива</label>
 <div class="row"><label class="rangeLabel">Сила <b id="distortStrengthValue" class="rangeValue">-0.07</b></label><input id="distortStrength" type="range" min="-1" max="1" step="0.01" value="-0.07"></div>
-<label class="check"><input id="enableZoomBlur" type="checkbox"> Зум-блюр</label>
-<div class="row"><label class="rangeLabel">Сила <b id="zoomBlurStrengthValue" class="rangeValue">0.20</b></label><input id="zoomBlurStrength" type="range" min="0" max="1" step="0.01" value="0.2"></div>
+<label class="check"><input id="enableZoomBlur" type="checkbox" checked> Зум-блюр</label>
+<div class="row"><label class="rangeLabel">Сила <b id="zoomBlurStrengthValue" class="rangeValue">0.14</b></label><input id="zoomBlurStrength" type="range" min="0" max="1" step="0.01" value="0.14"></div>
 <div style="font-size:10px;color:var(--muted);line-height:1.45">Pixelate и distort меняют координаты выборки; zoom-blur тянет изображение к центру; sharpen использует соседние пиксели.</div>
 </section>
 
@@ -1916,7 +1916,7 @@ function syncPostFxLabels(){
   distortStrength:[uiNum('distortStrength',-.07),'',2],
   dayCycleSpeed:[uiNum('dayCycleSpeed',2),' ч/мин',2],
   weatherStrength:[uiNum('weatherStrength',0),'',2],
-  zoomBlurStrength:[uiNum('zoomBlurStrength',.2),'',2],
+  zoomBlurStrength:[uiNum('zoomBlurStrength',.14),'',2],
   
  };
  for(const [id,[value,suffix,digits]] of Object.entries(pairs)){
@@ -2212,7 +2212,7 @@ function foliageWindUniforms(f){return f?.resources?.foliageWindUniforms?.unifor
 function updateOneFoliageWindUniforms(f,dt=0){
  const u=f.resources?.foliageWindUniforms?.uniforms||f.resources?.foliageWindUniforms;if(!u)return;
  u.uTime=(u.uTime||0)+dt;
- const weather=clamp(weatherSliderStrength?.()||0,0,1);
+ const weather=clamp(S.foliageWeatherWind||0,0,1);
  const strengthPct=clamp(uiNum('foliageWindStrength',26)/100,0,1)*(1-weather)+weather;
  const speedPct=clamp(uiNum('foliageWindSpeed',100)/100,0,1)*(1-weather)+weather;
  const gustPct=clamp(uiNum('foliageWindGust',44)/100,0,1)*(1-weather)+weather;
@@ -2221,15 +2221,15 @@ function updateOneFoliageWindUniforms(f,dt=0){
  u.uGust=gustPct;
  const nowMs=performance.now();
  const dx=Number(f._windWorldX||0)-Number(S.foliagePlayerImpulseX||0),dy=Number(f._windWorldY||0)-Number(S.foliagePlayerImpulseY||0);
- const ivx=Number(S.foliagePlayerImpulseVX||0),ivy=Number(S.foliagePlayerImpulseVY||0);
+ const screenSide=clamp((Number(S.foliagePlayerImpulseX||0)-Number(f._windWorldX||0))-(Number(S.foliagePlayerImpulseY||0)-Number(f._windWorldY||0)),-1,1);
  const dist=Math.hypot(dx,dy);
  const impulseT=clamp(((S.foliagePlayerImpulseUntil||0)-nowMs)/950,0,1);
  const impulseFade=1-Math.pow(1-impulseT,3);
- const ahead=impulseFade>.001&&dist>.001?clamp((dx*ivx+dy*ivy)/dist,0,1):0;
+ const ahead=impulseFade>.001&&dist>.001?.75:0;
  const pushMul=clamp(uiNum('foliagePlayerPush',400)/100,0,6);
  const near=clamp(1-dist/2.85,0,1);
- u.uPlayerBoost=impulseFade>.001?near*near*(.20+.80*ahead)*pushMul*impulseFade:0;
- u.uPlayerPush=impulseFade>.001?clamp(ivx-ivy,-1,1):0;
+ u.uPlayerBoost=impulseFade>.001?near*near*(.55+.45*ahead)*pushMul*.48*impulseFade:0;
+ u.uPlayerPush=impulseFade>.001?screenSide:0;
 }
 function updateFoliageWindUniforms(dt=0){
  for(const f of S.foliageWindFilters||[])if(f&&!f.destroyed)updateOneFoliageWindUniforms(f,dt);
@@ -2278,8 +2278,14 @@ function setFoliageWindSampling(on){
   ...(S.bushFrames||[]),...(S.woodTreeFrames||[])
  ],mode,false);
 }
+function updateFoliageWeatherWind(dt){
+ const target=clamp(Number(S.foliageWeatherTarget)||0,0,1);
+ const current=clamp(Number(S.foliageWeatherWind)||0,0,1);
+ const rate=target>current?2.2:.55;
+ S.foliageWeatherWind=approachValue(current,target,rate,Math.max(0,dt||0));
+}
 function effectiveFoliageWindSettings(){
- const weather=clamp(weatherSliderStrength?.()||0,0,1);
+ const weather=clamp(S.foliageWeatherWind||0,0,1);
  const strength=clamp(uiNum('foliageWindStrength',26)/100,0,1)*(1-weather)+weather;
  const speed=clamp(uiNum('foliageWindSpeed',100)/100,0,1)*(1-weather)+weather;
  const gust=clamp(uiNum('foliageWindGust',44)/100,0,1)*(1-weather)+weather;
@@ -2300,7 +2306,7 @@ function updateGrassWindTransforms(dt){
  const nowMs=performance.now(),time=nowMs*.001;
  const mvx=Number(S.playerMoveVX||0),mvy=Number(S.playerMoveVY||0),speed=Math.hypot(mvx,mvy);
  const moving=S.play&&speed>.08;
- if(moving&&(!S.foliagePlayerImpulseLast||nowMs-S.foliagePlayerImpulseLast>=1000)){
+ if(moving&&(!(S.foliagePlayerImpulseUntil>nowMs)||!S.foliagePlayerImpulseLast||nowMs-S.foliagePlayerImpulseLast>=1000)){
   S.foliagePlayerImpulseLast=nowMs;
   S.foliagePlayerImpulseUntil=nowMs+950;
   S.foliagePlayerImpulseX=Number(S.player?.x||0);
@@ -2322,19 +2328,24 @@ function updateGrassWindTransforms(dt){
    let player=0;
    if(impulseFade>.001){
     const dx=wx-Number(S.foliagePlayerImpulseX||0),dy=wy-Number(S.foliagePlayerImpulseY||0),dist=Math.hypot(dx,dy);
-    const ivx=Number(S.foliagePlayerImpulseVX||0),ivy=Number(S.foliagePlayerImpulseVY||0);
-    const ahead=dist>.001?clamp((dx*ivx+dy*ivy)/dist,0,1):0;
+    const ahead=dist>.001?.75:0;
     const near=clamp(1-dist/2.15,0,1);
     const pushMul=clamp(uiNum('foliagePlayerPush',400)/100,0,6);
-    player=near*near*(.20+.80*ahead)*clamp(ivx-ivy,-1,1)*pushMul*impulseFade;
+    const screenPush=clamp((Number(S.foliagePlayerImpulseX||0)-wx)-(Number(S.foliagePlayerImpulseY||0)-wy),-1,1);
+    player=near*near*(.55+.45*ahead)*screenPush*pushMul*.48*impulseFade;
    }
-   obj.skew.x=obj._windBaseSkewX+ambient*.18+player*.52;
-   obj.rotation=obj._windBaseRotation+ambient*.065+player*.18;
+   const targetSkew=obj._windBaseSkewX+ambient*.16+player*.31;
+   const targetRot=obj._windBaseRotation+ambient*.055+player*.09;
+   const response=1-Math.exp(-Math.max(0,dt||0)*8.5);
+   obj.skew.x+=(targetSkew-obj.skew.x)*response;
+   obj.rotation+=(targetRot-obj.rotation)*response;
   }
  }
 }
 function updateFoliageWindShader(dt){
- if(!uiCheck('enableFoliageWindShader',false)||!S.foliageWindFilters?.size)return;
+ if(!uiCheck('enableFoliageWindShader',false))return;
+ updateFoliageWeatherWind(dt||0);
+ if(!S.foliageWindFilters?.size)return;
  updateFoliageWindUniforms(dt||0);
 }
 
@@ -2501,7 +2512,7 @@ function createPostFxFilter(){
    uDistortEnabled:{value:0,type:'f32'},
    uDistortStrength:{value:-.09,type:'f32'},
    uZoomBlurEnabled:{value:0,type:'f32'},
-   uZoomBlurStrength:{value:.2,type:'f32'}
+   uZoomBlurStrength:{value:.14,type:'f32'}
   }}
  });
  filter.padding=64;
@@ -2629,7 +2640,7 @@ function configurePostFxFilter(){
    u.uDistortEnabled=uiCheck('enableDistort',false)?1:0;
    u.uDistortStrength=clamp(uiNum('distortStrength',-.07),-1,1);
    u.uZoomBlurEnabled=uiCheck('enableZoomBlur',false)?1:0;
-   u.uZoomBlurStrength=clamp(uiNum('zoomBlurStrength',.2),0,1);
+   u.uZoomBlurStrength=clamp(uiNum('zoomBlurStrength',.14),0,1);
 
    S.postFxFilter.resolution=u.uFxResolution;
    S.postFxFilter.padding=Math.ceil(Math.max(u.uGlowDistance,u.uBloomRadius[0],u.uBloomRadius[1],u.uCAStrength,2)*2+4);
@@ -2741,7 +2752,7 @@ async function init(){
  ensureLightBufferSystem();
  bindPostFilters();
  applyPostFilters(true);
- for(const [name,z] of [['waterBase',-30],['overview',-20],['biome',-10],['ground',0],['waterDecorUnder',0.6],['water',1],['waterRipples',1.6],['waterOutline',2],['lowDecor',8],['routes',10],['objects',20],['npcs',25],['pathDebug',39],['playerAvoidDebug',39.5],['debug',40]]){const c=new PIXI.Container({sortableChildren:true});c.sortableChildren=true;c.zIndex=z;S.root.addChild(c);S.layers[name]=c}
+ for(const [name,z] of [['waterBase',-30],['overview',-20],['biome',-10],['ground',0],['waterDecorUnder',0.6],['water',1],['waterRipples',1.6],['waterOutline',2],['rainSplashes',7],['lowDecor',8],['routes',10],['objects',20],['npcs',25],['pathDebug',39],['playerAvoidDebug',39.5],['debug',40]]){const c=new PIXI.Container({sortableChildren:true});c.sortableChildren=true;c.zIndex=z;S.root.addChild(c);S.layers[name]=c}
  for(const name of ['waterBase','overview','biome','ground','waterDecorUnder','water','waterRipples','waterOutline','lowDecor','routes','objects','pathDebug','playerAvoidDebug','debug']){const layer=S.layers[name];if(layer){layer.eventMode='none';layer.interactiveChildren=false}}
  const biomeFogRoot=new PIXI.Container({sortableChildren:true});
  biomeFogRoot.zIndex=900000;biomeFogRoot.eventMode='none';
@@ -2847,7 +2858,7 @@ function clearScene(){
  destroyBiomeFog();
  for(const c of S.chunks.values())destroyChunk(c);
  S.chunks.clear();S.keys.clear();S.decorColliders=[];S.decorColliderGrid=new Map();S.pathingDebugStamp="";S.navmeshDebugStamp="";S.fogChunks.clear();S.voidDecorSpawned=0;
- for(const name of ['waterDecorUnder','waterRipples','lowDecor','routes','objects','npcs','clouds','weatherClouds','satelliteWeatherClouds','weatherRainFx','weatherSnowFx','weatherDustFx','weatherSwampFogFx','weatherSwampFogBackFx','heroLightFx','ambientFirefliesFx','ambientDesertDustFx','ambientCursedDustFx','nightLightsFx','pathDebug','playerAvoidDebug','debug','waterBase','overview','biome','ground','waterOutline']){
+ for(const name of ['waterDecorUnder','waterRipples','rainSplashes','lowDecor','routes','objects','npcs','clouds','weatherClouds','satelliteWeatherClouds','weatherRainFx','weatherSnowFx','weatherDustFx','weatherSwampFogFx','weatherSwampFogBackFx','heroLightFx','ambientFirefliesFx','ambientDesertDustFx','ambientCursedDustFx','nightLightsFx','pathDebug','playerAvoidDebug','debug','waterBase','overview','biome','ground','waterOutline']){
   const layer=S.layers[name];if(!layer)continue;
   for(const o of layer.removeChildren()){
    const ownsTexture=name==='biome'&&o instanceof PIXI.Sprite&&isOwnedRenderTexture(o.texture);
@@ -2856,7 +2867,7 @@ function clearScene(){
   layer.visible=true;
  }
  if(S.layers.fog){for(const o of S.layers.fog.removeChildren())safeDestroyDisplay(o,{destroyTexture:false});}
- S.overview={mid:null,far:null};S.overviewMode=null;S.biomeFogOverview=null;if(S.fogOverview&&!S.fogOverview.destroyed)safeDestroyDisplay(S.fogOverview);S.fogOverview=null;clearPlayerWaterCap?.();S.playerSprite=null;S.playerShadow=null;S.playerParticles=null;S.playerDust=[];S.weatherParticles={rain:[],snow:[],dust:[],swampFog:[]};S.weatherRegions=null;S.weatherRuntime={kind:null,level:0,rainGraceUntil:0,snowGraceUntil:0};S.weatherFlashAlpha=0;S.weatherFlashCooldown=0;S.ambientParticles={firefly:[],desertDust:[],cursedDust:[]};S.ambientFxState=null;for(const rec of (S.ambientNightLights||[])){rec._ready=false;rec._retiring=false;rec._visibility=0;hideNightLight(rec);}if(S.lightBufferHero){S.lightBufferHero._visibility=0;S.lightBufferHero.alpha=0;S.lightBufferHero.visible=false;S.lightBufferHero.renderable=false;}renderLightBuffer();updateStormFlashOverlay(0,false);S.lastViewKey='';$('tileInspector')?.classList.remove('visible');
+ S.overview={mid:null,far:null};S.overviewMode=null;S.biomeFogOverview=null;if(S.fogOverview&&!S.fogOverview.destroyed)safeDestroyDisplay(S.fogOverview);S.fogOverview=null;clearPlayerWaterCap?.();S.playerSprite=null;S.playerShadow=null;S.playerParticles=null;S.playerDust=[];S.weatherParticles={rain:[],snow:[],dust:[],swampFog:[]};S.rainSplashPool=[];S.rainSplashSpawnCarry=0;S.weatherRegions=null;S.weatherRuntime={kind:null,level:0,rainGraceUntil:0,snowGraceUntil:0};S.weatherFlashAlpha=0;S.weatherFlashCooldown=0;S.ambientParticles={firefly:[],desertDust:[],cursedDust:[]};S.ambientFxState=null;for(const rec of (S.ambientNightLights||[])){rec._ready=false;rec._retiring=false;rec._visibility=0;hideNightLight(rec);}if(S.lightBufferHero){S.lightBufferHero._visibility=0;S.lightBufferHero.alpha=0;S.lightBufferHero.visible=false;S.lightBufferHero.renderable=false;}renderLightBuffer();updateStormFlashOverlay(0,false);S.lastViewKey='';$('tileInspector')?.classList.remove('visible');
 }
 function destroyChunk(c){
  for(const s of Object.values(c.backgrounds||{}))safeDestroyDisplay(s,{destroyTexture:true});
@@ -3011,11 +3022,15 @@ function playerBiomeWeatherState(){
   }
  }else if(rt.kind==='dust'){
   if(eligibleKind==='dust'){
-   // Latch the strongest reached intensity. Moving back toward the biome edge
-   // no longer fades the storm before the player actually crosses the boundary.
+   rt.rainGraceUntil=0;
    rt.level=Math.max(rt.level||0,entryFade);
    effectiveFade=rt.level;
-  }else{rt.kind=null;rt.level=0;rt.rainGraceUntil=0;rt.snowGraceUntil=0;effectiveFade=0;}
+  }else{
+   if(!(rt.rainGraceUntil>0))rt.rainGraceUntil=now+1600;
+   const remain=clamp((rt.rainGraceUntil-now)/1600,0,1);
+   effectiveFade=(rt.level||1)*smootherStep01(remain);
+   if(now>=rt.rainGraceUntil){rt.kind=null;rt.level=0;rt.rainGraceUntil=0;rt.snowGraceUntil=0;effectiveFade=0;}
+  }
  }else if(rt.kind==='snow'){
   // Once snow has started, keep its strongest reached intensity all the way to
   // the biome boundary, then give it the same one-second exit tail as rain.
@@ -3071,7 +3086,7 @@ function weatherParticleTexture(kind){return ensureWeatherParticleTextures()?.[k
 function ensureBiomeWeatherPool(){
  if(!S.app||!S.layers.weatherFx)return;
  S.weatherParticles=S.weatherParticles||{rain:[],snow:[],dust:[],swampFog:[]};
- const specs={rain:176,snow:82,dust:110,swampFog:46};
+ const specs={rain:176,snow:82,dust:34,swampFog:46};
  for(const [kind,maxCount] of Object.entries(specs)){
   const defaultLayer=weatherLayerForKind(kind);if(!defaultLayer)continue;
   const arr=S.weatherParticles[kind]||[];S.weatherParticles[kind]=arr;
@@ -3080,8 +3095,15 @@ function ensureBiomeWeatherPool(){
    const sp=new PIXI.Sprite(weatherParticleTexture(kind));sp.anchor.set(.5);sp.eventMode='none';sp.visible=false;sp.renderable=false;sp._weatherKind=kind;sp._phase=Math.random()*Math.PI*2;sp._seed=Math.random()*9999;sp.texture=weatherParticleTexture(kind);sp._visibility=0;layer.addChild(sp);arr.push(sp);
   }
  }
+ S.rainSplashPool=S.rainSplashPool||[];
+ const splashLayer=S.layers.rainSplashes;
+ while(splashLayer&&S.rainSplashPool.length<72){
+  const g=new PIXI.Graphics();g.eventMode='none';g.visible=false;g.renderable=false;g.zIndex=-2;g._ready=false;g._age=0;g._life=.32;g._wx=0;g._wy=0;
+  splashLayer.addChild(g);S.rainSplashPool.push(g);
+ }
 }
 function setWeatherParticleVisible(sp,on){sp.visible=!!on;sp.renderable=!!on}
+function setRainSplashVisible(sp,on){if(sp){sp.visible=!!on;sp.renderable=!!on}}
 function visibleSwampFogCells(){
  if(!S.world)return[];
  const now=performance.now(),zoom=Math.max(.001,S.zoom||1),key=[Math.round((S.panX||0)/80),Math.round((S.panY||0)/80),Math.round(zoom*10)].join('|');
@@ -3113,7 +3135,7 @@ function respawnWeatherParticle(sp,kind,fromEdge=false,vx=0,vy=0){
  }
  sp._wx=x;sp._wy=y;sp._fade=1;sp._phase=Math.random()*Math.PI*2;sp._age=kind==='swampFog'?0:Math.random()*10;sp._ready=true;
  if(kind==='snow')sp._snowScale=.65+Math.random()*.75;
- if(kind==='dust'){sp._dustScale=3+Math.random()*2;sp._dustSpeed=.90+Math.random()*.20;}
+ if(kind==='dust'){sp._dustScale=1.35+Math.random()*1.25;sp._dustSpeed=.55+Math.random()*.18;}
  if(kind==='swampFog'){sp._fogScale=.55+Math.random()*.85;sp._fogLife=1+Math.random()*2;sp._age=0;sp._visibility=0;}
  return true;
 }
@@ -3136,6 +3158,40 @@ function updateStormFlashOverlay(dt,canFlash){
  const a=clamp(S.weatherFlashAlpha||0,0,1);
  overlay.style.display=a>.001?'block':'none';overlay.style.opacity=a.toFixed(3);
 }
+function spawnRainSplash(){
+ const pool=S.rainSplashPool;if(!pool?.length||!S.world)return false;
+ const sp=pool.find(o=>o&&!o.destroyed&&!o._ready);if(!sp)return false;
+ const b=weatherViewLocalBounds((S.world.cell||24)*1.8);
+ const x=b.minX+Math.random()*(b.maxX-b.minX),y=b.minY+Math.random()*(b.maxY-b.minY);
+ const cell=S.world.cell||24,p=uniso(x,y,cell);
+ const gx=clamp(Math.floor(p.x),0,S.world.cols-1),gy=clamp(Math.floor(p.y),0,S.world.rows-1);
+ const biome=visualBiomeAt(S.world,gx,gy);
+ if(!(S.world.open?.[gy]?.[gx]||biome===0||biome===5||biome===WATER_BIOME))return false;
+ sp._ready=true;sp._age=0;sp._life=.22+Math.random()*.18;sp._wx=x;sp._wy=y;sp._r=.018+Math.random()*.032;sp._alpha=.22+Math.random()*.20;
+ sp.position.set(x,y);sp.zIndex=y-3+Math.random()*.05;setRainSplashVisible(sp,true);return true;
+}
+function updateRainGroundSplashes(dt,active,intensity=0){
+ const pool=S.rainSplashPool||[];
+ if(!active||intensity<=.001){
+  for(const sp of pool){if(sp&&sp._ready){sp._ready=false;sp.clear?.();setRainSplashVisible(sp,false)}}
+  return;
+ }
+ const spawnBudget=dt*(12+80*clamp(intensity,0,1));
+ S.rainSplashSpawnCarry=Math.min(3,(S.rainSplashSpawnCarry||0)+spawnBudget);
+ while(S.rainSplashSpawnCarry>=1){S.rainSplashSpawnCarry-=1;if(!spawnRainSplash())break}
+ const bounds=weatherViewLocalBounds((S.world?.cell||24)*2.5);
+ for(const sp of pool){
+  if(!sp||!sp._ready)continue;
+  sp._age+=dt;
+  if(sp._age>=sp._life||sp._wx<bounds.minX||sp._wx>bounds.maxX||sp._wy<bounds.minY||sp._wy>bounds.maxY){
+   sp._ready=false;sp.clear?.();setRainSplashVisible(sp,false);continue;
+  }
+  const t=clamp(sp._age/sp._life,0,1),fade=(1-t)*(1-t),r=(sp._r||.25)*(1+2.2*t)*(S.world?.cell||24);
+  sp.clear();
+  sp.ellipse(0,0,r,r*.34).stroke({width:Math.max(1,r*.06),color:0xbfdcff,alpha:(sp._alpha||.25)*fade});
+  sp.alpha=1;sp.scale.set(1);
+ }
+}
 function updateBiomeWeather(dt){
  const rawStrength=weatherSliderStrength();
  const strength=weatherStrength();
@@ -3152,9 +3208,10 @@ function updateBiomeWeather(dt){
  const state=playerBiomeWeatherState();
  const weatherEnabled=rawStrength>.001;
  if(!weatherEnabled){state.kind=null;state.fade=0;S.weatherRuntime={kind:null,level:0,rainGraceUntil:0,snowGraceUntil:0};}
+ S.foliageWeatherTarget=(state.kind==='rain'||state.kind==='snow'||state.kind==='dust')?rawStrength*clamp(state.fade||0,0,1):0;
  const dir=weatherWindDirection();
  const t=performance.now()*.001;
- const baseCounts={rain:176,snow:82,dust:110,swampFog:46};
+ const baseCounts={rain:176,snow:82,dust:34,swampFog:46};
  const localBounds=weatherViewLocalBounds(120),visibleSwamp=visibleSwampFogCells();
  const swampPresence=visibleSwamp.length?(.35+.65*smootherStep01(clamp(visibleSwamp.length/36,0,1))):0;
  let rainVisible=false;
@@ -3184,7 +3241,7 @@ function updateBiomeWeather(dt){
     vx=dir.x*windAmp;
     vy=(680+420*strength)*Math.max(.88,dir.y)*dir.mult;
     sp.texture=weatherParticleTexture('rain');
-    sp.tint=0xb8d9ff;sp.alpha=(.16+.50*strength)*factor;sp.width=.8;sp.height=26+34*strength;sp.rotation=Math.atan2(vy,vx)-Math.PI/2;
+    sp.tint=0xb8d9ff;sp.alpha=(.16+.50*strength)*factor;sp.width=.8;sp.height=(26+34*strength)*.67;sp.rotation=Math.atan2(vy,vx)-Math.PI/2;
    }else if(kind==='snow'){
     const sway=Math.sin(t*1.8+sp._phase)*(18+24*strength);
     vx=dir.x*(42+108*strength)*dir.mult+sway*.38;
@@ -3198,8 +3255,8 @@ function updateBiomeWeather(dt){
     const dustWindMult=1+smoothStep01(clamp((dustStrength-.4)/.4,0,1))*.85;
     vx=sideSign*(390+520*dustStrength)*dustWindMult*dustSpeed*.5;
     vy=dir.y*(18+26*dustStrength)*dustWindMult*dustSpeed*.5;
-    sp.texture=weatherParticleTexture('dust');
-    sp.tint=0xc79d64;sp.alpha=(.10+.24*strength)*factor;sp.width=(7+10*strength)*dustScale;sp.height=(1.8+2.8*strength)*dustScale;sp.rotation=Math.atan2(vy,vx);
+    sp.texture=(S.cloudFrames&&S.cloudFrames.length)?S.cloudFrames[(i+(sp._seed|0))%S.cloudFrames.length]:weatherParticleTexture('dust');
+    sp.tint=0xc79d64;sp.alpha=(.08+.18*strength)*factor;sp.width=(70+90*strength)*dustScale;sp.height=(24+34*strength)*dustScale;sp.rotation=Math.atan2(vy,vx)*.18+Math.sin(t*.35+sp._phase)*.05;
    }else{
     // Ambient swamp corruption fog: completely independent of weather strength.
     // Moves at half the previous speed and each puff lives only 1–3 seconds.
@@ -3219,6 +3276,7 @@ function updateBiomeWeather(dt){
    if(kind==='rain')rainVisible=true;
   }
  }
+ updateRainGroundSplashes(dt,rainVisible&&state.kind==='rain',strength*state.fade);
  updateStormFlashOverlay(dt,rainVisible&&state.kind==='rain'&&rawStrength>.8);
 }
 
@@ -5390,7 +5448,7 @@ function buildChunkDecor(chunk){
     sp.scale.set(((base>>>28)&1?-1:1)*(sc/7),sc/7);
     sp.tint=picked.isPlant?(S.groundMode==='detailed'?(isSnowBiome(biome)?snowDecorTint(biome):isDesertBiome(biome)?mixColors(0xffffff,grassTintForBiome(biome,n),.5):grassTintForBiome(biome,n)):0xffffff):(isSnowBiome(biome)?snowDecorTint(biome):isDesertBiome(biome)?mixColors(0xffffff,grassTintForTile(biome,role,n+grassIndex),.5):grassTintForTile(biome,role,n+grassIndex));
     sp.alpha=.96;
-    sp.zIndex=p.y+(picked.isDesertPlantB ? .65 : (uiCheck('enableFoliageWindShader',false)?.35:-1))+n*.001;
+    sp.zIndex=p.y+(picked.isDesertPlantB ? -1.5 : (uiCheck('enableFoliageWindShader',false)?-1.5:-1))+n*.001;
     sp._waterDecorDryTint=sp.tint;addOptimizedWaterDecor(chunk,sp,biome,picked.isDesertPlantB?'desertPlantB':'grass',x+gp.x,y+gp.y,!picked.isDesertPlantB);
    }
   }
@@ -5410,7 +5468,7 @@ function buildChunkDecor(chunk){
    sp.scale.set(sc/7);
    sp.tint=densePick.isPlant?(S.groundMode==='detailed'?(isSnowBiome(biome)?snowDecorTint(biome):isDesertBiome(biome)?mixColors(0xffffff,grassTintForBiome(biome,denseIndex+3),.5):grassTintForBiome(biome,denseIndex+3)):0xffffff):(isSnowBiome(biome)?snowDecorTint(biome):isDesertBiome(biome)?mixColors(0xffffff,grassTintForTile(biome,role,denseIndex+3),.5):grassTintForTile(biome,role,denseIndex+3));
    sp.alpha=.97;
-   sp.zIndex=p.y+(densePick.isDesertPlantB ? .65 : (uiCheck('enableFoliageWindShader',false)?.38:0));
+   sp.zIndex=p.y-1.5;
    sp._waterDecorDryTint=sp.tint;addOptimizedWaterDecor(chunk,sp,biome,densePick.isDesertPlantB?'desertPlantB':'denseGrass',x+gp.x,y+gp.y,!densePick.isDesertPlantB);
   }
   const clutterBase=(role==='grass'||role==='tallGrass')
