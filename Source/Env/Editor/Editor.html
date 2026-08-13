@@ -660,6 +660,13 @@ function setTextureSampling(texture,scaleMode='linear',mipmaps=true){
 function setTextureSamplingMany(textures,scaleMode='linear',mipmaps=true){
  for(const texture of textures)setTextureSampling(texture,scaleMode,mipmaps);
 }
+function depthYForSprite(sp,bias=0){
+ if(!sp)return bias;
+ const y=Number(sp.position?.y)||0;
+ const h=Math.abs(Number(sp.height)||0);
+ const ay=Number(sp.anchor?.y)||0;
+ return y+h*Math.max(0,1-ay)+bias;
+}
 function isMobileStartupDevice(){
  const ua=navigator.userAgent||'';
  return document.body?.classList?.contains('mobile-ui')||/Android|iPhone|iPad|iPod|Mobile|Telegram/i.test(ua)||(navigator.maxTouchPoints||0)>0;
@@ -1998,10 +2005,9 @@ function dayNoonFactor(h=S.dayTime??14){
  return smootherStep01(clamp(1-dist/5.5,0,1));
 }
 function effectiveColorGradeSettings(){
- const noon=dayNoonFactor();
  return{
-  brightness:uiNum('cgBrightness',.12)+.14*noon,
-  contrast:uiNum('cgContrast',0)+(-.41)*noon,
+  brightness:uiNum('cgBrightness',.12),
+  contrast:uiNum('cgContrast',0),
   saturation:Math.max(0,uiNum('cgSaturation',1.22)),
   hue:uiNum('cgHue',0)
  };
@@ -5111,7 +5117,7 @@ function addVoidBiomeDecor(chunk,x,y,biome,base,c,globalScale){
   sp.position.set(p.x,p.y+c*.04);
   const mirrorX=(kind==='rock'||kind==='stone')?1:(hash2(x,y,S.world.seed^i)<.5?-1:1);
   sp.scale.set(mirrorX*scale,scale);
-  sp.zIndex=sp.position.y;
+  sp.zIndex=depthYForSprite(sp);
   {
    sp.tint=S.groundMode==='detailed'
     ?decorTintForBiome(biome,kind,kind==='rock'||kind==='stone')
@@ -5434,7 +5440,7 @@ function buildChunkDecor(chunk){
    sp.position.set(p.x,p.y+c*.08);
    const mirrorX=(kind==='rock'||kind==='stone')?1:(((base>>>29)&1)?-1:1);
    sp.scale.set(mirrorX*baseScale,baseScale);
-   sp.zIndex=sp.position.y;
+   sp.zIndex=depthYForSprite(sp);
    sp.tint=S.groundMode==='detailed'
     ?decorTintForBiome(biome,kind,kind==='rock'||kind==='stone')
     :0xffffff;sp._waterDecorDryTint=sp.tint;addOptimizedWaterDecor(chunk,sp,biome,kind,x+.5,y+.5);if(!(biome===0||biome===5))addWaterGradientOverlay(chunk,sp,biome);
@@ -5462,7 +5468,7 @@ function buildChunkDecor(chunk){
     sp.scale.set(((base>>>28)&1?-1:1)*(sc/7),sc/7);
     sp.tint=picked.isPlant?(S.groundMode==='detailed'?(isSnowBiome(biome)?snowDecorTint(biome):isDesertBiome(biome)?mixColors(0xffffff,grassTintForBiome(biome,n),.5):grassTintForBiome(biome,n)):0xffffff):(isSnowBiome(biome)?snowDecorTint(biome):isDesertBiome(biome)?mixColors(0xffffff,grassTintForTile(biome,role,n+grassIndex),.5):grassTintForTile(biome,role,n+grassIndex));
     sp.alpha=.96;
-    sp.zIndex=sp.position.y+(picked.isDesertPlantB ? -.8 : (uiCheck('enableFoliageWindShader',false)?-.8:-1))+n*.001;
+    sp.zIndex=depthYForSprite(sp)+n*.001;
     sp._waterDecorDryTint=sp.tint;addOptimizedWaterDecor(chunk,sp,biome,picked.isDesertPlantB?'desertPlantB':'grass',x+gp.x,y+gp.y,!picked.isDesertPlantB);
    }
   }
@@ -5482,7 +5488,7 @@ function buildChunkDecor(chunk){
    sp.scale.set(sc/7);
    sp.tint=densePick.isPlant?(S.groundMode==='detailed'?(isSnowBiome(biome)?snowDecorTint(biome):isDesertBiome(biome)?mixColors(0xffffff,grassTintForBiome(biome,denseIndex+3),.5):grassTintForBiome(biome,denseIndex+3)):0xffffff):(isSnowBiome(biome)?snowDecorTint(biome):isDesertBiome(biome)?mixColors(0xffffff,grassTintForTile(biome,role,denseIndex+3),.5):grassTintForTile(biome,role,denseIndex+3));
    sp.alpha=.97;
-   sp.zIndex=sp.position.y-.8;
+   sp.zIndex=depthYForSprite(sp);
    sp._waterDecorDryTint=sp.tint;addOptimizedWaterDecor(chunk,sp,biome,densePick.isDesertPlantB?'desertPlantB':'denseGrass',x+gp.x,y+gp.y,!densePick.isDesertPlantB);
   }
   const clutterBase=(role==='grass'||role==='tallGrass')
@@ -5697,7 +5703,7 @@ function placePlayer(){
  const rx=Number.isFinite(S.playerRenderX)?S.playerRenderX:S.player.x;
  const ry=Number.isFinite(S.playerRenderY)?S.playerRenderY:S.player.y;
  const p=iso(rx,ry,S.world.cell);
- S.playerSprite.position.set(p.x,p.y);S.playerSprite.zIndex=p.y+0.001;
+ S.playerSprite.position.set(p.x,p.y);S.playerSprite.zIndex=depthYForSprite(S.playerSprite)+0.001;
  if(S.playerShadow){S.playerShadow.position.set(p.x,p.y+Math.max(1,S.playerVisualHeight*.025));S.playerShadow.zIndex=p.y-0.002}
  if(S.playerParticles){S.playerParticles.zIndex=p.y-0.001}
  $('status').textContent=`${S.player.x|0}, ${S.player.y|0}`;
