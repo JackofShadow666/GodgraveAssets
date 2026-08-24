@@ -115,7 +115,7 @@ body.mobile-ui .cloudTransitionOverlay{position:fixed}
 body.mobile-ui .timeTopControl{top:calc(7px + env(safe-area-inset-top,0px));max-width:58vw;padding:4px 7px;height:34px;font-size:10px}
 body.mobile-ui .timeTopControl input[type=range]{width:min(150px,32vw)}
 body.play-mode .timeTopControl{height:32px}
-body.mobile-ui .timeTopControl{display:none}
+body.mobile-ui .timeTopControl{display:flex!important}
 </style>
 
 <style>
@@ -281,6 +281,30 @@ body.mobile-ui .hint,
 body.mobile-ui .legend{display:none!important}
 body.mobile-ui .mobileControls{display:block!important}
 body.mobile-ui .mobileStick{display:block!important;opacity:1!important;visibility:visible!important}
+body.mobile-ui .top{
+ display:flex!important;
+ position:fixed!important;
+ left:calc(58px + var(--safe-left))!important;
+ right:calc(8px + var(--safe-right))!important;
+ top:calc(6px + var(--safe-top))!important;
+ width:auto!important;
+ height:38px!important;
+ min-height:38px!important;
+ padding:0!important;
+ background:transparent!important;
+ pointer-events:none!important;
+ overflow:visible!important;
+ z-index:2147483003!important;
+}
+body.mobile-ui .top>*:not(.timeTopControl){display:none!important}
+body.mobile-ui .timeTopControl{
+ display:flex!important;
+ max-width:calc(100vw - 76px - var(--safe-left) - var(--safe-right))!important;
+ margin:0!important;
+ pointer-events:auto!important;
+ transform:none!important;
+}
+body.mobile-ui .timeTopControl input[type=range]{width:min(96px,22vw)!important}
 @supports not (height:100dvh){
  body.mobile-ui .app,body.mobile-ui .workspace{height:100vh!important}
 }
@@ -308,7 +332,43 @@ body.mobile-ui .mobileStick{display:block!important;opacity:1!important;visibili
 
 
 <style>
-html.force-mobile body .top{display:none!important}
+html.force-mobile body .top{
+ display:flex!important;
+ position:fixed!important;
+ left:calc(58px + var(--safe-left))!important;
+ right:calc(8px + var(--safe-right))!important;
+ top:calc(6px + var(--safe-top))!important;
+ width:auto!important;
+ height:38px!important;
+ min-height:38px!important;
+ padding:0!important;
+ background:transparent!important;
+ pointer-events:none!important;
+ overflow:visible!important;
+ z-index:2147483003!important;
+}
+html.force-mobile body .top>*:not(.timeTopControl){display:none!important}
+html.force-mobile body .timeTopControl{
+ display:flex!important;
+ max-width:calc(100vw - 76px - var(--safe-left) - var(--safe-right))!important;
+ margin:0!important;
+ pointer-events:auto!important;
+ transform:none!important;
+}
+html.force-mobile body .timeTopControl input[type=range]{width:min(96px,22vw)!important}
+.mobileFloatingTime{
+ position:fixed!important;
+ left:calc(58px + var(--safe-left))!important;
+ right:calc(8px + var(--safe-right))!important;
+ top:calc(6px + var(--safe-top))!important;
+ z-index:2147483600!important;
+ display:flex!important;
+ max-width:calc(100vw - 76px - var(--safe-left) - var(--safe-right))!important;
+ margin:0!important;
+ pointer-events:auto!important;
+ transform:none!important;
+}
+.mobileFloatingTime input[type=range]{width:min(96px,22vw)!important}
 html.force-mobile body .app{position:fixed!important;inset:0!important;width:100vw!important;height:100dvh!important;display:block!important;overflow:hidden!important}
 html.force-mobile body .workspace{position:fixed!important;inset:0!important;width:100vw!important;height:100dvh!important;overflow:hidden!important}
 html.force-mobile body .mobileControls{display:block!important;position:fixed!important;inset:0!important;z-index:2147483000!important}
@@ -416,7 +476,7 @@ body:not(.mobile-ui) #miniHost img{
 </section>
 
 
-<section class="panel"><h3>РЕНДЕР</h3><div class="row"><label class="rangeLabel">Масштаб плиток земли <b id="groundTileScaleValue" class="rangeValue">62%</b></label><input id="groundTileScale" type="range" min="20" max="200" step="1" value="62"></div><div class="row"><label>Размер чанка</label><input id="chunk" type="number" min="8" max="64" value="24"></div><label class="check"><input id="showGround" type="checkbox" checked> Земля</label><label class="check"><input id="showDecor" type="checkbox" checked> Окружение</label><label class="check greenCheck"><input id="enableFoliageWindShader" type="checkbox" checked> TEST: shader-ветер травы/кустов/деревьев</label><div class="row"><label class="rangeLabel">Ветер foliage <b id="foliageWindStrengthValue" class="rangeValue">26%</b></label><input id="foliageWindStrength" type="range" min="0" max="100" value="26"></div><div class="row"><label class="rangeLabel">Скорость foliage <b id="foliageWindSpeedValue" class="rangeValue">100%</b></label><input id="foliageWindSpeed" type="range" min="0" max="100" value="100"></div><div class="row"><label class="rangeLabel">Порывы foliage <b id="foliageWindGustValue" class="rangeValue">44%</b></label><input id="foliageWindGust" type="range" min="0" max="100" value="44"></div><div class="row"><label class="rangeLabel">Игрок качает foliage <b id="foliagePlayerPushValue" class="rangeValue">400%</b></label><input id="foliagePlayerPush" type="range" min="0" max="600" value="400"></div><label class="check dangerCheck"><input id="hideDecorVisualsOnly" type="checkbox"> TEST: скрыть декор, оставить navmesh/коллизии</label><label class="check"><input id="useParticleDecor" type="checkbox" checked> Particle batching мелкого декора</label><label class="check"><input id="useBakedLowDecor" type="checkbox" checked> Chunk baking мелкого декора</label><label class="check"><input id="useBakedVoidDecor" type="checkbox" checked> Chunk baking глубины непроходимых зон</label><label class="check"><input id="useEnvironmentFlatten" type="checkbox" checked> Environment flattening · crisp tiles</label><label class="check"><input id="showRoutes" type="checkbox"> Маршруты</label><label class="check"><input id="showPathingDebug" type="checkbox"> Дебаг alpha-пафинга (20 клеток, 3×3)</label><label class="check"><input id="showNavmeshDebug" type="checkbox"> Визуальный navmesh (20 клеток)</label><label class="check"><input id="showNavmeshLinks" type="checkbox"> Связи navmesh</label><label class="check"><input id="showNpcNavPaths" type="checkbox"> Пути дебаг-NPC</label><label class="check"><input id="useNavmeshMovement" type="checkbox" checked disabled> Движение игрока по navmesh — всегда</label><label class="check"><input id="showPlayerAvoidanceDebug" type="checkbox"> Дебаг обхода игрока</label><label class="check"><input id="spawnDebugNpcs" type="checkbox"> Дебаг-NPC каждую 1 сек. · N — нагрузка</label><label class="check"><input id="hideVignette" type="checkbox"> Скрыть виньетку</label>
+<section class="panel"><h3>РЕНДЕР</h3><div class="row"><label class="rangeLabel">Масштаб плиток земли <b id="groundTileScaleValue" class="rangeValue">62%</b></label><input id="groundTileScale" type="range" min="20" max="200" step="1" value="62"></div><div class="row"><label>Размер чанка</label><input id="chunk" type="number" min="8" max="64" value="24"></div><label class="check"><input id="showGround" type="checkbox" checked> Земля</label><label class="check"><input id="showDecor" type="checkbox" checked> Окружение</label><label class="check greenCheck"><input id="enableFoliageWindShader" type="checkbox" checked> 2D sprite-ветер травы/кустов/деревьев</label><div class="row"><label class="rangeLabel">Ветер foliage <b id="foliageWindStrengthValue" class="rangeValue">26%</b></label><input id="foliageWindStrength" type="range" min="0" max="100" value="26"></div><div class="row"><label class="rangeLabel">Скорость foliage <b id="foliageWindSpeedValue" class="rangeValue">100%</b></label><input id="foliageWindSpeed" type="range" min="0" max="100" value="100"></div><div class="row"><label class="rangeLabel">Порывы foliage <b id="foliageWindGustValue" class="rangeValue">44%</b></label><input id="foliageWindGust" type="range" min="0" max="100" value="44"></div><div class="row"><label class="rangeLabel">Игрок качает foliage <b id="foliagePlayerPushValue" class="rangeValue">400%</b></label><input id="foliagePlayerPush" type="range" min="0" max="600" value="400"></div><label class="check dangerCheck"><input id="hideDecorVisualsOnly" type="checkbox"> TEST: скрыть декор, оставить navmesh/коллизии</label><label class="check"><input id="useParticleDecor" type="checkbox" checked> Particle batching мелкого декора</label><label class="check"><input id="useBakedLowDecor" type="checkbox" checked> Chunk baking мелкого декора</label><label class="check"><input id="useBakedVoidDecor" type="checkbox" checked> Chunk baking глубины непроходимых зон</label><label class="check"><input id="useEnvironmentFlatten" type="checkbox" checked> Environment flattening · crisp tiles</label><label class="check"><input id="showRoutes" type="checkbox"> Маршруты</label><label class="check"><input id="showPathingDebug" type="checkbox"> Дебаг alpha-пафинга (20 клеток, 3×3)</label><label class="check"><input id="showNavmeshDebug" type="checkbox"> Визуальный navmesh (20 клеток)</label><label class="check"><input id="showNavmeshLinks" type="checkbox"> Связи navmesh</label><label class="check"><input id="showNpcNavPaths" type="checkbox"> Пути дебаг-NPC</label><label class="check"><input id="useNavmeshMovement" type="checkbox" checked disabled> Движение игрока по navmesh — всегда</label><label class="check"><input id="showPlayerAvoidanceDebug" type="checkbox"> Дебаг обхода игрока</label><label class="check"><input id="spawnDebugNpcs" type="checkbox"> Дебаг-NPC каждую 1 сек. · N — нагрузка</label><label class="check"><input id="hideVignette" type="checkbox"> Скрыть виньетку</label>
 <label class="check"><input id="showRenderMetrics" type="checkbox"> Метрики нагрузки рендера</label>
 <label class="check"><input id="showCloudLodTransition" type="checkbox" checked> Облака при переключении дальности</label>
 <label class="check"><input id="showTopShade" type="checkbox" checked> Затемнение сверху</label>
@@ -660,9 +720,14 @@ function setTextureSampling(texture,scaleMode='linear',mipmaps=true){
 function setTextureSamplingMany(textures,scaleMode='linear',mipmaps=true){
  for(const texture of textures)setTextureSampling(texture,scaleMode,mipmaps);
 }
-function depthYForSprite(sp,bias=0){
+function depthYForSprite(sp,bias=0,kindOverride=null){
  if(!sp)return bias;
  const y=Number(sp.position?.y)||0;
+ const kind=kindOverride||sp._decorKind;
+ if(kind==='tree')return y+2+bias;
+ if(kind==='rock')return y+1.5+bias;
+ if(kind==='stone')return y+1+bias;
+ if(kind==='bush')return y+1+bias;
  const h=Math.abs(Number(sp.height)||0);
  const ay=Number(sp.anchor?.y)||0;
  return y+h*Math.max(0,1-ay)+bias;
@@ -2193,21 +2258,30 @@ uniform float uGust;
 uniform float uPhase;
 uniform float uPlayerBoost;
 uniform float uPlayerPush;
+uniform float uMobile;
 void main(void){
  vec2 uv=vTextureCoord;
  float height=clamp(1.0-uv.y,0.0,1.0);
  float anchor=smoothstep(0.24,1.0,height);
  float topWeight=anchor*anchor*(0.35+0.65*height);
  float sideFade=smoothstep(0.03,0.22,uv.x)*smoothstep(0.97,0.78,uv.x);
- float slow=sin(uTime*uSpeed+uPhase+uv.x*1.7)*0.45;
+ float slow=sin(uTime*uSpeed+uPhase+uv.x*1.7)*(0.45+uMobile*0.35);
  float gustRaw=sin(uTime*(uSpeed*0.37+0.11)+uPhase*1.73+uv.x*4.1+uv.y*1.3);
  float gust=max(0.0,gustRaw);
- gust=gust*gust*(0.35+0.65*uGust);
- float flutter=sin(uTime*(uSpeed*2.35+0.2)+uPhase*.61+uv.y*18.0+uv.x*5.0)*0.10*uGust;
+ gust=gust*gust*(0.35+0.65*uGust)*(1.0-uMobile*0.25);
+ float flutter=sin(uTime*(uSpeed*2.35+0.2)+uPhase*.61+uv.y*18.0+uv.x*5.0)*0.10*uGust*(1.0-uMobile);
  float playerPush=uPlayerPush*uPlayerBoost*(0.55+0.45*height);
- float bend=(slow+gust+flutter+playerPush)*uStrength*(1.0+uPlayerBoost*1.35)*topWeight*sideFade;
+ float mobileSoft=1.0-uMobile*0.02;
+ float bend=(slow+gust+flutter+playerPush)*uStrength*mobileSoft*(1.0+uPlayerBoost*1.35)*topWeight*sideFade;
  uv.x-=bend;
- finalColor=texture(uTexture,uv);
+ vec4 c=texture(uTexture,uv);
+ if(uMobile>0.5){
+  vec2 px=vec2(0.00135,0.00135);
+  vec4 cx=texture(uTexture,uv+vec2(px.x,0.0))+texture(uTexture,uv-vec2(px.x,0.0));
+  vec4 cy=texture(uTexture,uv+vec2(0.0,px.y))+texture(uTexture,uv-vec2(0.0,px.y));
+  c=mix(c,(c*2.0+cx+cy)/6.0,0.58);
+ }
+ finalColor=c;
 }
 `;
 function createFoliageWindFilter(){
@@ -2220,7 +2294,8 @@ function createFoliageWindFilter(){
    uGust:{value:.55,type:'f32'},
    uPhase:{value:0,type:'f32'},
    uPlayerBoost:{value:0,type:'f32'},
-   uPlayerPush:{value:0,type:'f32'}
+   uPlayerPush:{value:0,type:'f32'},
+   uMobile:{value:0,type:'f32'}
   }}
  });
  filter.padding=4;
@@ -2228,6 +2303,14 @@ function createFoliageWindFilter(){
 }
 function isWindFoliageKind(kind){return kind==='bush'||kind==='tree'}
 function isWindGrassKind(kind){return kind==='grass'||kind==='denseGrass'}
+function isSpriteWindKind(kind){return kind==='grass'||kind==='denseGrass'||kind==='bush'||kind==='tree'}
+function spriteWindKindFactor(kind){
+ if(kind==='grass')return{wind:2.00,brush:1.00,rot:.055,skew:.16,scale:.018,radius:1.00};
+ if(kind==='denseGrass')return{wind:2.24,brush:1.16,rot:.070,skew:.20,scale:.022,radius:1.12};
+ if(kind==='bush')return{wind:.96,brush:.42,rot:.020,skew:.070,scale:.008,radius:1.18};
+ if(kind==='tree')return{wind:.72,brush:.08,rot:.014,skew:.055,scale:.006,radius:1.20};
+ return{wind:.70,brush:.25,rot:.015,skew:.050,scale:.006,radius:1.00};
+}
 function foliageWindUniforms(f){return f?.resources?.foliageWindUniforms?.uniforms||f?.resources?.foliageWindUniforms}
 function updateOneFoliageWindUniforms(f,dt=0){
  const u=f.resources?.foliageWindUniforms?.uniforms||f.resources?.foliageWindUniforms;if(!u)return;
@@ -2236,20 +2319,23 @@ function updateOneFoliageWindUniforms(f,dt=0){
  const strengthPct=clamp(uiNum('foliageWindStrength',26)/100,0,1)*(1-weather)+weather;
  const speedPct=clamp(uiNum('foliageWindSpeed',100)/100,0,1)*(1-weather)+weather;
  const gustPct=clamp(uiNum('foliageWindGust',44)/100,0,1)*(1-weather)+weather;
- u.uStrength=strengthPct*.030;
- u.uSpeed=.35+speedPct*3.1;
+ const mobile=S.isMobile||document.body.classList.contains('mobile-ui')||document.documentElement.classList.contains('force-mobile');
+ try{f.resolution=mobile?.72:1}catch(_){}
+ u.uMobile=mobile?1:0;
+ u.uStrength=strengthPct*(mobile?.036:.030);
+ u.uSpeed=.35+speedPct*(mobile?3.1:3.1);
  u.uGust=gustPct;
  const nowMs=performance.now();
  const dx=Number(f._windWorldX||0)-Number(S.foliagePlayerImpulseX||0),dy=Number(f._windWorldY||0)-Number(S.foliagePlayerImpulseY||0);
- const screenSide=clamp((Number(S.foliagePlayerImpulseX||0)-Number(f._windWorldX||0))-(Number(S.foliagePlayerImpulseY||0)-Number(f._windWorldY||0)),-1,1);
+ const screenSide=clamp((Number(f._windWorldX||0)-Number(S.foliagePlayerImpulseX||0))-(Number(f._windWorldY||0)-Number(S.foliagePlayerImpulseY||0)),-1,1);
  const dist=Math.hypot(dx,dy);
  const impulseT=clamp(((S.foliagePlayerImpulseUntil||0)-nowMs)/950,0,1);
  const impulseFade=1-Math.pow(1-impulseT,3);
  const ahead=impulseFade>.001&&dist>.001?.75:0;
- const pushMul=clamp(uiNum('foliagePlayerPush',400)/100,0,6);
- const near=clamp(1-dist/2.85,0,1);
- u.uPlayerBoost=impulseFade>.001?near*near*(.55+.45*ahead)*pushMul*.48*impulseFade:0;
- u.uPlayerPush=impulseFade>.001?screenSide:0;
+ const pushMul=(S.isMobile||document.body.classList.contains('mobile-ui'))?0:clamp(uiNum('foliagePlayerPush',400)/100,0,6);
+ const near=clamp(1-dist/1.425,0,1);
+ u.uPlayerBoost=impulseFade>.001?near*near*(.55+.45*ahead)*pushMul*.96*impulseFade:0;
+ u.uPlayerPush=impulseFade>.001?-screenSide:0;
 }
 function updateFoliageWindUniforms(dt=0){
  for(const f of S.foliageWindFilters||[])if(f&&!f.destroyed)updateOneFoliageWindUniforms(f,dt);
@@ -2273,6 +2359,8 @@ function setDisplayFoliageWind(display,on){
  if(!display||display.destroyed)return;
  const f=display._foliageWindFilter;
  const filters=(display.filters||[]).filter(x=>x&&x!==f);
+ // Keep the 2D foliage path cheap: sprite transforms below replace per-object filters.
+ on=false;
  if(on)filters.push(ensureFoliageWindFilterFor(display));
  display.filters=filters.length?filters:null;
 }
@@ -2291,12 +2379,11 @@ function applyFoliageWindShader(){
  }
 }
 function setFoliageWindSampling(on){
- const mode=on?'nearest':'linear';
  setTextureSamplingMany([
   S.bushAtlas,
   ...S.woodTreeAtlases,
   ...(S.bushFrames||[]),...(S.woodTreeFrames||[])
- ],mode,false);
+ ],'linear',true);
 }
 function updateFoliageWeatherWind(dt){
  const target=clamp(Number(S.foliageWeatherTarget)||0,0,1);
@@ -2314,14 +2401,19 @@ function effectiveFoliageWindSettings(){
 function resetGrassWindTransforms(){
  for(const chunk of S.chunks?.values?.()||[]){
   for(const obj of chunk.decorItems||[]){
-   if(!obj||obj.destroyed||!isWindGrassKind(obj._decorKind))continue;
+   if(!obj||obj.destroyed||!isSpriteWindKind(obj._decorKind))continue;
    if(Number.isFinite(obj._windBaseRotation))obj.rotation=obj._windBaseRotation;
    if(Number.isFinite(obj._windBaseSkewX))obj.skew.x=obj._windBaseSkewX;
+   if(Number.isFinite(obj._windBaseScaleX))obj.scale.x=obj._windBaseScaleX;
   }
  }
 }
 function updateGrassWindTransforms(dt){
  if(!uiCheck('enableFoliageWindShader',false)||!S.world)return;
+ if(S.isMobile||document.body.classList.contains('mobile-ui')||document.documentElement.classList.contains('force-mobile')){
+  resetGrassWindTransforms();
+  return;
+ }
  const cfg=effectiveFoliageWindSettings();
  const nowMs=performance.now(),time=nowMs*.001;
  const mvx=Number(S.playerMoveVX||0),mvy=Number(S.playerMoveVY||0),speed=Math.hypot(mvx,mvy);
@@ -2336,30 +2428,69 @@ function updateGrassWindTransforms(dt){
  }
  const impulseT=clamp(((S.foliagePlayerImpulseUntil||0)-nowMs)/950,0,1);
  const impulseFade=1-Math.pow(1-impulseT,3);
+ const px=Number(S.player?.x||0),py=Number(S.player?.y||0);
+ const cameraRadius=Math.max(10,Math.min(24,16/(Number(S.zoom)||1)));
+ const playerRadius=1.22;
+ const maxAnimated=360;
+ const maxReset=120;
+ let animated=0;
+ const candidates=[];
+ const stale=[];
  for(const chunk of S.chunks?.values?.()||[]){
   if(!chunk.active||!chunk.decorVisible)continue;
   for(const obj of chunk.decorItems||[]){
-   if(!obj||obj.destroyed||!obj.visible||!isWindGrassKind(obj._decorKind))continue;
+   if(!obj||obj.destroyed||!obj.visible||!isSpriteWindKind(obj._decorKind))continue;
    if(!Number.isFinite(obj._windBaseRotation))obj._windBaseRotation=obj.rotation||0;
    if(!Number.isFinite(obj._windBaseSkewX))obj._windBaseSkewX=obj.skew?.x||0;
-   const phase=foliagePhaseForDisplay(obj);
+   if(!Number.isFinite(obj._windBaseScaleX))obj._windBaseScaleX=obj.scale?.x||1;
    const wx=Number(obj._decorWorldX||0),wy=Number(obj._decorWorldY||0);
-   const ambient=(Math.sin(time*(.8+cfg.speed*5.2)+phase)*.55+Math.max(0,Math.sin(time*(.25+cfg.speed*1.1)+phase*1.7))*cfg.gust)*cfg.strength;
-   let player=0;
-   if(impulseFade>.001){
-    const dx=wx-Number(S.foliagePlayerImpulseX||0),dy=wy-Number(S.foliagePlayerImpulseY||0),dist=Math.hypot(dx,dy);
-    const ahead=dist>.001?.75:0;
-    const near=clamp(1-dist/2.15,0,1);
-    const pushMul=clamp(uiNum('foliagePlayerPush',400)/100,0,6);
-    const screenPush=clamp((Number(S.foliagePlayerImpulseX||0)-wx)-(Number(S.foliagePlayerImpulseY||0)-wy),-1,1);
-    player=near*near*(.55+.45*ahead)*screenPush*pushMul*.48*impulseFade;
+   const camDx=wx-px,camDy=wy-py,distToPlayer=Math.hypot(camDx,camDy);
+   if(distToPlayer>cameraRadius){
+    if(obj._windActive&&stale.length<maxReset)stale.push(obj);
+    continue;
    }
-   const targetSkew=obj._windBaseSkewX+ambient*.16+player*.31;
-   const targetRot=obj._windBaseRotation+ambient*.055+player*.09;
-   const response=1-Math.exp(-Math.max(0,dt||0)*8.5);
-   obj.skew.x+=(targetSkew-obj.skew.x)*response;
-   obj.rotation+=(targetRot-obj.rotation)*response;
+   candidates.push({obj,wx,wy,distToPlayer});
   }
+ }
+ candidates.sort((a,b)=>a.distToPlayer-b.distToPlayer);
+ for(const item of candidates){
+  if(animated>=maxAnimated)break;
+  animated++;
+  const obj=item.obj;
+  const kindCfg=spriteWindKindFactor(obj._decorKind);
+  const phase=foliagePhaseForDisplay(obj);
+  const wx=item.wx,wy=item.wy;
+  const windTimeScale=.48;
+  const ambient=(Math.sin(time*(.8+cfg.speed*5.2)*windTimeScale+phase)*.55+Math.max(0,Math.sin(time*(.25+cfg.speed*1.1)*windTimeScale+phase*1.7))*cfg.gust)*cfg.strength*kindCfg.wind;
+  let player=0;
+  if(impulseFade>.001){
+   const dx=wx-Number(S.foliagePlayerImpulseX||0),dy=wy-Number(S.foliagePlayerImpulseY||0),dist=Math.hypot(dx,dy);
+   const ahead=dist>.001?.75:0;
+   const near=clamp(1-dist/(playerRadius*kindCfg.radius),0,1);
+   const pushMul=(S.isMobile||document.body.classList.contains('mobile-ui'))?0:clamp(uiNum('foliagePlayerPush',400)/100,0,6);
+   const screenPush=clamp((wx-Number(S.foliagePlayerImpulseX||0))-(wy-Number(S.foliagePlayerImpulseY||0)),-1,1);
+   player=near*near*(.55+.45*ahead)*(-screenPush)*pushMul*.96*impulseFade*kindCfg.brush*clamp(speed/3.0,.25,1.25);
+  }
+  const targetSkew=obj._windBaseSkewX+ambient*kindCfg.skew+player*kindCfg.skew*1.9;
+  const targetRot=obj._windBaseRotation+ambient*kindCfg.rot+player*kindCfg.rot*1.55;
+  const targetScaleX=obj._windBaseScaleX*(1+Math.abs(ambient+player)*kindCfg.scale);
+  const response=1-Math.exp(-Math.max(0,dt||0)*8.5);
+  obj._windActive=true;
+  obj.skew.x+=(targetSkew-obj.skew.x)*response;
+  obj.rotation+=(targetRot-obj.rotation)*response;
+  obj.scale.x+=(targetScaleX-obj.scale.x)*response;
+ }
+ for(let i=animated;i<candidates.length&&stale.length<maxReset;i++){
+  const obj=candidates[i].obj;
+  if(obj?._windActive)stale.push(obj);
+ }
+ const resetResponse=1-Math.exp(-Math.max(0,dt||0)*6);
+ for(const obj of stale){
+  if(!obj||obj.destroyed)continue;
+  if(Number.isFinite(obj._windBaseSkewX))obj.skew.x+=(obj._windBaseSkewX-obj.skew.x)*resetResponse;
+  if(Number.isFinite(obj._windBaseRotation))obj.rotation+=(obj._windBaseRotation-obj.rotation)*resetResponse;
+  if(Number.isFinite(obj._windBaseScaleX))obj.scale.x+=(obj._windBaseScaleX-obj.scale.x)*resetResponse;
+  if(Math.abs((obj.skew?.x||0)-(obj._windBaseSkewX||0))<.0005&&Math.abs((obj.rotation||0)-(obj._windBaseRotation||0))<.0005)obj._windActive=false;
  }
 }
 function updateFoliageWindShader(dt){
@@ -2887,7 +3018,7 @@ function clearScene(){
   layer.visible=true;
  }
  if(S.layers.fog){for(const o of S.layers.fog.removeChildren())safeDestroyDisplay(o,{destroyTexture:false});}
- S.overview={mid:null,far:null};S.overviewMode=null;S.biomeFogOverview=null;if(S.fogOverview&&!S.fogOverview.destroyed)safeDestroyDisplay(S.fogOverview);S.fogOverview=null;clearPlayerWaterCap?.();S.playerSprite=null;S.playerShadow=null;S.playerParticles=null;S.playerDust=[];S.weatherParticles={rain:[],snow:[],dust:[],swampFog:[]};S.rainSplashPool=[];S.rainSplashSpawnCarry=0;S.weatherRegions=null;S.weatherRuntime={kind:null,level:0,rainGraceUntil:0,snowGraceUntil:0};S.weatherFlashAlpha=0;S.weatherFlashCooldown=0;S.ambientParticles={firefly:[],desertDust:[],cursedDust:[]};S.ambientFxState=null;for(const rec of (S.ambientNightLights||[])){rec._ready=false;rec._retiring=false;rec._visibility=0;hideNightLight(rec);}if(S.lightBufferHero){S.lightBufferHero._visibility=0;S.lightBufferHero.alpha=0;S.lightBufferHero.visible=false;S.lightBufferHero.renderable=false;}renderLightBuffer();updateStormFlashOverlay(0,false);S.lastViewKey='';$('tileInspector')?.classList.remove('visible');
+ S.overview={mid:null,far:null};S.overviewMode=null;S.biomeFogOverview=null;if(S.fogOverview&&!S.fogOverview.destroyed)safeDestroyDisplay(S.fogOverview);S.fogOverview=null;clearPlayerWaterCap?.();S.playerSprite=null;S.playerShadow=null;S.playerParticles=null;S.playerDust=[];S.playerFoliageBits=[];S.weatherParticles={rain:[],snow:[],dust:[],swampFog:[]};S.rainSplashPool=[];S.rainSplashSpawnCarry=0;S.weatherRegions=null;S.weatherRuntime={kind:null,level:0,rainGraceUntil:0,snowGraceUntil:0};S.weatherFlashAlpha=0;S.weatherFlashCooldown=0;S.ambientParticles={firefly:[],desertDust:[],cursedDust:[]};S.ambientFxState=null;for(const rec of (S.ambientNightLights||[])){rec._ready=false;rec._retiring=false;rec._visibility=0;hideNightLight(rec);}if(S.lightBufferHero){S.lightBufferHero._visibility=0;S.lightBufferHero.alpha=0;S.lightBufferHero.visible=false;S.lightBufferHero.renderable=false;}renderLightBuffer();updateStormFlashOverlay(0,false);S.lastViewKey='';$('tileInspector')?.classList.remove('visible');
 }
 function destroyChunk(c){
  for(const s of Object.values(c.backgrounds||{}))safeDestroyDisplay(s,{destroyTexture:true});
@@ -4515,7 +4646,7 @@ function updateVegetationForeground(now=performance.now()){
     sp.position.set(r.x,r.y);sp.scale.set(r.sx,r.sy);sp.rotation=r.rotation;
     sp.tint=r.tint;sp.alpha=r.alpha;sp.zIndex=r.z;
    }
-   sp._decorKind=r.kind;sp._decorWorldX=r.worldX;sp._decorWorldY=r.worldY;
+   sp._decorKind=r.kind;sp._decorWorldX=r.wx;sp._decorWorldY=r.wy;
    applyFoliageWindToDisplay(sp);
   }
  }
@@ -4523,11 +4654,12 @@ function updateVegetationForeground(now=performance.now()){
 }
 function addOptimizedWaterDecor(chunk,sp,biome,kind,x,y,low=false){
  sp._decorKind=kind;sp._decorWorldX=x;sp._decorWorldY=y;
+ const mobile=S.isMobile||document.body.classList.contains('mobile-ui')||document.documentElement.classList.contains('force-mobile');
  const wx=clamp(Math.floor(x),0,Math.max(0,(S.world?.cols||1)-1)),wy=clamp(Math.floor(y),0,Math.max(0,(S.world?.rows||1)-1));
  const actualWater=!!S.world&&isActualWaterWater(S.world,wx,wy);
  if(!actualWater||!S.layers.waterDecorUnder){
   registerVegetationForegroundRecord(chunk,sp,kind,x,y);
-  const windGrassTest=uiCheck('enableFoliageWindShader',false)&&(kind==='grass'||kind==='denseGrass');
+  const windGrassTest=!mobile&&uiCheck('enableFoliageWindShader',false)&&(kind==='grass'||kind==='denseGrass');
   const particleKind=low&&!windGrassTest&&(kind==='grass'||kind==='denseGrass'||kind==='decal'||kind==='clutter');
   if(particleKind&&addStaticLowParticle(chunk,sp))return null;
   addDepthObject(chunk,sp,low&&!windGrassTest);return sp
@@ -4535,7 +4667,7 @@ function addOptimizedWaterDecor(chunk,sp,biome,kind,x,y,low=false){
  // Use the actual water biome at the object's point. Visual generation can pass
  // a neighbouring/terrain biome for grass and decals near blended shore cells.
  biome=visualBiomeAt(S.world,wx,wy);
- const windGrassTest=uiCheck('enableFoliageWindShader',false)&&(kind==='grass'||kind==='denseGrass');
+ const windGrassTest=!mobile&&uiCheck('enableFoliageWindShader',false)&&(kind==='grass'||kind==='denseGrass');
  addDepthObject(chunk,sp,low&&!windGrassTest);
  sp._waterDecorDryTint=sp._waterDecorDryTint??sp.tint??0xffffff;
  sp._waterDecorMeta={biome,kind,x,y,sourceTexture:sp.texture,baseAlpha:sp.alpha,low:!!low};
@@ -4564,11 +4696,62 @@ function visualBiomeAt(w,x,y){
  if(Number.isFinite(visual))return visual%BIOME_COUNT;
  return (w?.biome?.[y]?.[x]??3)%BIOME_COUNT;
 }
+function biomeTransitionTintAt(w,x,y,biome,baseTint){
+ if(!w||!Number.isFinite(x)||!Number.isFinite(y))return baseTint;
+ const isEdgeSource=isSnowBiome(biome)||isDesertBiome(biome);
+ let bestBiome=-1,bestDist=99;
+ const radius=3;
+ for(let oy=-radius;oy<=radius;oy++)for(let ox=-radius;ox<=radius;ox++){
+  if(!ox&&!oy)continue;
+  const nx=x+ox,ny=y+oy;
+  if(nx<0||ny<0||nx>=w.cols||ny>=w.rows)continue;
+  const nb=visualBiomeAt(w,nx,ny);
+  if(nb===biome)continue;
+  const special=isEdgeSource||isSnowBiome(nb)||isDesertBiome(nb);
+  if(!special)continue;
+  const d=Math.hypot(ox,oy);
+  if(d<bestDist){bestDist=d;bestBiome=nb}
+ }
+ if(bestBiome<0)return baseTint;
+ const t=clamp((radius+.35-bestDist)/(radius+.35),0,1);
+ const maxMix=isEdgeSource?.55:.42;
+ let tint=mixColors(baseTint,groundBiomeTint(bestBiome),t*maxMix);
+ const snowInfluence=(isSnowBiome(biome)?.65:0)+(isSnowBiome(bestBiome)?.50:0);
+ if(snowInfluence>0){
+  tint=desaturateColor(tint,t*.30*snowInfluence);
+  tint=whitenColor(tint,t*.28*snowInfluence);
+ }
+ if(isDesertBiome(biome)||isDesertBiome(bestBiome)){
+  tint=mixColors(tint,0xd0aa72,t*.22);
+ }
+ return tint;
+}
+function groundBiomeTintAt(w,x,y,biome){
+ return biomeTransitionTintAt(w,x,y,biome,groundBiomeTint(biome));
+}
+function biomeTransitionOverlayAt(w,x,y,biome){
+ if(!w||!Number.isFinite(x)||!Number.isFinite(y))return null;
+ let snowDist=99,desertDist=99;
+ const radius=4;
+ for(let oy=-radius;oy<=radius;oy++)for(let ox=-radius;ox<=radius;ox++){
+  const nx=x+ox,ny=y+oy;
+  if(nx<0||ny<0||nx>=w.cols||ny>=w.rows)continue;
+  const nb=visualBiomeAt(w,nx,ny),d=Math.hypot(ox,oy);
+  if(isSnowBiome(nb))snowDist=Math.min(snowDist,d);
+  if(isDesertBiome(nb))desertDist=Math.min(desertDist,d);
+ }
+ const selfSnow=isSnowBiome(biome),selfDesert=isDesertBiome(biome);
+ const snowT=clamp((radius+.45-snowDist)/(radius+.45),0,1)*(selfSnow?.55:.86);
+ const desertT=clamp((radius+.45-desertDist)/(radius+.45),0,1)*(selfDesert?.42:.72);
+ if(snowT<=.01&&desertT<=.01)return null;
+ if(snowT>=desertT)return{color:0xf2fbff,alpha:clamp(.18+snowT*.55,0,.62)};
+ return{color:0xd0a05f,alpha:clamp(.14+desertT*.42,0,.48)};
+}
 function makeChunkTextures(cx,cy,lod){
  const w=S.world,c=w.cell,cs=w.chunk,coreRect=chunkScreenRect(cx,cy,0),pad=c*.35,chunkRect=chunkScreenRect(cx,cy,pad);
  const minX=Math.floor(chunkRect.x),maxX=Math.ceil(chunkRect.right),minY=Math.floor(chunkRect.y),maxY=Math.ceil(chunkRect.bottom),frame=new PIXI.Rectangle(0,0,Math.max(1,maxX-minX),Math.max(1,maxY-minY));
  const cells=chunkScreenCellBounds({x:minX,y:minY,right:maxX,bottom:maxY},c,lod==='near'?4:16),x0=cells.minX,y0=cells.minY,x1=cells.maxX,y1=cells.maxY;
- const bg=new PIXI.Container(),ground=new PIXI.Container(),shallowGround=new PIXI.Container(),vectorGround=(S.groundMode==='technical'||S.groundMode==='simple')?new PIXI.Graphics():null,shallowVector=(S.groundMode==='technical'||S.groundMode==='simple')?new PIXI.Graphics():null,step=lod==='far'?10:lod==='mid'?5:1;
+ const bg=new PIXI.Container(),ground=new PIXI.Container(),shallowGround=new PIXI.Container(),vectorGround=new PIXI.Graphics(),shallowVector=(S.groundMode==='technical'||S.groundMode==='simple')?new PIXI.Graphics():null,step=lod==='far'?10:lod==='mid'?5:1;
  if(vectorGround)ground.addChild(vectorGround);
  // Болотные тайлы заменяют землю и не получают дополнительный слой суши сверху.
  // Stable environment background. Near uses masks; mid/far use one dominant biome per fixed chunk.
@@ -4646,23 +4829,27 @@ function makeChunkTextures(cx,cy,lod){
      q.x-minX,q.y-minY+c*.25,
      q.x-minX-c*.5,q.y-minY
     ]);
-    graphicsFill(tile,{color:groundBiomeTint(targetBiome),alpha});
+    graphicsFill(tile,{color:groundBiomeTintAt(w,x,y,targetBiome),alpha});
    };
    drawTechnicalTile(baseBiome,insideIsland?1:.96);
    if(needsBiomeOverlay)drawTechnicalTile(biome,1);
    if(shallowBiome>=0)drawTechnicalTile(shallowBiome,.8,shallowVector);
+   const overlay=biomeTransitionOverlayAt(w,x,y,biome);
+   if(overlay)drawTechnicalTile(biome,overlay.alpha,vectorGround);
    continue
   }
   if(S.groundMode==='simple'){
-   tilePoly(vectorGround,x,y,c,groundBiomeTint(baseBiome),insideIsland?1:.96);
+   tilePoly(vectorGround,x,y,c,groundBiomeTintAt(w,x,y,baseBiome),insideIsland?1:.96);
    if(needsBiomeOverlay){
-    const simpleTint=isDesertBiome(biome)?mixColors(0xffffff,groundBiomeTint(biome),.5):groundBiomeTint(biome);
+    const simpleTint=isDesertBiome(biome)?mixColors(0xffffff,groundBiomeTintAt(w,x,y,biome),.5):groundBiomeTintAt(w,x,y,biome);
     tilePoly(vectorGround,x,y,c,simpleTint,visuallyOpen?1:.72);
    }
    if(shallowBiome>=0){
-    const shallowTint=isDesertBiome(shallowBiome)?mixColors(0xffffff,groundBiomeTint(shallowBiome),.5):groundBiomeTint(shallowBiome);
+    const shallowTint=isDesertBiome(shallowBiome)?mixColors(0xffffff,groundBiomeTintAt(w,x,y,shallowBiome),.5):groundBiomeTintAt(w,x,y,shallowBiome);
     tilePoly(shallowVector,x,y,c,shallowTint,.8);
    }
+   const overlay=biomeTransitionOverlayAt(w,x,y,biome);
+   if(overlay)tilePoly(vectorGround,x,y,c,overlay.color,overlay.alpha);
    continue
   }
 
@@ -4674,7 +4861,7 @@ function makeChunkTextures(cx,cy,lod){
    sp.width=Math.max(2,c*step*2*tileScale+5.2);sp.height=Math.max(1,sp.width*.5+2.6);
    sp.roundPixels=false;
    if(S.groundMode==='detailed'){
-    const tint=groundBiomeTint(targetBiome);
+    const tint=groundBiomeTintAt(w,x,y,targetBiome);
     sp.tint=(targetBiome===5||targetBiome===6||targetBiome===7)
      ?whitenColor(tint,.22)
      :isDesertBiome(targetBiome)
@@ -4703,16 +4890,18 @@ function makeChunkTextures(cx,cy,lod){
    if(submerged){
     const coastAlpha=insideIsland?1:clamp(1-smoothstep01((submerged.distance-.15)/3.5),0,1);
     if(coastAlpha>.005){
-     tilePoly(vectorGround,x,y,c,groundBiomeTint(submerged.biome),coastAlpha);
+     tilePoly(vectorGround,x,y,c,groundBiomeTintAt(w,x,y,submerged.biome),coastAlpha);
      addGroundSprite(submerged.biome,(insideIsland?.34:.72)*coastAlpha);
     }
    }
   }else if(!insideIsland||biome===ISLAND_BASE_BIOME){
    addGroundSprite(baseBiome,.97);
   }else{
-   tilePoly(vectorGround,x,y,c,groundBiomeTint(biome),1);
+   tilePoly(vectorGround,x,y,c,groundBiomeTintAt(w,x,y,biome),1);
    addGroundSprite(biome,.97);
   }
+  const overlay=biomeTransitionOverlayAt(w,x,y,biome);
+  if(overlay)tilePoly(vectorGround,x,y,c,overlay.color,overlay.alpha);
   if(shallowBiome>=0)addGroundSprite(shallowBiome,.8,shallowGround);
  }
  // Дополнительный слой мелководной суши отключён: D/E являются самим типом земли.
@@ -4735,6 +4924,12 @@ function addDepthObject(chunk,obj,low=false){
  obj.eventMode='none';
  obj.interactiveChildren=false;
  obj.cullable=true;
+ const tex=obj.texture,orig=tex?.orig||tex?.frame;
+ const sx=Math.abs(obj.scale?.x||1),sy=Math.abs(obj.scale?.y||1);
+ obj._decorCullRadius=Math.max(
+  S.world?.cell||24,
+  orig?Math.max(orig.width*sx,orig.height*sy)*.65:0
+ );
  applyFoliageWindToDisplay(obj);
 
  // Spatial index in world-render coordinates. It is populated once when the
@@ -4771,6 +4966,48 @@ function applyChunkDecorVisualVisibility(chunk){
    }
   }
  }
+ applyViewportDecorCulling(false);
+}
+function decorViewportRect(extra=0){
+ if(!S.app||!S.world)return null;
+ const margin=Math.max(S.world.cell*5,extra);
+ const z=Math.max(.0001,S.zoom||1);
+ const rect={x:(-S.panX)/z-margin,y:(-S.panY)/z-margin};
+ rect.right=(S.app.screen.width-S.panX)/z+margin;
+ rect.bottom=(S.app.screen.height-S.panY)/z+margin;
+ return rect;
+}
+function decorObjectNearViewport(obj,rect){
+ if(!obj||obj.destroyed||!rect)return false;
+ const r=Math.max(S.world?.cell||24,Number(obj._decorCullRadius)||0);
+ const x=Number(obj.position?.x)||0,y=Number(obj.position?.y)||0;
+ return x+r>=rect.x&&x-r<=rect.right&&y+r>=rect.y&&y-r<=rect.bottom;
+}
+function setDecorRenderable(obj,on){
+ if(!obj||obj.destroyed)return;
+ obj.visible=on;obj.renderable=on;
+ for(const aux of [obj._waterDecorCap,obj._waterDecorLighten,obj._waterDecorDebug]){
+  if(aux&&!aux.destroyed){aux.visible=on;aux.renderable=on}
+ }
+}
+function applyViewportDecorCulling(force=false){
+ if(!S.world||!S.chunks||S.lod!=='near')return;
+ const now=performance.now();
+ if(!force&&now-(S.lastDecorViewportCull||0)<80)return;
+ S.lastDecorViewportCull=now;
+ const globalShow=$('showDecor')?.checked!==false&&!S.decorDistanceHidden&&!uiCheck('hideDecorVisualsOnly',false);
+ const rect=decorViewportRect();
+ for(const chunk of S.chunks.values()){
+  const chunkShow=globalShow&&chunk.active&&chunk.decorVisible;
+  if(chunk.lowParticleBatch&&!chunk.lowParticleBatch.destroyed){chunk.lowParticleBatch.visible=chunkShow;chunk.lowParticleBatch.renderable=chunkShow}
+  if(chunk.lowDecorBakeSprite&&!chunk.lowDecorBakeSprite.destroyed){chunk.lowDecorBakeSprite.visible=chunkShow;chunk.lowDecorBakeSprite.renderable=chunkShow}
+  if(chunk.voidBakeSprite&&!chunk.voidBakeSprite.destroyed){chunk.voidBakeSprite.visible=chunkShow;chunk.voidBakeSprite.renderable=chunkShow}
+  for(const sp of chunk.flattenSprites||[]){if(sp&&!sp.destroyed){sp.visible=chunkShow;sp.renderable=chunkShow}}
+  for(const obj of chunk.decorItems||[]){
+   setDecorRenderable(obj,chunkShow&&decorObjectNearViewport(obj,rect));
+  }
+ }
+ if(S.renderMetrics){S.renderMetrics.cachedTree=null;S.renderMetrics.lastTreeScan=0}
 }
 function applyDecorVisualsOnlyTest(){
  if(!S.chunks)return;
@@ -5117,7 +5354,10 @@ function addVoidBiomeDecor(chunk,x,y,biome,base,c,globalScale){
   sp.position.set(p.x,p.y+c*.04);
   const mirrorX=(kind==='rock'||kind==='stone')?1:(hash2(x,y,S.world.seed^i)<.5?-1:1);
   sp.scale.set(mirrorX*scale,scale);
-  sp.zIndex=depthYForSprite(sp);
+  sp._decorKind=kind;
+  sp._decorWorldX=px;
+  sp._decorWorldY=py;
+  sp.zIndex=depthYForSprite(sp,0,kind);
   {
    sp.tint=S.groundMode==='detailed'
     ?decorTintForBiome(biome,kind,kind==='rock'||kind==='stone')
@@ -5440,7 +5680,10 @@ function buildChunkDecor(chunk){
    sp.position.set(p.x,p.y+c*.08);
    const mirrorX=(kind==='rock'||kind==='stone')?1:(((base>>>29)&1)?-1:1);
    sp.scale.set(mirrorX*baseScale,baseScale);
-   sp.zIndex=depthYForSprite(sp);
+   sp._decorKind=kind;
+   sp._decorWorldX=x+.5;
+   sp._decorWorldY=y+.5;
+   sp.zIndex=depthYForSprite(sp,0,kind);
    sp.tint=S.groundMode==='detailed'
     ?decorTintForBiome(biome,kind,kind==='rock'||kind==='stone')
     :0xffffff;sp._waterDecorDryTint=sp.tint;addOptimizedWaterDecor(chunk,sp,biome,kind,x+.5,y+.5);if(!(biome===0||biome===5))addWaterGradientOverlay(chunk,sp,biome);
@@ -5468,8 +5711,9 @@ function buildChunkDecor(chunk){
     sp.scale.set(((base>>>28)&1?-1:1)*(sc/7),sc/7);
     sp.tint=picked.isPlant?(S.groundMode==='detailed'?(isSnowBiome(biome)?snowDecorTint(biome):isDesertBiome(biome)?mixColors(0xffffff,grassTintForBiome(biome,n),.5):grassTintForBiome(biome,n)):0xffffff):(isSnowBiome(biome)?snowDecorTint(biome):isDesertBiome(biome)?mixColors(0xffffff,grassTintForTile(biome,role,n+grassIndex),.5):grassTintForTile(biome,role,n+grassIndex));
     sp.alpha=.96;
-    sp.zIndex=depthYForSprite(sp)+n*.001;
-    sp._waterDecorDryTint=sp.tint;addOptimizedWaterDecor(chunk,sp,biome,picked.isDesertPlantB?'desertPlantB':'grass',x+gp.x,y+gp.y,!picked.isDesertPlantB);
+    const grassKind=picked.isDesertPlantB?'desertPlantB':'grass';
+    sp.zIndex=depthYForSprite(sp,0,grassKind)+n*.001;
+    sp._waterDecorDryTint=sp.tint;addOptimizedWaterDecor(chunk,sp,biome,grassKind,x+gp.x,y+gp.y,!picked.isDesertPlantB);
    }
   }
   if(S.grassFrames.length&&role==='tallGrass'&&decorEnabled('denseGrass')&&((base>>>4)&65535)/65535<grassDensity){
@@ -5488,8 +5732,9 @@ function buildChunkDecor(chunk){
    sp.scale.set(sc/7);
    sp.tint=densePick.isPlant?(S.groundMode==='detailed'?(isSnowBiome(biome)?snowDecorTint(biome):isDesertBiome(biome)?mixColors(0xffffff,grassTintForBiome(biome,denseIndex+3),.5):grassTintForBiome(biome,denseIndex+3)):0xffffff):(isSnowBiome(biome)?snowDecorTint(biome):isDesertBiome(biome)?mixColors(0xffffff,grassTintForTile(biome,role,denseIndex+3),.5):grassTintForTile(biome,role,denseIndex+3));
    sp.alpha=.97;
-   sp.zIndex=depthYForSprite(sp);
-   sp._waterDecorDryTint=sp.tint;addOptimizedWaterDecor(chunk,sp,biome,densePick.isDesertPlantB?'desertPlantB':'denseGrass',x+gp.x,y+gp.y,!densePick.isDesertPlantB);
+   const denseKind=densePick.isDesertPlantB?'desertPlantB':'denseGrass';
+   sp.zIndex=depthYForSprite(sp,0,denseKind);
+   sp._waterDecorDryTint=sp.tint;addOptimizedWaterDecor(chunk,sp,biome,denseKind,x+gp.x,y+gp.y,!densePick.isDesertPlantB);
   }
   const clutterBase=(role==='grass'||role==='tallGrass')
    ?Math.min(1,clutterDensity*1.18)
@@ -5696,7 +5941,7 @@ function buildPlayer(){
  shadow.scale.set(1,1);shadow.zIndex=0;
  const particles=new PIXI.Container();particles.sortableChildren=true;
  S.layers.objects.addChild(shadow);S.layers.objects.addChild(particles);S.layers.objects.addChild(obj);
- S.playerShadow=shadow;S.playerParticles=particles;S.playerDust=[];S.playerSprite=obj;placePlayer();
+ S.playerShadow=shadow;S.playerParticles=particles;S.playerDust=[];S.playerFoliageBits=[];S.playerSprite=obj;placePlayer();
 }
 function placePlayer(){
  if(!S.playerSprite||!S.world)return;
@@ -5726,24 +5971,88 @@ function spawnPlayerDust(){
  if(!S.playerParticles||!S.world)return;
  const p=iso(S.player.x,S.player.y,S.world.cell),h=S.playerVisualHeight||S.world.cell*.72;
  const g=new PIXI.Graphics();
- const r=Math.max(1,h*(.09+Math.random()*.07));
- g.circle(0,0,r).fill({color:0xd0b999,alpha:.39});
- g.position.set(p.x+(Math.random()-.5)*h*.34,p.y-Math.random()*h*.04);
+ const r=Math.max(1.4,h*(.055+Math.random()*.035));
+ for(let i=0;i<3;i++){
+  const ox=(Math.random()-.5)*r*3.2,oy=(Math.random()-.5)*r*.9;
+  g.ellipse(ox,oy,r*(1.4+Math.random()*1.2),r*(.28+Math.random()*.16),(Math.random()-.5)*.65).fill({color:0xd0b999,alpha:.26+Math.random()*.16});
+ }
+ const vx=Number(S.playerScreenVX||0),vy=Number(S.playerScreenVY||0);
+ const speed=Math.hypot(vx,vy);
+ const backX=speed>.001?-vx/speed*h*.16:0;
+ const backY=speed>.001?-vy/speed*h*.16:0;
+ g.position.set(p.x+backX+(Math.random()-.5)*h*.28,p.y+backY-h*(.075+Math.random()*.04));
  g.zIndex=p.y-0.001;S.playerParticles.addChild(g);
  const speedScale=Math.max(.35,Math.min(1.2,Math.hypot(S.playerScreenVX||0,S.playerScreenVY||0)/(S.world.cell*7)));
- S.playerDust.push({sprite:g,vx:(Math.random()-.5)*h*.7-(S.playerScreenVX||0)*.025,vy:-h*(.18+.16*Math.random()),life:1,maxLife:.14+.10*Math.random(),r,speedScale});
+ S.playerDust.push({sprite:g,vx:(Math.random()-.5)*h*.70-(S.playerScreenVX||0)*.024,vy:-h*(.08+.08*Math.random()),life:1,maxLife:.24+.18*Math.random(),r,speedScale});
+}
+function spawnFoliageTouchParticles(wx,wy,kind){
+ if(!S.layers.objects||!S.world)return;
+ const h=S.playerVisualHeight||S.world.cell*.72,p=iso(wx,wy,S.world.cell);
+ const count=kind==='bush'?8:5;
+ for(let i=0;i<count;i++){
+  const g=new PIXI.Graphics();
+  const r=Math.max(2.0,h*(.044+Math.random()*.030));
+  const leaf=kind==='bush'||kind==='tree';
+  const color=leaf?(Math.random()<.5?0x6f8d3f:0x8a9d51):(Math.random()<.5?0x708548:0xb59a60);
+  if(leaf)g.ellipse(0,0,r*2.15,r*.78,(Math.random()-.5)*1.4).fill({color,alpha:.90});
+  else g.ellipse(0,0,r*1.6,r*.54,(Math.random()-.5)*.9).fill({color,alpha:.72});
+  g.position.set(p.x+(Math.random()-.5)*h*.46,p.y-h*(.02+Math.random()*.20));
+  g.zIndex=(S.playerSprite?.zIndex??p.y)+0.08;S.layers.objects.addChild(g);
+  const awayX=(wx-(S.player?.x||wx)),awayY=(wy-(S.player?.y||wy));
+  const len=Math.max(.001,Math.hypot(awayX,awayY));
+  const side=(Math.random()-.5)*h*.42;
+  S.playerFoliageBits.push({
+   sprite:g,
+   vx:awayX/len*h*(.38+Math.random()*.24)+side-(S.playerScreenVX||0)*.018,
+   vy:awayY/len*h*(.18+Math.random()*.16)-h*(.32+Math.random()*.22)-(S.playerScreenVY||0)*.010,
+   rot:(Math.random()-.5)*4.5,
+   life:1,
+   maxLife:.38+Math.random()*.22
+  });
+ }
+}
+function spawnTouchedFoliageParticles(){
+ if(!S.player||!S.world||!S.chunks?.size)return;
+ const now=performance.now();
+ if(now<(S.nextFoliageTouchScan||0))return;
+ S.nextFoliageTouchScan=now+90;
+ const cs=Math.max(1,S.world.chunk||24),pcx=Math.floor(S.player.x/cs),pcy=Math.floor(S.player.y/cs);
+ let spawned=0;
+ for(let oy=-1;oy<=1&&spawned<4;oy++)for(let ox=-1;ox<=1&&spawned<4;ox++){
+  const chunk=S.chunks.get((pcx+ox)+','+(pcy+oy));
+  if(!chunk?.active||!chunk.decorVisible)continue;
+  for(const obj of chunk.decorItems||[]){
+   const kind=obj?._decorKind;
+   if(kind!=='bush'&&kind!=='grass'&&kind!=='denseGrass'&&kind!=='desertPlantB')continue;
+   const wx=Number(obj._decorWorldX),wy=Number(obj._decorWorldY);
+   if(!Number.isFinite(wx)||!Number.isFinite(wy))continue;
+   const radius=kind==='bush'?2.15:1.20;
+   if(Math.hypot(wx-S.player.x,wy-S.player.y)>radius)continue;
+   if(now<(obj._touchParticlesUntil||0))continue;
+   obj._touchParticlesUntil=now+(kind==='bush'?420:650);
+   spawnFoliageTouchParticles(wx,wy,kind);
+   spawned++;
+  }
+ }
 }
 function updatePlayerDust(dt,moving){
  if(!S.playerDust)return;
  if(moving){
   S.playerDustCD=(S.playerDustCD||0)-dt;
-  if(S.playerDustCD<=0){S.playerDustCD=.055+Math.random()*.075;spawnPlayerDust()}
+  if(S.playerDustCD<=0){S.playerDustCD=.045+Math.random()*.055;spawnPlayerDust()}
+  spawnTouchedFoliageParticles();
  }
  for(let i=S.playerDust.length-1;i>=0;i--){
   const d=S.playerDust[i];d.life-=dt/d.maxLife;
   if(d.life<=0||!d.sprite||d.sprite.destroyed){if(d.sprite&&!d.sprite.destroyed)d.sprite.destroy();S.playerDust.splice(i,1);continue}
   d.sprite.x+=d.vx*dt;d.sprite.y+=d.vy*dt;d.vy+=(S.playerVisualHeight||20)*.9*dt;
-  const grow=1+(1-d.life)*.55;d.sprite.scale.set(grow);d.sprite.alpha=Math.max(0,d.life*.38);
+  const grow=1+(1-d.life)*.62;d.sprite.scale.set(grow);d.sprite.alpha=Math.max(0,d.life*.52);
+ }
+ for(let i=(S.playerFoliageBits?.length||0)-1;i>=0;i--){
+  const f=S.playerFoliageBits[i];f.life-=dt/f.maxLife;
+  if(f.life<=0||!f.sprite||f.sprite.destroyed){if(f.sprite&&!f.sprite.destroyed)f.sprite.destroy();S.playerFoliageBits.splice(i,1);continue}
+  f.sprite.x+=f.vx*dt;f.sprite.y+=f.vy*dt;f.vy+=(S.playerVisualHeight||20)*1.9*dt;f.sprite.rotation+=f.rot*dt;
+  const fade=Math.max(0,f.life);f.sprite.alpha=fade*.82;f.sprite.scale.set(.85+(1-fade)*.55);
  }
  if(S.playerShadow){
   const speed=Math.hypot(S.playerScreenVX||0,S.playerScreenVY||0),norm=clamp(speed/(S.world.cell*7),0,1);
@@ -7030,6 +7339,7 @@ function updateChunks(force=false){
  }
  S.keys=want;S.visible=want.size;
  scheduleDecorBake();
+ applyViewportDecorCulling(true);
  drawBounds();
 }
 function drawBounds(){S.layers.debug.removeChildren().forEach(o=>o.destroy());if(!$('showBounds').checked)return;const g=new PIXI.Graphics();for(const k of S.keys){const [cx,cy]=k.split(',').map(Number),r=chunkScreenRect(cx,cy,0);g.rect(r.x,r.y,r.width,r.height).stroke({width:1/S.zoom,color:0xff5577,alpha:.5})}S.layers.debug.addChild(g)}
@@ -7042,8 +7352,10 @@ function updateVignetteForZoom(){
 }
 function applyCamera(){
  // Дробные координаты исключают попеременное подёргивание по X/Y при плавном zoom.
- const snappedX=S.panX;
- const snappedY=S.panY;
+ const mobileSnap=S.isMobile||document.body.classList.contains('mobile-ui')||document.documentElement.classList.contains('force-mobile');
+ const dpr=mobileSnap?Math.max(1,window.devicePixelRatio||1):1;
+ const snappedX=mobileSnap?Math.round(S.panX*dpr)/dpr:S.panX;
+ const snappedY=mobileSnap?Math.round(S.panY*dpr)/dpr:S.panY;
 
  S.root.position.set(snappedX,snappedY);
  S.root.scale.set(S.zoom);updateCloudTransitionOverlay();updateVignetteForZoom();
@@ -7075,6 +7387,7 @@ function applyCamera(){
   S.cloudRoot.scale.set(S.zoom);
  }
  updateWaterFilterAreas();
+ applyViewportDecorCulling(false);
 }
 function fit(){if(!S.world)return;const w=S.world,c=w.cell,a=iso(0,0,c),b=iso(w.cols,0,c),d=iso(0,w.rows,c),e=iso(w.cols,w.rows,c),minX=Math.min(a.x,b.x,d.x,e.x),maxX=Math.max(a.x,b.x,d.x,e.x),minY=Math.min(a.y,b.y,d.y,e.y),maxY=Math.max(a.y,b.y,d.y,e.y);S.zoom=Math.min(S.app.screen.width/(maxX-minX+80),S.app.screen.height/(maxY-minY+80));S.targetZoom=S.zoom;S.zoomAnchor=null;S.panX=(S.app.screen.width-(minX+maxX)*S.zoom)/2;S.panY=(S.app.screen.height-(minY+maxY)*S.zoom)/2;applyCamera();updateChunks(true)}
 function centerOnPlayer(){
@@ -7616,6 +7929,11 @@ function navCellOpen(gx,gy,withDecor=true){
   const screenY=Math.sin(a)*screenHalfHeight;
   // Inverse of iso delta:
   // screenX = dx-dy, screenY = (dx+dy)/2 (in cell-normalized units).
+  const dx=(screenX+screenY*2)*.5;
+  const dy=(screenY*2-screenX)*.5;
+  samples.push([dx,dy]);
+ }
+ for(const [screenX,screenY] of [[0,-.20],[0,-.32],[-.07,-.24],[.07,-.24]]){
   const dx=(screenX+screenY*2)*.5;
   const dy=(screenY*2-screenX)*.5;
   samples.push([dx,dy]);
@@ -9417,7 +9735,8 @@ function showTileInspector(e){
  S.inspectorTimer=setTimeout(()=>el.classList.remove('visible'),4500);
 }
 async function lockLandscape(requestFullScreen=false){
- if(!S.isMobile)return;
+ const mobile=S.isMobile||document.body.classList.contains('mobile-ui')||document.documentElement.classList.contains('force-mobile')||/Android|iPhone|iPad|iPod|Mobile|Telegram/i.test(navigator.userAgent||'')||(navigator.maxTouchPoints||0)>0;
+ if(!mobile)return;
  if(requestFullScreen){
   try{
    if(!document.fullscreenElement&&!document.webkitFullscreenElement&&document.documentElement.requestFullscreen){
@@ -9470,6 +9789,22 @@ function viewportSnapshot(){
   screenW:Math.max(1,Math.round(S.app.screen?.width||0)),screenH:Math.max(1,Math.round(S.app.screen?.height||0)),
   dpr:Number(window.devicePixelRatio)||1
  };
+}
+function syncMobileTimeControlPlacement(){
+ const control=$('timeTopControl'),top=document.querySelector('.top');
+ if(!control||!top)return;
+ const mobile=S.isMobile||document.body.classList.contains('mobile-ui')||document.documentElement.classList.contains('force-mobile');
+ if(mobile){
+  if(control.parentElement!==document.body)document.body.appendChild(control);
+  control.classList.add('mobileFloatingTime');
+ }else{
+  if(control.parentElement!==top){
+   const brand=top.querySelector('.brand');
+   if(brand?.nextSibling)top.insertBefore(control,brand.nextSibling);
+   else top.insertBefore(control,top.firstChild);
+  }
+  control.classList.remove('mobileFloatingTime');
+ }
 }
 function viewportOutOfSync(snap=viewportSnapshot()){
  if(!snap)return false;
@@ -9539,11 +9874,14 @@ function updateMobileLayout(force=false){
  const vw=Math.round(vv?.width||innerWidth);
  const vh=Math.round(vv?.height||innerHeight);
  const mobile=detectStableMobileMode();
+ const wasMobile=!!S.isMobile;
 
  S.isMobile=mobile;
  document.body.classList.toggle('mobile-ui',mobile);
  document.body.classList.toggle('portrait-ui',mobile&&vh>=vw);
  document.body.classList.toggle('landscape-ui',mobile&&vw>vh);
+ syncMobileTimeControlPlacement();
+ if(S.world&&wasMobile!==mobile)rebuildDecor();
  if(!mobile)document.body.classList.remove('mobile-menu-open');
 
  scheduleViewportSync(force);
@@ -9880,9 +10218,10 @@ document.addEventListener('DOMContentLoaded',()=>{
   gate.style.alignItems='center';
   gate.style.justifyContent='center';
  }
- const launch=e=>{
+const launch=e=>{
   if(e?.type==='keydown'&&e.code!=='Enter'&&e.code!=='Space')return;
   e?.preventDefault?.();
+  lockLandscape(true).catch(()=>{});
   startApplication().catch(()=>{});
  };
  // pointerdown с capture запускает приложение на первом реальном нажатии,
