@@ -5003,7 +5003,9 @@ function applyViewportDecorCulling(force=false){
   if(chunk.lowDecorBakeSprite&&!chunk.lowDecorBakeSprite.destroyed){chunk.lowDecorBakeSprite.visible=chunkShow;chunk.lowDecorBakeSprite.renderable=chunkShow}
   if(chunk.voidBakeSprite&&!chunk.voidBakeSprite.destroyed){chunk.voidBakeSprite.visible=chunkShow;chunk.voidBakeSprite.renderable=chunkShow}
   for(const sp of chunk.flattenSprites||[]){if(sp&&!sp.destroyed){sp.visible=chunkShow;sp.renderable=chunkShow}}
+  const flatSprites=new Set(chunk.flattenSprites||[]);
   for(const obj of chunk.decorItems||[]){
+   if(flatSprites.has(obj)){setDecorRenderable(obj,chunkShow);continue}
    setDecorRenderable(obj,chunkShow&&decorObjectNearViewport(obj,rect));
   }
  }

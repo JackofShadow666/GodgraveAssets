@@ -1,0 +1,1403 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Градиентная палитра — поворот и отражение</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: #1e1e2f;
+            color: #e0e0e0;
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .app {
+            max-width: 1200px;
+            width: 100%;
+            background: #2a2a3e;
+            border-radius: 24px;
+            padding: 28px 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+        }
+        h1 {
+            font-weight: 500;
+            font-size: 26px;
+            margin-bottom: 20px;
+            letter-spacing: 0.5px;
+            color: #f0f0ff;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        h1 small {
+            font-size: 14px;
+            font-weight: 400;
+            color: #a0a0c0;
+            margin-left: 8px;
+        }
+        .row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 24px;
+            margin-bottom: 28px;
+        }
+        .col {
+            flex: 1 1 300px;
+            min-width: 250px;
+        }
+        .ref-section {
+            background: #22223a;
+            border-radius: 16px;
+            padding: 18px;
+        }
+        .ref-section label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 10px;
+            color: #b0b0d0;
+        }
+        .ref-section input[type="file"] {
+            display: block;
+            width: 100%;
+            padding: 8px 12px;
+            background: #2e2e4a;
+            border: 1px solid #444466;
+            border-radius: 10px;
+            color: #d0d0f0;
+            font-size: 13px;
+            cursor: pointer;
+        }
+        .ref-section input[type="file"]::file-selector-button {
+            background: #4a4a7a;
+            border: none;
+            color: white;
+            padding: 6px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            margin-right: 14px;
+        }
+        .ref-canvas-wrap {
+            margin-top: 14px;
+            background: #1a1a2e;
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+            border: 2px solid #3a3a5a;
+            transition: border-color 0.2s;
+        }
+        .ref-canvas-wrap.active {
+            border-color: #7a7aff;
+        }
+        #refCanvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            cursor: crosshair;
+            background: #12121e;
+        }
+        .ref-hint {
+            font-size: 13px;
+            color: #8888aa;
+            margin-top: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .ref-hint .color-preview {
+            display: inline-block;
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            border: 2px solid #555577;
+            background: #333;
+            vertical-align: middle;
+            margin-left: 8px;
+        }
+        .controls {
+            background: #22223a;
+            border-radius: 16px;
+            padding: 18px;
+        }
+        .controls .param {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 14px;
+        }
+        .controls .param label {
+            font-weight: 500;
+            color: #b0b0d0;
+            font-size: 14px;
+        }
+        .controls .param input[type="number"] {
+            width: 70px;
+            padding: 6px 10px;
+            background: #2e2e4a;
+            border: 1px solid #444466;
+            border-radius: 8px;
+            color: white;
+            font-size: 16px;
+            text-align: center;
+        }
+        .controls .param button {
+            background: #4a4a7a;
+            border: none;
+            color: white;
+            padding: 6px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background 0.2s;
+            font-size: 14px;
+        }
+        .controls .param button:hover {
+            background: #5a5a9a;
+        }
+        .mode-switch {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 16px;
+            background: #1a1a2e;
+            border-radius: 10px;
+            padding: 4px;
+        }
+        .mode-switch button {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: #8888aa;
+            padding: 6px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.2s, color 0.2s;
+            font-size: 14px;
+        }
+        .mode-switch button.active {
+            background: #4a4a7a;
+            color: white;
+        }
+        .mode-switch button:hover:not(.active) {
+            background: #3a3a5a;
+            color: #c0c0e0;
+        }
+        .quick-btns {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+        .quick-btns button {
+            background: #3a3a5e;
+            border: none;
+            color: #c0c0f0;
+            padding: 4px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+        .quick-btns button:hover {
+            background: #5a5a8a;
+        }
+        .action-btns {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+        .action-btns button {
+            background: #4a4a7a;
+            border: none;
+            color: white;
+            padding: 8px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background 0.2s;
+            font-size: 14px;
+            flex: 1 0 auto;
+        }
+        .action-btns button:hover {
+            background: #6a6aaa;
+        }
+        .action-btns button.extract {
+            background: #5a5a3a;
+        }
+        .action-btns button.extract:hover {
+            background: #7a7a4a;
+        }
+        .transform-btns {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+        .transform-btns button {
+            background: #3a3a5e;
+            border: none;
+            color: #c0c0f0;
+            padding: 6px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background 0.2s;
+            font-size: 13px;
+            flex: 1;
+        }
+        .transform-btns button:hover {
+            background: #5a5a8a;
+        }
+        .gradient-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-height: 420px;
+            overflow-y: auto;
+            padding-right: 4px;
+            margin-top: 6px;
+        }
+        .gradient-list::-webkit-scrollbar {
+            width: 5px;
+        }
+        .gradient-list::-webkit-scrollbar-track {
+            background: #1e1e32;
+            border-radius: 10px;
+        }
+        .gradient-list::-webkit-scrollbar-thumb {
+            background: #55558a;
+            border-radius: 10px;
+        }
+        .gradient-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            background: #1e1e36;
+            border-radius: 12px;
+            padding: 10px 16px;
+            border: 2px solid transparent;
+            transition: border-color 0.2s, background 0.2s;
+            cursor: pointer;
+        }
+        .gradient-item.active {
+            border-color: #ffcc44;
+            background: #28284a;
+        }
+        .gradient-item .g-index {
+            font-size: 13px;
+            font-weight: 600;
+            color: #8888bb;
+            min-width: 28px;
+        }
+        .gradient-item .color-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex: 1;
+            flex-wrap: wrap;
+        }
+        .gradient-item .color-group label {
+            font-size: 12px;
+            color: #9999bb;
+            margin-right: 2px;
+        }
+        .color-swatch {
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            border: 2px solid #444466;
+            cursor: pointer;
+            transition: border-color 0.2s, transform 0.1s;
+            position: relative;
+            flex-shrink: 0;
+        }
+        .color-swatch:hover {
+            border-color: #7a7aff;
+            transform: scale(1.02);
+        }
+        .color-swatch.active-swatch {
+            border-color: #ffcc44;
+            box-shadow: 0 0 12px rgba(255, 204, 68, 0.5);
+        }
+        .color-swatch .hidden-input {
+            display: none;
+        }
+        .gradient-item .g-preview {
+            width: 60px;
+            height: 34px;
+            border-radius: 8px;
+            border: 1px solid #3a3a5a;
+            flex-shrink: 0;
+            background: linear-gradient(to bottom, #ff0000, #0000ff);
+        }
+        .gradient-item .g-actions {
+            display: flex;
+            gap: 4px;
+        }
+        .gradient-item .g-actions button {
+            background: #3a3a5a;
+            border: none;
+            color: #c0c0e0;
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .gradient-item .g-actions button:hover {
+            background: #5a5a8a;
+            color: white;
+        }
+        .gradient-item .g-actions button.del:hover {
+            background: #8a3a3a;
+        }
+        .palette-preview-wrap {
+            background: #1a1a2e;
+            border-radius: 16px;
+            padding: 16px;
+            margin-top: 20px;
+            border: 2px solid #3a3a5a;
+        }
+        .palette-preview-wrap h3 {
+            font-weight: 400;
+            font-size: 16px;
+            color: #b0b0d0;
+            margin-bottom: 12px;
+        }
+        #paletteCanvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            border-radius: 10px;
+            background: #0e0e1a;
+            aspect-ratio: 1 / 1;
+            max-width: 600px;
+            margin: 0 auto;
+            cursor: pointer;
+        }
+        .export-row {
+            display: flex;
+            gap: 16px;
+            margin-top: 16px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .export-row button {
+            background: #5a5a9a;
+            border: none;
+            color: white;
+            padding: 10px 28px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .export-row button:hover {
+            background: #6a6aaa;
+        }
+        .export-row button:active {
+            transform: scale(0.96);
+        }
+        .status {
+            font-size: 13px;
+            color: #a0a0c0;
+            margin-top: 8px;
+            min-height: 22px;
+            text-align: center;
+        }
+        .flex-between {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .badge {
+            background: #3a3a6a;
+            border-radius: 20px;
+            padding: 2px 14px;
+            font-size: 12px;
+            color: #c0c0f0;
+        }
+        .hidden {
+            display: none !important;
+        }
+        @media (max-width: 700px) {
+            .app {
+                padding: 16px;
+            }
+            .gradient-item {
+                flex-wrap: wrap;
+            }
+            .gradient-item .g-preview {
+                width: 50px;
+                height: 28px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app">
+        <h1>
+            🎨 Градиентная палитра
+            <small>поворот и отражение</small>
+        </h1>
+
+        <div class="row">
+            <!-- Референс -->
+            <div class="col ref-section">
+                <label>📷 Референс-изображение (кликните для пипетки)</label>
+                <input type="file" id="refInput" accept="image/*" />
+                <div class="ref-canvas-wrap" id="refWrap">
+                    <canvas id="refCanvas" width="600" height="400"></canvas>
+                </div>
+                <div class="ref-hint">
+                    <span>Выбранный цвет: <span id="pickedColorHex">#------</span></span>
+                    <span>
+                        <span class="color-preview" id="pickedColorPreview" style="background:#333;"></span>
+                    </span>
+                </div>
+            </div>
+
+            <!-- Управление -->
+            <div class="col controls">
+                <div class="param">
+                    <label for="gradCount">Количество плиток:</label>
+                    <input type="number" id="gradCount" value="16" min="1" max="100" />
+                    <button id="applyCountBtn">Применить</button>
+                </div>
+
+                <!-- Переключатель режима -->
+                <div class="mode-switch" id="modeSwitch">
+                    <button data-mode="2" class="active">2 цвета</button>
+                    <button data-mode="3">3 цвета</button>
+                </div>
+
+                <div class="quick-btns">
+                    <button data-count="4">4</button>
+                    <button data-count="16">16</button>
+                    <button data-count="32">32</button>
+                </div>
+                <div class="action-btns">
+                    <button id="autoGradBtn">🎲 Автоградиенты</button>
+                    <button id="extractBtn" class="extract">🖼 Извлечь из изображения</button>
+                </div>
+
+                <!-- Кнопки трансформаций -->
+                <div class="transform-btns">
+                    <button id="rotateBtn">↻ 90°</button>
+                    <button id="flipHBtn">↔ Отр. гор.</button>
+                    <button id="flipVBtn">↕ Отр. верт.</button>
+                </div>
+
+                <div class="flex-between" style="margin-bottom:8px;">
+                    <span style="font-weight:500; color:#b0b0d0;">Редактор</span>
+                    <span class="badge" id="gradCountBadge">16</span>
+                </div>
+                <div class="gradient-list" id="gradientList"></div>
+            </div>
+        </div>
+
+        <!-- Превью -->
+        <div class="palette-preview-wrap">
+            <div class="flex-between">
+                <h3>📋 Превью плиток (клик для выделения)</h3>
+                <span style="font-size:13px; color:#8888aa;" id="modeLabel">вертикальный градиент</span>
+            </div>
+            <canvas id="paletteCanvas" width="600" height="600"></canvas>
+            <div class="export-row">
+                <button id="exportPngBtn">⬇ Экспорт PNG</button>
+                <button id="resetColorsBtn" style="background:#4a4a6a;">Сбросить цвета</button>
+                <button id="resetTransformBtn" style="background:#4a4a6a;">Сбросить трансформации</button>
+            </div>
+            <div class="status" id="statusMsg"></div>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            'use strict';
+
+            // ---------- DOM ----------
+            const refInput = document.getElementById('refInput');
+            const refCanvas = document.getElementById('refCanvas');
+            const refWrap = document.getElementById('refWrap');
+            const pickedColorHex = document.getElementById('pickedColorHex');
+            const pickedColorPreview = document.getElementById('pickedColorPreview');
+
+            const gradCountInput = document.getElementById('gradCount');
+            const applyCountBtn = document.getElementById('applyCountBtn');
+            const gradientList = document.getElementById('gradientList');
+            const gradCountBadge = document.getElementById('gradCountBadge');
+
+            const paletteCanvas = document.getElementById('paletteCanvas');
+            const exportPngBtn = document.getElementById('exportPngBtn');
+            const resetColorsBtn = document.getElementById('resetColorsBtn');
+            const resetTransformBtn = document.getElementById('resetTransformBtn');
+            const autoGradBtn = document.getElementById('autoGradBtn');
+            const extractBtn = document.getElementById('extractBtn');
+            const rotateBtn = document.getElementById('rotateBtn');
+            const flipHBtn = document.getElementById('flipHBtn');
+            const flipVBtn = document.getElementById('flipVBtn');
+            const statusMsg = document.getElementById('statusMsg');
+            const modeSwitch = document.getElementById('modeSwitch');
+            const modeLabel = document.getElementById('modeLabel');
+
+            // ---------- Состояние ----------
+            let gradients = []; // каждый { top, bottom, mid, rotation, flipH, flipV }
+            let activeSwatch = null;
+            let refImageData = null;
+            let currentMode = 2;
+            let selectedIndex = -1; // индекс выделенной плитки
+
+            // ---------- Вспомогательные функции яркости ----------
+            function hexToRgb(hex) {
+                const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+                return result ? {
+                    r: parseInt(result[1], 16),
+                    g: parseInt(result[2], 16),
+                    b: parseInt(result[3], 16)
+                } : null;
+            }
+
+            function rgbToHex(r, g, b) {
+                return '#' + [r, g, b].map(c => Math.min(255, Math.max(0, Math.round(c))).toString(16).padStart(2, '0')).join(
+                '');
+            }
+
+            function getLuminance(hex) {
+                const rgb = hexToRgb(hex);
+                if (!rgb) return 0;
+                return 0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b;
+            }
+
+            function sortColorsByLuminance(colors) {
+                return colors.slice().sort((a, b) => getLuminance(a) - getLuminance(b));
+            }
+
+            // ---------- Генерация начальных градиентов (2 цвета) ----------
+            function getDefaultGradients2(count) {
+                const palettes = [
+                    ['#ff6b6b', '#c92a2a'],
+                    ['#f06595', '#862e9c'],
+                    ['#cc5de8', '#364fc7'],
+                    ['#5c7cfa', '#1864ab'],
+                    ['#4dabf7', '#087f5b'],
+                    ['#20c997', '#e67700'],
+                    ['#fcc419', '#d9480f'],
+                    ['#ff922b', '#c92a2a'],
+                ];
+                const result = [];
+                for (let i = 0; i < count; i++) {
+                    const idx = i % palettes.length;
+                    const p = palettes[idx];
+                    const sorted = sortColorsByLuminance([p[0], p[1]]);
+                    result.push({
+                        top: sorted[0],
+                        bottom: sorted[1],
+                        mid: '#888888',
+                        rotation: 0,
+                        flipH: false,
+                        flipV: false
+                    });
+                }
+                return result;
+            }
+
+            function getDefaultGradients3(count) {
+                const palettes = [
+                    ['#ff6b6b', '#f06595', '#c92a2a'],
+                    ['#f06595', '#cc5de8', '#862e9c'],
+                    ['#cc5de8', '#5c7cfa', '#364fc7'],
+                    ['#5c7cfa', '#4dabf7', '#1864ab'],
+                    ['#4dabf7', '#20c997', '#087f5b'],
+                    ['#20c997', '#fcc419', '#e67700'],
+                    ['#fcc419', '#ff922b', '#d9480f'],
+                    ['#ff922b', '#ff6b6b', '#c92a2a'],
+                ];
+                const result = [];
+                for (let i = 0; i < count; i++) {
+                    const idx = i % palettes.length;
+                    const p = palettes[idx];
+                    const sorted = sortColorsByLuminance([p[0], p[1], p[2]]);
+                    result.push({
+                        top: sorted[0],
+                        mid: sorted[1],
+                        bottom: sorted[2],
+                        rotation: 0,
+                        flipH: false,
+                        flipV: false
+                    });
+                }
+                return result;
+            }
+
+            // ---------- Рендер списка градиентов ----------
+            function renderGradientList() {
+                gradientList.innerHTML = '';
+                const is3 = (currentMode === 3);
+                gradients.forEach((grad, index) => {
+                    const item = document.createElement('div');
+                    item.className = 'gradient-item' + (index === selectedIndex ? ' active' : '');
+                    item.dataset.index = index;
+
+                    const idxSpan = document.createElement('span');
+                    idxSpan.className = 'g-index';
+                    idxSpan.textContent = `#${index+1}`;
+                    item.appendChild(idxSpan);
+
+                    const group = document.createElement('div');
+                    group.className = 'color-group';
+
+                    const roles = ['top', 'bottom'];
+                    const labels = ['A', 'B'];
+                    const colors = [grad.top, grad.bottom];
+                    if (is3) {
+                        roles.push('mid');
+                        labels.push('C');
+                        colors.push(grad.mid);
+                    }
+
+                    roles.forEach((role, i) => {
+                        const label = document.createElement('label');
+                        label.textContent = labels[i];
+                        group.appendChild(label);
+
+                        const swatch = document.createElement('div');
+                        swatch.className = 'color-swatch';
+                        swatch.style.background = colors[i];
+                        swatch.dataset.role = role;
+                        swatch.dataset.index = index;
+                        swatch.title = 'Клик — активировать для пипетки, двойной клик — выбрать цвет';
+
+                        const hidden = document.createElement('input');
+                        hidden.type = 'color';
+                        hidden.value = colors[i];
+                        hidden.className = 'hidden-input';
+                        hidden.dataset.role = role;
+                        hidden.dataset.index = index;
+
+                        swatch.appendChild(hidden);
+                        group.appendChild(swatch);
+
+                        swatch.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            setActiveSwatch(swatch);
+                        });
+                        swatch.addEventListener('dblclick', (e) => {
+                            e.stopPropagation();
+                            hidden.click();
+                        });
+                        hidden.addEventListener('input', (e) => {
+                            const val = hidden.value;
+                            swatch.style.background = val;
+                            const idx = parseInt(hidden.dataset.index);
+                            const role = hidden.dataset.role;
+                            gradients[idx][role] = val;
+                            updatePreviews();
+                            updatePalette();
+                            const parentItem = swatch.closest('.gradient-item');
+                            if (parentItem) {
+                                const previewDiv = parentItem.querySelector('.g-preview');
+                                if (previewDiv) {
+                                    const g = gradients[idx];
+                                    if (currentMode === 2) {
+                                        previewDiv.style.background =
+                                            `linear-gradient(to bottom, ${g.top}, ${g.bottom})`;
+                                    } else {
+                                        previewDiv.style.background =
+                                            `linear-gradient(to bottom, ${g.top}, ${g.bottom})`;
+                                    }
+                                }
+                            }
+                        });
+                    });
+
+                    item.appendChild(group);
+
+                    // Превью
+                    const preview = document.createElement('div');
+                    preview.className = 'g-preview';
+                    if (currentMode === 2) {
+                        preview.style.background =
+                            `linear-gradient(to bottom, ${grad.top}, ${grad.bottom})`;
+                    } else {
+                        preview.style.background =
+                            `linear-gradient(to bottom, ${grad.top}, ${grad.bottom})`;
+                    }
+                    item.appendChild(preview);
+
+                    // Действия
+                    const actions = document.createElement('div');
+                    actions.className = 'g-actions';
+                    const upBtn = document.createElement('button');
+                    upBtn.textContent = '▲';
+                    upBtn.title = 'Вверх';
+                    upBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        moveGradient(index, -1);
+                    });
+                    const downBtn = document.createElement('button');
+                    downBtn.textContent = '▼';
+                    downBtn.title = 'Вниз';
+                    downBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        moveGradient(index, 1);
+                    });
+                    const delBtn = document.createElement('button');
+                    delBtn.textContent = '✕';
+                    delBtn.className = 'del';
+                    delBtn.title = 'Удалить';
+                    delBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        if (gradients.length <= 1) {
+                            setStatus('Нельзя удалить единственный градиент', '#ffaa66');
+                            return;
+                        }
+                        gradients.splice(index, 1);
+                        if (selectedIndex === index) selectedIndex = -1;
+                        else if (selectedIndex > index) selectedIndex--;
+                        updateAll();
+                    });
+                    actions.appendChild(upBtn);
+                    actions.appendChild(downBtn);
+                    actions.appendChild(delBtn);
+                    item.appendChild(actions);
+
+                    // Клик по item — выделение
+                    item.addEventListener('click', (e) => {
+                        if (e.target.closest('.color-swatch') || e.target.closest('.g-actions')) return;
+                        selectGradient(index);
+                    });
+
+                    gradientList.appendChild(item);
+                });
+
+                gradCountBadge.textContent = gradients.length;
+                gradCountInput.value = gradients.length;
+                updatePalette();
+            }
+
+            function selectGradient(index) {
+                if (index < 0 || index >= gradients.length) {
+                    selectedIndex = -1;
+                } else {
+                    selectedIndex = index;
+                }
+                // Обновить классы active в списке
+                document.querySelectorAll('.gradient-item').forEach((el, i) => {
+                    el.classList.toggle('active', i === selectedIndex);
+                });
+                // Перерисовать палитру для подсветки (можно нарисовать рамку вокруг выделенной)
+                updatePalette();
+                if (selectedIndex >= 0) {
+                    setStatus(`Выделена плитка #${selectedIndex+1}`, '#88cc88');
+                } else {
+                    setStatus('Выделение снято', '#a0a0c0');
+                }
+            }
+
+            function setActiveSwatch(swatch) {
+                document.querySelectorAll('.color-swatch').forEach(el => el.classList.remove('active-swatch'));
+                if (swatch) {
+                    swatch.classList.add('active-swatch');
+                    activeSwatch = swatch;
+                    refWrap.classList.add('active');
+                    setStatus('Кликните на референсе, чтобы взять цвет', '#88ccff');
+                } else {
+                    activeSwatch = null;
+                    refWrap.classList.remove('active');
+                    setStatus('', '');
+                }
+            }
+
+            function updatePreviews() {
+                const items = gradientList.querySelectorAll('.gradient-item');
+                items.forEach((item, idx) => {
+                    const preview = item.querySelector('.g-preview');
+                    if (preview && gradients[idx]) {
+                        const g = gradients[idx];
+                        if (currentMode === 2) {
+                            preview.style.background =
+                                `linear-gradient(to bottom, ${g.top}, ${g.bottom})`;
+                        } else {
+                            preview.style.background =
+                                `linear-gradient(to bottom, ${g.top}, ${g.bottom})`;
+                        }
+                    }
+                });
+                updatePalette();
+            }
+
+            function updatePalette() {
+                const canvas = paletteCanvas;
+                const ctx = canvas.getContext('2d');
+                const w = canvas.width;
+                const h = canvas.height;
+                ctx.clearRect(0, 0, w, h);
+
+                if (gradients.length === 0) return;
+
+                const count = gradients.length;
+                const cols = Math.ceil(Math.sqrt(count));
+                const rows = Math.ceil(count / cols);
+                const cellSize = Math.min(w / cols, h / rows);
+                const totalW = cellSize * cols;
+                const totalH = cellSize * rows;
+                const offsetX = (w - totalW) / 2;
+                const offsetY = (h - totalH) / 2;
+
+                const is3 = (currentMode === 3);
+
+                for (let i = 0; i < count; i++) {
+                    const col = i % cols;
+                    const row = Math.floor(i / cols);
+                    const x = offsetX + col * cellSize;
+                    const y = offsetY + row * cellSize;
+                    const g = gradients[i];
+
+                    // Применяем трансформации
+                    ctx.save();
+                    ctx.translate(x + cellSize / 2, y + cellSize / 2);
+                    // Поворот
+                    const angle = g.rotation * Math.PI / 2;
+                    ctx.rotate(angle);
+                    // Отражения
+                    let sx = 1,
+                        sy = 1;
+                    if (g.flipH) sx = -1;
+                    if (g.flipV) sy = -1;
+                    ctx.scale(sx, sy);
+
+                    // Рисуем градиент в локальных координатах от -cellSize/2 до +cellSize/2
+                    const half = cellSize / 2;
+
+                    if (is3) {
+                        // Вертикальный градиент top->bottom
+                        const gradV = ctx.createLinearGradient(0, -half, 0, half);
+                        gradV.addColorStop(0, g.top);
+                        gradV.addColorStop(1, g.bottom);
+                        ctx.fillStyle = gradV;
+                        ctx.fillRect(-half, -half, cellSize, cellSize);
+
+                        // Накладываем горизонтальный градиент от mid к прозрачности (справа налево)
+                        const gradH = ctx.createLinearGradient(-half, 0, half, 0);
+                        gradH.addColorStop(0, g.mid + 'ff');
+                        gradH.addColorStop(1, g.mid + '00');
+                        ctx.fillStyle = gradH;
+                        ctx.fillRect(-half, -half, cellSize, cellSize);
+                    } else {
+                        // 2 цвета — вертикальный градиент
+                        const grad = ctx.createLinearGradient(0, -half, 0, half);
+                        grad.addColorStop(0, g.top);
+                        grad.addColorStop(1, g.bottom);
+                        ctx.fillStyle = grad;
+                        ctx.fillRect(-half, -half, cellSize, cellSize);
+                    }
+                    ctx.restore();
+
+                    // Рамка
+                    ctx.strokeStyle = '#2a2a42';
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(x, y, cellSize, cellSize);
+
+                    // Если выделена, рисуем яркую рамку
+                    if (i === selectedIndex) {
+                        ctx.strokeStyle = '#ffcc44';
+                        ctx.lineWidth = 4;
+                        ctx.strokeRect(x + 2, y + 2, cellSize - 4, cellSize - 4);
+                    }
+                }
+            }
+
+            // ---------- Перемещение ----------
+            function moveGradient(index, direction) {
+                const newIndex = index + direction;
+                if (newIndex < 0 || newIndex >= gradients.length) return;
+                const temp = gradients[index];
+                gradients[index] = gradients[newIndex];
+                gradients[newIndex] = temp;
+                if (selectedIndex === index) selectedIndex = newIndex;
+                else if (selectedIndex === newIndex) selectedIndex = index;
+                renderGradientList();
+                // восстановить активный swatch
+                if (activeSwatch) {
+                    const idx = parseInt(activeSwatch.dataset.index);
+                    const role = activeSwatch.dataset.role;
+                    // после перемещения индексы изменились, нужно найти соответствие
+                    // проще сбросить
+                    setActiveSwatch(null);
+                }
+                updateAll();
+                setStatus(`Градиент перемещён`, '#88cc88');
+            }
+
+            function updateAll() {
+                renderGradientList();
+                updatePalette();
+                if (activeSwatch && !document.contains(activeSwatch)) {
+                    setActiveSwatch(null);
+                }
+                gradCountBadge.textContent = gradients.length;
+                gradCountInput.value = gradients.length;
+                modeLabel.textContent = (currentMode === 2) ? 'вертикальный градиент (2 цвета)' :
+                    'вертикальный + горизонтальный с прозрачностью (3 цвета)';
+            }
+
+            // ---------- Трансформации ----------
+            function applyTransform(transformFn) {
+                if (selectedIndex < 0 || selectedIndex >= gradients.length) {
+                    setStatus('Сначала выделите плитку (кликните на неё в палитре или в списке)', '#ffaa66');
+                    return;
+                }
+                const idx = selectedIndex;
+                const g = gradients[idx];
+                transformFn(g);
+                // Обновить отображение
+                updatePalette();
+                // Также обновить превью в списке (но там не отображаются трансформации, можно оставить как есть)
+                // Можно перерисовать список для обновления индикаторов, но не обязательно
+                setStatus(`Трансформация применена к плитке #${idx+1}`, '#88cc88');
+            }
+
+            rotateBtn.addEventListener('click', function() {
+                applyTransform((g) => {
+                    g.rotation = (g.rotation + 1) % 4;
+                });
+            });
+
+            flipHBtn.addEventListener('click', function() {
+                applyTransform((g) => {
+                    g.flipH = !g.flipH;
+                });
+            });
+
+            flipVBtn.addEventListener('click', function() {
+                applyTransform((g) => {
+                    g.flipV = !g.flipV;
+                });
+            });
+
+            resetTransformBtn.addEventListener('click', function() {
+                if (selectedIndex < 0 || selectedIndex >= gradients.length) {
+                    setStatus('Сначала выделите плитку', '#ffaa66');
+                    return;
+                }
+                const g = gradients[selectedIndex];
+                g.rotation = 0;
+                g.flipH = false;
+                g.flipV = false;
+                updatePalette();
+                setStatus(`Трансформации сброшены для плитки #${selectedIndex+1}`, '#88cc88');
+            });
+
+            // ---------- Клик по палитре для выделения ----------
+            paletteCanvas.addEventListener('click', function(e) {
+                const rect = paletteCanvas.getBoundingClientRect();
+                const scaleX = paletteCanvas.width / rect.width;
+                const scaleY = paletteCanvas.height / rect.height;
+                const mx = (e.clientX - rect.left) * scaleX;
+                const my = (e.clientY - rect.top) * scaleY;
+
+                const count = gradients.length;
+                if (count === 0) return;
+                const cols = Math.ceil(Math.sqrt(count));
+                const rows = Math.ceil(count / cols);
+                const cellSize = Math.min(paletteCanvas.width / cols, paletteCanvas.height / rows);
+                const totalW = cellSize * cols;
+                const totalH = cellSize * rows;
+                const offsetX = (paletteCanvas.width - totalW) / 2;
+                const offsetY = (paletteCanvas.height - totalH) / 2;
+
+                // Определяем индекс плитки
+                const col = Math.floor((mx - offsetX) / cellSize);
+                const row = Math.floor((my - offsetY) / cellSize);
+                if (col < 0 || col >= cols || row < 0 || row >= rows) {
+                    selectGradient(-1);
+                    return;
+                }
+                const idx = row * cols + col;
+                if (idx >= 0 && idx < count) {
+                    selectGradient(idx);
+                } else {
+                    selectGradient(-1);
+                }
+            });
+
+            // ---------- Загрузка референса ----------
+            function loadReferenceImage(file) {
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.onload = function() {
+                        const ctx = refCanvas.getContext('2d');
+                        const canvasW = refCanvas.width;
+                        const canvasH = refCanvas.height;
+                        const imgW = img.width;
+                        const imgH = img.height;
+                        const ratio = Math.min(canvasW / imgW, canvasH / imgH);
+                        const drawW = imgW * ratio;
+                        const drawH = imgH * ratio;
+                        const offsetX = (canvasW - drawW) / 2;
+                        const offsetY = (canvasH - drawH) / 2;
+                        ctx.clearRect(0, 0, canvasW, canvasH);
+                        ctx.drawImage(img, offsetX, offsetY, drawW, drawH);
+                        refImageData = {
+                            img: img,
+                            drawW: drawW,
+                            drawH: drawH,
+                            offsetX: offsetX,
+                            offsetY: offsetY,
+                            canvasW: canvasW,
+                            canvasH: canvasH,
+                            imgW: imgW,
+                            imgH: imgH,
+                            ratio: ratio
+                        };
+                        setStatus('Референс загружен, кликайте для пипетки', '#88cc88');
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+
+            // ---------- Пипетка ----------
+            refCanvas.addEventListener('click', function(e) {
+                if (!refImageData) {
+                    setStatus('Сначала загрузите референс-изображение', '#ffaa66');
+                    return;
+                }
+                if (!activeSwatch) {
+                    setStatus('Выберите цветовой контрол (A, B или C)', '#ffaa66');
+                    return;
+                }
+
+                const rect = refCanvas.getBoundingClientRect();
+                const scaleX = refCanvas.width / rect.width;
+                const scaleY = refCanvas.height / rect.height;
+                const mouseX = (e.clientX - rect.left) * scaleX;
+                const mouseY = (e.clientY - rect.top) * scaleY;
+
+                const d = refImageData;
+                const imgX = (mouseX - d.offsetX) / d.ratio;
+                const imgY = (mouseY - d.offsetY) / d.ratio;
+
+                if (imgX < 0 || imgX >= d.imgW || imgY < 0 || imgY >= d.imgH) {
+                    setStatus('Кликните внутри изображения', '#ffaa66');
+                    return;
+                }
+
+                const ctx = refCanvas.getContext('2d');
+                const px = Math.round(d.offsetX + imgX * d.ratio);
+                const py = Math.round(d.offsetY + imgY * d.ratio);
+                if (px < 0 || px >= d.canvasW || py < 0 || py >= d.canvasH) {
+                    setStatus('Вне изображения', '#ffaa66');
+                    return;
+                }
+
+                const imageData = ctx.getImageData(px, py, 1, 1);
+                const data = imageData.data;
+                const r = data[0],
+                    g = data[1],
+                    b = data[2],
+                    a = data[3];
+                if (a < 128) {
+                    setStatus('Прозрачный пиксель, выберите другой', '#ffaa66');
+                    return;
+                }
+                const hex = '#' + [r, g, b].map(c => c.toString(16).padStart(2, '0')).join('');
+
+                const hidden = activeSwatch.querySelector('.hidden-input');
+                if (hidden) {
+                    hidden.value = hex;
+                    hidden.dispatchEvent(new Event('input'));
+                }
+                activeSwatch.style.background = hex;
+                const idx = parseInt(activeSwatch.dataset.index);
+                const role = activeSwatch.dataset.role;
+                gradients[idx][role] = hex;
+                updatePreviews();
+                pickedColorHex.textContent = hex.toUpperCase();
+                pickedColorPreview.style.background = hex;
+                setStatus(`Цвет ${hex} установлен в градиент #${idx+1} (${role})`, '#88cc88');
+            });
+
+            // ---------- Сброс цветов ----------
+            resetColorsBtn.addEventListener('click', function() {
+                const count = gradients.length;
+                if (currentMode === 2) {
+                    gradients = getDefaultGradients2(count);
+                } else {
+                    gradients = getDefaultGradients3(count);
+                }
+                selectedIndex = -1;
+                updateAll();
+                setActiveSwatch(null);
+                setStatus('Цвета сброшены к стандартным, трансформации сброшены', '#88cc88');
+            });
+
+            // ---------- Автоградиенты ----------
+            function randomColor() {
+                return '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
+            }
+
+            autoGradBtn.addEventListener('click', function() {
+                const count = gradients.length;
+                for (let i = 0; i < count; i++) {
+                    if (currentMode === 2) {
+                        const colors = [randomColor(), randomColor()];
+                        const sorted = sortColorsByLuminance(colors);
+                        gradients[i].top = sorted[0];
+                        gradients[i].bottom = sorted[1];
+                        gradients[i].mid = '#888888';
+                    } else {
+                        const colors = [randomColor(), randomColor(), randomColor()];
+                        const sorted = sortColorsByLuminance(colors);
+                        gradients[i].top = sorted[0];
+                        gradients[i].mid = sorted[1];
+                        gradients[i].bottom = sorted[2];
+                    }
+                    // сброс трансформаций
+                    gradients[i].rotation = 0;
+                    gradients[i].flipH = false;
+                    gradients[i].flipV = false;
+                }
+                selectedIndex = -1;
+                updateAll();
+                setActiveSwatch(null);
+                setStatus('Сгенерированы случайные градиенты (сортировка по яркости)', '#88cc88');
+            });
+
+            // ---------- Извлечение из изображения ----------
+            function extractColorsFromImage(img, numColors) {
+                const canvas = document.createElement('canvas');
+                canvas.width = img.width;
+                canvas.height = img.height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+                const imageData = ctx.getImageData(0, 0, img.width, img.height);
+                const data = imageData.data;
+
+                const sampleCount = Math.min(img.width * img.height, 3000);
+                const step = Math.max(1, Math.floor(Math.sqrt((img.width * img.height) / sampleCount)));
+                const colors = [];
+                for (let y = 0; y < img.height; y += step) {
+                    for (let x = 0; x < img.width; x += step) {
+                        const idx = (y * img.width + x) * 4;
+                        const r = data[idx],
+                            g = data[idx + 1],
+                            b = data[idx + 2],
+                            a = data[idx + 3];
+                        if (a < 128) continue;
+                        const hex = '#' + [r, g, b].map(c => c.toString(16).padStart(2, '0')).join('');
+                        colors.push(hex);
+                    }
+                }
+                if (colors.length === 0) return [];
+                colors.sort((a, b) => getLuminance(a) - getLuminance(b));
+                const selected = [];
+                const total = colors.length;
+                for (let i = 0; i < numColors; i++) {
+                    const idx = Math.floor((i / (numColors - 1)) * (total - 1));
+                    selected.push(colors[idx]);
+                }
+                return selected;
+            }
+
+            extractBtn.addEventListener('click', function() {
+                if (!refImageData) {
+                    setStatus('Сначала загрузите референс-изображение', '#ffaa66');
+                    return;
+                }
+                const count = gradients.length;
+                if (count === 0) return;
+                const need = (currentMode === 2) ? count * 2 : count * 3;
+                const img = refImageData.img;
+                const colorHexes = extractColorsFromImage(img, need);
+                if (colorHexes.length < need) {
+                    setStatus('Недостаточно цветов в изображении', '#ffaa66');
+                    return;
+                }
+
+                if (currentMode === 2) {
+                    for (let i = 0; i < count; i++) {
+                        const base = i * 2;
+                        gradients[i].top = colorHexes[base];
+                        gradients[i].bottom = colorHexes[base + 1];
+                        gradients[i].mid = '#888888';
+                        gradients[i].rotation = 0;
+                        gradients[i].flipH = false;
+                        gradients[i].flipV = false;
+                    }
+                } else {
+                    for (let i = 0; i < count; i++) {
+                        const base = i * 3;
+                        gradients[i].top = colorHexes[base];
+                        gradients[i].mid = colorHexes[base + 1];
+                        gradients[i].bottom = colorHexes[base + 2];
+                        gradients[i].rotation = 0;
+                        gradients[i].flipH = false;
+                        gradients[i].flipV = false;
+                    }
+                }
+                selectedIndex = -1;
+                updateAll();
+                setActiveSwatch(null);
+                setStatus(`Извлечено ${count} градиентов (${currentMode === 2 ? '2' : '3'} цвета)`, '#88cc88');
+            });
+
+            // ---------- Переключение режима ----------
+            function setMode(mode) {
+                if (mode === currentMode) return;
+                currentMode = mode;
+                document.querySelectorAll('.mode-switch button').forEach(btn => {
+                    btn.classList.toggle('active', parseInt(btn.dataset.mode) === mode);
+                });
+                const count = gradients.length;
+                if (mode === 3) {
+                    for (let i = 0; i < count; i++) {
+                        if (!gradients[i].mid) {
+                            const mid = mixColors(gradients[i].top, gradients[i].bottom);
+                            gradients[i].mid = mid;
+                        }
+                    }
+                } else {
+                    for (let i = 0; i < count; i++) {
+                        delete gradients[i].mid;
+                    }
+                }
+                selectedIndex = -1;
+                updateAll();
+                setActiveSwatch(null);
+                setStatus(`Режим переключён на ${mode} цвета`, '#88cc88');
+            }
+
+            function mixColors(hex1, hex2) {
+                const r1 = hexToRgb(hex1),
+                    r2 = hexToRgb(hex2);
+                if (!r1 || !r2) return '#888888';
+                const r = Math.round((r1.r + r2.r) / 2);
+                const g = Math.round((r1.g + r2.g) / 2);
+                const b = Math.round((r1.b + r2.b) / 2);
+                return rgbToHex(r, g, b);
+            }
+
+            // ---------- Изменение количества ----------
+            function setGradientCount(newCount) {
+                if (isNaN(newCount) || newCount < 1) newCount = 1;
+                if (newCount > 100) newCount = 100;
+                gradCountInput.value = newCount;
+                const currentCount = gradients.length;
+                if (newCount > currentCount) {
+                    const extra = newCount - currentCount;
+                    let defs;
+                    if (currentMode === 2) {
+                        defs = getDefaultGradients2(extra);
+                    } else {
+                        defs = getDefaultGradients3(extra);
+                    }
+                    for (let i = 0; i < extra; i++) {
+                        gradients.push(defs[i]);
+                    }
+                } else if (newCount < currentCount) {
+                    gradients = gradients.slice(0, newCount);
+                    if (selectedIndex >= newCount) selectedIndex = -1;
+                }
+                selectedIndex = -1;
+                updateAll();
+                setActiveSwatch(null);
+                setStatus(`Количество плиток: ${newCount}`, '#88cc88');
+            }
+
+            applyCountBtn.addEventListener('click', function() {
+                const val = parseInt(gradCountInput.value);
+                if (!isNaN(val)) setGradientCount(val);
+            });
+
+            gradCountInput.addEventListener('change', function() {
+                applyCountBtn.click();
+            });
+
+            document.querySelectorAll('.quick-btns button').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const count = parseInt(this.dataset.count);
+                    setGradientCount(count);
+                });
+            });
+
+            document.querySelectorAll('.mode-switch button').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const mode = parseInt(this.dataset.mode);
+                    setMode(mode);
+                });
+            });
+
+            // ---------- Экспорт PNG ----------
+            exportPngBtn.addEventListener('click', function() {
+                if (gradients.length === 0) {
+                    setStatus('Нет градиентов для экспорта', '#ffaa66');
+                    return;
+                }
+                const canvas = paletteCanvas;
+                const link = document.createElement('a');
+                link.download = `gradient_palette_${currentMode}color.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+                setStatus('Палитра экспортирована в PNG', '#88cc88');
+            });
+
+            // ---------- Вспомогательные ----------
+            function setStatus(msg, color = '#a0a0c0') {
+                statusMsg.textContent = msg;
+                statusMsg.style.color = color || '#a0a0c0';
+            }
+
+            // ---------- Инициализация ----------
+            function init() {
+                const count = parseInt(gradCountInput.value) || 16;
+                currentMode = 2;
+                gradients = getDefaultGradients2(count);
+                selectedIndex = -1;
+                renderGradientList();
+                updatePalette();
+                gradCountBadge.textContent = count;
+                modeLabel.textContent = 'вертикальный градиент (2 цвета)';
+                document.querySelector('.mode-switch button[data-mode="2"]').classList.add('active');
+
+                refInput.addEventListener('change', function(e) {
+                    if (this.files && this.files[0]) {
+                        loadReferenceImage(this.files[0]);
+                    }
+                });
+
+                setTimeout(() => {
+                    const first = document.querySelector('.color-swatch[data-role="top"]');
+                    if (first) setActiveSwatch(first);
+                }, 50);
+            }
+
+            init();
+        })();
+    </script>
+
+</body>
+</html>
