@@ -941,11 +941,11 @@ function estimateThrowRange(def){
       ai._weaponSeekTimer = undefined; // оружие нашлось — сбрасываем таймер "нет оружия на карте"
       tx = nearest.x; ty = nearest.y;
     } else {
-      // На карте нет вообще никакого оружия — ждём 3-5 сек и выдаём кинжал
+      // На карте нет вообще никакого оружия — ждём 3-5 сек и выдаём меч
       if(ai._weaponSeekTimer === undefined) ai._weaponSeekTimer = rf(3,5);
       ai._weaponSeekTimer -= dt;
       if(ai._weaponSeekTimer <= 0){
-        setWeapon(bot, bot._manualWeaponType !== undefined ? bot._manualWeaponType : 1); // 1 = кинжал
+        setWeapon(bot, bot._manualWeaponType !== undefined ? bot._manualWeaponType : 0); // 0 = меч
         ai._weaponSeekTimer = undefined;
         k.w=k.a=k.s=k.d=false;
         return;

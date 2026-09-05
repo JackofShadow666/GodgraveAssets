@@ -83,6 +83,16 @@ const WEAPON_TYPES = [
 // Строки, начинающиеся с '#', и пустые строки — игнорируются (комментарии).
 // Если файл не найден/не грузится — остаёмся на встроенных значениях выше.
 const WEAPON_TABLE_URL = PROJECT_PATH_AUDIO + "Source/Talbe/WeaponTalbe.txt";
+const DEFAULT_WEAPON_KEY = 'rapier';
+
+function weaponTypeIndexByKey(key){
+  const idx = WEAPON_TYPES.findIndex(w => w && w.key === key);
+  return idx >= 0 ? idx : 0;
+}
+
+function defaultWeaponTypeIndex(){
+  return weaponTypeIndexByKey(DEFAULT_WEAPON_KEY);
+}
 async function loadWeaponTable(){
   try {
     // cache-bust: без этого браузер может годами отдавать старую закешированную
@@ -117,6 +127,8 @@ async function loadWeaponTable(){
     if(parsed.length){
       WEAPON_TYPES.length = 0;
       parsed.forEach(w => WEAPON_TYPES.push(w));
+      if(typeof P !== 'undefined' && P._defaultWeaponKey && P.hasWeapon !== false) setWeapon(P, P._defaultWeaponKey, { keepDefault: true });
+      if(typeof D !== 'undefined' && D._defaultWeaponKey && D.hasWeapon !== false) setWeapon(D, D._defaultWeaponKey, { keepDefault: true });
       console.log('✔ WeaponTalbe.txt загружен, видов оружия:', WEAPON_TYPES.length);
     } else {
       console.warn('⚠ WeaponTalbe.txt пуст или не распознан — используются встроенные параметры оружия');
@@ -133,7 +145,12 @@ function weaponDefFor(ent){
 }
 function weaponWeight(ent){
   const d = weaponDefFor(ent);
-  return (d && d.weight != null) ? d.weight : 1.0;
+  let w = (d && d.weight != null) ? d.weight : 1.0;
+  if($.IS(ent, 'spear') && typeof shieldHeld === 'function' && shieldHeld(ent)){
+    const great = WEAPON_TYPES.find(t => t.key === 'greatsword');
+    w = Math.max(w, great && great.weight != null ? great.weight : 1.6);
+  }
+  return w;
 }
 function weaponStaminaMult(ent){
   const d = weaponDefFor(ent);
@@ -231,7 +248,13 @@ function weaponReach(ent){
 let DROPPED_WEAPONS = [];
 
 // Экипирует entity оружием типа typeIdx (случайный вариант из папки этого вида)
-function setWeapon(ent, typeIdx) {
+function setWeapon(ent, typeIdx, options) {
+  if (!ent) return;
+  if (typeof typeIdx === 'string') typeIdx = weaponTypeIndexByKey(typeIdx);
+  if (!Number.isFinite(typeIdx)) typeIdx = 0;
+  typeIdx = Math.max(0, Math.min(WEAPON_TYPES.length - 1, typeIdx | 0));
+  options = options || {};
+  if(!options.keepDefault) ent._defaultWeaponKey = null;
   // Drop controller state tied to the previous weapon. In particular, the
   // magic-staff controller writes the angle directly; keeping its state or an
   // old smoothed AI mouse target makes every later weapon twitch.

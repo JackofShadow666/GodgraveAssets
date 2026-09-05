@@ -11,7 +11,7 @@
 //
 // Единственное исключение — несколько ДЕЙСТВИТЕЛЬНО ПУБЛИЧНЫХ функций,
 // которые сама игра явно вывесила на `window.*` как публичный API
-// (window.doDodge, window.toggleZone, window.toggleAI, window.toggleMusic,
+// (window.doDodge, window.toggleAI, window.toggleMusic,
 // window.toggleSwordStyle, window.doResume/doRestart/doOpenSettings) —
 // их вызывать напрямую нормально, это не "лазанье во внутренности",
 // а официальная точка входа, которую сама игра для этого и открыла.
@@ -48,7 +48,6 @@
       if (window.beginDodgePress) window.beginDodgePress('GamepadDodge');
       else if (window.doDodge) window.doDodge(true);
     },
-    zoneToggle:  () => window.toggleZone && window.toggleZone(),
     spawnBot:    () => window.toggleAI && window.toggleAI(),
     musicToggle: () => window.toggleMusic && window.toggleMusic(),
   };
@@ -67,7 +66,6 @@
       throwWeapon: { index: 4,  action: 'throwWeapon' },
       pause:       { index: 9,  action: 'pause' },
       dpadUp:      { index: 12, action: 'swordStyle' },
-      dpadDown:    { index: 13, action: 'zoneToggle' },
       dpadLeft:    { index: 14, action: 'swapWeapon' },
       dpadRight:   { index: 15, action: 'shieldType' }
     }
@@ -865,7 +863,7 @@
 
       const KNOWN_ACTIONS = new Set([
         'attack','dodge','swapWeapon','shield','shieldFlip','shieldType','swordStyle',
-        'throwWeapon','zoneToggle','spawnBot','musicToggle','pause'
+        'throwWeapon','spawnBot','musicToggle','pause'
       ]);
 
       for (const line of lines) {
@@ -913,7 +911,6 @@
     swordStyle()  { if (!isAnyMenuOpen()) tapKey(HOTKEY_ACTIONS.swordStyle); },
     throwWeapon() { if (!isAnyMenuOpen()) tapKey(HOTKEY_ACTIONS.throwWeapon); },
     dodge()       { if (!isAnyMenuOpen()) PUBLIC_API_ACTIONS.dodge(); },
-    zoneToggle()  { if (!isAnyMenuOpen()) PUBLIC_API_ACTIONS.zoneToggle(); },
     spawnBot()    { if (!isAnyMenuOpen()) PUBLIC_API_ACTIONS.spawnBot(); },
     musicToggle() { if (!isAnyMenuOpen()) PUBLIC_API_ACTIONS.musicToggle(); },
     pause() {
@@ -1104,6 +1101,12 @@
       // курсора, конфликта нет). Влево/вправо по оси X левого стика.
       const axMoveMenu = CFG.axes.move;
       const moveAX = applyDeadzone(gp.axes[axMoveMenu.x] ?? 0, CFG.deadzoneMove);
+      const moveAY = applyDeadzone(gp.axes[axMoveMenu.y] ?? 0, CFG.deadzoneMove);
+      const settingsEmbed = document.getElementById('mob-settings-embed');
+      const settingsOverlay = document.getElementById('mob-settings-overlay');
+      if (moveAY !== 0 && settingsEmbed && settingsOverlay && window.getComputedStyle(settingsOverlay).display !== 'none') {
+        settingsEmbed.scrollTop += moveAY * dt_menu * 900;
+      }
       if (moveAX !== 0 && hoveredElement && hoveredElement.tagName === 'INPUT' && hoveredElement.type === 'range') {
         adjustSlider(hoveredElement, moveAX * dt_menu * SLIDER_STICK_SPEED);
       }

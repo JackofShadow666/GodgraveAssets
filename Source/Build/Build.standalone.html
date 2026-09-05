@@ -85,7 +85,7 @@ canvas{display:block;position:fixed;top:0;left:0;cursor:none;}
 .game-overlay{display:none;position:fixed;inset:0;z-index:5000;background:rgba(5,8,12,0.97);flex-direction:column;align-items:center;justify-content:flex-start;gap:10px;padding:16px 12px 30px;overflow-y:auto;overflow-x:hidden;font-family:'Share Tech Mono',monospace;cursor:default;pointer-events:all;-webkit-user-select:text;user-select:text;box-sizing:border-box;}
 @media(min-height:600px){#name-overlay.open{justify-content:center;}}
 .game-overlay.open{display:flex;}
-body.menu-open canvas,body.menu-open #hud,body.menu-open #pvp-hud,body.menu-open #badge,body.menu-open #adisplay,body.menu-open #hint,body.menu-open #panel,body.menu-open #dtoggle,body.menu-open #mobile-ctrl,body.menu-open #mob-spawn-btn,body.menu-open #mob-menu-btn,body.menu-open #mob-dodge-btn,body.menu-open #mob-style-btn,body.menu-open #mob-shield-flip-btn,body.menu-open #mob-weapon-btn,body.menu-open #mob-throw-btn,body.menu-open #mob-bot-shield-btn,body.menu-open #mob-bot-weapon-btn,body.menu-open #mob-music-btn,body.menu-open #mob-zone-btn{visibility:hidden !important;}
+body.menu-open canvas,body.menu-open #hud,body.menu-open #pvp-hud,body.menu-open #badge,body.menu-open #adisplay,body.menu-open #hint,body.menu-open #panel,body.menu-open #dtoggle,body.menu-open #mobile-ctrl,body.menu-open #mob-spawn-btn,body.menu-open #mob-menu-btn,body.menu-open #mob-dodge-btn,body.menu-open #mob-style-btn,body.menu-open #mob-shield-flip-btn,body.menu-open #mob-weapon-btn,body.menu-open #mob-throw-btn,body.menu-open #mob-bot-shield-btn,body.menu-open #mob-bot-weapon-btn,body.menu-open #mob-music-btn{visibility:hidden !important;}
 
 .ov-title{color:#6ab0d0;font-size:15px;letter-spacing:4px;text-transform:uppercase;margin:0 0 4px;}
 .ov-sub{color:#2a5a70;font-size:10px;letter-spacing:2px;margin:0;}
@@ -120,22 +120,38 @@ body.menu-open canvas,body.menu-open #hud,body.menu-open #pvp-hud,body.menu-open
 
 /* ===== MOBILE ===== */
 #mobile-ctrl{display:none;position:fixed;inset:0;pointer-events:none;z-index:100;}
-body.is-mobile:not(.is-portrait) #mobile-ctrl{display:block;}
+body.is-mobile #mobile-ctrl{display:block;}
 body.is-mobile #panel{display:none !important;}
 body.is-mobile.mob-pregame canvas,body.is-mobile.mob-pregame #hud,body.is-mobile.mob-pregame #mobile-ctrl,body.is-mobile.mob-pregame #adisplay,body.is-mobile.mob-pregame #hint,body.is-mobile.mob-pregame #dtoggle{visibility:hidden !important;}
 body.is-mobile canvas{width:100vw !important;height:100vh !important;}
+body.is-mobile.virtual-landscape canvas,
+body.is-mobile.virtual-landscape #mobile-ctrl,
+body.is-mobile.virtual-landscape #hud,
+body.is-mobile.virtual-landscape #mob-start-overlay,
+body.is-mobile.virtual-landscape #mob-menu-overlay,
+body.is-mobile.virtual-landscape #mob-settings-overlay,
+body.is-mobile.virtual-landscape .game-overlay{
+  width:100vh !important;
+  height:100vw !important;
+  left:100vw !important;
+  top:0 !important;
+  right:auto !important;
+  bottom:auto !important;
+  transform:rotate(90deg);
+  transform-origin:top left;
+}
 body.is-mobile #hud{width:100% !important;}
 body.is-mobile #adisplay{display:none !important;}
 body.is-mobile #hint{display:none !important;}
 body.is-mobile #dtoggle{display:none !important;}
 #rotate-prompt{display:none;position:fixed;inset:0;z-index:999;pointer-events:all;background:#060a0e;flex-direction:column;align-items:center;justify-content:center;color:#6ab0d0;font-family:'Share Tech Mono',monospace;text-align:center;}
-body.is-mobile.is-portrait #rotate-prompt{display:flex;}
-body.is-mobile.is-portrait #mobile-ctrl,body.is-mobile.is-portrait canvas,body.is-mobile.is-portrait #hud{visibility:hidden;}
+body.is-mobile.is-portrait #rotate-prompt{display:none;}
+
 #rotate-prompt .icon{font-size:56px;margin-bottom:16px;animation:rotateHint 1.6s ease-in-out infinite;}
 @keyframes rotateHint{0%,100%{transform:rotate(0deg);}50%{transform:rotate(90deg);}}
 #rotate-prompt .txt{font-size:13px;letter-spacing:2px;opacity:0.8;}
 
-#mob-spawn-btn,#mob-menu-btn,#mob-dodge-btn,#mob-music-btn,#mob-zone-btn,#mob-style-btn,#mob-shield-flip-btn,#mob-bot-shield-btn,#mob-bot-weapon-btn,#mob-weapon-btn,#mob-throw-btn{z-index:1000;pointer-events:auto !important;position:absolute;}
+#mob-spawn-btn,#mob-menu-btn,#mob-dodge-btn,#mob-music-btn,#mob-style-btn,#mob-shield-flip-btn,#mob-bot-shield-btn,#mob-bot-weapon-btn,#mob-weapon-btn,#mob-throw-btn{z-index:1000;pointer-events:auto !important;position:absolute;}
 .touch-zone{z-index:100;position:absolute;top:0;bottom:0;pointer-events:all;touch-action:none;}
 #zone-move{left:0;width:45%;top:90px;}
 #zone-sword{right:0;width:55%;top:90px;}
@@ -153,28 +169,26 @@ body.fixed-stick-mode #fixed-stick-base{display:block;}
 body.fixed-stick-mode #zone-sword .stick-base,body.fixed-stick-mode #zone-sword .stick-knob{display:none;}
 #fixed-stick-knob{position:absolute;top:50%;left:50%;width:56px;height:56px;border-radius:50%;background:rgba(200,200,200,0.2);border:1.5px solid rgba(255,255,255,0.25);box-shadow:0 2px 8px rgba(0,0,0,0.3);transform:translate(-50%,-50%);transition:background .1s,box-shadow .1s;}
 #fixed-stick-knob.lmb-active{background:rgba(255,80,80,0.4);box-shadow:0 4px 16px rgba(255,0,0,0.5);border-color:rgba(255,120,120,0.6);}
-#fixed-stick-reticle{position:absolute;top:50%;left:50%;width:22px;height:22px;margin:-11px 0 0 -11px;border:2px solid #ffcc40;border-radius:50%;box-shadow:0 0 8px rgba(255,200,60,0.7);pointer-events:none;transition:transform .05s linear;}
+#fixed-stick-reticle{display:none;position:absolute;top:50%;left:50%;width:22px;height:22px;margin:-11px 0 0 -11px;border:2px solid #ffcc40;border-radius:50%;box-shadow:0 0 8px rgba(255,200,60,0.7);pointer-events:none;transition:transform .05s linear;}
 #fixed-stick-reticle::after{content:'';position:absolute;top:50%;left:50%;width:6px;height:6px;margin:-3px 0 0 -3px;background:#ffcc40;border-radius:50%;}
 #mob-bot-shield-btn{top:14px;left:calc(50% - 109px);background:rgba(10,30,20,0.9);border:1px solid #2a6a40;border-radius:50%;width:50px;height:50px;color:#4acc70;font-size:18px;display:flex;align-items:center;justify-content:center;touch-action:none;}
 #mob-bot-weapon-btn{top:14px;left:calc(50% - 165px);background:rgba(10,30,20,0.9);border:1px solid #2a6a40;border-radius:50%;width:50px;height:50px;color:#4acc70;font-size:18px;display:flex;align-items:center;justify-content:center;touch-action:none;}
 #mob-spawn-btn{top:14px;left:calc(50% - 53px);background:rgba(10,30,20,0.9);border:1px solid #2a6a40;border-radius:50%;width:50px;height:50px;color:#4acc70;font-size:18px;display:flex;align-items:center;justify-content:center;touch-action:none;}
 #mob-menu-btn{top:14px;left:calc(50% + 59px);background:rgba(10,20,30,0.9);border:1px solid #1a4060;border-radius:50%;width:50px;height:50px;color:#6ab0d0;font-size:20px;display:flex;align-items:center;justify-content:center;touch-action:none;}
 #mob-music-btn{top:14px;left:calc(50% + 3px);background:rgba(10,20,30,0.9);border:1px solid #1a4060;border-radius:50%;width:50px;height:50px;color:#4acc70;font-size:20px;display:flex;align-items:center;justify-content:center;touch-action:none;z-index:1000;}
-#mob-zone-btn{top:14px;left:calc(50% + 115px);background:rgba(10,20,30,0.9);border:1px solid #3a3010;border-radius:50%;width:50px;height:50px;color:#ccaa30;font-size:20px;display:flex;align-items:center;justify-content:center;touch-action:none;z-index:1000;}
-#mob-zone-btn.active{border-color:#cc6010;color:#ff8020;background:rgba(40,20,5,0.9);}
 #mob-style-btn{top:100px;left:126px;background:rgba(10,20,30,0.9);border:1px solid #3a5a8a;border-radius:50%;width:50px;height:50px;color:#7ab0e0;font-size:18px;display:flex;align-items:center;justify-content:center;touch-action:none;}
 #mob-shield-flip-btn{right:160px;bottom:22px;background:rgba(10,20,30,0.9);border:1px solid #2a4a7a;border-radius:50%;width:50px;height:50px;color:#88ccff;font-size:20px;display:flex;align-items:center;justify-content:center;touch-action:none;z-index:1000;}
 #mob-shield-flip-btn.active{background:rgba(20,45,70,0.96);border-color:#88ccff;box-shadow:0 0 14px rgba(120,190,255,0.45);}
-body.is-mobile:not(.is-portrait) #mob-shield-flip-btn{display:flex;}
+body.is-mobile #mob-shield-flip-btn{display:flex;}
 #mob-weapon-btn{top:100px;left:70px;background:rgba(10,20,30,0.9);border:1px solid #2a4a7a;border-radius:50%;width:50px;height:50px;color:#88ccff;font-size:20px;display:flex;align-items:center;justify-content:center;touch-action:none;z-index:1000;}
-body.is-mobile:not(.is-portrait) #mob-weapon-btn{display:flex;}
+body.is-mobile #mob-weapon-btn{display:flex;}
 #mob-throw-btn{top:90px;right:72px;background:rgba(10,20,30,0.9);border:1px solid #7a4a2a;border-radius:50%;width:50px;height:50px;color:#ffaa66;font-size:20px;display:flex;align-items:center;justify-content:center;touch-action:none;z-index:1000;}
-body.is-mobile:not(.is-portrait) #mob-throw-btn{display:flex;}
+body.is-mobile #mob-throw-btn{display:flex;}
 #mob-dodge-btn{top:90px;right:14px;background:rgba(10,20,30,0.9);border:1px solid #2a5a3a;border-radius:50%;width:50px;height:50px;color:#4acc80;font-size:18px;display:flex;align-items:center;justify-content:center;touch-action:none;z-index:1000;}
 #mob-dodge-btn:active{background:rgba(20,60,30,0.95);}
 #mob-menu-overlay{display:none;position:fixed;inset:0;z-index:500;background:rgba(5,8,12,0.92);flex-direction:column;align-items:center;justify-content:flex-start;gap:10px;pointer-events:all;overflow-y:auto;overflow-x:hidden;padding:22px 0 32px;scrollbar-width:auto;scrollbar-color:#2c4f78 transparent;}
-#mob-menu-overlay::-webkit-scrollbar,.mob-menu-embed::-webkit-scrollbar,#mob-settings-overlay::-webkit-scrollbar{width:12px;}
-#mob-menu-overlay::-webkit-scrollbar-thumb,.mob-menu-embed::-webkit-scrollbar-thumb,#mob-settings-overlay::-webkit-scrollbar-thumb{background:#2c4f78;border-radius:8px;border:2px solid rgba(5,8,12,0.92);}
+#mob-menu-overlay::-webkit-scrollbar,.mob-menu-embed::-webkit-scrollbar,#mob-settings-embed::-webkit-scrollbar{width:26px;}
+#mob-menu-overlay::-webkit-scrollbar-thumb,.mob-menu-embed::-webkit-scrollbar-thumb,#mob-settings-embed::-webkit-scrollbar-thumb{background:#3e6d9f;border-radius:14px;border:6px solid rgba(5,8,12,0.92);}
 #mob-menu-overlay.open{display:flex;}
 .mob-net-group{display:flex;gap:0;width:220px;flex-shrink:0;}
 .mob-net-half{flex:1;margin:0 !important;padding:10px 2px !important;font-size:9px !important;letter-spacing:0.5px !important;min-width:0 !important;}
@@ -183,9 +197,15 @@ body.is-mobile:not(.is-portrait) #mob-throw-btn{display:flex;}
 .menu-btn-mob{font-family:'Share Tech Mono',monospace;font-size:13px;letter-spacing:2px;padding:10px 32px;border-radius:22px;cursor:pointer;background:rgba(20,30,45,0.9);color:#6ab0d0;border:1px solid #2a5a80;min-width:220px;flex-shrink:0;transition:background .15s,border-color .15s;}
 @media(hover:hover){.menu-btn-mob:hover{background:rgba(30,50,75,0.95);border-color:#4a8ab0;color:#8ad0f0;}.ov-btn:hover{filter:brightness(1.2);}}
 .menu-btn-mob:active{background:rgba(40,70,100,0.95);}
-.mob-menu-embed{max-height:60vh;overflow-y:auto;width:90%;}
-#mob-settings-overlay{display:none;position:fixed;inset:0;z-index:600;background:rgba(5,8,12,0.96);flex-direction:column;align-items:center;justify-content:center;overflow-y:auto;padding:20px 16px;}
+.mob-menu-embed{max-height:60vh;overflow-y:auto;width:94%;padding-right:12px;scrollbar-width:auto;scrollbar-color:#3e6d9f rgba(5,8,12,0.35);}
+#mob-settings-overlay{display:none;position:fixed;inset:0;z-index:600;background:rgba(5,8,12,0.96);flex-direction:column;align-items:center;justify-content:flex-start;overflow:hidden;padding:20px 16px 24px;}
 #mob-settings-overlay.open{display:flex;}
+#mob-settings-body{display:flex;width:min(600px,100%);flex:1;min-height:0;gap:8px;}
+#mob-settings-embed{flex:1;min-width:0;overflow-y:auto;overflow-x:hidden;scrollbar-width:none;touch-action:none;}
+#mob-settings-embed::-webkit-scrollbar{display:none;}
+#mob-settings-scroll{position:relative;flex:0 0 44px;touch-action:none;cursor:pointer;background:rgba(62,109,159,.15);border-radius:6px;}
+#mob-settings-thumb{position:absolute;left:10px;width:24px;min-height:44px;border-radius:6px;background:#3e6d9f;}
+#mob-settings-scroll:focus-visible{outline:2px solid #6ab0d0;}
 #pvp-hud{display:none;position:fixed;bottom:14px;left:50%;transform:translateX(-50%);background:rgba(8,14,22,0.9);border:1px solid #1a3a54;border-radius:20px;padding:5px 12px;z-index:200;align-items:center;gap:10px;font-family:'Share Tech Mono',monospace;font-size:11px;}
 #pvp-hud.visible{display:flex;}
 </style>
@@ -361,6 +381,7 @@ body.is-mobile:not(.is-portrait) #mob-throw-btn{display:flex;}
       <div data-slider="gamespeed,slider.gameSpeed,1,.1,2,.05"></div>
       <div data-slider="camrows,slider.cameraZoom,10,6,24,1"></div>
       <div data-checkbox="followcam,checkbox.followCamera,true"></div>
+      <div data-slider="camedge,slider.cameraEdgeMargin,3.5,.5,6,.5"></div>
       <div data-slider="camlerp,slider.cameraLerp,.25,.003,.8,.001"></div>
       <div data-slider="musicvol,slider.musicVolume,.1,0,1,.05"></div>
       <div data-slider="botcount,slider.botCount,1,0,10,1"></div>
@@ -502,7 +523,6 @@ body.is-mobile:not(.is-portrait) #mob-throw-btn{display:flex;}
   <button id="mob-throw-btn" data-i18n-title="mobile.controls.throw">&#127919;</button>
   <button id="mob-dodge-btn" data-i18n-title="mobile.controls.dodge">💨</button>
   <button id="mob-music-btn" data-i18n-title="mobile.controls.music">🎵</button>
-  <button id="mob-zone-btn" data-i18n-title="mobile.controls.zone">⏺</button>
   <div id="zone-move" class="touch-zone"><div id="move-base" class="stick-base"></div><div id="move-knob" class="stick-knob"></div></div>
   <div id="zone-sword" class="touch-zone"><div id="sword-base" class="stick-base"><div id="sword-knob" class="stick-knob"></div></div></div>
   <div id="fixed-stick-base"><div id="fixed-stick-knob"></div><div id="fixed-stick-reticle"></div></div>
@@ -521,8 +541,11 @@ body.is-mobile:not(.is-portrait) #mob-throw-btn{display:flex;}
 </div>
 
 <div id="mob-settings-overlay">
-  <div style="font-family:'Share Tech Mono',monospace;font-size:13px;color:#6ab0d0;letter-spacing:2px;margin-bottom:16px;" data-i18n="mobile.settingsTitle"></div>
-  <div id="mob-settings-embed" style="width:100%;max-width:400px;"></div>
+  <div style="font-family:'Share Tech Mono',monospace;font-size:13px;color:#6ab0d0;letter-spacing:2px;margin-bottom:16px;" id="mob-settings-title" data-i18n="mobile.settingsTitle"></div>
+  <div id="mob-settings-body">
+    <div id="mob-settings-embed"></div>
+    <div id="mob-settings-scroll" role="scrollbar" tabindex="0" aria-controls="mob-settings-embed" aria-orientation="vertical" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0" aria-labelledby="mob-settings-title"><div id="mob-settings-thumb"></div></div>
+  </div>
   <button id="mob-settings-close" class="menu-btn-mob" style="margin-top:20px;" data-i18n="mobile.settingsClose"></button>
 </div>
 
@@ -840,6 +863,7 @@ body.is-mobile:not(.is-portrait) #mob-throw-btn{display:flex;}
 'slider.gamepadStamFlick': 'Флик геймпада: расход выносливости',
 'slider.gameSpeed': 'Скорость игры (×)',
 'slider.cameraZoom': 'Приближение камеры (клетки)',
+'slider.cameraEdgeMargin': 'Отступ камеры от края (клетки)',
 'slider.cameraLerp': 'Отставание камеры',
 'slider.musicVolume': 'Громкость музыки',
 'slider.botCount': 'Количество ботов',
@@ -1049,7 +1073,6 @@ body.is-mobile:not(.is-portrait) #mob-throw-btn{display:flex;}
     'controls.toggle': 'T — вкл/выкл манекен',
     'controls.rename': 'Enter — переименовать',
     'controls.pause': 'P — пауза',
-    'controls.zone': 'O — зона арены',
     'gamepad.diagnostic.noApi': '🎮 navigator.getGamepads недоступен в этом браузере',
     'gamepad.diagnostic.pressButton': '🎮 Нажмите любую кнопку на геймпаде\n(getGamepads() всё ещё пуст)',
     'gamepad.diagnostic.detectedNotHeld': '🎮 Обнаружен, но не захвачен:\n{devices}',
@@ -1063,9 +1086,6 @@ body.is-mobile:not(.is-portrait) #mob-throw-btn{display:flex;}
     'net.wins.bot': 'Бот',
     'net.wins.seriesWin': '🏆 {name} ВЫИГРАЛ СЕРИЮ!',
     'net.wins.champion': '🏆 {name} ПОБЕДИЛ!',
-    'net.zone.active': 'ЗОНА АКТИВНА',
-    'net.zone.inactive': 'ЗОНА ВЫКЛ',
-    'net.zone.damageSuffix': '🔥',
     'lobby.status.waiting': 'Никого нет. Ожидание...',
     'lobby.status.join': '🔗 Присоединиться',
     'lobby.status.found': '🔗 Найден {name} — подключение...',
@@ -1096,8 +1116,6 @@ body.is-mobile:not(.is-portrait) #mob-throw-btn{display:flex;}
     'main.swing': '⚔ ВЗМАХ',
     'main.hitDamage': '-{damage}HP',
     'main.champion': '🏆 {name} ВЫИГРАЛ СЕРИЮ!',
-    'main.zoneActive': 'ЗОНА АКТИВНА',
-    'main.zoneInactive': 'ЗОНА ВЫКЛ',
     'main.unknownWeapon': 'НЕИЗВЕСТНО',
     'main.shieldNone': 'нет',
     'main.rageActivatedShort': '🔥 ЯРОСТЬ!',
@@ -1244,7 +1262,6 @@ body.is-mobile:not(.is-portrait) #mob-throw-btn{display:flex;}
     'mobile.controls.shield': 'Щит',
     'mobile.controls.shieldFlip': 'Перевернуть щит',
     'mobile.controls.style': 'Стиль',
-    'mobile.controls.zone': 'Зона',
     'mobile.controls.music': 'Музыка',
     'mobile.controls.menu': 'Меню',
     'mobile.controls.quickMatch': 'Быстрый матч',
@@ -1266,7 +1283,6 @@ body.is-mobile:not(.is-portrait) #mob-throw-btn{display:flex;}
     'mobile.toast.shieldChanged': '🛡 Щит изменён',
     'mobile.toast.shieldFlipped': '🔄 Щит перевернут',
     'mobile.toast.styleChanged': '⚔ Стиль изменён',
-    'mobile.toast.zoneToggled': '🌐 Зона переключена',
     'mobile.toast.musicToggled': '🎵 Музыка переключена',
     'mobile.toast.weaponThrown': '🗡 Оружие брошено',
     'mobile.toast.dodge': '💨 Уворот!',
@@ -1410,6 +1426,7 @@ body.is-mobile:not(.is-portrait) #mob-throw-btn{display:flex;}
         spindur: 'Длительность круга',
         gamespeed: 'Скорость игры',
         camrows: 'Масштаб камеры',
+        camedge: 'Отступ края камеры',
         camlerp: 'Отставание камеры',
         musicvol: 'Громкость музыки',
         botcount: 'Количество ботов',
@@ -1495,7 +1512,6 @@ body.is-mobile:not(.is-portrait) #mob-throw-btn{display:flex;}
         '#mob-bot-weapon-btn': 'Оружие бота',
         '#mob-weapon-btn': 'Сменить оружие',
         '#mob-throw-btn': 'Бросить оружие',
-        '#mob-zone-btn': 'Зона арены'
       },
       controls: [
         'WASD — движение игрока',
@@ -1516,8 +1532,6 @@ body.is-mobile:not(.is-portrait) #mob-throw-btn{display:flex;}
         botName: 'Бот',
         seriesChampion: 'ПОБЕДИТЕЛЬ СЕРИИ: {name}!',
         champion: 'ПОБЕДИТЕЛЬ: {name}!',
-        zoneOn: 'ЗОНА АКТИВНА',
-        zoneOff: 'ЗОНА ВЫКЛ',
         lobbyConnect: 'ПОДКЛЮЧЕНИЕ К {name}...',
         spriteMissing: 'Отсутствует файл: {name}',
         shieldPlayer: 'ЩИТ ИГР: {name}',
@@ -1699,14 +1713,13 @@ let H = canvas.height = window.innerHeight;
 let WORLD_W = W, WORLD_H = H;
 let CAM_X = 0, CAM_Y = 0;
 let CAM_SCALE = 1;
-let CAM_FOLLOW_SPEED = 0.25;
 let mouseScreenX = W / 2, mouseScreenY = H / 2;
 
 function updateWorldSize(){
-  const aspect = Math.max(0.1, window.innerWidth / Math.max(1, window.innerHeight));
-  const minWorldH = Math.max(window.innerHeight * 3, 55 * 42);
+  const aspect = Math.max(0.1, W / Math.max(1, H));
+  const minWorldH = Math.max(H * 3, 55 * 42);
   WORLD_H = Math.round(minWorldH);
-  WORLD_W = Math.round(Math.max(window.innerWidth * 3, minWorldH * aspect));
+  WORLD_W = Math.round(Math.max(W * 3, minWorldH * aspect));
 }
 
 function updateCameraScale(){
@@ -1737,49 +1750,136 @@ function updateMouseWorld(){
   mY = p.y;
 }
 
-function updateCamera(dt){
-  updateCameraScale();
-  if(!cb('followcam')){
-    CAM_X = (WORLD_W - W / CAM_SCALE) / 2;
-    CAM_Y = (WORLD_H - H / CAM_SCALE) / 2;
-    clampCamera();
-    updateMouseWorld();
-    return;
+function activeCameraSubjects(){
+  const subjects = [];
+  const seen = new Set();
+  function add(ent){
+    if(!ent || seen.has(ent) || ent.hp <= 0 || ent._awaitingReveal || ent._defeated) return;
+    seen.add(ent);
+    subjects.push(ent);
   }
-  const target = cameraTargetPoint();
-  const targetX = target.x - (W / CAM_SCALE) / 2;
-  const targetY = target.y - (H / CAM_SCALE) / 2;
-  const spd = cameraFollowSpeed(dt || 1 / 60);
-  CAM_X = $.M.lerpDT(CAM_X, targetX, spd, dt || 1 / 60);
-  CAM_Y = $.M.lerpDT(CAM_Y, targetY, spd, dt || 1 / 60);
-  keepCameraContainingPlayer();
+  if(Array.isArray(window.PLAYER_SLOTS)){
+    for(const slot of window.PLAYER_SLOTS){
+      if(slot && slot.source) add(slot.entity);
+    }
+  }
+  add(typeof P !== 'undefined' ? P : null);
+  return subjects;
+}
+
+function clampEntityToCameraView(ent, edgeMargin){
+  if(!ent || !$.M) return;
+  const viewW = W / CAM_SCALE;
+  const viewH = H / CAM_SCALE;
+  const minX = CAM_X + edgeMargin;
+  const maxX = CAM_X + viewW - edgeMargin;
+  const minY = CAM_Y + edgeMargin;
+  const maxY = CAM_Y + viewH - edgeMargin;
+  const prevX = ent.x;
+  const prevY = ent.y;
+  ent.x = $.M.clamp(ent.x, minX, maxX);
+  ent.y = $.M.clamp(ent.y, minY, maxY);
+  if(ent.x !== prevX){
+    if((prevX < minX && ent.vx < 0) || (prevX > maxX && ent.vx > 0)) ent.vx = 0;
+    if((prevX < minX && ent._dvx < 0) || (prevX > maxX && ent._dvx > 0)) ent._dvx = 0;
+  }
+  if(ent.y !== prevY){
+    if((prevY < minY && ent.vy < 0) || (prevY > maxY && ent.vy > 0)) ent.vy = 0;
+    if((prevY < minY && ent._dvy < 0) || (prevY > maxY && ent._dvy > 0)) ent._dvy = 0;
+  }
+}
+
+function enforceCameraCage(){
+  if(!cb('followcam') || !$.M) return;
+  updateCameraScale();
+  const subjects = activeCameraSubjects();
+  if(!subjects.length) return;
+  const viewW = W / CAM_SCALE;
+  const viewH = H / CAM_SCALE;
+  const maxCamX = Math.max(0, WORLD_W - viewW);
+  const maxCamY = Math.max(0, WORLD_H - viewH);
+  const edgeMargin = Math.min(Math.max(CELL_PX * 0.5, (sv('camedge') || 3.5) * CELL_PX), Math.max(CELL_PX * 0.5, Math.min(viewW, viewH) * 0.5 - 1));
+  let minAllowedX = -Infinity, maxAllowedX = Infinity;
+  let minAllowedY = -Infinity, maxAllowedY = Infinity;
+  for(const ent of subjects){
+    minAllowedX = Math.max(minAllowedX, ent.x + edgeMargin - viewW);
+    maxAllowedX = Math.min(maxAllowedX, ent.x - edgeMargin);
+    minAllowedY = Math.max(minAllowedY, ent.y + edgeMargin - viewH);
+    maxAllowedY = Math.min(maxAllowedY, ent.y - edgeMargin);
+  }
+  if(minAllowedX <= maxAllowedX) CAM_X = $.M.clamp(CAM_X, Math.max(0, minAllowedX), Math.min(maxCamX, maxAllowedX));
+  if(minAllowedY <= maxAllowedY) CAM_Y = $.M.clamp(CAM_Y, Math.max(0, minAllowedY), Math.min(maxCamY, maxAllowedY));
   clampCamera();
+  for(const ent of subjects) clampEntityToCameraView(ent, edgeMargin);
   updateMouseWorld();
 }
 
-// Применяет размер viewport и масштаб зоны видимости.
-function cameraTargetPoint(){
-  if(typeof P === 'undefined') return { x: WORLD_W / 2, y: WORLD_H / 2 };
-  const combatBot = cameraCombatBot();
-  if(combatBot){
-    const bp = entityCameraPoint(combatBot);
-    return { x: (P.x + bp.x) * 0.5, y: (P.y + bp.y) * 0.5 };
-  }
-  return { x: P.x + 5, y: P.y - 8 };
+const cameraMotion = {};
+function resetCameraMotion(){
+  Object.assign(cameraMotion, { x: null, y: null, moveTime: 0, idleTime: 0, distance: 0,
+    dirX: 0, dirY: 0, aheadX: 0, aheadY: 0, edgeTime: 0, following: false, centering: false, centerX: false, centerY: false });
 }
+resetCameraMotion();
 
-function cameraCombatBot(){
-  if(typeof P === 'undefined' || (P._cameraCombatUntil || 0) <= GameTime) return null;
-  if(typeof DEATH !== 'undefined' && DEATH && (DEATH.fadeIn || DEATH.pDead || DEATH.dDead)){
-    if(typeof D !== 'undefined' && D && !D._awaitingReveal) return D;
-  }
-  if(typeof D !== 'undefined' && D && D.hp > 0 && !D._defeated) return D;
-  if(typeof ALL_BOTS !== 'undefined'){
-    for(const bot of ALL_BOTS){
-      if(bot && bot.hp > 0 && !bot._defeated) return bot;
+function updateCamera(dt){
+  updateCameraScale();
+  const step = Math.min(0.05, Math.max(0, dt || 1 / 60));
+  if(!cb('followcam')){
+    CAM_X = (WORLD_W - W / CAM_SCALE) / 2;
+    CAM_Y = (WORLD_H - H / CAM_SCALE) / 2;
+    resetCameraMotion();
+  } else if(typeof P !== 'undefined'){
+    const c = cameraMotion;
+    const viewW = W / CAM_SCALE, viewH = H / CAM_SCALE;
+    const dx = c.x === null ? 0 : P.x - c.x;
+    const dy = c.y === null ? 0 : P.y - c.y;
+    c.x = P.x; c.y = P.y;
+    const dist = Math.hypot(dx, dy);
+    const moving = dist > step * 8 && dist < Math.min(viewW, viewH) * 0.5;
+    const edgeMargin = Math.min(Math.max(CELL_PX * 0.5, (sv('camedge') || 3.5) * CELL_PX), Math.max(CELL_PX * 0.5, Math.min(viewW, viewH) * 0.5 - 1));
+    const px = P.x - CAM_X;
+    const py = P.y - CAM_Y;
+    const edgeX = px < edgeMargin ? -1 : (px > viewW - edgeMargin ? 1 : 0);
+    const edgeY = py < edgeMargin ? -1 : (py > viewH - edgeMargin ? 1 : 0);
+    if(edgeX !== 0){
+      const boundX = edgeX < 0 ? P.x - edgeMargin : P.x + edgeMargin - viewW;
+      CAM_X = $.M.clamp(boundX, 0, Math.max(0, WORLD_W - viewW));
+    }
+    if(edgeY !== 0){
+      const boundY = edgeY < 0 ? P.y - edgeMargin : P.y + edgeMargin - viewH;
+      CAM_Y = $.M.clamp(boundY, 0, Math.max(0, WORLD_H - viewH));
+    }
+    const nearEdge = edgeX !== 0 || edgeY !== 0;
+    const movingOutward = moving && ((edgeX !== 0 && dx * edgeX > 0) || (edgeY !== 0 && dy * edgeY > 0));
+    c.edgeTime = nearEdge && movingOutward ? c.edgeTime + step : 0;
+    if(c.edgeTime >= 2){
+      c.centering = true;
+      c.centerX = c.centerX || edgeX !== 0;
+      c.centerY = c.centerY || edgeY !== 0;
+    }
+    if(c.centering){
+      const targetX = $.M.clamp(P.x - viewW / 2, 0, Math.max(0, WORLD_W - viewW));
+      const targetY = $.M.clamp(P.y - viewH / 2, 0, Math.max(0, WORLD_H - viewH));
+      const moveAng = Math.atan2(dy, dx);
+      const aimAligned = moving && Number.isFinite(P.angle) && Math.abs($.M.angDiff(P.angle, moveAng)) <= Math.PI * 70 / 180;
+      const intentBoost = aimAligned ? 2 : 1;
+      const speed = Math.min(0.07, Math.max(0.003, sv('camlerp') || 0.25)) / 3 * intentBoost;
+      const alpha = 1 - Math.pow(1 - speed, step * 60);
+      const maxStep = Math.max(2, Math.min(viewW, viewH) * 0.006 * step * 60 * intentBoost);
+      const nextX = CAM_X + (targetX - CAM_X) * alpha;
+      const nextY = CAM_Y + (targetY - CAM_Y) * alpha;
+      if(c.centerX) CAM_X += $.M.clamp(nextX - CAM_X, -maxStep, maxStep);
+      if(c.centerY) CAM_Y += $.M.clamp(nextY - CAM_Y, -maxStep, maxStep);
+      if(c.centerX && Math.abs(targetX - CAM_X) < 2) c.centerX = false;
+      if(c.centerY && Math.abs(targetY - CAM_Y) < 2) c.centerY = false;
+      if(!c.centerX && !c.centerY){
+        c.centering = false;
+        c.edgeTime = 0;
+      }
     }
   }
-  return null;
+  clampCamera();
+  updateMouseWorld();
 }
 
 function entityCameraPoint(ent){
@@ -1788,25 +1888,6 @@ function entityCameraPoint(ent){
     x: isFinite(ent._pendingSpawnX) ? ent._pendingSpawnX : ent.x,
     y: isFinite(ent._pendingSpawnY) ? ent._pendingSpawnY : ent.y
   };
-}
-
-function cameraFollowSpeed(dt){
-  const normal = Math.max(0.003, sv('camlerp') || 0.25);
-  const desired = cameraCombatBot() ? 0.003 : normal;
-  CAM_FOLLOW_SPEED = $.M.lerpDT(CAM_FOLLOW_SPEED, desired, 0.08, dt || 1 / 60);
-  return CAM_FOLLOW_SPEED;
-}
-
-function keepCameraContainingPlayer(){
-  if(typeof P === 'undefined') return;
-  const viewW = W / CAM_SCALE;
-  const viewH = H / CAM_SCALE;
-  const marginX = 18;
-  const marginY = 18;
-  if(P.x < CAM_X + marginX) CAM_X = P.x - marginX;
-  if(P.x > CAM_X + viewW - marginX) CAM_X = P.x - viewW + marginX;
-  if(P.y < CAM_Y + marginY) CAM_Y = P.y - marginY;
-  if(P.y > CAM_Y + viewH - marginY) CAM_Y = P.y - viewH + marginY;
 }
 
 function factionSpawnPoint(side, index = 0, total = 1){
@@ -1826,6 +1907,7 @@ function factionSpawnPoint(side, index = 0, total = 1){
 }
 
 function snapCameraToPoint(x, y){
+  resetCameraMotion();
   updateCameraScale();
   CAM_X = x - (W / CAM_SCALE) / 2;
   CAM_Y = y - (H / CAM_SCALE) / 2;
@@ -1834,6 +1916,7 @@ function snapCameraToPoint(x, y){
 }
 
 function snapCameraBetweenEntities(a, b){
+  resetCameraMotion();
   updateCameraScale();
   const ap = entityCameraPoint(a);
   const bp = entityCameraPoint(b);
@@ -1869,6 +1952,7 @@ function applyDuelSpawnLayout(){
 }
 
 function snapCameraToTarget(){
+  resetCameraMotion();
   updateCameraScale();
   if(!cb('followcam')){
     CAM_X = (WORLD_W - W / CAM_SCALE) / 2;
@@ -2529,6 +2613,7 @@ bindSlider('unbcombo');
 bindSlider('stamreg');
 bindSlider('gamespeed');
 bindSlider('camrows');
+bindSlider('camedge');
 bindSlider('camlerp');
 bindSlider('botspd');
 bindSlider('botdodgechance');
@@ -4496,6 +4581,16 @@ const WEAPON_TYPES = [
 // Строки, начинающиеся с '#', и пустые строки — игнорируются (комментарии).
 // Если файл не найден/не грузится — остаёмся на встроенных значениях выше.
 const WEAPON_TABLE_URL = PROJECT_PATH_AUDIO + "Source/Talbe/WeaponTalbe.txt";
+const DEFAULT_WEAPON_KEY = 'rapier';
+
+function weaponTypeIndexByKey(key){
+  const idx = WEAPON_TYPES.findIndex(w => w && w.key === key);
+  return idx >= 0 ? idx : 0;
+}
+
+function defaultWeaponTypeIndex(){
+  return weaponTypeIndexByKey(DEFAULT_WEAPON_KEY);
+}
 async function loadWeaponTable(){
   try {
     // cache-bust: без этого браузер может годами отдавать старую закешированную
@@ -4530,6 +4625,8 @@ async function loadWeaponTable(){
     if(parsed.length){
       WEAPON_TYPES.length = 0;
       parsed.forEach(w => WEAPON_TYPES.push(w));
+      if(typeof P !== 'undefined' && P._defaultWeaponKey && P.hasWeapon !== false) setWeapon(P, P._defaultWeaponKey, { keepDefault: true });
+      if(typeof D !== 'undefined' && D._defaultWeaponKey && D.hasWeapon !== false) setWeapon(D, D._defaultWeaponKey, { keepDefault: true });
       console.log('✔ WeaponTalbe.txt загружен, видов оружия:', WEAPON_TYPES.length);
     } else {
       console.warn('⚠ WeaponTalbe.txt пуст или не распознан — используются встроенные параметры оружия');
@@ -4546,7 +4643,12 @@ function weaponDefFor(ent){
 }
 function weaponWeight(ent){
   const d = weaponDefFor(ent);
-  return (d && d.weight != null) ? d.weight : 1.0;
+  let w = (d && d.weight != null) ? d.weight : 1.0;
+  if($.IS(ent, 'spear') && typeof shieldHeld === 'function' && shieldHeld(ent)){
+    const great = WEAPON_TYPES.find(t => t.key === 'greatsword');
+    w = Math.max(w, great && great.weight != null ? great.weight : 1.6);
+  }
+  return w;
 }
 function weaponStaminaMult(ent){
   const d = weaponDefFor(ent);
@@ -4644,7 +4746,13 @@ function weaponReach(ent){
 let DROPPED_WEAPONS = [];
 
 // Экипирует entity оружием типа typeIdx (случайный вариант из папки этого вида)
-function setWeapon(ent, typeIdx) {
+function setWeapon(ent, typeIdx, options) {
+  if (!ent) return;
+  if (typeof typeIdx === 'string') typeIdx = weaponTypeIndexByKey(typeIdx);
+  if (!Number.isFinite(typeIdx)) typeIdx = 0;
+  typeIdx = Math.max(0, Math.min(WEAPON_TYPES.length - 1, typeIdx | 0));
+  options = options || {};
+  if(!options.keepDefault) ent._defaultWeaponKey = null;
   // Drop controller state tied to the previous weapon. In particular, the
   // magic-staff controller writes the angle directly; keeping its state or an
   // old smoothed AI mouse target makes every later weapon twitch.
@@ -8168,6 +8276,12 @@ const P = makeEntity(WORLD_W/2 - 80, WORLD_H/2, 0.8, '#1e4a72', {
 let D = makeEntity(WORLD_W/2 + 110, WORLD_H/2, 0.8, '#4a1a10', {
   stamRegen: 28
 });
+if(typeof setWeapon === 'function'){
+  P._defaultWeaponKey = DEFAULT_WEAPON_KEY;
+  D._defaultWeaponKey = DEFAULT_WEAPON_KEY;
+  setWeapon(P, DEFAULT_WEAPON_KEY, { keepDefault: true });
+  setWeapon(D, DEFAULT_WEAPON_KEY, { keepDefault: true });
+}
 const trailPts = [];
 const SWORD_LEN = 85;
 
@@ -9667,10 +9781,17 @@ function doClash(entA, entB, res, strongSwing){
   // Determine attacker/defender based on atkPts (who is more aggressive)
   const atkr = entA.isAttacker ? entA : entB;
   const defr = entA.isAttacker ? entB : entA;
-  // Deflection: 5-30° depending on attacker's velocity (scaled by deflectMin/deflectMax)
+  function clashLengthRecoilMult(ent){
+    const reach = typeof weaponReach === 'function' ? weaponReach(ent) * sv('swlen') : SWORD_LEN;
+    return $.M.clamp(SWORD_LEN / Math.max(SWORD_LEN, reach), 0.45, 1);
+  }
+
+  // Deflection: longer weapons need less angular rebound, otherwise the tip flies too far.
   const atkForce = Math.abs(atkr.vel);
   const deflectDeg = Math.min(getDynamicDeflectMax(), sv('deflectMin') + atkForce * 20);
-  const deflectRad = deflectDeg * Math.PI / 180;
+  const atkrRecoilMult = clashLengthRecoilMult(atkr);
+  const defrRecoilMult = clashLengthRecoilMult(defr);
+  const deflectRad = deflectDeg * defrRecoilMult * Math.PI / 180;
 
   // ─── DEFLECTION DIRECTION ──────────────────────────────────────
   // Use the impact point (res.px/res.py) relative to defender's pivot to determine
@@ -9710,8 +9831,8 @@ function doClash(entA, entB, res, strongSwing){
 
   // Clash: attacker's weapon goes backward, defender's weapon goes backward too (both rebound)
   const atkSign = atkr.vel >= 0 ? 1 : -1; // +1 = clockwise direction
-  atkr.vel = $.M.clamp(-atkSign * 3.0, -8, 8);  // attacker rebounds
-  defr.vel = $.M.clamp(-atkSign * 1.5, -8, 8);  // defender rebounds slightly less
+  atkr.vel = $.M.clamp(-atkSign * 3.0 * atkrRecoilMult, -8, 8);  // attacker rebounds
+  defr.vel = $.M.clamp(-atkSign * 1.5 * defrRecoilMult, -8, 8);  // defender rebounds slightly less
 
   // ─── KNOCKBACK ──────────────────────────────────────────────────
   // Apply a physical push that separates the two fighters (like a real clash).
@@ -11228,11 +11349,11 @@ function estimateThrowRange(def){
       ai._weaponSeekTimer = undefined; // оружие нашлось — сбрасываем таймер "нет оружия на карте"
       tx = nearest.x; ty = nearest.y;
     } else {
-      // На карте нет вообще никакого оружия — ждём 3-5 сек и выдаём кинжал
+      // На карте нет вообще никакого оружия — ждём 3-5 сек и выдаём меч
       if(ai._weaponSeekTimer === undefined) ai._weaponSeekTimer = rf(3,5);
       ai._weaponSeekTimer -= dt;
       if(ai._weaponSeekTimer <= 0){
-        setWeapon(bot, bot._manualWeaponType !== undefined ? bot._manualWeaponType : 1); // 1 = кинжал
+        setWeapon(bot, bot._manualWeaponType !== undefined ? bot._manualWeaponType : 0); // 0 = меч
         ai._weaponSeekTimer = undefined;
         k.w=k.a=k.s=k.d=false;
         return;
@@ -14008,6 +14129,7 @@ function _drawDummySword(){
 
 
 function drawCursor(){
+  if(window.IS_MOBILE) return;
   if(window._keyboardCrosshairVisible === false) return;
   const cx = mouseScreenX, cy = mouseScreenY;
   ctx.strokeStyle=mDown?'rgba(220,160,60,0.85)':'rgba(100,190,255,0.65)'; ctx.lineWidth=1.5;
@@ -14690,7 +14812,7 @@ const exhBodyMult = isExhausted(P) ? 0.3 : 1.0;
        const exhSwordMult = getMod(P, 'swordSlow', 1);
         
         // ????>? WEAPON WEIGHT — slows turning
-        const baseW = weaponWeight(P);
+        const baseW = Math.max(weaponWeight(P), $.IS(P, 'spear') && $.A.meleeHold(P, mDown) ? 2.1 : 0);
         const isRageActive = (P.rageBuffEnd || 0) > GameTime;
         let effectiveW = baseW;
         if (isRageActive) {
@@ -14946,7 +15068,7 @@ if(dummyOn) {
         }
       }
     }
-    
+    if(typeof enforceCameraCage === 'function') enforceCameraCage();
     updateBalls(dt);
     updateBlood(dt);
     updateFX(dt);
@@ -15044,13 +15166,11 @@ if(dummyOn&&isUnbalanced(D)) drawUnbalancedStars(D);
     drawFX();
     
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-    if(typeof drawZone==='function') drawZone();
     drawCursor();
     if(typeof window._restoreScreenShake==='function') window._restoreScreenShake(window._shakeApplied);
   }
 
   if(typeof updateBloodPools==='function') updateBloodPools(rawDt);
-  if(typeof updateZone==='function') updateZone(rawDt);
   if(typeof NET_SYNC !== 'undefined') NET_SYNC.tick(rawDt);
 
   requestAnimationFrame(loop);
@@ -15430,22 +15550,52 @@ requestAnimationFrame(loop);
   // Sticks and zones are mobile-only (guard inside each block)
   // Menu overlay works on all devices
 
+  let virtualLandscape = false;
+  const nativeApplyCamScale = applyCamScale;
+
+  function mobileViewportSize(){
+    return virtualLandscape
+      ? { w: window.innerHeight, h: window.innerWidth }
+      : { w: window.innerWidth, h: window.innerHeight };
+  }
+
+  applyCamScale = function(){
+    if(!window.IS_MOBILE) return nativeApplyCamScale();
+    const vp = mobileViewportSize();
+    W = canvas.width = vp.w;
+    H = canvas.height = vp.h;
+    canvas.style.width  = W + 'px';
+    canvas.style.height = H + 'px';
+    canvas.style.position = 'fixed';
+    canvas.style.left = '0'; canvas.style.top = '0';
+    updateWorldSize();
+    updateCameraScale();
+    clampCamera();
+    updateMouseWorld();
+  };
+
+  function clientToGamePoint(x, y){
+    if(!virtualLandscape) return { x, y };
+    return { x: y, y: window.innerWidth - x };
+  }
+
   function applyOrientation(){
     const portrait = window.innerHeight > window.innerWidth;
+    virtualLandscape = !!(window.IS_MOBILE && portrait);
     document.body.classList.toggle('is-portrait', portrait);
-    if(!portrait){
-      applyCamScale();
-      applyCanvasSmoothing();
-      arenaDirty = true;
-      initBoxes();
-    }
+    document.body.classList.toggle('virtual-landscape', virtualLandscape);
+    applyCamScale();
+    if(typeof resetCameraMotion === 'function') resetCameraMotion();
+    applyCanvasSmoothing();
+    arenaDirty = true;
+    initBoxes();
   }
-  // Default camera on mobile — 12 cells (more compact than PC)
+  // Default camera on mobile — 10 cells (more compact than PC)
   const camSlider0 = document.getElementById('sl-camrows');
   if(camSlider0){
-    camSlider0.value = 12;
+    camSlider0.value = 10;
     const camLabel0 = document.getElementById('vl-camrows');
-    if(camLabel0) camLabel0.textContent = '12';
+    if(camLabel0) camLabel0.textContent = '10';
   }
 
   // ── AUTO FULLSCREEN ──────────────────────────────────────────────────────
@@ -15617,10 +15767,12 @@ requestAnimationFrame(loop);
     for(const t of e.changedTouches){
       if(t.identifier !== shieldTouchId) continue;
       if(t.identifier === swordId){
-        if(controlMode==='fixed') updateSwordFixed(t.clientX, t.clientY);
-        else updateSword(t.clientX, t.clientY);
+        const gp = clientToGamePoint(t.clientX, t.clientY);
+        if(controlMode==='fixed') updateSwordFixed(gp.x, gp.y);
+        else updateSword(gp.x, gp.y);
       } else if(Date.now() >= shieldSwordUnlockAt && pointInElement(t.clientX, t.clientY, zoneSword)){
-        startSwordTouchFromShield(t);
+        const stp = clientToGamePoint(t.clientX, t.clientY);
+        startSwordTouchFromShield({ identifier:t.identifier, clientX:stp.x, clientY:stp.y });
       }
     }
   }, {passive:false});
@@ -15630,6 +15782,83 @@ requestAnimationFrame(loop);
   const settingsEmbed = document.getElementById('mob-settings-embed');
   const toggleSettingsBtn = document.getElementById('mob-toggle-settings');
   let pausedByMenu = false;
+  const settingsRail = document.getElementById('mob-settings-scroll');
+  const settingsThumb = document.getElementById('mob-settings-thumb');
+  let settingsDrag = null;
+
+  function settingsScrollMax(){
+    return Math.max(0, settingsEmbed.scrollHeight - settingsEmbed.clientHeight);
+  }
+
+  function settingsAxis(el, e){
+    const rect = el.getBoundingClientRect();
+    return virtualLandscape ? rect.right - e.clientX : e.clientY - rect.top;
+  }
+
+  function syncSettingsScroll(){
+    const max = settingsScrollMax();
+    const height = settingsRail.clientHeight;
+    const thumbHeight = Math.min(height, Math.max(44, height * settingsEmbed.clientHeight / Math.max(1, settingsEmbed.scrollHeight)));
+    settingsThumb.style.height = thumbHeight + 'px';
+    settingsThumb.style.top = (max ? settingsEmbed.scrollTop / max * (height - thumbHeight) : 0) + 'px';
+    settingsRail.style.visibility = max > 0 ? 'visible' : 'hidden';
+    settingsRail.setAttribute('aria-valuemax', String(max));
+    settingsRail.setAttribute('aria-valuenow', String(Math.round(settingsEmbed.scrollTop)));
+  }
+
+  function beginSettingsDrag(e, rail){
+    if(e.pointerType === 'mouse' && e.button !== 0) return;
+    if(settingsScrollMax() <= 0 || settingsDrag) return;
+    if(!rail && e.target.closest('input,button,select,textarea,a,label')) return;
+    const el = rail ? settingsRail : settingsEmbed;
+    const pos = settingsAxis(el, e);
+    const travel = Math.max(1, settingsRail.clientHeight - settingsThumb.offsetHeight);
+    if(rail && e.target !== settingsThumb){
+      settingsEmbed.scrollTop = (pos - settingsThumb.offsetHeight / 2) / travel * settingsScrollMax();
+    }
+    settingsDrag = { id: e.pointerId, el, rail, start: pos, scroll: settingsEmbed.scrollTop };
+    el.setPointerCapture(e.pointerId);
+    if(rail) e.preventDefault();
+    syncSettingsScroll();
+  }
+
+  function moveSettingsDrag(e){
+    const d = settingsDrag;
+    if(!d || d.id !== e.pointerId) return;
+    const delta = settingsAxis(d.el, e) - d.start;
+    const travel = Math.max(1, settingsRail.clientHeight - settingsThumb.offsetHeight);
+    settingsEmbed.scrollTop = d.scroll + delta * (d.rail ? settingsScrollMax() / travel : -1);
+    e.preventDefault();
+    syncSettingsScroll();
+  }
+
+  for(const el of [settingsRail, settingsEmbed]){
+    el.addEventListener('pointerdown', e => beginSettingsDrag(e, el === settingsRail));
+    el.addEventListener('pointermove', moveSettingsDrag);
+    for(const type of ['pointerup', 'pointercancel', 'lostpointercapture']){
+      el.addEventListener(type, e => {
+        if(settingsDrag?.id !== e.pointerId) return;
+        settingsDrag = null;
+        if(el.hasPointerCapture(e.pointerId)) el.releasePointerCapture(e.pointerId);
+      });
+    }
+  }
+  settingsRail.addEventListener('keydown', e => {
+    const moves = { ArrowDown: 40, ArrowUp: -40, PageDown: settingsEmbed.clientHeight, PageUp: -settingsEmbed.clientHeight };
+    if(e.key in moves) settingsEmbed.scrollTop += moves[e.key];
+    else if(e.key === 'Home') settingsEmbed.scrollTop = 0;
+    else if(e.key === 'End') settingsEmbed.scrollTop = settingsScrollMax();
+    else return;
+    e.preventDefault();
+  });
+  settingsEmbed.addEventListener('scroll', syncSettingsScroll);
+  const settingsResize = new ResizeObserver(syncSettingsScroll);
+  settingsResize.observe(settingsEmbed);
+  settingsResize.observe(settingsRail);
+  new MutationObserver(() => {
+    for(const child of settingsEmbed.children) settingsResize.observe(child);
+    syncSettingsScroll();
+  }).observe(settingsEmbed, { childList: true, subtree: true });
 
   function doOpenMenu(){
     menuOverlay.classList.add('open');
@@ -15842,7 +16071,6 @@ if(_spiked2 && typeof GameTime!=='undefined'){
       <span style="color:#6ab0d0;">Shift</span> — DODGE<br>
       <span style="color:#6ab0d0;">T</span> — spawn bot<br>
       <span style="color:#6ab0d0;">E</span> — AI on/off<br>
-      <span style="color:#6ab0d0;">O / Щ</span> — arena zone<br>
       <span style="color:#6ab0d0;">Enter</span> — pause menu<br>
       <span style="color:#6ab0d0;">Esc</span> — close menu
     </div>`;
@@ -15916,6 +16144,7 @@ if(_spiked2 && typeof GameTime!=='undefined'){
   // ── LEFT — movement ──────────────────────────────────────────────────────
   // Get zone offset relative to screen (once)
   function getZoneOffset(zone){
+    if(virtualLandscape) return {x: zone.offsetLeft, y: zone.offsetTop};
     const r=zone.getBoundingClientRect();
     return {x:r.left, y:r.top};
   }
@@ -15929,7 +16158,8 @@ if(_spiked2 && typeof GameTime!=='undefined'){
     if(moveId !== null) return;
     moveId = t.identifier;
     const zo = getZoneOffset(zoneMove);
-    moveOrigin = {x: t.clientX - zo.x, y: t.clientY - zo.y};
+    const gp = clientToGamePoint(t.clientX, t.clientY);
+    moveOrigin = {x: gp.x - zo.x, y: gp.y - zo.y};
     updateMoveKnob(0,0);
     moveBase.classList.add('active');
   }, {passive:false});
@@ -15939,8 +16169,9 @@ if(_spiked2 && typeof GameTime!=='undefined'){
     for(const t of e.changedTouches){
       if(t.identifier !== moveId) continue;
       const zo = getZoneOffset(zoneMove);
-      const lx = t.clientX - zo.x;
-      const ly = t.clientY - zo.y;
+      const gp = clientToGamePoint(t.clientX, t.clientY);
+      const lx = gp.x - zo.x;
+      const ly = gp.y - zo.y;
       const dx = lx - moveOrigin.x;
       const dy = ly - moveOrigin.y;
       const dist = Math.hypot(dx,dy);
@@ -15987,8 +16218,9 @@ if(_spiked2 && typeof GameTime!=='undefined'){
   function positionFixedStick(){
     // Bottom-right corner of the screen, with padding
     const r = 65; // half of fixed stick width (130px/2)
-    const x = window.innerWidth - r - 40;
-    const y = window.innerHeight - r - 40;
+    const vp = mobileViewportSize();
+    const x = vp.w - r - 40;
+    const y = vp.h - r - 40;
     fixedStickBase.style.left = x+'px';
     fixedStickBase.style.top  = y+'px';
     fixedStickBase.style.transform = 'translate(-50%,-50%)';
@@ -16028,7 +16260,6 @@ if(_spiked2 && typeof GameTime!=='undefined'){
         Shift — DODGE<br>
         T — spawn bot<br>
         E — AI on/off<br>
-        O/Щ — arena zone<br>
         Enter — menu<br>
         Esc — close
       </div>`;
@@ -16044,6 +16275,17 @@ if(_spiked2 && typeof GameTime!=='undefined'){
   // Unlike floating mode, the stick doesn't move with the finger — it's
   // always in place, and it processes the ANGLE (direction), not offset.
   const FIXED_RETICLE_R = 50; // aim distance from stick center (px, visual)
+  function setMobileAim(angle, strength = 1){
+    const playerScreen = (typeof P !== 'undefined' && typeof worldToScreen === 'function')
+      ? worldToScreen(P.x + 5, P.y - 8)
+      : { x: W / 2, y: H / 2 };
+    const s = Math.max(0, Math.min(1, strength));
+    const aimRadiusScreen = Math.min(W,H) * 0.35 * s;
+    mouseScreenX = playerScreen.x + Math.cos(angle) * aimRadiusScreen;
+    mouseScreenY = playerScreen.y + Math.sin(angle) * aimRadiusScreen;
+    updateMouseWorld();
+  }
+
   function updateSwordFixed(cx, cy){
     const dx = cx - fixedStickOrigin.x;
     const dy = cy - fixedStickOrigin.y;
@@ -16055,17 +16297,15 @@ if(_spiked2 && typeof GameTime!=='undefined'){
     fixedStickKnob.style.left = (65+Math.cos(angle)*knobR)+'px';
     fixedStickKnob.style.top  = (65+Math.sin(angle)*knobR)+'px';
 
-    // Reticle is always at fixed distance FIXED_RETICLE_R, rotates by angle
+    const showReticle = typeof isRangedWeapon === 'function' && typeof P !== 'undefined' && isRangedWeapon(P);
+    fixedStickReticle.style.display = showReticle ? 'block' : 'none';
     fixedStickReticle.style.left = (65+Math.cos(angle)*FIXED_RETICLE_R)+'px';
     fixedStickReticle.style.top  = (65+Math.sin(angle)*FIXED_RETICLE_R)+'px';
 
     // Apply direction to player aiming (mX/mY) — crosshair far from the character
     // at the same angle, distance doesn't depend on finger offset strength (only direction)
     if(dist > 8){ // dead zone to prevent micro-touch jitter
-      const rc = $.POS.root();
-      const aimRadius = Math.min(W,H) / CAM_SCALE * 0.35;
-      mX = rc.x + Math.cos(angle)*aimRadius;
-      mY = rc.y + Math.sin(angle)*aimRadius;
+      setMobileAim(angle, 1);
     }
   }
 
@@ -16109,14 +16349,16 @@ if(_spiked2 && typeof GameTime!=='undefined'){
 
     if(controlMode==='fixed'){
       // Fixed mode: stick is already in place, don't move the base
-      updateSwordFixed(t.clientX, t.clientY);
+      const gp = clientToGamePoint(t.clientX, t.clientY);
+      updateSwordFixed(gp.x, gp.y);
     } else {
       // Floating mode: appears at touch point
-      swordOrigin = {x: t.clientX, y: t.clientY};
+      const gp = clientToGamePoint(t.clientX, t.clientY);
+      swordOrigin = {x: gp.x, y: gp.y};
       swordBase.style.left = swordOrigin.x+'px';
       swordBase.style.top  = swordOrigin.y+'px';
       swordBase.classList.add('active');
-      updateSword(t.clientX, t.clientY);
+      updateSword(gp.x, gp.y);
     }
 
     // Single tap does NOT activate LMB for melee — only controls the sword
@@ -16129,8 +16371,9 @@ if(_spiked2 && typeof GameTime!=='undefined'){
     e.preventDefault();
     for(const t of e.changedTouches){
       if(t.identifier !== swordId) continue;
-      if(controlMode==='fixed') updateSwordFixed(t.clientX, t.clientY);
-      else updateSword(t.clientX, t.clientY);
+      const gp = clientToGamePoint(t.clientX, t.clientY);
+      if(controlMode==='fixed') updateSwordFixed(gp.x, gp.y);
+      else updateSword(gp.x, gp.y);
     }
   }, {passive:false});
 
@@ -16149,13 +16392,9 @@ if(_spiked2 && typeof GameTime!=='undefined'){
     const nx = dist>SWORD_R ? dx/dist*SWORD_R : dx;
     const ny = dist>SWORD_R ? dy/dist*SWORD_R : dy;
     updateSwordKnob(nx,ny);
-
-    const rc = $.POS.root();
-    const aimRadius = Math.min(W,H) / CAM_SCALE * 0.35;
     const normX = nx/SWORD_R, normY = ny/SWORD_R;
     if(Math.hypot(normX,normY) > 0.05){
-      mX = rc.x + normX*aimRadius;
-      mY = rc.y + normY*aimRadius;
+      setMobileAim(Math.atan2(normY, normX), Math.hypot(normX, normY));
     }
   }
 
@@ -16166,8 +16405,17 @@ if(_spiked2 && typeof GameTime!=='undefined'){
     swordBase.style.top  = swordOrigin.y+'px';
   }
 
-  // Prevent scroll/zoom
-  document.addEventListener('touchmove', e => { if(e.cancelable) e.preventDefault(); }, {passive:false});
+  function allowMobileScroll(e){
+    const scroller = e.target && e.target.closest && e.target.closest('#mob-settings-embed,.mob-menu-embed,#mob-menu-overlay');
+    if(!scroller) return false;
+    return scroller.scrollHeight > scroller.clientHeight;
+  }
+
+  // Prevent game scroll/zoom, but keep mobile overlay settings scrollable.
+  document.addEventListener('touchmove', e => {
+    if(allowMobileScroll(e)) return;
+    if(e.cancelable) e.preventDefault();
+  }, {passive:false});
   document.addEventListener('gesturestart', e => e.preventDefault());
 })();
 // ════════════════ END MODULE: MOBILE CONTROLS ═══════════════════════════════
@@ -16462,12 +16710,6 @@ const SHIELD_INFO_TEXT = [
     }
     window.fireDodge(dvx, dvy, bypassCooldown);
   }
-  // Arena zone button
-  document.getElementById('mob-zone-btn')?.addEventListener('touchstart', e=>{
-    e.preventDefault();
-    if(typeof toggleZone==='function') toggleZone();
-  },{passive:false});
-
   // Mobile music button
   const mobMusicBtn=document.getElementById('mob-music-btn');
   if(mobMusicBtn){
@@ -17880,126 +18122,6 @@ function onPvpReset(msg){
   };
 })();
 
-(function(){
-  function netText(key, fallback, vars){
-    return window.I18N ? window.I18N.t(key, vars) : fallback;
-  }
-
-  let _zoneActive = false;
-  let _zoneTimer = 0;
-  const ZONE_GRACE = 5;
-  const ZONE_DMG_P = 4;
-  const ZONE_DMG_D = 2;
-  const ZONE_FADE = 8;
-  let _pOutTime = 0;
-  let _dOutTime = 0;
-
-  function getZoneRadius(){ return H * 0.44; }
-  function getZoneCenter(){ return { x: W / 2, y: H / 2 }; }
-
-  window.zoneActive = function(){ return _zoneActive; };
-
-  window.toggleZone = function(){
-    _zoneActive = !_zoneActive;
-    _zoneTimer = 0;
-    const btn = document.getElementById('mob-zone-btn');
-    if(btn) btn.classList.toggle('active', _zoneActive);
-    if(typeof hitFX !== 'undefined'){
-      $.FX.hit({
-        x: W / 2,
-        y: H / 2 - 60,
-        t: _zoneActive ? netText('net.zone.active', 'ZONE ACTIVE') : netText('net.zone.inactive', 'ZONE OFF'),
-        life: 60,
-        big: true,
-        col: _zoneActive ? '#ffaa30' : '#888'
-      });
-    }
-  };
-
-  window.updateZone = function(dt){
-    if(!_zoneActive) return;
-    _zoneTimer += dt;
-    if(_zoneTimer <= ZONE_GRACE) return;
-
-    const c = getZoneCenter();
-    const r = getZoneRadius();
-    const ZONE_OUT_GRACE = 1.0;
-
-    if(typeof P !== 'undefined'){
-      const d = Math.hypot(P.x - c.x, P.y - c.y);
-      if(d > r){
-        _pOutTime += dt;
-        if(_pOutTime > ZONE_OUT_GRACE){
-          const zoneDmg = Math.round(ZONE_DMG_P * dt);
-          applyDamage(P, zoneDmg, null, {
-            isMagic: false,
-            isExplosion: false,
-            knockbackMult: 0,
-            hitstopFrames: 0,
-            shakePower: 0,
-            textColor: '#ff4444',
-            textSuffix: netText('net.zone.damageSuffix', '🔥'),
-            bloodCount: 2,
-            playSound: true
-          });
-        }
-      } else {
-        _pOutTime = 0;
-      }
-    }
-
-    if(typeof D !== 'undefined' && typeof dummyOn !== 'undefined' && dummyOn && !(typeof NET_SYNC !== 'undefined' && $.NET.active())){
-      const d = Math.hypot(D.x - c.x, D.y - c.y);
-      if(d > r){
-        _dOutTime += dt;
-        if(_dOutTime > ZONE_OUT_GRACE){
-          const zoneDmg = Math.round(ZONE_DMG_D * dt);
-          applyDamage(D, zoneDmg, null, {
-            isMagic: false,
-            isExplosion: false,
-            knockbackMult: 0,
-            hitstopFrames: 0,
-            shakePower: 0,
-            textColor: '#ff4444',
-            textSuffix: netText('net.zone.damageSuffix', '🔥'),
-            bloodCount: 2,
-            playSound: true
-          });
-        }
-      } else {
-        _dOutTime = 0;
-      }
-    }
-  };
-
-  window.drawZone = function(){
-    if(!_zoneActive) return;
-    const fadeProgress = Math.min(1, Math.max(0, (_zoneTimer - ZONE_GRACE) / ZONE_FADE));
-    const maxAlpha = 0.72;
-    const alpha = fadeProgress * maxAlpha;
-    if(alpha < 0.01) return;
-
-    ctx.save();
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    const cx = W / 2;
-    const cy = H / 2;
-    const inner = Math.min(W, H) * 0.38;
-    const outer = Math.hypot(W, H) * 0.62;
-    const grad = ctx.createRadialGradient(cx, cy, inner, cx, cy, outer);
-    grad.addColorStop(0, 'rgba(0,0,0,0)');
-    grad.addColorStop(0.55, `rgba(0,0,0,${alpha * 0.45})`);
-    grad.addColorStop(1, `rgba(0,0,0,${alpha})`);
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, W, H);
-    ctx.restore();
-  };
-
-  document.addEventListener('keydown', e => {
-    if(e.key === 'o' || e.key === 'O' || e.key === 'щ' || e.key === 'Щ'){
-      if(!(typeof gamePaused !== 'undefined' && gamePaused)) window.toggleZone();
-    }
-  });
-})();
 
 (function(){
   window.NET = { get active(){ return $.NET.active(); }, send:m=>$.NET.send(m) };
@@ -18069,7 +18191,7 @@ function onPvpReset(msg){
 //
 // Единственное исключение — несколько ДЕЙСТВИТЕЛЬНО ПУБЛИЧНЫХ функций,
 // которые сама игра явно вывесила на `window.*` как публичный API
-// (window.doDodge, window.toggleZone, window.toggleAI, window.toggleMusic,
+// (window.doDodge, window.toggleAI, window.toggleMusic,
 // window.toggleSwordStyle, window.doResume/doRestart/doOpenSettings) —
 // их вызывать напрямую нормально, это не "лазанье во внутренности",
 // а официальная точка входа, которую сама игра для этого и открыла.
@@ -18106,7 +18228,6 @@ function onPvpReset(msg){
       if (window.beginDodgePress) window.beginDodgePress('GamepadDodge');
       else if (window.doDodge) window.doDodge(true);
     },
-    zoneToggle:  () => window.toggleZone && window.toggleZone(),
     spawnBot:    () => window.toggleAI && window.toggleAI(),
     musicToggle: () => window.toggleMusic && window.toggleMusic(),
   };
@@ -18125,7 +18246,6 @@ function onPvpReset(msg){
       throwWeapon: { index: 4,  action: 'throwWeapon' },
       pause:       { index: 9,  action: 'pause' },
       dpadUp:      { index: 12, action: 'swordStyle' },
-      dpadDown:    { index: 13, action: 'zoneToggle' },
       dpadLeft:    { index: 14, action: 'swapWeapon' },
       dpadRight:   { index: 15, action: 'shieldType' }
     }
@@ -18923,7 +19043,7 @@ function onPvpReset(msg){
 
       const KNOWN_ACTIONS = new Set([
         'attack','dodge','swapWeapon','shield','shieldFlip','shieldType','swordStyle',
-        'throwWeapon','zoneToggle','spawnBot','musicToggle','pause'
+        'throwWeapon','spawnBot','musicToggle','pause'
       ]);
 
       for (const line of lines) {
@@ -18971,7 +19091,6 @@ function onPvpReset(msg){
     swordStyle()  { if (!isAnyMenuOpen()) tapKey(HOTKEY_ACTIONS.swordStyle); },
     throwWeapon() { if (!isAnyMenuOpen()) tapKey(HOTKEY_ACTIONS.throwWeapon); },
     dodge()       { if (!isAnyMenuOpen()) PUBLIC_API_ACTIONS.dodge(); },
-    zoneToggle()  { if (!isAnyMenuOpen()) PUBLIC_API_ACTIONS.zoneToggle(); },
     spawnBot()    { if (!isAnyMenuOpen()) PUBLIC_API_ACTIONS.spawnBot(); },
     musicToggle() { if (!isAnyMenuOpen()) PUBLIC_API_ACTIONS.musicToggle(); },
     pause() {
@@ -19162,6 +19281,12 @@ function onPvpReset(msg){
       // курсора, конфликта нет). Влево/вправо по оси X левого стика.
       const axMoveMenu = CFG.axes.move;
       const moveAX = applyDeadzone(gp.axes[axMoveMenu.x] ?? 0, CFG.deadzoneMove);
+      const moveAY = applyDeadzone(gp.axes[axMoveMenu.y] ?? 0, CFG.deadzoneMove);
+      const settingsEmbed = document.getElementById('mob-settings-embed');
+      const settingsOverlay = document.getElementById('mob-settings-overlay');
+      if (moveAY !== 0 && settingsEmbed && settingsOverlay && window.getComputedStyle(settingsOverlay).display !== 'none') {
+        settingsEmbed.scrollTop += moveAY * dt_menu * 900;
+      }
       if (moveAX !== 0 && hoveredElement && hoveredElement.tagName === 'INPUT' && hoveredElement.type === 'range') {
         adjustSlider(hoveredElement, moveAX * dt_menu * SLIDER_STICK_SPEED);
       }

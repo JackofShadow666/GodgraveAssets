@@ -1,6 +1,28 @@
 // Keeps the legacy gamepad menu layer active, but prevents its direct player-1
 // dodge action when the same physical pad is assigned to another local slot.
 (function(){
+  function shouldBlockPlayerOneGamepadDodge(source){
+    return window.LocalPlayerControls &&
+      window.LocalPlayerControls.getGamepadSlot()>0 &&
+      source === 'GamepadDodge';
+  }
+
+  if(typeof window.beginDodgePress === 'function'){
+    const playerOneBeginDodgePress=window.beginDodgePress;
+    window.beginDodgePress=function(source){
+      if(shouldBlockPlayerOneGamepadDodge(source)) return false;
+      return playerOneBeginDodgePress.apply(this,arguments);
+    };
+  }
+
+  if(typeof window.endDodgePress === 'function'){
+    const playerOneEndDodgePress=window.endDodgePress;
+    window.endDodgePress=function(source){
+      if(shouldBlockPlayerOneGamepadDodge(source)) return false;
+      return playerOneEndDodgePress.apply(this,arguments);
+    };
+  }
+
   if(typeof window.doDodge !== 'function') return;
   const playerOneDodge=window.doDodge;
   window.doDodge=function(){

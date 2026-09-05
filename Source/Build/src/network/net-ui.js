@@ -285,12 +285,6 @@ const SHIELD_INFO_TEXT = [
     }
     window.fireDodge(dvx, dvy, bypassCooldown);
   }
-  // Arena zone button
-  document.getElementById('mob-zone-btn')?.addEventListener('touchstart', e=>{
-    e.preventDefault();
-    if(typeof toggleZone==='function') toggleZone();
-  },{passive:false});
-
   // Mobile music button
   const mobMusicBtn=document.getElementById('mob-music-btn');
   if(mobMusicBtn){

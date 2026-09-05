@@ -43,14 +43,13 @@ let H = canvas.height = window.innerHeight;
 let WORLD_W = W, WORLD_H = H;
 let CAM_X = 0, CAM_Y = 0;
 let CAM_SCALE = 1;
-let CAM_FOLLOW_SPEED = 0.25;
 let mouseScreenX = W / 2, mouseScreenY = H / 2;
 
 function updateWorldSize(){
-  const aspect = Math.max(0.1, window.innerWidth / Math.max(1, window.innerHeight));
-  const minWorldH = Math.max(window.innerHeight * 3, 55 * 42);
+  const aspect = Math.max(0.1, W / Math.max(1, H));
+  const minWorldH = Math.max(H * 3, 55 * 42);
   WORLD_H = Math.round(minWorldH);
-  WORLD_W = Math.round(Math.max(window.innerWidth * 3, minWorldH * aspect));
+  WORLD_W = Math.round(Math.max(W * 3, minWorldH * aspect));
 }
 
 function updateCameraScale(){
@@ -81,76 +80,180 @@ function updateMouseWorld(){
   mY = p.y;
 }
 
-function updateCamera(dt){
-  updateCameraScale();
-  if(!cb('followcam')){
-    CAM_X = (WORLD_W - W / CAM_SCALE) / 2;
-    CAM_Y = (WORLD_H - H / CAM_SCALE) / 2;
-    clampCamera();
-    updateMouseWorld();
-    return;
+function activeCameraSubjects(){
+  const subjects = [];
+  const seen = new Set();
+  function add(ent){
+    if(!ent || seen.has(ent) || ent.hp <= 0 || ent._awaitingReveal || ent._defeated) return;
+    seen.add(ent);
+    subjects.push(ent);
   }
-  const target = cameraTargetPoint();
-  const targetX = target.x - (W / CAM_SCALE) / 2;
-  const targetY = target.y - (H / CAM_SCALE) / 2;
-  const spd = cameraFollowSpeed(dt || 1 / 60);
-  CAM_X = $.M.lerpDT(CAM_X, targetX, spd, dt || 1 / 60);
-  CAM_Y = $.M.lerpDT(CAM_Y, targetY, spd, dt || 1 / 60);
-  keepCameraContainingPlayer();
+  if(Array.isArray(window.PLAYER_SLOTS)){
+    for(const slot of window.PLAYER_SLOTS){
+      if(slot && slot.source) add(slot.entity);
+    }
+  }
+  add(typeof P !== 'undefined' ? P : null);
+  return subjects;
+}
+
+function clampEntityToCameraView(ent, cageMargin){
+  if(!ent || !$.M) return;
+  const viewW = W / CAM_SCALE;
+  const viewH = H / CAM_SCALE;
+  const minX = CAM_X + cageMargin;
+  const maxX = CAM_X + viewW - cageMargin;
+  const minY = CAM_Y + cageMargin;
+  const maxY = CAM_Y + viewH - cageMargin;
+  const prevX = ent.x;
+  const prevY = ent.y;
+  ent.x = $.M.clamp(ent.x, minX, maxX);
+  ent.y = $.M.clamp(ent.y, minY, maxY);
+  if(ent.x !== prevX){
+    if((prevX < minX && ent.vx < 0) || (prevX > maxX && ent.vx > 0)) ent.vx = 0;
+    if((prevX < minX && ent._dvx < 0) || (prevX > maxX && ent._dvx > 0)) ent._dvx = 0;
+  }
+  if(ent.y !== prevY){
+    if((prevY < minY && ent.vy < 0) || (prevY > maxY && ent.vy > 0)) ent.vy = 0;
+    if((prevY < minY && ent._dvy < 0) || (prevY > maxY && ent._dvy > 0)) ent._dvy = 0;
+  }
+}
+
+function enforceCameraCage(){
+  if(!cb('followcam') || !$.M) return;
+  updateCameraScale();
+  const subjects = activeCameraSubjects();
+  if(!subjects.length) return;
+  const viewW = W / CAM_SCALE;
+  const viewH = H / CAM_SCALE;
+  const maxCamX = Math.max(0, WORLD_W - viewW);
+  const maxCamY = Math.max(0, WORLD_H - viewH);
+  const cageMargin = Math.min(CELL_PX * 0.5, Math.max(0, Math.min(viewW, viewH) * 0.5 - 1));
+  let minAllowedX = -Infinity, maxAllowedX = Infinity;
+  let minAllowedY = -Infinity, maxAllowedY = Infinity;
+  for(const ent of subjects){
+    minAllowedX = Math.max(minAllowedX, ent.x + cageMargin - viewW);
+    maxAllowedX = Math.min(maxAllowedX, ent.x - cageMargin);
+    minAllowedY = Math.max(minAllowedY, ent.y + cageMargin - viewH);
+    maxAllowedY = Math.min(maxAllowedY, ent.y - cageMargin);
+  }
+  if(minAllowedX <= maxAllowedX) CAM_X = $.M.clamp(CAM_X, Math.max(0, minAllowedX), Math.min(maxCamX, maxAllowedX));
+  if(minAllowedY <= maxAllowedY) CAM_Y = $.M.clamp(CAM_Y, Math.max(0, minAllowedY), Math.min(maxCamY, maxAllowedY));
   clampCamera();
+  for(const ent of subjects) clampEntityToCameraView(ent, cageMargin);
   updateMouseWorld();
 }
 
-// Применяет размер viewport и масштаб зоны видимости.
-function cameraTargetPoint(){
-  if(typeof P === 'undefined') return { x: WORLD_W / 2, y: WORLD_H / 2 };
-  const combatBot = cameraCombatBot();
-  if(combatBot){
-    const bp = entityCameraPoint(combatBot);
-    return { x: (P.x + bp.x) * 0.5, y: (P.y + bp.y) * 0.5 };
-  }
-  return { x: P.x + 5, y: P.y - 8 };
+const cameraMotion = {};
+function resetCameraMotion(){
+  Object.assign(cameraMotion, { x: null, y: null, moveTime: 0, idleTime: 0, distance: 0,
+    dirX: 0, dirY: 0, aheadX: 0, aheadY: 0, edgeTime: 0, centerRamp: 0, following: false, centering: false, centerX: false, centerY: false, driver: null, driverDirX: 0, driverDirY: 0 });
+  window.DEBUG_CAMERA_DRIVER = null;
 }
+resetCameraMotion();
 
-function cameraCombatBot(){
-  if(typeof P === 'undefined' || (P._cameraCombatUntil || 0) <= GameTime) return null;
-  if(typeof DEATH !== 'undefined' && DEATH && (DEATH.fadeIn || DEATH.pDead || DEATH.dDead)){
-    if(typeof D !== 'undefined' && D && !D._awaitingReveal) return D;
-  }
-  if(typeof D !== 'undefined' && D && D.hp > 0 && !D._defeated) return D;
-  if(typeof ALL_BOTS !== 'undefined'){
-    for(const bot of ALL_BOTS){
-      if(bot && bot.hp > 0 && !bot._defeated) return bot;
+function updateCamera(dt){
+  updateCameraScale();
+  const step = Math.min(0.05, Math.max(0, dt || 1 / 60));
+  if(!cb('followcam')){
+    CAM_X = (WORLD_W - W / CAM_SCALE) / 2;
+    CAM_Y = (WORLD_H - H / CAM_SCALE) / 2;
+    resetCameraMotion();
+  } else if(typeof P !== 'undefined'){
+    const c = cameraMotion;
+    const viewW = W / CAM_SCALE, viewH = H / CAM_SCALE;
+    const edgeMargin = Math.min(Math.max(CELL_PX * 0.5, (sv('camedge') || 3.5) * CELL_PX), Math.max(CELL_PX * 0.5, Math.min(viewW, viewH) * 0.5 - 1));
+    const subjects = activeCameraSubjects();
+    let driver = null;
+    let bestPressure = 0;
+
+    for(const ent of subjects){
+      const prevX = Number.isFinite(ent._camTrackX) ? ent._camTrackX : ent.x;
+      const prevY = Number.isFinite(ent._camTrackY) ? ent._camTrackY : ent.y;
+      const dx = ent.x - prevX;
+      const dy = ent.y - prevY;
+      ent._camTrackX = ent.x;
+      ent._camTrackY = ent.y;
+      const dist = Math.hypot(dx, dy);
+      const moving = dist > step * 8 && dist < Math.min(viewW, viewH) * 0.5;
+      ent._camFrameDx = dx;
+      ent._camFrameDy = dy;
+      ent._camFrameMoving = moving;
+
+      if(c.centering) continue;
+      const px = ent.x - CAM_X;
+      const py = ent.y - CAM_Y;
+      const edgeX = px < edgeMargin ? -1 : (px > viewW - edgeMargin ? 1 : 0);
+      const edgeY = py < edgeMargin ? -1 : (py > viewH - edgeMargin ? 1 : 0);
+      const movingOutward = moving && ((edgeX !== 0 && dx * edgeX > 0) || (edgeY !== 0 && dy * edgeY > 0));
+      if(!movingOutward) continue;
+      const pressureX = edgeX < 0 ? edgeMargin - px : (edgeX > 0 ? px - (viewW - edgeMargin) : 0);
+      const pressureY = edgeY < 0 ? edgeMargin - py : (edgeY > 0 ? py - (viewH - edgeMargin) : 0);
+      const pressure = Math.max(pressureX, pressureY);
+      if(pressure >= bestPressure){
+        bestPressure = pressure;
+        driver = { ent, dx, dy, moving, edgeX, edgeY };
+      }
+    }
+
+    const centerDelay = Math.max(0, sv('camdelay') || 0.5);
+    if(!c.centering){
+      c.edgeTime = driver ? c.edgeTime + step : 0;
+      window.DEBUG_CAMERA_DRIVER = driver ? driver.ent : null;
+      if(driver && c.edgeTime >= centerDelay){
+        c.centering = true;
+        c.centerX = driver.edgeX !== 0;
+        c.centerY = driver.edgeY !== 0;
+        c.driver = driver.ent;
+        c.driverDirX = driver.edgeX;
+        c.driverDirY = driver.edgeY;
+      }
+    }
+
+    if(c.centering){
+      const ent = c.driver || P;
+      const dx = ent._camFrameDx || 0;
+      const dy = ent._camFrameDy || 0;
+      const moving = !!ent._camFrameMoving;
+      const movedOpposite = (c.centerX && c.driverDirX && dx * c.driverDirX < -step * 8) || (c.centerY && c.driverDirY && dy * c.driverDirY < -step * 8);
+      window.DEBUG_CAMERA_DRIVER = ent;
+      if(!moving || movedOpposite){
+        c.centering = false;
+        c.centerX = false;
+        c.centerY = false;
+        c.edgeTime = 0;
+        c.centerRamp = 0;
+        c.driver = null;
+        c.driverDirX = 0;
+        c.driverDirY = 0;
+        window.DEBUG_CAMERA_DRIVER = null;
+      } else {
+        c.edgeTime += step;
+        c.centerRamp = $.M.clamp((c.edgeTime - centerDelay) / 0.75, 0, 1);
+        const targetX = $.M.clamp(ent.x - viewW / 2, 0, Math.max(0, WORLD_W - viewW));
+        const targetY = $.M.clamp(ent.y - viewH / 2, 0, Math.max(0, WORLD_H - viewH));
+        const moveAng = Math.atan2(dy, dx);
+        const aimAligned = Number.isFinite(ent.angle) && Math.abs($.M.angDiff(ent.angle, moveAng)) <= Math.PI * 70 / 180;
+        const intentBoost = aimAligned ? 2 : 1;
+        const speed = Math.min(0.07, Math.max(0.003, sv('camlerp') || 0.25)) / 3 * intentBoost * c.centerRamp;
+        const alpha = 1 - Math.pow(1 - speed, step * 60);
+        const maxStep = Math.max(0.25, Math.min(viewW, viewH) * 0.006 * step * 60 * intentBoost * c.centerRamp);
+        const nextX = CAM_X + (targetX - CAM_X) * alpha;
+        const nextY = CAM_Y + (targetY - CAM_Y) * alpha;
+        if(c.centerX) CAM_X += $.M.clamp(nextX - CAM_X, -maxStep, maxStep);
+        if(c.centerY) CAM_Y += $.M.clamp(nextY - CAM_Y, -maxStep, maxStep);
+      }
     }
   }
-  return null;
+  clampCamera();
+  updateMouseWorld();
 }
-
 function entityCameraPoint(ent){
   if(!ent) return { x: WORLD_W / 2, y: WORLD_H / 2 };
   return {
     x: isFinite(ent._pendingSpawnX) ? ent._pendingSpawnX : ent.x,
     y: isFinite(ent._pendingSpawnY) ? ent._pendingSpawnY : ent.y
   };
-}
-
-function cameraFollowSpeed(dt){
-  const normal = Math.max(0.003, sv('camlerp') || 0.25);
-  const desired = cameraCombatBot() ? 0.003 : normal;
-  CAM_FOLLOW_SPEED = $.M.lerpDT(CAM_FOLLOW_SPEED, desired, 0.08, dt || 1 / 60);
-  return CAM_FOLLOW_SPEED;
-}
-
-function keepCameraContainingPlayer(){
-  if(typeof P === 'undefined') return;
-  const viewW = W / CAM_SCALE;
-  const viewH = H / CAM_SCALE;
-  const marginX = 18;
-  const marginY = 18;
-  if(P.x < CAM_X + marginX) CAM_X = P.x - marginX;
-  if(P.x > CAM_X + viewW - marginX) CAM_X = P.x - viewW + marginX;
-  if(P.y < CAM_Y + marginY) CAM_Y = P.y - marginY;
-  if(P.y > CAM_Y + viewH - marginY) CAM_Y = P.y - viewH + marginY;
 }
 
 function factionSpawnPoint(side, index = 0, total = 1){
@@ -170,6 +273,7 @@ function factionSpawnPoint(side, index = 0, total = 1){
 }
 
 function snapCameraToPoint(x, y){
+  resetCameraMotion();
   updateCameraScale();
   CAM_X = x - (W / CAM_SCALE) / 2;
   CAM_Y = y - (H / CAM_SCALE) / 2;
@@ -178,6 +282,7 @@ function snapCameraToPoint(x, y){
 }
 
 function snapCameraBetweenEntities(a, b){
+  resetCameraMotion();
   updateCameraScale();
   const ap = entityCameraPoint(a);
   const bp = entityCameraPoint(b);
@@ -213,6 +318,7 @@ function applyDuelSpawnLayout(){
 }
 
 function snapCameraToTarget(){
+  resetCameraMotion();
   updateCameraScale();
   if(!cb('followcam')){
     CAM_X = (WORLD_W - W / CAM_SCALE) / 2;

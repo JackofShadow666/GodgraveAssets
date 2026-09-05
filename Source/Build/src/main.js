@@ -502,7 +502,7 @@ const exhBodyMult = isExhausted(P) ? 0.3 : 1.0;
        const exhSwordMult = getMod(P, 'swordSlow', 1);
         
         // ????>? WEAPON WEIGHT — slows turning
-        const baseW = weaponWeight(P);
+        const baseW = Math.max(weaponWeight(P), $.IS(P, 'spear') && $.A.meleeHold(P, mDown) ? 2.1 : 0);
         const isRageActive = (P.rageBuffEnd || 0) > GameTime;
         let effectiveW = baseW;
         if (isRageActive) {
@@ -758,7 +758,7 @@ if(dummyOn) {
         }
       }
     }
-    
+    if(typeof enforceCameraCage === 'function') enforceCameraCage();
     updateBalls(dt);
     updateBlood(dt);
     updateFX(dt);
@@ -856,13 +856,11 @@ if(dummyOn&&isUnbalanced(D)) drawUnbalancedStars(D);
     drawFX();
     
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-    if(typeof drawZone==='function') drawZone();
     drawCursor();
     if(typeof window._restoreScreenShake==='function') window._restoreScreenShake(window._shakeApplied);
   }
 
   if(typeof updateBloodPools==='function') updateBloodPools(rawDt);
-  if(typeof updateZone==='function') updateZone(rawDt);
   if(typeof NET_SYNC !== 'undefined') NET_SYNC.tick(rawDt);
 
   requestAnimationFrame(loop);

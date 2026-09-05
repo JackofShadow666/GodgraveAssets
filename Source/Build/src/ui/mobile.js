@@ -9,22 +9,52 @@
   // Sticks and zones are mobile-only (guard inside each block)
   // Menu overlay works on all devices
 
+  let virtualLandscape = false;
+  const nativeApplyCamScale = applyCamScale;
+
+  function mobileViewportSize(){
+    return virtualLandscape
+      ? { w: window.innerHeight, h: window.innerWidth }
+      : { w: window.innerWidth, h: window.innerHeight };
+  }
+
+  applyCamScale = function(){
+    if(!window.IS_MOBILE) return nativeApplyCamScale();
+    const vp = mobileViewportSize();
+    W = canvas.width = vp.w;
+    H = canvas.height = vp.h;
+    canvas.style.width  = W + 'px';
+    canvas.style.height = H + 'px';
+    canvas.style.position = 'fixed';
+    canvas.style.left = '0'; canvas.style.top = '0';
+    updateWorldSize();
+    updateCameraScale();
+    clampCamera();
+    updateMouseWorld();
+  };
+
+  function clientToGamePoint(x, y){
+    if(!virtualLandscape) return { x, y };
+    return { x: y, y: window.innerWidth - x };
+  }
+
   function applyOrientation(){
     const portrait = window.innerHeight > window.innerWidth;
+    virtualLandscape = !!(window.IS_MOBILE && portrait);
     document.body.classList.toggle('is-portrait', portrait);
-    if(!portrait){
-      applyCamScale();
-      applyCanvasSmoothing();
-      arenaDirty = true;
-      initBoxes();
-    }
+    document.body.classList.toggle('virtual-landscape', virtualLandscape);
+    applyCamScale();
+    if(typeof resetCameraMotion === 'function') resetCameraMotion();
+    applyCanvasSmoothing();
+    arenaDirty = true;
+    initBoxes();
   }
-  // Default camera on mobile — 12 cells (more compact than PC)
+  // Default camera on mobile — 10 cells (more compact than PC)
   const camSlider0 = document.getElementById('sl-camrows');
   if(camSlider0){
-    camSlider0.value = 12;
+    camSlider0.value = 10;
     const camLabel0 = document.getElementById('vl-camrows');
-    if(camLabel0) camLabel0.textContent = '12';
+    if(camLabel0) camLabel0.textContent = '10';
   }
 
   // ── AUTO FULLSCREEN ──────────────────────────────────────────────────────
@@ -196,10 +226,12 @@
     for(const t of e.changedTouches){
       if(t.identifier !== shieldTouchId) continue;
       if(t.identifier === swordId){
-        if(controlMode==='fixed') updateSwordFixed(t.clientX, t.clientY);
-        else updateSword(t.clientX, t.clientY);
+        const gp = clientToGamePoint(t.clientX, t.clientY);
+        if(controlMode==='fixed') updateSwordFixed(gp.x, gp.y);
+        else updateSword(gp.x, gp.y);
       } else if(Date.now() >= shieldSwordUnlockAt && pointInElement(t.clientX, t.clientY, zoneSword)){
-        startSwordTouchFromShield(t);
+        const stp = clientToGamePoint(t.clientX, t.clientY);
+        startSwordTouchFromShield({ identifier:t.identifier, clientX:stp.x, clientY:stp.y });
       }
     }
   }, {passive:false});
@@ -209,6 +241,83 @@
   const settingsEmbed = document.getElementById('mob-settings-embed');
   const toggleSettingsBtn = document.getElementById('mob-toggle-settings');
   let pausedByMenu = false;
+  const settingsRail = document.getElementById('mob-settings-scroll');
+  const settingsThumb = document.getElementById('mob-settings-thumb');
+  let settingsDrag = null;
+
+  function settingsScrollMax(){
+    return Math.max(0, settingsEmbed.scrollHeight - settingsEmbed.clientHeight);
+  }
+
+  function settingsAxis(el, e){
+    const rect = el.getBoundingClientRect();
+    return virtualLandscape ? rect.right - e.clientX : e.clientY - rect.top;
+  }
+
+  function syncSettingsScroll(){
+    const max = settingsScrollMax();
+    const height = settingsRail.clientHeight;
+    const thumbHeight = Math.min(height, Math.max(44, height * settingsEmbed.clientHeight / Math.max(1, settingsEmbed.scrollHeight)));
+    settingsThumb.style.height = thumbHeight + 'px';
+    settingsThumb.style.top = (max ? settingsEmbed.scrollTop / max * (height - thumbHeight) : 0) + 'px';
+    settingsRail.style.visibility = max > 0 ? 'visible' : 'hidden';
+    settingsRail.setAttribute('aria-valuemax', String(max));
+    settingsRail.setAttribute('aria-valuenow', String(Math.round(settingsEmbed.scrollTop)));
+  }
+
+  function beginSettingsDrag(e, rail){
+    if(e.pointerType === 'mouse' && e.button !== 0) return;
+    if(settingsScrollMax() <= 0 || settingsDrag) return;
+    if(!rail && e.target.closest('input,button,select,textarea,a,label')) return;
+    const el = rail ? settingsRail : settingsEmbed;
+    const pos = settingsAxis(el, e);
+    const travel = Math.max(1, settingsRail.clientHeight - settingsThumb.offsetHeight);
+    if(rail && e.target !== settingsThumb){
+      settingsEmbed.scrollTop = (pos - settingsThumb.offsetHeight / 2) / travel * settingsScrollMax();
+    }
+    settingsDrag = { id: e.pointerId, el, rail, start: pos, scroll: settingsEmbed.scrollTop };
+    el.setPointerCapture(e.pointerId);
+    if(rail) e.preventDefault();
+    syncSettingsScroll();
+  }
+
+  function moveSettingsDrag(e){
+    const d = settingsDrag;
+    if(!d || d.id !== e.pointerId) return;
+    const delta = settingsAxis(d.el, e) - d.start;
+    const travel = Math.max(1, settingsRail.clientHeight - settingsThumb.offsetHeight);
+    settingsEmbed.scrollTop = d.scroll + delta * (d.rail ? settingsScrollMax() / travel : -1);
+    e.preventDefault();
+    syncSettingsScroll();
+  }
+
+  for(const el of [settingsRail, settingsEmbed]){
+    el.addEventListener('pointerdown', e => beginSettingsDrag(e, el === settingsRail));
+    el.addEventListener('pointermove', moveSettingsDrag);
+    for(const type of ['pointerup', 'pointercancel', 'lostpointercapture']){
+      el.addEventListener(type, e => {
+        if(settingsDrag?.id !== e.pointerId) return;
+        settingsDrag = null;
+        if(el.hasPointerCapture(e.pointerId)) el.releasePointerCapture(e.pointerId);
+      });
+    }
+  }
+  settingsRail.addEventListener('keydown', e => {
+    const moves = { ArrowDown: 40, ArrowUp: -40, PageDown: settingsEmbed.clientHeight, PageUp: -settingsEmbed.clientHeight };
+    if(e.key in moves) settingsEmbed.scrollTop += moves[e.key];
+    else if(e.key === 'Home') settingsEmbed.scrollTop = 0;
+    else if(e.key === 'End') settingsEmbed.scrollTop = settingsScrollMax();
+    else return;
+    e.preventDefault();
+  });
+  settingsEmbed.addEventListener('scroll', syncSettingsScroll);
+  const settingsResize = new ResizeObserver(syncSettingsScroll);
+  settingsResize.observe(settingsEmbed);
+  settingsResize.observe(settingsRail);
+  new MutationObserver(() => {
+    for(const child of settingsEmbed.children) settingsResize.observe(child);
+    syncSettingsScroll();
+  }).observe(settingsEmbed, { childList: true, subtree: true });
 
   function doOpenMenu(){
     menuOverlay.classList.add('open');
@@ -421,7 +530,6 @@ if(_spiked2 && typeof GameTime!=='undefined'){
       <span style="color:#6ab0d0;">Shift</span> — DODGE<br>
       <span style="color:#6ab0d0;">T</span> — spawn bot<br>
       <span style="color:#6ab0d0;">E</span> — AI on/off<br>
-      <span style="color:#6ab0d0;">O / Щ</span> — arena zone<br>
       <span style="color:#6ab0d0;">Enter</span> — pause menu<br>
       <span style="color:#6ab0d0;">Esc</span> — close menu
     </div>`;
@@ -495,6 +603,7 @@ if(_spiked2 && typeof GameTime!=='undefined'){
   // ── LEFT — movement ──────────────────────────────────────────────────────
   // Get zone offset relative to screen (once)
   function getZoneOffset(zone){
+    if(virtualLandscape) return {x: zone.offsetLeft, y: zone.offsetTop};
     const r=zone.getBoundingClientRect();
     return {x:r.left, y:r.top};
   }
@@ -508,7 +617,8 @@ if(_spiked2 && typeof GameTime!=='undefined'){
     if(moveId !== null) return;
     moveId = t.identifier;
     const zo = getZoneOffset(zoneMove);
-    moveOrigin = {x: t.clientX - zo.x, y: t.clientY - zo.y};
+    const gp = clientToGamePoint(t.clientX, t.clientY);
+    moveOrigin = {x: gp.x - zo.x, y: gp.y - zo.y};
     updateMoveKnob(0,0);
     moveBase.classList.add('active');
   }, {passive:false});
@@ -518,8 +628,9 @@ if(_spiked2 && typeof GameTime!=='undefined'){
     for(const t of e.changedTouches){
       if(t.identifier !== moveId) continue;
       const zo = getZoneOffset(zoneMove);
-      const lx = t.clientX - zo.x;
-      const ly = t.clientY - zo.y;
+      const gp = clientToGamePoint(t.clientX, t.clientY);
+      const lx = gp.x - zo.x;
+      const ly = gp.y - zo.y;
       const dx = lx - moveOrigin.x;
       const dy = ly - moveOrigin.y;
       const dist = Math.hypot(dx,dy);
@@ -566,8 +677,9 @@ if(_spiked2 && typeof GameTime!=='undefined'){
   function positionFixedStick(){
     // Bottom-right corner of the screen, with padding
     const r = 65; // half of fixed stick width (130px/2)
-    const x = window.innerWidth - r - 40;
-    const y = window.innerHeight - r - 40;
+    const vp = mobileViewportSize();
+    const x = vp.w - r - 40;
+    const y = vp.h - r - 40;
     fixedStickBase.style.left = x+'px';
     fixedStickBase.style.top  = y+'px';
     fixedStickBase.style.transform = 'translate(-50%,-50%)';
@@ -607,7 +719,6 @@ if(_spiked2 && typeof GameTime!=='undefined'){
         Shift — DODGE<br>
         T — spawn bot<br>
         E — AI on/off<br>
-        O/Щ — arena zone<br>
         Enter — menu<br>
         Esc — close
       </div>`;
@@ -623,6 +734,17 @@ if(_spiked2 && typeof GameTime!=='undefined'){
   // Unlike floating mode, the stick doesn't move with the finger — it's
   // always in place, and it processes the ANGLE (direction), not offset.
   const FIXED_RETICLE_R = 50; // aim distance from stick center (px, visual)
+  function setMobileAim(angle, strength = 1){
+    const playerScreen = (typeof P !== 'undefined' && typeof worldToScreen === 'function')
+      ? worldToScreen(P.x + 5, P.y - 8)
+      : { x: W / 2, y: H / 2 };
+    const s = Math.max(0, Math.min(1, strength));
+    const aimRadiusScreen = Math.min(W,H) * 0.35 * s;
+    mouseScreenX = playerScreen.x + Math.cos(angle) * aimRadiusScreen;
+    mouseScreenY = playerScreen.y + Math.sin(angle) * aimRadiusScreen;
+    updateMouseWorld();
+  }
+
   function updateSwordFixed(cx, cy){
     const dx = cx - fixedStickOrigin.x;
     const dy = cy - fixedStickOrigin.y;
@@ -634,17 +756,15 @@ if(_spiked2 && typeof GameTime!=='undefined'){
     fixedStickKnob.style.left = (65+Math.cos(angle)*knobR)+'px';
     fixedStickKnob.style.top  = (65+Math.sin(angle)*knobR)+'px';
 
-    // Reticle is always at fixed distance FIXED_RETICLE_R, rotates by angle
+    const showReticle = typeof isRangedWeapon === 'function' && typeof P !== 'undefined' && isRangedWeapon(P);
+    fixedStickReticle.style.display = showReticle ? 'block' : 'none';
     fixedStickReticle.style.left = (65+Math.cos(angle)*FIXED_RETICLE_R)+'px';
     fixedStickReticle.style.top  = (65+Math.sin(angle)*FIXED_RETICLE_R)+'px';
 
     // Apply direction to player aiming (mX/mY) — crosshair far from the character
     // at the same angle, distance doesn't depend on finger offset strength (only direction)
     if(dist > 8){ // dead zone to prevent micro-touch jitter
-      const rc = $.POS.root();
-      const aimRadius = Math.min(W,H) / CAM_SCALE * 0.35;
-      mX = rc.x + Math.cos(angle)*aimRadius;
-      mY = rc.y + Math.sin(angle)*aimRadius;
+      setMobileAim(angle, 1);
     }
   }
 
@@ -688,14 +808,16 @@ if(_spiked2 && typeof GameTime!=='undefined'){
 
     if(controlMode==='fixed'){
       // Fixed mode: stick is already in place, don't move the base
-      updateSwordFixed(t.clientX, t.clientY);
+      const gp = clientToGamePoint(t.clientX, t.clientY);
+      updateSwordFixed(gp.x, gp.y);
     } else {
       // Floating mode: appears at touch point
-      swordOrigin = {x: t.clientX, y: t.clientY};
+      const gp = clientToGamePoint(t.clientX, t.clientY);
+      swordOrigin = {x: gp.x, y: gp.y};
       swordBase.style.left = swordOrigin.x+'px';
       swordBase.style.top  = swordOrigin.y+'px';
       swordBase.classList.add('active');
-      updateSword(t.clientX, t.clientY);
+      updateSword(gp.x, gp.y);
     }
 
     // Single tap does NOT activate LMB for melee — only controls the sword
@@ -708,8 +830,9 @@ if(_spiked2 && typeof GameTime!=='undefined'){
     e.preventDefault();
     for(const t of e.changedTouches){
       if(t.identifier !== swordId) continue;
-      if(controlMode==='fixed') updateSwordFixed(t.clientX, t.clientY);
-      else updateSword(t.clientX, t.clientY);
+      const gp = clientToGamePoint(t.clientX, t.clientY);
+      if(controlMode==='fixed') updateSwordFixed(gp.x, gp.y);
+      else updateSword(gp.x, gp.y);
     }
   }, {passive:false});
 
@@ -728,13 +851,9 @@ if(_spiked2 && typeof GameTime!=='undefined'){
     const nx = dist>SWORD_R ? dx/dist*SWORD_R : dx;
     const ny = dist>SWORD_R ? dy/dist*SWORD_R : dy;
     updateSwordKnob(nx,ny);
-
-    const rc = $.POS.root();
-    const aimRadius = Math.min(W,H) / CAM_SCALE * 0.35;
     const normX = nx/SWORD_R, normY = ny/SWORD_R;
     if(Math.hypot(normX,normY) > 0.05){
-      mX = rc.x + normX*aimRadius;
-      mY = rc.y + normY*aimRadius;
+      setMobileAim(Math.atan2(normY, normX), Math.hypot(normX, normY));
     }
   }
 
@@ -745,8 +864,17 @@ if(_spiked2 && typeof GameTime!=='undefined'){
     swordBase.style.top  = swordOrigin.y+'px';
   }
 
-  // Prevent scroll/zoom
-  document.addEventListener('touchmove', e => { if(e.cancelable) e.preventDefault(); }, {passive:false});
+  function allowMobileScroll(e){
+    const scroller = e.target && e.target.closest && e.target.closest('#mob-settings-embed,.mob-menu-embed,#mob-menu-overlay');
+    if(!scroller) return false;
+    return scroller.scrollHeight > scroller.clientHeight;
+  }
+
+  // Prevent game scroll/zoom, but keep mobile overlay settings scrollable.
+  document.addEventListener('touchmove', e => {
+    if(allowMobileScroll(e)) return;
+    if(e.cancelable) e.preventDefault();
+  }, {passive:false});
   document.addEventListener('gesturestart', e => e.preventDefault());
 })();
 // ════════════════ END MODULE: MOBILE CONTROLS ═══════════════════════════════

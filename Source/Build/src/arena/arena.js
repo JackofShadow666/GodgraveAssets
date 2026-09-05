@@ -1209,7 +1209,23 @@ function drawChar(ent, cscl, torsoCol, headCol){
   }
   ctx.restore();
   drawOverheadHealthBar(ent, cscl);
+  drawCameraDriverDebug(ent, cscl);
   drawStatusEffects(ent, cscl);
+}
+
+function drawCameraDriverDebug(ent, cscl){
+  if(!ent || window.DEBUG_CAMERA_DRIVER !== ent) return;
+  const center = $.POS.body(ent);
+  const y = center.y - 52 * cscl;
+  ctx.save();
+  ctx.lineWidth = 2 / CAM_SCALE;
+  ctx.strokeStyle = '#40e8ff';
+  ctx.fillStyle = 'rgba(64,232,255,0.18)';
+  ctx.beginPath();
+  ctx.arc(center.x, y, 7 * cscl, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+  ctx.restore();
 }
 
 function drawOverheadHealthBar(ent, cscl){
@@ -1303,6 +1319,7 @@ function _drawDummySword(){
 
 
 function drawCursor(){
+  if(window.IS_MOBILE) return;
   if(window._keyboardCrosshairVisible === false) return;
   const cx = mouseScreenX, cy = mouseScreenY;
   ctx.strokeStyle=mDown?'rgba(220,160,60,0.85)':'rgba(100,190,255,0.65)'; ctx.lineWidth=1.5;

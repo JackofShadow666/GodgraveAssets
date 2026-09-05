@@ -42,11 +42,11 @@ First read for most `src/` tasks. Use it to avoid broad project searches.
 - `src/input/gamepad-adapter.js`: gamepad integration adapter over existing controls.
 - `src/input/gamepad-controls.js`: full gamepad polling, synthetic DOM input, menu cursor, virtual keyboard.
 - `src/input/keyboard-layout.js`: keyboard code aliases for EN/RU layouts.
-- `src/ui/mobile.js`: mobile controls, mobile menu flow, mobile camera/zone/buttons; can call gameplay actions.
+- `src/ui/mobile.js`: mobile controls, virtual landscape, settings pointer scrollbar, mobile menu/buttons; can call gameplay actions.
 
 ## Core
 
-- `src/core/engine.js`: canvas, viewport, world/camera coordinates, base input state, global runtime primitives.
+- `src/core/engine.js`: canvas, viewport, world/camera coordinates, base input state, edge-triggered camera tracking, global runtime primitives.
 - `src/core/settings.js`: settings definitions/bindings, saved values, `sv(...)` access.
 - `src/core/math.js`: geometry, interpolation, angle/vector helpers.
 - `src/core/entity.js`: entity helpers/shared structure.
@@ -66,7 +66,7 @@ First read for most `src/` tasks. Use it to avoid broad project searches.
 - `src/network/net-sync.js`: PvP state sync, reset flow, remote entity updates.
 - `src/network/net-ui.js`: profile persistence, overlays, network menu, friend list UI.
 - `src/network/net-lobby.js`: quick lobby discovery and auto-connect flow.
-- `src/network/net-effects.js`: online dodge/hitstop/wins/blood/zone compatibility hooks.
+- `src/network/net-effects.js`: online dodge/hitstop/wins/blood compatibility hooks.
 
 ## Fast Routes
 

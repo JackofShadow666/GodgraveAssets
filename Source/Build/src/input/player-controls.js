@@ -116,10 +116,20 @@
     let dx=moveX, dy=moveY;
     if(Math.hypot(dx,dy) < 0.1){ dx=Math.cos(entity.angle); dy=Math.sin(entity.angle); }
     const len=Math.hypot(dx,dy)||1;
-    entity._dvx=dx/len*8; entity._dvy=dy/len*8;
+    const dirX=dx/len, dirY=dy/len;
+    entity._dvx=dirX*8; entity._dvy=dirY*8;
     entity._dodgeCD=GameTime+0.7;
     entity._dodgeActiveUntil=GameTime+0.3;
     if(typeof drainStamina==='function') drainStamina(entity,30);
+    if(typeof spawnDust==='function'){
+      for(let i=0;i<8;i++) spawnDust(entity.x+Math.random()*24-12,entity.y+Math.random()*12,-dirX*8,-dirY*8);
+    }
+    if(typeof $!=='undefined' && $.S) $.S.play('dodgeSound');
+    if(typeof DODGE_TRAIL==='undefined') window.DODGE_TRAIL=[];
+    entity._manualDodgeTrailFrames=12;
+    if(typeof $!=='undefined' && $.FX){
+      $.FX.hit({x:entity.x,y:entity.y-30,t:(window.I18N ? window.I18N.t('common.dodge') : 'DODGE'),life:35,big:false,col:'rgba(200,200,200,0.6)'});
+    }
   }
 
   function manualFlickStaminaCost(){
@@ -388,6 +398,17 @@
 
   function afterEntityUpdate(entity,dt){
     if(!entity || !entity._manualControl) return;
+    if(entity._manualDodgeTrailFrames > 0){
+      entity._manualDodgeTrailFrames--;
+      if(typeof DODGE_TRAIL==='undefined') window.DODGE_TRAIL=[];
+      DODGE_TRAIL.push({
+        x:entity.x+Math.random()*10-5,
+        y:entity.y+Math.random()*10-5,
+        life:14,
+        maxLife:14,
+        r:7
+      });
+    }
     const gestureAngle=Number.isFinite(entity._manualAimAngle) ? entity._manualAimAngle : entity.angle;
     updateManualCombatStaminaV2(entity,!!entity._manualAttackInput,gestureAngle,dt,entity._manualAimVelocity);
   }

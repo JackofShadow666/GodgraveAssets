@@ -191,6 +191,8 @@ bindSlider('unbcombo');
 bindSlider('stamreg');
 bindSlider('gamespeed');
 bindSlider('camrows');
+bindSlider('camedge');
+bindSlider('camdelay');
 bindSlider('camlerp');
 bindSlider('botspd');
 bindSlider('botdodgechance');

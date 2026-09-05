@@ -90,6 +90,12 @@ const P = makeEntity(WORLD_W/2 - 80, WORLD_H/2, 0.8, '#1e4a72', {
 let D = makeEntity(WORLD_W/2 + 110, WORLD_H/2, 0.8, '#4a1a10', {
   stamRegen: 28
 });
+if(typeof setWeapon === 'function'){
+  P._defaultWeaponKey = DEFAULT_WEAPON_KEY;
+  D._defaultWeaponKey = DEFAULT_WEAPON_KEY;
+  setWeapon(P, DEFAULT_WEAPON_KEY, { keepDefault: true });
+  setWeapon(D, DEFAULT_WEAPON_KEY, { keepDefault: true });
+}
 const trailPts = [];
 const SWORD_LEN = 85;
 
@@ -1589,10 +1595,17 @@ function doClash(entA, entB, res, strongSwing){
   // Determine attacker/defender based on atkPts (who is more aggressive)
   const atkr = entA.isAttacker ? entA : entB;
   const defr = entA.isAttacker ? entB : entA;
-  // Deflection: 5-30° depending on attacker's velocity (scaled by deflectMin/deflectMax)
+  function clashLengthRecoilMult(ent){
+    const reach = typeof weaponReach === 'function' ? weaponReach(ent) * sv('swlen') : SWORD_LEN;
+    return $.M.clamp(SWORD_LEN / Math.max(SWORD_LEN, reach), 0.45, 1);
+  }
+
+  // Deflection: longer weapons need less angular rebound, otherwise the tip flies too far.
   const atkForce = Math.abs(atkr.vel);
   const deflectDeg = Math.min(getDynamicDeflectMax(), sv('deflectMin') + atkForce * 20);
-  const deflectRad = deflectDeg * Math.PI / 180;
+  const atkrRecoilMult = clashLengthRecoilMult(atkr);
+  const defrRecoilMult = clashLengthRecoilMult(defr);
+  const deflectRad = deflectDeg * defrRecoilMult * Math.PI / 180;
 
   // ─── DEFLECTION DIRECTION ──────────────────────────────────────
   // Use the impact point (res.px/res.py) relative to defender's pivot to determine
@@ -1632,8 +1645,8 @@ function doClash(entA, entB, res, strongSwing){
 
   // Clash: attacker's weapon goes backward, defender's weapon goes backward too (both rebound)
   const atkSign = atkr.vel >= 0 ? 1 : -1; // +1 = clockwise direction
-  atkr.vel = $.M.clamp(-atkSign * 3.0, -8, 8);  // attacker rebounds
-  defr.vel = $.M.clamp(-atkSign * 1.5, -8, 8);  // defender rebounds slightly less
+  atkr.vel = $.M.clamp(-atkSign * 3.0 * atkrRecoilMult, -8, 8);  // attacker rebounds
+  defr.vel = $.M.clamp(-atkSign * 1.5 * defrRecoilMult, -8, 8);  // defender rebounds slightly less
 
   // ─── KNOCKBACK ──────────────────────────────────────────────────
   // Apply a physical push that separates the two fighters (like a real clash).

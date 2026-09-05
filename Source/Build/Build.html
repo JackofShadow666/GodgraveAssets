@@ -85,7 +85,7 @@ canvas{display:block;position:fixed;top:0;left:0;cursor:none;}
 .game-overlay{display:none;position:fixed;inset:0;z-index:5000;background:rgba(5,8,12,0.97);flex-direction:column;align-items:center;justify-content:flex-start;gap:10px;padding:16px 12px 30px;overflow-y:auto;overflow-x:hidden;font-family:'Share Tech Mono',monospace;cursor:default;pointer-events:all;-webkit-user-select:text;user-select:text;box-sizing:border-box;}
 @media(min-height:600px){#name-overlay.open{justify-content:center;}}
 .game-overlay.open{display:flex;}
-body.menu-open canvas,body.menu-open #hud,body.menu-open #pvp-hud,body.menu-open #badge,body.menu-open #adisplay,body.menu-open #hint,body.menu-open #panel,body.menu-open #dtoggle,body.menu-open #mobile-ctrl,body.menu-open #mob-spawn-btn,body.menu-open #mob-menu-btn,body.menu-open #mob-dodge-btn,body.menu-open #mob-style-btn,body.menu-open #mob-shield-flip-btn,body.menu-open #mob-weapon-btn,body.menu-open #mob-throw-btn,body.menu-open #mob-bot-shield-btn,body.menu-open #mob-bot-weapon-btn,body.menu-open #mob-music-btn,body.menu-open #mob-zone-btn{visibility:hidden !important;}
+body.menu-open canvas,body.menu-open #hud,body.menu-open #pvp-hud,body.menu-open #badge,body.menu-open #adisplay,body.menu-open #hint,body.menu-open #panel,body.menu-open #dtoggle,body.menu-open #mobile-ctrl,body.menu-open #mob-spawn-btn,body.menu-open #mob-menu-btn,body.menu-open #mob-dodge-btn,body.menu-open #mob-style-btn,body.menu-open #mob-shield-flip-btn,body.menu-open #mob-weapon-btn,body.menu-open #mob-throw-btn,body.menu-open #mob-bot-shield-btn,body.menu-open #mob-bot-weapon-btn,body.menu-open #mob-music-btn{visibility:hidden !important;}
 
 .ov-title{color:#6ab0d0;font-size:15px;letter-spacing:4px;text-transform:uppercase;margin:0 0 4px;}
 .ov-sub{color:#2a5a70;font-size:10px;letter-spacing:2px;margin:0;}
@@ -120,22 +120,38 @@ body.menu-open canvas,body.menu-open #hud,body.menu-open #pvp-hud,body.menu-open
 
 /* ===== MOBILE ===== */
 #mobile-ctrl{display:none;position:fixed;inset:0;pointer-events:none;z-index:100;}
-body.is-mobile:not(.is-portrait) #mobile-ctrl{display:block;}
+body.is-mobile #mobile-ctrl{display:block;}
 body.is-mobile #panel{display:none !important;}
 body.is-mobile.mob-pregame canvas,body.is-mobile.mob-pregame #hud,body.is-mobile.mob-pregame #mobile-ctrl,body.is-mobile.mob-pregame #adisplay,body.is-mobile.mob-pregame #hint,body.is-mobile.mob-pregame #dtoggle{visibility:hidden !important;}
 body.is-mobile canvas{width:100vw !important;height:100vh !important;}
+body.is-mobile.virtual-landscape canvas,
+body.is-mobile.virtual-landscape #mobile-ctrl,
+body.is-mobile.virtual-landscape #hud,
+body.is-mobile.virtual-landscape #mob-start-overlay,
+body.is-mobile.virtual-landscape #mob-menu-overlay,
+body.is-mobile.virtual-landscape #mob-settings-overlay,
+body.is-mobile.virtual-landscape .game-overlay{
+  width:100vh !important;
+  height:100vw !important;
+  left:100vw !important;
+  top:0 !important;
+  right:auto !important;
+  bottom:auto !important;
+  transform:rotate(90deg);
+  transform-origin:top left;
+}
 body.is-mobile #hud{width:100% !important;}
 body.is-mobile #adisplay{display:none !important;}
 body.is-mobile #hint{display:none !important;}
 body.is-mobile #dtoggle{display:none !important;}
 #rotate-prompt{display:none;position:fixed;inset:0;z-index:999;pointer-events:all;background:#060a0e;flex-direction:column;align-items:center;justify-content:center;color:#6ab0d0;font-family:'Share Tech Mono',monospace;text-align:center;}
-body.is-mobile.is-portrait #rotate-prompt{display:flex;}
-body.is-mobile.is-portrait #mobile-ctrl,body.is-mobile.is-portrait canvas,body.is-mobile.is-portrait #hud{visibility:hidden;}
+body.is-mobile.is-portrait #rotate-prompt{display:none;}
+
 #rotate-prompt .icon{font-size:56px;margin-bottom:16px;animation:rotateHint 1.6s ease-in-out infinite;}
 @keyframes rotateHint{0%,100%{transform:rotate(0deg);}50%{transform:rotate(90deg);}}
 #rotate-prompt .txt{font-size:13px;letter-spacing:2px;opacity:0.8;}
 
-#mob-spawn-btn,#mob-menu-btn,#mob-dodge-btn,#mob-music-btn,#mob-zone-btn,#mob-style-btn,#mob-shield-flip-btn,#mob-bot-shield-btn,#mob-bot-weapon-btn,#mob-weapon-btn,#mob-throw-btn{z-index:1000;pointer-events:auto !important;position:absolute;}
+#mob-spawn-btn,#mob-menu-btn,#mob-dodge-btn,#mob-music-btn,#mob-style-btn,#mob-shield-flip-btn,#mob-bot-shield-btn,#mob-bot-weapon-btn,#mob-weapon-btn,#mob-throw-btn{z-index:1000;pointer-events:auto !important;position:absolute;}
 .touch-zone{z-index:100;position:absolute;top:0;bottom:0;pointer-events:all;touch-action:none;}
 #zone-move{left:0;width:45%;top:90px;}
 #zone-sword{right:0;width:55%;top:90px;}
@@ -153,28 +169,26 @@ body.fixed-stick-mode #fixed-stick-base{display:block;}
 body.fixed-stick-mode #zone-sword .stick-base,body.fixed-stick-mode #zone-sword .stick-knob{display:none;}
 #fixed-stick-knob{position:absolute;top:50%;left:50%;width:56px;height:56px;border-radius:50%;background:rgba(200,200,200,0.2);border:1.5px solid rgba(255,255,255,0.25);box-shadow:0 2px 8px rgba(0,0,0,0.3);transform:translate(-50%,-50%);transition:background .1s,box-shadow .1s;}
 #fixed-stick-knob.lmb-active{background:rgba(255,80,80,0.4);box-shadow:0 4px 16px rgba(255,0,0,0.5);border-color:rgba(255,120,120,0.6);}
-#fixed-stick-reticle{position:absolute;top:50%;left:50%;width:22px;height:22px;margin:-11px 0 0 -11px;border:2px solid #ffcc40;border-radius:50%;box-shadow:0 0 8px rgba(255,200,60,0.7);pointer-events:none;transition:transform .05s linear;}
+#fixed-stick-reticle{display:none;position:absolute;top:50%;left:50%;width:22px;height:22px;margin:-11px 0 0 -11px;border:2px solid #ffcc40;border-radius:50%;box-shadow:0 0 8px rgba(255,200,60,0.7);pointer-events:none;transition:transform .05s linear;}
 #fixed-stick-reticle::after{content:'';position:absolute;top:50%;left:50%;width:6px;height:6px;margin:-3px 0 0 -3px;background:#ffcc40;border-radius:50%;}
 #mob-bot-shield-btn{top:14px;left:calc(50% - 109px);background:rgba(10,30,20,0.9);border:1px solid #2a6a40;border-radius:50%;width:50px;height:50px;color:#4acc70;font-size:18px;display:flex;align-items:center;justify-content:center;touch-action:none;}
 #mob-bot-weapon-btn{top:14px;left:calc(50% - 165px);background:rgba(10,30,20,0.9);border:1px solid #2a6a40;border-radius:50%;width:50px;height:50px;color:#4acc70;font-size:18px;display:flex;align-items:center;justify-content:center;touch-action:none;}
 #mob-spawn-btn{top:14px;left:calc(50% - 53px);background:rgba(10,30,20,0.9);border:1px solid #2a6a40;border-radius:50%;width:50px;height:50px;color:#4acc70;font-size:18px;display:flex;align-items:center;justify-content:center;touch-action:none;}
 #mob-menu-btn{top:14px;left:calc(50% + 59px);background:rgba(10,20,30,0.9);border:1px solid #1a4060;border-radius:50%;width:50px;height:50px;color:#6ab0d0;font-size:20px;display:flex;align-items:center;justify-content:center;touch-action:none;}
 #mob-music-btn{top:14px;left:calc(50% + 3px);background:rgba(10,20,30,0.9);border:1px solid #1a4060;border-radius:50%;width:50px;height:50px;color:#4acc70;font-size:20px;display:flex;align-items:center;justify-content:center;touch-action:none;z-index:1000;}
-#mob-zone-btn{top:14px;left:calc(50% + 115px);background:rgba(10,20,30,0.9);border:1px solid #3a3010;border-radius:50%;width:50px;height:50px;color:#ccaa30;font-size:20px;display:flex;align-items:center;justify-content:center;touch-action:none;z-index:1000;}
-#mob-zone-btn.active{border-color:#cc6010;color:#ff8020;background:rgba(40,20,5,0.9);}
 #mob-style-btn{top:100px;left:126px;background:rgba(10,20,30,0.9);border:1px solid #3a5a8a;border-radius:50%;width:50px;height:50px;color:#7ab0e0;font-size:18px;display:flex;align-items:center;justify-content:center;touch-action:none;}
 #mob-shield-flip-btn{right:160px;bottom:22px;background:rgba(10,20,30,0.9);border:1px solid #2a4a7a;border-radius:50%;width:50px;height:50px;color:#88ccff;font-size:20px;display:flex;align-items:center;justify-content:center;touch-action:none;z-index:1000;}
 #mob-shield-flip-btn.active{background:rgba(20,45,70,0.96);border-color:#88ccff;box-shadow:0 0 14px rgba(120,190,255,0.45);}
-body.is-mobile:not(.is-portrait) #mob-shield-flip-btn{display:flex;}
+body.is-mobile #mob-shield-flip-btn{display:flex;}
 #mob-weapon-btn{top:100px;left:70px;background:rgba(10,20,30,0.9);border:1px solid #2a4a7a;border-radius:50%;width:50px;height:50px;color:#88ccff;font-size:20px;display:flex;align-items:center;justify-content:center;touch-action:none;z-index:1000;}
-body.is-mobile:not(.is-portrait) #mob-weapon-btn{display:flex;}
+body.is-mobile #mob-weapon-btn{display:flex;}
 #mob-throw-btn{top:90px;right:72px;background:rgba(10,20,30,0.9);border:1px solid #7a4a2a;border-radius:50%;width:50px;height:50px;color:#ffaa66;font-size:20px;display:flex;align-items:center;justify-content:center;touch-action:none;z-index:1000;}
-body.is-mobile:not(.is-portrait) #mob-throw-btn{display:flex;}
+body.is-mobile #mob-throw-btn{display:flex;}
 #mob-dodge-btn{top:90px;right:14px;background:rgba(10,20,30,0.9);border:1px solid #2a5a3a;border-radius:50%;width:50px;height:50px;color:#4acc80;font-size:18px;display:flex;align-items:center;justify-content:center;touch-action:none;z-index:1000;}
 #mob-dodge-btn:active{background:rgba(20,60,30,0.95);}
 #mob-menu-overlay{display:none;position:fixed;inset:0;z-index:500;background:rgba(5,8,12,0.92);flex-direction:column;align-items:center;justify-content:flex-start;gap:10px;pointer-events:all;overflow-y:auto;overflow-x:hidden;padding:22px 0 32px;scrollbar-width:auto;scrollbar-color:#2c4f78 transparent;}
-#mob-menu-overlay::-webkit-scrollbar,.mob-menu-embed::-webkit-scrollbar,#mob-settings-overlay::-webkit-scrollbar{width:12px;}
-#mob-menu-overlay::-webkit-scrollbar-thumb,.mob-menu-embed::-webkit-scrollbar-thumb,#mob-settings-overlay::-webkit-scrollbar-thumb{background:#2c4f78;border-radius:8px;border:2px solid rgba(5,8,12,0.92);}
+#mob-menu-overlay::-webkit-scrollbar,.mob-menu-embed::-webkit-scrollbar,#mob-settings-embed::-webkit-scrollbar{width:26px;}
+#mob-menu-overlay::-webkit-scrollbar-thumb,.mob-menu-embed::-webkit-scrollbar-thumb,#mob-settings-embed::-webkit-scrollbar-thumb{background:#3e6d9f;border-radius:14px;border:6px solid rgba(5,8,12,0.92);}
 #mob-menu-overlay.open{display:flex;}
 .mob-net-group{display:flex;gap:0;width:220px;flex-shrink:0;}
 .mob-net-half{flex:1;margin:0 !important;padding:10px 2px !important;font-size:9px !important;letter-spacing:0.5px !important;min-width:0 !important;}
@@ -183,9 +197,15 @@ body.is-mobile:not(.is-portrait) #mob-throw-btn{display:flex;}
 .menu-btn-mob{font-family:'Share Tech Mono',monospace;font-size:13px;letter-spacing:2px;padding:10px 32px;border-radius:22px;cursor:pointer;background:rgba(20,30,45,0.9);color:#6ab0d0;border:1px solid #2a5a80;min-width:220px;flex-shrink:0;transition:background .15s,border-color .15s;}
 @media(hover:hover){.menu-btn-mob:hover{background:rgba(30,50,75,0.95);border-color:#4a8ab0;color:#8ad0f0;}.ov-btn:hover{filter:brightness(1.2);}}
 .menu-btn-mob:active{background:rgba(40,70,100,0.95);}
-.mob-menu-embed{max-height:60vh;overflow-y:auto;width:90%;}
-#mob-settings-overlay{display:none;position:fixed;inset:0;z-index:600;background:rgba(5,8,12,0.96);flex-direction:column;align-items:center;justify-content:center;overflow-y:auto;padding:20px 16px;}
+.mob-menu-embed{max-height:60vh;overflow-y:auto;width:94%;padding-right:12px;scrollbar-width:auto;scrollbar-color:#3e6d9f rgba(5,8,12,0.35);}
+#mob-settings-overlay{display:none;position:fixed;inset:0;z-index:600;background:rgba(5,8,12,0.96);flex-direction:column;align-items:center;justify-content:flex-start;overflow:hidden;padding:20px 16px 24px;}
 #mob-settings-overlay.open{display:flex;}
+#mob-settings-body{display:flex;width:min(600px,100%);flex:1;min-height:0;gap:8px;}
+#mob-settings-embed{flex:1;min-width:0;overflow-y:auto;overflow-x:hidden;scrollbar-width:none;touch-action:none;}
+#mob-settings-embed::-webkit-scrollbar{display:none;}
+#mob-settings-scroll{position:relative;flex:0 0 44px;touch-action:none;cursor:pointer;background:rgba(62,109,159,.15);border-radius:6px;}
+#mob-settings-thumb{position:absolute;left:10px;width:24px;min-height:44px;border-radius:6px;background:#3e6d9f;}
+#mob-settings-scroll:focus-visible{outline:2px solid #6ab0d0;}
 #pvp-hud{display:none;position:fixed;bottom:14px;left:50%;transform:translateX(-50%);background:rgba(8,14,22,0.9);border:1px solid #1a3a54;border-radius:20px;padding:5px 12px;z-index:200;align-items:center;gap:10px;font-family:'Share Tech Mono',monospace;font-size:11px;}
 #pvp-hud.visible{display:flex;}
 </style>
@@ -361,6 +381,8 @@ body.is-mobile:not(.is-portrait) #mob-throw-btn{display:flex;}
       <div data-slider="gamespeed,slider.gameSpeed,1,.1,2,.05"></div>
       <div data-slider="camrows,slider.cameraZoom,10,6,24,1"></div>
       <div data-checkbox="followcam,checkbox.followCamera,true"></div>
+      <div data-slider="camedge,slider.cameraEdgeMargin,6,.5,6,.5"></div>
+      <div data-slider="camdelay,slider.cameraEdgeDelay,1,0,2,.05"></div>
       <div data-slider="camlerp,slider.cameraLerp,.25,.003,.8,.001"></div>
       <div data-slider="musicvol,slider.musicVolume,.1,0,1,.05"></div>
       <div data-slider="botcount,slider.botCount,1,0,10,1"></div>
@@ -502,7 +524,6 @@ body.is-mobile:not(.is-portrait) #mob-throw-btn{display:flex;}
   <button id="mob-throw-btn" data-i18n-title="mobile.controls.throw">&#127919;</button>
   <button id="mob-dodge-btn" data-i18n-title="mobile.controls.dodge">💨</button>
   <button id="mob-music-btn" data-i18n-title="mobile.controls.music">🎵</button>
-  <button id="mob-zone-btn" data-i18n-title="mobile.controls.zone">⏺</button>
   <div id="zone-move" class="touch-zone"><div id="move-base" class="stick-base"></div><div id="move-knob" class="stick-knob"></div></div>
   <div id="zone-sword" class="touch-zone"><div id="sword-base" class="stick-base"><div id="sword-knob" class="stick-knob"></div></div></div>
   <div id="fixed-stick-base"><div id="fixed-stick-knob"></div><div id="fixed-stick-reticle"></div></div>
@@ -521,8 +542,11 @@ body.is-mobile:not(.is-portrait) #mob-throw-btn{display:flex;}
 </div>
 
 <div id="mob-settings-overlay">
-  <div style="font-family:'Share Tech Mono',monospace;font-size:13px;color:#6ab0d0;letter-spacing:2px;margin-bottom:16px;" data-i18n="mobile.settingsTitle"></div>
-  <div id="mob-settings-embed" style="width:100%;max-width:400px;"></div>
+  <div style="font-family:'Share Tech Mono',monospace;font-size:13px;color:#6ab0d0;letter-spacing:2px;margin-bottom:16px;" id="mob-settings-title" data-i18n="mobile.settingsTitle"></div>
+  <div id="mob-settings-body">
+    <div id="mob-settings-embed"></div>
+    <div id="mob-settings-scroll" role="scrollbar" tabindex="0" aria-controls="mob-settings-embed" aria-orientation="vertical" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0" aria-labelledby="mob-settings-title"><div id="mob-settings-thumb"></div></div>
+  </div>
   <button id="mob-settings-close" class="menu-btn-mob" style="margin-top:20px;" data-i18n="mobile.settingsClose"></button>
 </div>
 
@@ -711,7 +735,7 @@ body.is-mobile:not(.is-portrait) #mob-throw-btn{display:flex;}
       'sl-gamepadflickwindow','vl-gamepadflickwindow','sl-gamepadflickminvel','vl-gamepadflickminvel',
       'sl-gamepadflickminamp','vl-gamepadflickminamp','sl-gamepadflickcount','vl-gamepadflickcount',
       'sl-gamepadflickmaxmult','vl-gamepadflickmaxmult','sl-gamepadstamflick','vl-gamepadstamflick',
-      'sl-gamespeed','vl-gamespeed','sl-camrows','vl-camrows','sl-camlerp','vl-camlerp','sl-musicvol','vl-musicvol',
+      'sl-gamespeed','vl-gamespeed','sl-camrows','vl-camrows','sl-camedge','vl-camedge','sl-camdelay','vl-camdelay','sl-camlerp','vl-camlerp','sl-musicvol','vl-musicvol',
       'sl-botcount','vl-botcount','sl-botspd','vl-botspd','sl-botdodgechance','vl-botdodgechance',
       'sl-botdodgetoward','vl-botdodgetoward','sl-botscale','vl-botscale','sl-botswordscale','vl-botswordscale',
       'sl-globalspd','vl-globalspd','sl-swthresh','vl-swthresh','sl-stamblock','vl-stamblock',
