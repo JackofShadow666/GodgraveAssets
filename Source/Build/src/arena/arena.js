@@ -1318,15 +1318,17 @@ function drawFX(){
 }
 
 // ──────────────── END LAYER: ARENA ────────────────
-const SPARK_EMOJI_URL = '../Source/UI/T_SparkEmoj.png';
+const SPARK_EMOJI_PATH = 'Source/UI/T_SparkEmoj.png';
 let SPARK_EMOJI_IMG = null;
 function sparkEmojiImage(){
   if(SPARK_EMOJI_IMG !== null) return SPARK_EMOJI_IMG;
-  SPARK_EMOJI_IMG = typeof loadSpriteImage === 'function' ? loadSpriteImage(SPARK_EMOJI_URL) : new Image();
-  if(!SPARK_EMOJI_IMG.src) SPARK_EMOJI_IMG.src = SPARK_EMOJI_URL;
+  const base = (typeof PROJECT_PATH_AUDIO !== 'undefined') ? PROJECT_PATH_AUDIO : '';
+  const url = base + SPARK_EMOJI_PATH;
+  SPARK_EMOJI_IMG = typeof loadSpriteImage === 'function' ? loadSpriteImage(url) : new Image();
+  SPARK_EMOJI_IMG.crossOrigin = 'anonymous';
+  if(!SPARK_EMOJI_IMG.src) SPARK_EMOJI_IMG.src = url;
   return SPARK_EMOJI_IMG;
 }
-
 function drawSparkImageFX(ctx, f, maxLife){
   const img = sparkEmojiImage();
   if(!img || !img.complete || !img.naturalWidth) return;
