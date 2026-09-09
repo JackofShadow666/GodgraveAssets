@@ -381,7 +381,8 @@ body.is-mobile #mob-throw-btn{display:flex;}
       <div data-slider="gamespeed,slider.gameSpeed,1,.1,2,.05"></div>
       <div data-slider="camrows,slider.cameraZoom,10,6,24,1"></div>
       <div data-checkbox="followcam,checkbox.followCamera,true"></div>
-      <div data-slider="camedge,slider.cameraEdgeMargin,3.5,.5,6,.5"></div>
+      <div data-slider="camedge,slider.cameraEdgeMargin,6,.5,6,.5"></div>
+      <div data-slider="camdelay,slider.cameraEdgeDelay,1,0,2,.05"></div>
       <div data-slider="camlerp,slider.cameraLerp,.25,.003,.8,.001"></div>
       <div data-slider="musicvol,slider.musicVolume,.1,0,1,.05"></div>
       <div data-slider="botcount,slider.botCount,1,0,10,1"></div>
@@ -461,6 +462,7 @@ body.is-mobile #mob-throw-btn{display:flex;}
     <div class="sec"><div class="sec-title" data-i18n="sec.debug"></div>
       <div data-slider="dbg,slider.debugToggle,0,0,1,1"></div>
       <div data-checkbox="clashdbg,checkbox.debugClash,false,true"></div>
+      <div data-checkbox="perfprof,checkbox.perfProfiler,false,true"></div>
     </div>
 
     <!-- 🎮 CONTROLS -->
@@ -734,7 +736,7 @@ body.is-mobile #mob-throw-btn{display:flex;}
       'sl-gamepadflickwindow','vl-gamepadflickwindow','sl-gamepadflickminvel','vl-gamepadflickminvel',
       'sl-gamepadflickminamp','vl-gamepadflickminamp','sl-gamepadflickcount','vl-gamepadflickcount',
       'sl-gamepadflickmaxmult','vl-gamepadflickmaxmult','sl-gamepadstamflick','vl-gamepadstamflick',
-      'sl-gamespeed','vl-gamespeed','sl-camrows','vl-camrows','sl-camlerp','vl-camlerp','sl-musicvol','vl-musicvol',
+      'sl-gamespeed','vl-gamespeed','sl-camrows','vl-camrows','sl-camedge','vl-camedge','sl-camdelay','vl-camdelay','sl-camlerp','vl-camlerp','sl-musicvol','vl-musicvol',
       'sl-botcount','vl-botcount','sl-botspd','vl-botspd','sl-botdodgechance','vl-botdodgechance',
       'sl-botdodgetoward','vl-botdodgetoward','sl-botscale','vl-botscale','sl-botswordscale','vl-botswordscale',
       'sl-globalspd','vl-globalspd','sl-swthresh','vl-swthresh','sl-stamblock','vl-stamblock',
@@ -864,6 +866,7 @@ body.is-mobile #mob-throw-btn{display:flex;}
 'slider.gameSpeed': 'Скорость игры (×)',
 'slider.cameraZoom': 'Приближение камеры (клетки)',
 'slider.cameraEdgeMargin': 'Отступ камеры от края (клетки)',
+'slider.cameraEdgeDelay': 'Задержка центрирования камеры (сек.)',
 'slider.cameraLerp': 'Отставание камеры',
 'slider.musicVolume': 'Громкость музыки',
 'slider.botCount': 'Количество ботов',
@@ -926,6 +929,7 @@ body.is-mobile #mob-throw-btn{display:flex;}
 'checkbox.flickDetect': 'Обнаружение флика (быстрая смена направления)',
 'checkbox.debugBrowser': 'Отладка: разблокировать ПКМ и клавиши браузера',
 'checkbox.debugClash': 'Отладка: выводить данные столкновений (консоль)',
+'checkbox.perfProfiler': 'Отладка: профилировать просадки FPS (консоль)',
 'checkbox.followCamera': 'Камера закреплена на игроке',
 
 // ─── SELECT LABELS ──────────────────────────────────────────────
@@ -1427,6 +1431,7 @@ body.is-mobile #mob-throw-btn{display:flex;}
         gamespeed: 'Скорость игры',
         camrows: 'Масштаб камеры',
         camedge: 'Отступ края камеры',
+        camdelay: 'Задержка центрирования камеры',
         camlerp: 'Отставание камеры',
         musicvol: 'Громкость музыки',
         botcount: 'Количество ботов',
@@ -1745,6 +1750,14 @@ function worldToScreen(x, y){
 }
 
 function updateMouseWorld(){
+  if(typeof isPlayerBotMode === 'function' && isPlayerBotMode() && P && P._playerAiState){
+    const aim = worldToScreen(P._playerAiState._fakeMX, P._playerAiState._fakeMY);
+    mouseScreenX = aim.x;
+    mouseScreenY = aim.y;
+    mX = P._playerAiState._fakeMX;
+    mY = P._playerAiState._fakeMY;
+    return;
+  }
   const p = screenToWorld(mouseScreenX, mouseScreenY);
   mX = p.x;
   mY = p.y;
@@ -1767,14 +1780,14 @@ function activeCameraSubjects(){
   return subjects;
 }
 
-function clampEntityToCameraView(ent, edgeMargin){
+function clampEntityToCameraView(ent, cageMargin){
   if(!ent || !$.M) return;
   const viewW = W / CAM_SCALE;
   const viewH = H / CAM_SCALE;
-  const minX = CAM_X + edgeMargin;
-  const maxX = CAM_X + viewW - edgeMargin;
-  const minY = CAM_Y + edgeMargin;
-  const maxY = CAM_Y + viewH - edgeMargin;
+  const minX = CAM_X + cageMargin;
+  const maxX = CAM_X + viewW - cageMargin;
+  const minY = CAM_Y + cageMargin;
+  const maxY = CAM_Y + viewH - cageMargin;
   const prevX = ent.x;
   const prevY = ent.y;
   ent.x = $.M.clamp(ent.x, minX, maxX);
@@ -1798,26 +1811,27 @@ function enforceCameraCage(){
   const viewH = H / CAM_SCALE;
   const maxCamX = Math.max(0, WORLD_W - viewW);
   const maxCamY = Math.max(0, WORLD_H - viewH);
-  const edgeMargin = Math.min(Math.max(CELL_PX * 0.5, (sv('camedge') || 3.5) * CELL_PX), Math.max(CELL_PX * 0.5, Math.min(viewW, viewH) * 0.5 - 1));
+  const cageMargin = Math.min(CELL_PX * 0.5, Math.max(0, Math.min(viewW, viewH) * 0.5 - 1));
   let minAllowedX = -Infinity, maxAllowedX = Infinity;
   let minAllowedY = -Infinity, maxAllowedY = Infinity;
   for(const ent of subjects){
-    minAllowedX = Math.max(minAllowedX, ent.x + edgeMargin - viewW);
-    maxAllowedX = Math.min(maxAllowedX, ent.x - edgeMargin);
-    minAllowedY = Math.max(minAllowedY, ent.y + edgeMargin - viewH);
-    maxAllowedY = Math.min(maxAllowedY, ent.y - edgeMargin);
+    minAllowedX = Math.max(minAllowedX, ent.x + cageMargin - viewW);
+    maxAllowedX = Math.min(maxAllowedX, ent.x - cageMargin);
+    minAllowedY = Math.max(minAllowedY, ent.y + cageMargin - viewH);
+    maxAllowedY = Math.min(maxAllowedY, ent.y - cageMargin);
   }
   if(minAllowedX <= maxAllowedX) CAM_X = $.M.clamp(CAM_X, Math.max(0, minAllowedX), Math.min(maxCamX, maxAllowedX));
   if(minAllowedY <= maxAllowedY) CAM_Y = $.M.clamp(CAM_Y, Math.max(0, minAllowedY), Math.min(maxCamY, maxAllowedY));
   clampCamera();
-  for(const ent of subjects) clampEntityToCameraView(ent, edgeMargin);
+  for(const ent of subjects) clampEntityToCameraView(ent, cageMargin);
   updateMouseWorld();
 }
 
 const cameraMotion = {};
 function resetCameraMotion(){
   Object.assign(cameraMotion, { x: null, y: null, moveTime: 0, idleTime: 0, distance: 0,
-    dirX: 0, dirY: 0, aheadX: 0, aheadY: 0, edgeTime: 0, following: false, centering: false, centerX: false, centerY: false });
+    dirX: 0, dirY: 0, aheadX: 0, aheadY: 0, edgeTime: 0, centerRamp: 0, following: false, centering: false, centerX: false, centerY: false, driver: null, driverDirX: 0, driverDirY: 0 });
+  window.DEBUG_CAMERA_DRIVER = null;
 }
 resetCameraMotion();
 
@@ -1831,57 +1845,92 @@ function updateCamera(dt){
   } else if(typeof P !== 'undefined'){
     const c = cameraMotion;
     const viewW = W / CAM_SCALE, viewH = H / CAM_SCALE;
-    const dx = c.x === null ? 0 : P.x - c.x;
-    const dy = c.y === null ? 0 : P.y - c.y;
-    c.x = P.x; c.y = P.y;
-    const dist = Math.hypot(dx, dy);
-    const moving = dist > step * 8 && dist < Math.min(viewW, viewH) * 0.5;
     const edgeMargin = Math.min(Math.max(CELL_PX * 0.5, (sv('camedge') || 3.5) * CELL_PX), Math.max(CELL_PX * 0.5, Math.min(viewW, viewH) * 0.5 - 1));
-    const px = P.x - CAM_X;
-    const py = P.y - CAM_Y;
-    const edgeX = px < edgeMargin ? -1 : (px > viewW - edgeMargin ? 1 : 0);
-    const edgeY = py < edgeMargin ? -1 : (py > viewH - edgeMargin ? 1 : 0);
-    if(edgeX !== 0){
-      const boundX = edgeX < 0 ? P.x - edgeMargin : P.x + edgeMargin - viewW;
-      CAM_X = $.M.clamp(boundX, 0, Math.max(0, WORLD_W - viewW));
+    const subjects = activeCameraSubjects();
+    let driver = null;
+    let bestPressure = 0;
+
+    for(const ent of subjects){
+      const prevX = Number.isFinite(ent._camTrackX) ? ent._camTrackX : ent.x;
+      const prevY = Number.isFinite(ent._camTrackY) ? ent._camTrackY : ent.y;
+      const dx = ent.x - prevX;
+      const dy = ent.y - prevY;
+      ent._camTrackX = ent.x;
+      ent._camTrackY = ent.y;
+      const dist = Math.hypot(dx, dy);
+      const moving = dist > step * 8 && dist < Math.min(viewW, viewH) * 0.5;
+      ent._camFrameDx = dx;
+      ent._camFrameDy = dy;
+      ent._camFrameMoving = moving;
+
+      if(c.centering) continue;
+      const px = ent.x - CAM_X;
+      const py = ent.y - CAM_Y;
+      const edgeX = px < edgeMargin ? -1 : (px > viewW - edgeMargin ? 1 : 0);
+      const edgeY = py < edgeMargin ? -1 : (py > viewH - edgeMargin ? 1 : 0);
+      const movingOutward = moving && ((edgeX !== 0 && dx * edgeX > 0) || (edgeY !== 0 && dy * edgeY > 0));
+      if(!movingOutward) continue;
+      const pressureX = edgeX < 0 ? edgeMargin - px : (edgeX > 0 ? px - (viewW - edgeMargin) : 0);
+      const pressureY = edgeY < 0 ? edgeMargin - py : (edgeY > 0 ? py - (viewH - edgeMargin) : 0);
+      const pressure = Math.max(pressureX, pressureY);
+      if(pressure >= bestPressure){
+        bestPressure = pressure;
+        driver = { ent, dx, dy, moving, edgeX, edgeY };
+      }
     }
-    if(edgeY !== 0){
-      const boundY = edgeY < 0 ? P.y - edgeMargin : P.y + edgeMargin - viewH;
-      CAM_Y = $.M.clamp(boundY, 0, Math.max(0, WORLD_H - viewH));
+
+    const centerDelay = Math.max(0, sv('camdelay') || 0.5);
+    if(!c.centering){
+      c.edgeTime = driver ? c.edgeTime + step : 0;
+      window.DEBUG_CAMERA_DRIVER = driver ? driver.ent : null;
+      if(driver && c.edgeTime >= centerDelay){
+        c.centering = true;
+        c.centerX = driver.edgeX !== 0;
+        c.centerY = driver.edgeY !== 0;
+        c.driver = driver.ent;
+        c.driverDirX = driver.edgeX;
+        c.driverDirY = driver.edgeY;
+      }
     }
-    const nearEdge = edgeX !== 0 || edgeY !== 0;
-    const movingOutward = moving && ((edgeX !== 0 && dx * edgeX > 0) || (edgeY !== 0 && dy * edgeY > 0));
-    c.edgeTime = nearEdge && movingOutward ? c.edgeTime + step : 0;
-    if(c.edgeTime >= 2){
-      c.centering = true;
-      c.centerX = c.centerX || edgeX !== 0;
-      c.centerY = c.centerY || edgeY !== 0;
-    }
+
     if(c.centering){
-      const targetX = $.M.clamp(P.x - viewW / 2, 0, Math.max(0, WORLD_W - viewW));
-      const targetY = $.M.clamp(P.y - viewH / 2, 0, Math.max(0, WORLD_H - viewH));
-      const moveAng = Math.atan2(dy, dx);
-      const aimAligned = moving && Number.isFinite(P.angle) && Math.abs($.M.angDiff(P.angle, moveAng)) <= Math.PI * 70 / 180;
-      const intentBoost = aimAligned ? 2 : 1;
-      const speed = Math.min(0.07, Math.max(0.003, sv('camlerp') || 0.25)) / 3 * intentBoost;
-      const alpha = 1 - Math.pow(1 - speed, step * 60);
-      const maxStep = Math.max(2, Math.min(viewW, viewH) * 0.006 * step * 60 * intentBoost);
-      const nextX = CAM_X + (targetX - CAM_X) * alpha;
-      const nextY = CAM_Y + (targetY - CAM_Y) * alpha;
-      if(c.centerX) CAM_X += $.M.clamp(nextX - CAM_X, -maxStep, maxStep);
-      if(c.centerY) CAM_Y += $.M.clamp(nextY - CAM_Y, -maxStep, maxStep);
-      if(c.centerX && Math.abs(targetX - CAM_X) < 2) c.centerX = false;
-      if(c.centerY && Math.abs(targetY - CAM_Y) < 2) c.centerY = false;
-      if(!c.centerX && !c.centerY){
+      const ent = c.driver || P;
+      const dx = ent._camFrameDx || 0;
+      const dy = ent._camFrameDy || 0;
+      const moving = !!ent._camFrameMoving;
+      const movedOpposite = (c.centerX && c.driverDirX && dx * c.driverDirX < -step * 8) || (c.centerY && c.driverDirY && dy * c.driverDirY < -step * 8);
+      window.DEBUG_CAMERA_DRIVER = ent;
+      if(!moving || movedOpposite){
         c.centering = false;
+        c.centerX = false;
+        c.centerY = false;
         c.edgeTime = 0;
+        c.centerRamp = 0;
+        c.driver = null;
+        c.driverDirX = 0;
+        c.driverDirY = 0;
+        window.DEBUG_CAMERA_DRIVER = null;
+      } else {
+        c.edgeTime += step;
+        c.centerRamp = $.M.clamp((c.edgeTime - centerDelay) / 0.75, 0, 1);
+        const targetX = $.M.clamp(ent.x - viewW / 2, 0, Math.max(0, WORLD_W - viewW));
+        const targetY = $.M.clamp(ent.y - viewH / 2, 0, Math.max(0, WORLD_H - viewH));
+        const moveAng = Math.atan2(dy, dx);
+        const aimAligned = Number.isFinite(ent.angle) && Math.abs($.M.angDiff(ent.angle, moveAng)) <= Math.PI * 70 / 180;
+        const intentBoost = aimAligned ? 2 : 1;
+        const speed = Math.min(0.07, Math.max(0.003, sv('camlerp') || 0.25)) / 3 * intentBoost * c.centerRamp;
+        const alpha = 1 - Math.pow(1 - speed, step * 60);
+        const maxStep = Math.max(0.25, Math.min(viewW, viewH) * 0.006 * step * 60 * intentBoost * c.centerRamp);
+        const nextX = CAM_X + (targetX - CAM_X) * alpha;
+        const nextY = CAM_Y + (targetY - CAM_Y) * alpha;
+        if(c.centerX) CAM_X += $.M.clamp(nextX - CAM_X, -maxStep, maxStep);
+        if(c.centerY) CAM_Y += $.M.clamp(nextY - CAM_Y, -maxStep, maxStep);
       }
     }
   }
   clampCamera();
   updateMouseWorld();
 }
-
 function entityCameraPoint(ent){
   if(!ent) return { x: WORLD_W / 2, y: WORLD_H / 2 };
   return {
@@ -2614,6 +2663,7 @@ bindSlider('stamreg');
 bindSlider('gamespeed');
 bindSlider('camrows');
 bindSlider('camedge');
+bindSlider('camdelay');
 bindSlider('camlerp');
 bindSlider('botspd');
 bindSlider('botdodgechance');
@@ -3569,7 +3619,7 @@ standingRegenMult
 );
 }
 
-function applyDisbalance(ent, source){
+function applyDisbalance(ent, source, durationOverride){
 if(isUnbalanced(ent)){
 return false;
 }
@@ -3579,11 +3629,12 @@ return false;
 // while slowdown continues for the remaining duration.
 const duration = Math.max(
 0.1,
-typeof sv === 'function'
+durationOverride !== undefined
+? durationOverride
+: (typeof sv === 'function'
 ? sv('unbdur')
-: DISBALANCE_DURATION
+: DISBALANCE_DURATION)
 );
-
 const recoilDuration = Math.min(
 DISBALANCE_RECOIL_DURATION,
 duration
@@ -3713,6 +3764,7 @@ const SFX_FOLDERS = {
   whoosh:         'Source/Sound/Sword/SwordSwing/',  // фильтр: без Agressive
   whooshRage:     'Source/Sound/Sword/SwordSwing/',  // фильтр: Agressive
   damage:         'Source/Sound/Damage/Sword/',
+  woodClink:      'Source/Sound/WoodClink/',
   rage:           'Source/Sound/Rage/',
   bladeblind:     'Source/Sound/Shield/',
   shieldblock:    'Source/Sound/Shield/',
@@ -3760,7 +3812,26 @@ let audioDBReady = false;
 // ?? КЛЮЧ ДЛЯ localStorage
 // ====================================================================
 const ASSETS_CACHE_KEY = 'godgrave_assets_list_v1';
-const ASSETS_VERSION = '1.1';
+const ASSETS_VERSION = '1.2';
+
+const SFX_MAX_BY_TYPE = {
+  damage: 15,
+  damageHammer: 8,
+};
+
+function sfxNumberFromUrl(url){
+  const m = String(url || '').match(/_(\d+)\.(mp3|wav|ogg)$/i);
+  return m ? parseInt(m[1], 10) : null;
+}
+
+function applySfxLimit(type, matches){
+  const max = SFX_MAX_BY_TYPE[type];
+  if(!max) return matches;
+  return matches.filter(u => {
+    const n = sfxNumberFromUrl(u);
+    return n == null || n <= max;
+  });
+}
 
 async function loadAudioDB() {
   // ====================================================================
@@ -3884,6 +3955,7 @@ async function loadAudioDB() {
     if (type === 'magicExplode')   matches = matches.filter(u => u.toLowerCase().includes('explode'));
 	
     if (type === 'crossbowReload') matches = matches.filter(u => u.toLowerCase().includes('reload'));
+    matches = applySfxLimit(type, matches);
 
     if (type === 'music') {
       MUSIC_LIST_FULL = matches;
@@ -3999,11 +4071,12 @@ function getPoolAudio(url){
 
 // -- Звуки UI: hover и tap на кнопках ----------------------------------------
 $.S = $.S || {
-  play(type){ return window['playSound'](type); },
+  play(type, volume){ return window['playSound'](type, volume); },
   swing(){ return window['playSound']('whoosh'); },
   hammer(){ return window['playSound']('hammerSwing'); },
   damage(){ return window['playSound']('damage'); },
   damageHammer(){ return window['playSound']('damageHammer'); },
+  woodClink(){ return window['playSound']('woodClink'); },
   clash(){ return window['playSound']('clash'); },
   clashHard(){ return window['playSound']('clashHard'); },
   rage(){ return window['playSound']('rage'); },
@@ -4029,7 +4102,7 @@ document.addEventListener('click', e=>{
   if(e.target.closest('button, .menu-btn, .ov-btn')) $.S.play('uiTap');
 });
 
-function playSound(sfxType) {
+function playSound(sfxType, volume) {
   if (!audioEnabledFlag) return;
   let arr = SFX_DB[sfxType];
   if (sfxType === 'clashHard' && Math.random() < 0.05 && SFX_DB['clashHard_rare']?.length)
@@ -4042,10 +4115,10 @@ function playSound(sfxType) {
   const url = arr[idx];
   const audio = getPoolAudio(url);
   audio.currentTime = 0;
-  audio.volume = 0.5;
+  audio.volume = volume != null ? volume : 0.5;
   audio.play().catch(() => {
     // Если pool объект не готов — fallback new Audio
-    const fb = new Audio(url); fb.volume = 0.5; fb.play().catch(()=>{});
+    const fb = new Audio(url); fb.volume = volume != null ? volume : 0.5; fb.play().catch(()=>{});
   });
 }
 
@@ -4256,7 +4329,8 @@ function shieldHeld(ent){
   const def = shieldDef(ent);
   if(!def || isShieldSuppressed(ent)) return false;
   const isPlayer = typeof P !== 'undefined' && ent===P;
-  if(!isPlayer) return true;
+  if(ent && ent._manualControl) return !!ent._shieldHeld;
+  if(!isPlayer) return !!(ent && ent._aiState && ent._aiState._shieldHeld);
   if(typeof mDown !== 'undefined' && mDown) return false;
   return !!ent._shieldHeld;
 }
@@ -4264,7 +4338,7 @@ function shieldHeld(ent){
 // Щит на той же стороне что меч (курсор) = флип активен
 function shieldSameSideAsSword(ent){
   const isPlayer = typeof P !== 'undefined' && ent === P;
-  if(isPlayer) return typeof shieldHeld === 'function' && shieldHeld(ent);
+  if(isPlayer || (ent && ent._manualControl)) return typeof shieldHeld === 'function' && shieldHeld(ent);
   return !!ent._shieldFlipped;
 }
 // Эффективный масштаб меча: -40% размера, если щит держат в той же руке, что и меч
@@ -4418,7 +4492,8 @@ function assignRandomSkin(ent){
 
 // Использует те же правила восстановления, что и игрок.
 function botRegenStamina(bot, dt){
-  regenStamina(bot, dt, !!(bot._aiState && bot._aiState._fakeMDown));
+  const ai = bot && bot._aiState;
+  regenStamina(bot, dt, !!(ai && (ai._fakeMDown || ai._shieldHeld)));
 }
 
 // Обновляет усталость и дисбаланс
@@ -4550,7 +4625,7 @@ const WEAPON_TYPES = [
 	
   // Цеп: scale ниже — резервное значение, реальная длина в бою динамическая
   // (см. МОДУЛЬ ЦЕПА: flailScaleFor/updateFlailExtension).
-  { key:'flail',    name:'Цеп',         category:'flail', throwSpeed: 8, scale: 0.7,
+  { key:'flail',    damageMult:0.5, name:'Цеп',         category:'flail', throwSpeed: 8, scale: 0.7,
     dmgBase: 8, dmgPerSpeed: 6, maxDmgPercent: 0.20, spinMin: 0.24, spinMax: 0.24,
     weight: 1.2, staminaMult: 1.5, cutMult: 2, pierceMult: 0.1, collision: 'tip', flags: 'disarm,knockback', lmbStaminaMult: 1.0 },
   // ── Дальнобойное оружие (см. МОДУЛЬ ДАЛЬНЕГО БОЯ ниже) ──────────────────
@@ -4572,7 +4647,7 @@ const WEAPON_TYPES = [
 // ── Загрузка параметров оружия с сервера (WeaponTalbe.txt) ─────────────────
 // Формат файла — по одной строке на вид оружия, поля через '|':
 //   key|name|category|throwSpeed|scale|dmgBase|dmgPerSpeed|maxDmgPercent|spinMin|spinMax
-//     |weight|staminaMult|cutMult|pierceMult|collision|flags|chargeTime|lmbStaminaMult
+//     |weight|staminaMult|cutMult|pierceMult|collision|flags|chargeTime|lmbStaminaMult|damageMult
 // chargeTime — время накопления заряда перед выстрелом, сек (используется
 //   только жезлом; для остального оружия можно не указывать — не используется).
 // lmbStaminaMult — множитель стоимости стамины ЛКМ-удара (сверху общего % из
@@ -4605,6 +4680,7 @@ async function loadWeaponTable(){
       if(p.length < 5) continue; // минимум key|name|category|throwSpeed|scale
       parsed.push({
         key: p[0], name: p[1], category: p[2],
+        damageMult: p[18] !== undefined && p[18] !== '' && Number.isFinite(Number(p[18])) ? Math.max(0,Number(p[18])) : (p[0]==='flail'?0.5:1),
         throwSpeed:    p[3]  !== undefined ? parseFloat(p[3])  : 16,
         scale:         p[4]  !== undefined ? parseFloat(p[4])  : 1.0,
         dmgBase:       p[5]  !== undefined ? parseFloat(p[5])  : 8,
@@ -4747,6 +4823,7 @@ let DROPPED_WEAPONS = [];
 
 // Экипирует entity оружием типа typeIdx (случайный вариант из папки этого вида)
 function setWeapon(ent, typeIdx, options) {
+  resetFlailCombat(ent);
   if (!ent) return;
   if (typeof typeIdx === 'string') typeIdx = weaponTypeIndexByKey(typeIdx);
   if (!Number.isFinite(typeIdx)) typeIdx = 0;
@@ -4905,6 +4982,34 @@ function droppedWeaponPixelLen(ent){
   return currentWeaponPixelLen(ent);
 }
 
+function cancelRangedCharge(ent){
+  if(ent._wandCharging){
+    ent._wandCharging = false;
+    if(ent._wandChargeSoundObj){ fadeOutSound(ent._wandChargeSoundObj, 0.2); ent._wandChargeSoundObj = null; }
+  }
+  if(ent._bowCharging){
+    ent._bowCharging = false;
+    ent._bowSpawnCD = 0;
+    if(ent._bowTensionSound){ fadeOutSound(ent._bowTensionSound, 0.2); ent._bowTensionSound = null; }
+    clearBowTensionFX();
+  }
+  if(ent._magicCharging){
+    ent._magicCharging = false;
+    if(ent._magicChargeSoundObj){ fadeOutSound(ent._magicChargeSoundObj, 0.2); ent._magicChargeSoundObj = null; }
+    clearMagicStaffFX(ent);
+  }
+  if(ent._magicStaffState){
+    ent._magicStaffState.isHeld = false;
+    ent._magicStaffState.hasFired = false;
+    ent._magicStaffState.rageConsumed = false;
+    ent._magicStaffState.staminaConsumed = false;
+    ent._magicStaffState._penaltyApplied = false;
+    ent._magicStaffState._penaltyTimer = 0;
+    ent._magicStaffState.rageDrainTimer = 0;
+    ent._magicStaffState._releaseProcessed = false;
+  }
+}
+
 // Разоружает entity: оружие падает на карту как подбираемый предмет
 function disarmEntity(ent, kickVx, kickVy){
   if(ent.hasWeapon === false) return;
@@ -4942,6 +5047,7 @@ function disarmEntity(ent, kickVx, kickVy){
     rot: dropAngle,
     angVel: randSpin(defW, 0.8), // чуть быстрее вращение
   });
+  cancelRangedCharge(ent);
   ent.hasWeapon = false;
   ent._weaponImg = null;
   ent._weaponUrl = null;
@@ -4987,6 +5093,7 @@ function throwWeapon(ent){
     angVel: randSpin(def, 1),
   });
   
+  cancelRangedCharge(ent);
   ent.hasWeapon = false;
   ent._weaponImg = null;
   ent._weaponUrl = null;
@@ -5134,6 +5241,10 @@ if(bounced){
         }
 
         if(deflected){
+          if(w._projectileBlockContact!==ent){
+            applyProjectileContactEffects(w,ent,true,0);
+            w._projectileBlockContact=ent;
+          }
           // 🔥 ВРАЩЕНИЕ ПРИ ОТСКОКЕ ОТ МЕЧА/ЩИТА (уже в bounceWeapon)
           // но добавим на всякий случай
           if (w.weaponType === 'spear' && !w.isThrow) {
@@ -5142,7 +5253,8 @@ if(bounced){
           
           if(hitShield){
             applyShieldBlockFX(w.x, w.y, null, null, {waveAngle: Math.atan2(w.vy, w.vx)});
-          } else {
+          } else if((w._deflectFxUntil || 0) <= GameTime) {
+            w._deflectFxUntil = GameTime + 0.5;
             const strongHit = flySpdPre > 6;
             $.FX.hit({x:w.x, y:w.y-8, t:(window.I18N ? window.I18N.t('combat.clash') : 'CLASH!'), life:28, big:strongHit, col:'#ccccaa'});
             $.S.play(strongHit ? 'clashHard' : 'clash');
@@ -5153,6 +5265,8 @@ if(bounced){
         }
       }
     }
+
+    if(!deflected) w._projectileBlockContact=null;
 
     // Затухание скорости
     const velocityDecay = Math.pow(0.9887, step);
@@ -5191,6 +5305,7 @@ if (w.weaponType === 'spear' && Math.abs(w.angVel) > 0.1) {
           dmg = Math.min(dmg, Math.max(1, Math.round(MAX_HP * maxDmgPct)));
           
           applyDamage(ent, dmg, w.owner, {
+            weaponDamageKey: wDefHit.key,
             isMagic: false,
             isExplosion: false,
             knockbackMult: 0.6,
@@ -5205,7 +5320,7 @@ if (w.weaponType === 'spear' && Math.abs(w.angVel) > 0.1) {
           const nx = d > 0.1 ? (c.x - w.x)/d : 0, ny = d > 0.1 ? (c.y - w.y)/d : -1;
           ent.vx += nx * 6; ent.vy += ny * 6;
           
-          $.S.play(isHeavySwingWeaponType(w.weaponType) ? 'damageHammer' : 'damage');
+          $.S.play((WEAPON_TYPES[w.weaponType]?.key === 'spear') ? 'damage' : (isHeavySwingWeaponType(w.weaponType) ? 'damageHammer' : 'damage')); 
           
           w.x = c.x - nx*hitR; w.y = c.y - ny*hitR;
           bounceWeapon(w, -nx, -ny, 0.6);
@@ -5394,6 +5509,20 @@ function weaponTipPos(ent){
 
 // ════════════════════════════════════════════════════════════════════════════
 
+// Final damage balance, applied after minimum damage and caps, including loaded tables.
+function weaponDamageMultiplier(key){
+  const def=WEAPON_TYPES.find(w=>w.key===key);
+  return def && Number.isFinite(def.damageMult) ? Math.max(0,def.damageMult) : (key==='flail'?0.5:1);
+}
+// Call only once an actual dodge starts. Keep the timestamp across weapon swaps.
+function spendDodgeStamina(ent,baseCost){
+  const rested=ent._lastDodgeAt==null || GameTime-ent._lastDodgeAt>2;
+  const cost=baseCost*(weaponKeyOf(ent)==='bow' && rested?0.5:1);
+  ent._lastDodgeAt=GameTime;
+  drainStamina(ent,cost);
+  return cost;
+}
+
 </script>
 <script>
 // === bundled: src/combat/flail.js ===
@@ -5413,6 +5542,7 @@ const FLAIL_RING_LEN = 11;  // локальный размер одного зв
 const FLAIL_MAX_LAG_PX = 50; // макс. боковой "провис" цепи у самого кончика (в местных единицах, база до слайдера)
 
 function drawFlailSprite(ctx2, ent, length, glowColor, glowBlur){
+    if(ent._flailNodes){ drawFlailChain(ctx2, ent, glowColor, glowBlur); return; }
     if(glowColor){ ctx2.shadowColor = glowColor; ctx2.shadowBlur = glowBlur; }
 
     const headImg  = ent._weaponImg;       // кончик = навершие (из Tip/)
@@ -5514,7 +5644,8 @@ function flailRingCountForExt(ext){
 // targetAng — угол на цель (курсор у игрока / положение противника у бота),
 // rawDt — РЕАЛЬНАЯ дельта кадра (не фиксированный физический тик).
 
-function updateFlailSwing(ent, targetAng, rawDt){
+function updateFlailSwing(ent, targetAng, rawDt, directAim = false){
+    if(!directAim && ent._flailState==='AXE_SWING') ent._flailState='FOLLOW';
     // ⚠️ КОНСТАНТЫ В САМОМ НАЧАЛЕ
     // ⚠️ КОНСТАНТЫ В САМОМ НАЧАЛЕ
     const FLAIL_GROW_MIN_ANGLE = isBot(ent) ? 0.15 : 0.65; // +0.1 для игрока
@@ -5534,8 +5665,16 @@ function updateFlailSwing(ent, targetAng, rawDt){
         ent._flailWasAtMax = false;
     }
 
-    const cursorDelta = $.M.angDiff(targetAng, ent._flailPrevCursorAngle || targetAng);
+    const cursorDelta = $.M.angDiff(targetAng, ent._flailPrevCursorAngle ?? targetAng);
     ent._flailPrevCursorAngle = targetAng;
+
+    if(ent._flailOrbitPrevious==null) ent._flailOrbitPrevious=ent.angle;
+    if(isExhausted(ent) || isUnbalanced(ent) ||
+       (!ent._flailFoldLocked && !ent._flailAttack && detectFlailFlick(ent,cursorDelta,rawDt))){
+        beginFlailFold(ent);
+    }
+    if(ent._flailAttack) return;
+    if(ent._flailFoldLocked){ updateForcedFlailFold(ent,targetAng,rawDt); return; }
 
     const MAX_CURSOR_DELTA = 0.5;
     const clampedDelta = $.M.clamp(cursorDelta, -MAX_CURSOR_DELTA, MAX_CURSOR_DELTA);
@@ -5546,8 +5685,8 @@ function updateFlailSwing(ent, targetAng, rawDt){
 
     // ── Накопитель устойчивого вращения ──
     if (isMouseMoving) {
-        // ДЛЯ БОТОВ: ускоряем накопление в 3 раза
-        const accumMult = isBot(ent) ? 3.0 : 2.0;
+        // ДЛЯ БОТОВ: ускоряем накопление мягче, чтобы цепь не раскрывалась за пол-оборота.
+        const accumMult = isBot(ent) ? 1.5 : 2.0;
         if (ent._flailAccumDir === 0 || mouseDirection === ent._flailAccumDir) {
             ent._flailAccumAngle = (ent._flailAccumAngle || 0) + Math.abs(clampedDelta) * accumMult;
         } else {
@@ -5569,7 +5708,18 @@ function updateFlailSwing(ent, targetAng, rawDt){
     const isShort = ringCount <= 4;
     const isLong = ringCount > 4;
 
-    const directionChanged = isMouseMoving && mouseDirection !== ent._flailDirection;
+    let directionChanged = isMouseMoving && mouseDirection !== ent._flailDirection;
+    if(directAim && isBot(ent) && directionChanged && GameTime < (ent._flailDirectionLockUntil || 0)){
+        directionChanged = false;
+    }
+    if(directAim){
+        // Follow the axe AI's sweep/spin target; retain the chain's flick and status rules.
+        ent._flailState='AXE_SWING';
+        ent.angle+=$.M.clamp($.M.angDiff(targetAng,ent.angle),-11.2*rawDt,11.2*rawDt);
+        const botGrowMult = isBot(ent) ? 0.5 : 1.0;
+        ent._flailExt=$.M.clamp((ent._flailExt||0)+(isRealSpin?botGrowMult:-0.84)*rawDt,0,1);
+        ent._flailFreeAngle=ent.angle;ent._flailIsLerping=false;
+    }
 
     // ── СОСТОЯНИЕ 1: FOLLOW ──
        if (ent._flailState === 'FOLLOW') {
@@ -5581,13 +5731,14 @@ function updateFlailSwing(ent, targetAng, rawDt){
             ent._flailState = 'SPIN';
             ent._flailFreeAngle = ent.angle;
             ent._flailDirection = mouseDirection;
+            if(isBot(ent)) ent._flailDirectionLockUntil = GameTime + 3;
             ent._flailSpinSpeed = Math.min(5.0, mouseSpeed * 0.8);
             // Боты получают бонусную скорость
             if(isBot(ent)) ent._flailSpinSpeed = Math.min(5.0, ent._flailSpinSpeed * 1.5);
             // Сбрасываем lerp если начали вращение
             ent._flailIsLerping = false;
         } else if (isRealSpin) {
-            ent._flailExt = Math.min(1, ent._flailExt + 0.5 * rawDt);
+            ent._flailExt = Math.min(1, ent._flailExt + 1.0 * rawDt);
             ent._flailIsLerping = false;
         } else {
             ent._flailExt = Math.max(0, ent._flailExt - 1.5 * rawDt);
@@ -5608,9 +5759,11 @@ function updateFlailSwing(ent, targetAng, rawDt){
             ent._flailTimeInState = 0;
             // НЕ ОБНУЛЯЕМ ent._flailSpinSpeed!
         }
-        ent._flailFreeAngle += ent._flailDirection * ent._flailSpinSpeed * 1.5 * rawDt;
-        ent.angle = ent._flailFreeAngle;
-        ent._flailExt = Math.min(1, ent._flailExt + 0.1 * rawDt);
+        if(ent._flailState==='SPIN'){
+            ent._flailFreeAngle += ent._flailDirection * ent._flailSpinSpeed * 2.1 * rawDt;
+            ent.angle = ent._flailFreeAngle;
+            ent._flailExt = Math.min(1, ent._flailExt + 0.2 * rawDt);
+        }
     }
 
     // ── СОСТОЯНИЕ 3: RETRACT ──
@@ -5630,6 +5783,7 @@ function updateFlailSwing(ent, targetAng, rawDt){
             // Возобновляем вращение, но с плавным набором скорости
             ent._flailState = 'SPIN';
             ent._flailDirection = mouseDirection;
+            if(isBot(ent)) ent._flailDirectionLockUntil = GameTime + 3;
             // Скорость растёт плавно от текущей, а не резко
             const targetSpinSpeed = Math.min(5.0, mouseSpeed * 0.6);
             ent._flailSpinSpeed = ent._flailSpinSpeed * 0.6 + targetSpinSpeed * 0.4;
@@ -5642,7 +5796,7 @@ function updateFlailSwing(ent, targetAng, rawDt){
         }
         
         // ⚡ ВРАЩЕНИЕ ПРОДОЛЖАЕТСЯ (инерция) - НЕ ЗАТУХАЕТ, ПОКА ЦЕПЬ НЕ СКРУТИТСЯ
-        ent._flailFreeAngle += ent._flailDirection * ent._flailSpinSpeed * 1.5 * rawDt;
+        ent._flailFreeAngle += ent._flailDirection * ent._flailSpinSpeed * 2.1 * rawDt;
         ent.angle = ent._flailFreeAngle;
         
         // Медленное скручивание цепи
@@ -5686,7 +5840,7 @@ function updateFlailSwing(ent, targetAng, rawDt){
 
     // ── Угловая скорость ──
     if (ent._flailPrevAngle !== undefined && ent._flailPrevAngle !== null) {
-        const MAX_ANGLE_STEP = 8 * rawDt;
+        const MAX_ANGLE_STEP = 11.2 * rawDt;
         const rawStep = $.M.angDiff(ent.angle, ent._flailPrevAngle);
         const clampedStep = Math.max(-MAX_ANGLE_STEP, Math.min(MAX_ANGLE_STEP, rawStep));
         ent.angle = ent._flailPrevAngle + clampedStep;
@@ -5745,6 +5899,424 @@ function flailScaleFor(ent){
 // ──────────────── END LAYER: WEAPONS_FLAIL ────────────────
 
 // ════════════════════════════════════════════════════════════════════════════
+
+// Lunge authority belongs to the attacking peer; ring simulation is cosmetic.
+const FLAIL_LUNGE_OUT_TIME = 0.18;
+const FLAIL_LUNGE_RETURN_TIME = 0.32;
+const FLAIL_PULL_TIME = 0.6;
+const FLAIL_NODE_COUNT = 17;
+let flailAttackSerial = Date.now();
+
+function flailWorldScale(ent){
+    return effSwordScale(ent) * sv('swlen') * (isBot(ent) ? sv('botswordscale') : 1);
+}
+function flailRemote(ent){ return typeof NET_SYNC !== 'undefined' && NET_SYNC.active && ent === D; }
+function flailBusy(ent){ return !!ent._flailAttack || ent._flailAttackEnd === GameTime; }
+function resetFlailCombat(ent){
+    if(!ent) return;
+    if(ent===P && ent._flailAttack && typeof NET_SYNC!=='undefined' && NET_SYNC.active)
+        $.NET.send({type:'flailCancel',id:ent._flailAttack.id});
+    if(ent._flailAttack && ent._flailAttack.target && ent._flailAttack.target._flailPull?.owner === ent)
+        ent._flailAttack.target._flailPull = null;
+    ent._flailAttack = null;
+    ent._flailPull = null;
+    ent._flailNodes = null;
+    ent._flailDrawNodes = null;
+    ent._flailChainAngle = null;
+    ent._flailPress = false;
+    ent._flailAttackEnd = -1;
+    ent._flailNetTime = -1;
+    ent._flailNetTarget = null;
+    ent._flailFoldLocked=false;
+    ent._flailFlick=null;
+    ent._flailOrbitPrevious=null;
+    ent._flailOrbitAccum=0;
+    ent._flailOrbitDirection=0;
+}
+function flailTryHook(ent, angle){
+    flailInput(ent, true, angle);
+    flailInput(ent, false, angle);
+}
+
+function flailInput(ent, down, angle){
+    const pressed = down && !ent._flailPress;
+    ent._flailPress = !!down;
+    if(!pressed || flailRemote(ent) || weaponKeyOf(ent) !== 'flail' || flailBusy(ent) || ent._flailFoldLocked || isUnbalanced(ent) ||
+       ent.hp <= 0 || ent.hasWeapon === false || isExhausted(ent) || !(ent.rage >= 50)) return;
+    const pivot = $.POS.pivot(ent), scale = flailWorldScale(ent);
+    ent.rage -= 50;
+    ent._flailAttack = { id: ++flailAttackSerial, phase: 'out', angle, time: 0,
+        reach: SWORD_LEN * FLAIL_MAX_SCALE * scale * 1.5, x: pivot.x, y: pivot.y,
+        speed: Math.max(Math.abs(ent.vel || 0), sv('swthresh')),
+        tested: new Set(), target: null };
+    ent._flailIsLerping = false;
+    $.S.play('hammerSwing');
+}
+// Earliest intersection of a swept point with an expanded rectangle.
+function flailRectHit(ax, ay, bx, by, x, y, w, h, radius){
+    let lo = 0, hi = 1;
+    for(const [a, d, min, max] of [[ax,bx-ax,x-radius,x+w+radius],[ay,by-ay,y-radius,y+h+radius]]){
+        if(Math.abs(d) < 1e-9){ if(a < min || a > max) return null; }
+        else {
+            let t0 = (min-a)/d, t1 = (max-a)/d;
+            if(t0 > t1) [t0,t1] = [t1,t0];
+            lo = Math.max(lo,t0); hi = Math.min(hi,t1);
+            if(lo > hi) return null;
+        }
+    }
+    return lo;
+}
+function flailCircleHit(ax,ay,bx,by,cx,cy,r){
+    const dx=bx-ax, dy=by-ay, ox=ax-cx, oy=ay-cy;
+    const c=ox*ox+oy*oy-r*r;
+    if(c<=0) return 0;
+    const a=dx*dx+dy*dy, b=ox*dx+oy*dy, disc=b*b-a*c;
+    if(a<1e-9 || disc<0) return null;
+    const t=(-b-Math.sqrt(disc))/a;
+    return t>=0 && t<=1 ? t : null;
+}
+function flailCapsuleHit(ax,ay,bx,by,cx,cy,dx,dy,r){
+    const len=Math.hypot(dx-cx,dy-cy);
+    if(len<1e-9) return flailCircleHit(ax,ay,bx,by,cx,cy,r);
+    const ux=(dx-cx)/len, uy=(dy-cy)/len;
+    const t=flailRectHit((ax-cx)*ux+(ay-cy)*uy, -(ax-cx)*uy+(ay-cy)*ux,
+        (bx-cx)*ux+(by-cy)*uy, -(bx-cx)*uy+(by-cy)*ux, 0,-r,len,2*r,0);
+    const hits=[t,flailCircleHit(ax,ay,bx,by,cx,cy,r),flailCircleHit(ax,ay,bx,by,dx,dy,r)].filter(v=>v!==null);
+    return hits.length ? Math.min(...hits) : null;
+}
+function flailWallHit(ax,ay,bx,by,r){
+    let first=null;
+    const consider=t=>{ if(t!==null && (first===null || t<first)) first=t; };
+    if(typeof boxesOn!=='undefined' && boxesOn){
+        for(const b of BOXES) consider(flailRectHit(ax,ay,bx,by,b.x,b.y,b.w,b.h,r));
+    }
+    if(bx<r) consider(Math.max(0,(r-ax)/(bx-ax)));
+    if(bx>WORLD_W-r) consider(Math.max(0,(WORLD_W-r-ax)/(bx-ax)));
+    if(by<r) consider(Math.max(0,(r-ay)/(by-ay)));
+    if(by>WORLD_H-r) consider(Math.max(0,(WORLD_H-r-ay)/(by-ay)));
+    return first;
+}
+function flailLungeContact(ent,a,nx,ny,entities){
+    const radius=5*flailWorldScale(ent), hits=[];
+    const wall=flailWallHit(a.x,a.y,nx,ny,radius);
+    if(wall!==null) hits.push({t:wall,kind:'wall'});
+    for(const other of entities){
+        if(other===ent || other.hp<=0 || other._defeated || other._awaitingReveal ||
+            (typeof FactionRules!=='undefined' && !FactionRules.canDamage(ent,other))) continue;
+        const c=$.POS.body(other);
+        if(shieldHeld(other)){
+            const sh=shieldCenter(other,ent.x);
+            if(sh){
+                const w=other._shieldW||20, h=other._shieldH||30;
+                const t=flailRectHit(a.x,a.y,nx,ny,sh.x-w/2,sh.y-h/2,w,h,radius);
+                if(t!==null) hits.push({t,kind:'shield',other});
+            }
+        }
+        if(!a.tested.has(other) && !isWeaponDisabled(other) && weaponCollisionType(other)!=='none'){
+            const p=$.POS.pivot(other), span=weaponColliderSpan(other);
+            const sc=sv('swlen')*(isBot(other)?sv('botswordscale'):1);
+            const dx=Math.cos(other.angle), dy=Math.sin(other.angle);
+            const t=flailCapsuleHit(a.x,a.y,nx,ny,p.x-dx*span.back*sc,p.y-dy*span.back*sc,
+                p.x+dx*span.front*sc,p.y+dy*span.front*sc,radius+BLADE_W/2);
+            if(t!==null) hits.push({t,kind:'weapon',other});
+        }
+        const t=flailCircleHit(a.x,a.y,nx,ny,c.x,c.y,14*sv('cscl')+radius);
+        if(t!==null) hits.push({t,kind:'body',other});
+    }
+    hits.sort((a,b)=>a.t-b.t);
+    for(const hit of hits){
+        if(hit.kind==='weapon'){
+            a.tested.add(hit.other);
+            if(Math.random()>=0.5) continue;
+        }
+        return hit;
+    }
+    return null;
+}
+function finishFlailLunge(ent){
+    ent._flailAttack=null;
+    ent._flailAttackEnd=GameTime;
+    ent._flailState='FOLLOW'; ent._flailExt=0; ent._flailSpinSpeed=0;
+    ent._flailAccumAngle=0; ent._flailPrevAngle=ent.angle;
+    ent._flailFreeAngle=ent.angle; ent.vel=0;
+}
+function flailPullStopFor(target,owner,halfPath){
+    const normalStop=SWORD_LEN*flailWorldScale(owner);
+    if(!halfPath) return normalStop;
+    const c=$.POS.body(target), o=$.POS.body(owner);
+    const dist=Math.hypot(o.x-c.x,o.y-c.y);
+    return Math.max(normalStop,(dist+normalStop)*0.5);
+}
+function startFlailPull(target,owner,id,opts){
+    if(target.hp<=0 || target._flailPull) return;
+    target._flailPull={owner,id,time:0,stop:flailPullStopFor(target,owner,opts?.halfPath)};
+    const recoil=Math.min(DISBALANCE_RECOIL_DURATION,1.5);
+    startBuff(target,'DISBALANCE',recoil,1.5-recoil);
+}
+function updateFlailPull(ent,dt){
+    const pull=ent._flailPull;
+    if(!pull || flailRemote(ent)) return;
+    const owner=pull.owner;
+    pull.time+=dt;
+    if(ent.hp<=0 || owner.hp<=0 || owner.hasWeapon===false || weaponKeyOf(owner)!=='flail' ||
+       pull.time>FLAIL_PULL_TIME || (!flailRemote(owner) && owner._flailAttack?.id!==pull.id)){
+        ent._flailPull=null; return;
+    }
+    const c=$.POS.body(ent), o=$.POS.body(owner), dx=o.x-c.x, dy=o.y-c.y;
+    const dist=Math.hypot(dx,dy), stop=Math.max(pull.stop,32*sv('cscl'));
+    if(dist<=stop){ ent._flailPull=null; return; }
+    const step=Math.min(dist-stop,SWORD_LEN*FLAIL_MAX_SCALE*flailWorldScale(owner)/0.3*dt);
+    const nx=c.x+dx/dist*step, ny=c.y+dy/dist*step;
+    const wall=flailWallHit(c.x,c.y,nx,ny,14*sv('cscl'));
+    const fraction=wall===null ? 1 : Math.max(0,wall-0.001);
+    ent.x=$.M.clamp(ent.x+(nx-c.x)*fraction,40,WORLD_W-80);
+    ent.y=$.M.clamp(ent.y+(ny-c.y)*fraction,40,WORLD_H-40);
+    ent.vx=0; ent.vy=0; ent._dvx=0; ent._dvy=0;
+    if(wall!==null) ent._flailPull=null;
+}
+function updateFlailLunge(ent,dt,entities){
+    const a=ent._flailAttack;
+    if(!a || flailRemote(ent)) return;
+    if(ent.hp<=0 || ent.hasWeapon===false || weaponKeyOf(ent)!=='flail'){
+        resetFlailCombat(ent); return;
+    }
+    const p=$.POS.pivot(ent);
+    a.time+=dt;
+    ent.angle=a.angle; ent.vel=0;
+    if(a.phase==='out'){
+        const distance=a.reach*Math.min(1,a.time/FLAIL_LUNGE_OUT_TIME);
+        let nx=p.x+Math.cos(a.angle)*distance, ny=p.y+Math.sin(a.angle)*distance;
+        const hit=flailLungeContact(ent,a,nx,ny,entities);
+        if(hit){
+            nx=a.x+(nx-a.x)*hit.t; ny=a.y+(ny-a.y)*hit.t;
+            if(hit.kind==='body'){
+                if(applyFlailLungeDamage(ent,hit.other,a.speed)){
+                    a.target=hit.other;
+                    if(!flailRemote(hit.other)) startFlailPull(hit.other,ent,a.id);
+                    else $.NET.send({type:'flailHit',id:a.id,newHp:hit.other.hp,dmg:ent._flailLastDamage});
+                }
+            } else if(hit.other){
+                if(hit.kind==='shield') applyShieldBlockFX(nx,ny,ent,hit.other);
+                else $.S.play(blockClashSoundFor(hit.other));
+                a.target=hit.other;
+                if(!flailRemote(hit.other)) startFlailPull(hit.other,ent,a.id,{halfPath:true});
+                else $.NET.send({type:'flailHit',id:a.id,newHp:hit.other.hp,dmg:0,pullHalf:true});
+            }
+        }
+        a.x=nx; a.y=ny;
+        if(hit || a.time>=FLAIL_LUNGE_OUT_TIME){ a.phase='back'; a.time=0; }
+    } else {
+        if(a.target && a.target.hp>0 && a.time<FLAIL_PULL_TIME &&
+           (flailRemote(a.target) || a.target._flailPull?.owner===ent)){
+            const c=$.POS.body(a.target); a.x=c.x; a.y=c.y;
+        } else {
+            const dx=p.x-a.x,dy=p.y-a.y,dist=Math.hypot(dx,dy);
+            const step=a.reach/FLAIL_LUNGE_RETURN_TIME*dt;
+            if(dist<=step || a.time>FLAIL_PULL_TIME+FLAIL_LUNGE_RETURN_TIME){finishFlailLunge(ent);return;}
+            a.x+=dx/dist*step; a.y+=dy/dist*step;
+        }
+    }
+}
+// Fixed-size Verlet chain; endpoints are authoritative, internal nodes are visual only.
+function updateFlailChain(ent,dt){
+    if(flailRemote(ent) && ent._flailAttack && ent._flailNetTarget){
+        const t=1-Math.exp(-30*dt);
+        ent._flailAttack.x+=(ent._flailNetTarget.x-ent._flailAttack.x)*t;
+        ent._flailAttack.y+=(ent._flailNetTarget.y-ent._flailAttack.y)*t;
+    }
+    const scale=flailWorldScale(ent), p=$.POS.pivot(ent), a=ent._flailAttack;
+    const length=weaponLenFor(ent)*scale;
+    const hx=a?a.x:p.x+Math.cos(ent.angle)*length;
+    const hy=a?a.y:p.y+Math.sin(ent.angle)*length;
+    const chainAngle=Math.atan2(hy-p.y,hx-p.x);
+    const angularSpeed=ent._flailChainAngle==null ? 0 : $.M.clamp(
+        $.M.angDiff(chainAngle,ent._flailChainAngle)/Math.max(dt,0.001),-11.2,11.2);
+    ent._flailChainAngle=chainAngle;
+    const normalX=-Math.sin(chainAngle), normalY=Math.cos(chainAngle);
+    const spin=a?0:angularSpeed;
+    const headLen=FLAIL_HEAD_LEN*scale;
+    const distance=Math.hypot(hx-p.x,hy-p.y)||1;
+    const endX=hx-(hx-p.x)/distance*Math.min(headLen,distance);
+    const endY=hy-(hy-p.y)/distance*Math.min(headLen,distance);
+    let nodes=ent._flailNodes;
+    if(!nodes || Math.hypot(nodes[0].x-p.x,nodes[0].y-p.y)>Math.max(100,length)){
+        nodes=ent._flailNodes=Array.from({length:FLAIL_NODE_COUNT},(_,i)=>{
+            const t=i/(FLAIL_NODE_COUNT-1),x=p.x+(endX-p.x)*t,y=p.y+(endY-p.y)*t;
+            return {x,y,px:x,py:y};
+        });
+    }
+    const n=nodes.length-1;
+    const taut=a && a.phase==='out';
+    const slack=taut?0:Math.min(0.22,0.16/(1+Math.abs(ent.vel||0)*0.15));
+    const segment=Math.max(1,Math.hypot(endX-p.x,endY-p.y)*(1+slack)/n);
+    const damp=Math.exp(-8*dt);
+    for(let i=1;i<n;i++){
+        const v=nodes[i], x=v.x,y=v.y;
+        // Centrifugal tension plus lag opposite the actual rotation, not a fixed screen-side bend.
+        const lagForce=-spin*120*scale*dt*dt;
+        v.x+=(x-v.px)*damp+normalX*lagForce;
+        v.y+=(y-v.py)*damp+normalY*lagForce+500*scale*dt*dt/(1+Math.abs(spin));
+        v.px=x;v.py=y;
+    }
+    for(let pass=0;pass<6;pass++){
+        nodes[0].x=p.x;nodes[0].y=p.y;nodes[n].x=endX;nodes[n].y=endY;
+        for(let i=0;i<n;i++){
+            const u=nodes[i],v=nodes[i+1],dx=v.x-u.x,dy=v.y-u.y,d=Math.hypot(dx,dy)||1;
+            const error=(d-segment)/d;
+            const w=i===0 || i+1===n ? 1 : 0.5;
+            if(i!==0){u.x+=dx*error*w;u.y+=dy*error*w;}
+            if(i+1!==n){v.x-=dx*error*w;v.y-=dy*error*w;}
+        }
+    }
+    // The anchored tip must not make slack buckle ahead of a rotating chain.
+    if(Math.abs(spin)>0.3){
+        const direction=Math.sign(spin);
+        for(let i=1;i<n;i++){
+            const v=nodes[i],side=(v.x-p.x)*normalX+(v.y-p.y)*normalY;
+            if(side*direction>0){
+                const dx=normalX*side,dy=normalY*side;
+                v.x-=dx;v.y-=dy;v.px-=dx;v.py-=dy;
+            }
+        }
+    }
+    nodes[0].x=p.x;nodes[0].y=p.y;nodes[n].x=endX;nodes[n].y=endY;
+    // Keep Verlet history independent of visual bend amplitude. With the head anchored,
+    // the visible chain bows toward rotation (the head trails the hand), not behind it.
+    const drawn=ent._flailDrawNodes || (ent._flailDrawNodes=nodes.map(()=>({x:0,y:0})));
+    const bendScale=Math.abs(spin)>0.3 ? -0.5 : 0.5;
+    for(let i=0;i<=n;i++){
+        const v=nodes[i],side=(v.x-p.x)*normalX+(v.y-p.y)*normalY;
+        drawn[i].x=v.x+normalX*side*(bendScale-1);
+        drawn[i].y=v.y+normalY*side*(bendScale-1);
+    }
+    ent._flailHeadX=hx;ent._flailHeadY=hy;
+}
+function drawFlailChain(c,ent,glow,blur){
+    const nodes=ent._flailDrawNodes || ent._flailNodes, scale=flailWorldScale(ent);
+    c.save();
+    c.setTransform(CAM_SCALE,0,0,CAM_SCALE,-CAM_X*CAM_SCALE,-CAM_Y*CAM_SCALE);
+    if(glow){c.shadowColor=glow;c.shadowBlur=blur;}
+    let total=0;
+    for(let i=1;i<nodes.length;i++) total+=Math.hypot(nodes[i].x-nodes[i-1].x,nodes[i].y-nodes[i-1].y);
+    const count=Math.min(80,Math.max(2,Math.ceil(total/(FLAIL_RING_LEN*scale))));
+    let index=1, walked=0;
+    for(let i=0;i<count;i++){
+        const distance=(i+0.5)/count*total;
+        let u=nodes[index-1],v=nodes[index],len=Math.hypot(v.x-u.x,v.y-u.y);
+        while(index<nodes.length-1 && walked+len<distance){walked+=len;index++;u=nodes[index-1];v=nodes[index];len=Math.hypot(v.x-u.x,v.y-u.y);}
+        const t=Math.min(1,(distance-walked)/Math.max(len,0.001));
+        const img=i%2?ent._flailRing2Img:ent._flailRing1Img;
+        c.save();c.translate(u.x+(v.x-u.x)*t,u.y+(v.y-u.y)*t);c.rotate(Math.atan2(v.y-u.y,v.x-u.x)+Math.PI/2);
+        const h=FLAIL_RING_LEN*scale;
+        if(img && img.complete && img.naturalWidth){const w=h*spriteAspectFor(img);c.drawImage(img,-w/2,-h/2,w,h);}
+        else {c.strokeStyle='#aaa';c.lineWidth=2*scale;c.strokeRect(-2*scale,-h/2,4*scale,h);}
+        c.restore();
+    }
+    const last=nodes[nodes.length-1],img=ent._weaponImg,h=FLAIL_HEAD_LEN*scale;
+    c.translate(ent._flailHeadX,ent._flailHeadY);
+    c.rotate(Math.atan2(ent._flailHeadY-last.y,ent._flailHeadX-last.x)+Math.PI/2);
+    if(img && img.complete && img.naturalWidth){const w=h*spriteAspectFor(img);c.drawImage(img,-w/2,0,w,h);}
+    c.restore();
+}
+function updateFlailCombat(dt){
+    const entities=[P,...(dummyOn?ALL_BOTS:[])];
+    if(typeof NET_SYNC!=='undefined' && NET_SYNC.active && !entities.includes(D)) entities.push(D);
+    for(const ent of entities) updateFlailPull(ent,dt);
+    for(const ent of entities){
+        if(ent.hp<=0 || ent._defeated || ent.hasWeapon===false || weaponKeyOf(ent)!=='flail'){
+            if(ent._flailAttack || ent._flailNodes) resetFlailCombat(ent);
+            continue;
+        }
+        if(flailRemote(ent) && GameTime-(ent._flailNetTime||0)>1) ent._flailAttack=null;
+        if(!flailRemote(ent) && (isExhausted(ent) || isUnbalanced(ent))) beginFlailFold(ent);
+        updateFlailLunge(ent,dt,entities);
+        updateFlailTurns(ent);
+        updateFlailChain(ent,dt);
+    }
+}
+
+// Three quick directional strokes (out/back/out), independent of extension and global sword flick settings.
+function detectFlailFlick(ent,delta,dt){
+    let f=ent._flailFlick;
+    if(!f || (f.time+=dt)>0.7) f=ent._flailFlick={time:0,dir:0,amp:0,turns:0};
+    if(Math.abs(delta)/Math.max(dt,0.001)<2.5) return false;
+    if(!f.dir) f.time=0; // Start the gesture window on movement, not on an arbitrary idle tick.
+    const dir=Math.sign(delta),amp=Math.abs(delta);
+    if(f.dir && dir!==f.dir){
+        f.turns=f.amp>=0.18 && f.amp<=1.6 ? f.turns+1 : 0;
+        f.amp=0;
+    }
+    f.dir=dir;f.amp+=amp;
+    if(f.amp>1.6) f.turns=0;
+    if(f.turns>=2 && f.amp>=0.18){ent._flailFlick=null;return true;}
+    return false;
+}
+function beginFlailFold(ent){
+    if(ent._flailFoldLocked) return;
+    ent._flailFoldLocked=true;
+    ent._flailExt=Math.max(0,ent._flailExt||0);
+    ent._flailFlick=null;ent._flailAccumAngle=0;ent._flailIsLerping=false;
+    ent._flailFreeAngle=ent.angle;
+    // DISBALANCE changes ent.vel before this tick; retain the chain's own momentum.
+    const wasSpinning=(ent._flailState==='SPIN' || ent._flailState==='RETRACT') &&
+        Number.isFinite(ent._flailSpinSpeed) && ent._flailSpinSpeed>0;
+    if(!wasSpinning){
+        const velocity=ent._flailLagVel ?? ent.vel ?? 0;
+        ent._flailDirection=Math.sign(velocity)||ent._flailDirection||1;
+        ent._flailSpinSpeed=Math.min(5,Math.abs(velocity)/2.1);
+    }
+    ent._flailState='RETRACT';
+    const a=ent._flailAttack;
+    if(a){
+        if(a.target?._flailPull?.owner===ent) a.target._flailPull=null;
+        if(ent===P && typeof NET_SYNC!=='undefined' && NET_SYNC.active)
+            $.NET.send({type:'flailCancel',id:a.id,retract:true});
+        a.target=null;a.phase='back';a.time=0;
+    }
+}
+function updateForcedFlailFold(ent,targetAng,dt){
+    const previous=ent.angle;
+    if((ent._flailExt||0)>0){
+        ent.angle+=ent._flailDirection*ent._flailSpinSpeed*2.1*dt;
+        ent._flailExt=Math.max(0,ent._flailExt-0.84*dt);
+    }
+    ent._flailFreeAngle=ent.angle;
+    ent._flailPrevAngle=ent.angle;
+    ent.vel=$.M.angDiff(ent.angle,previous)/Math.max(dt,0.001);
+    ent._flailLagVel=ent.vel;
+    if(ent._flailExt<=0){
+        ent._flailSpinSpeed=0;ent.vel=0;ent._flailWasAtMax=false;
+        if(!isExhausted(ent) && !isUnbalanced(ent)){
+            ent._flailFoldLocked=false;ent._flailState='FOLLOW';
+            ent._flailLerpStartAngle=ent.angle;ent._flailLerpTargetAngle=targetAng;
+            ent._flailLerpTimer=0;ent._flailLerpDuration=1;ent._flailIsLerping=true;
+            ent._flailFlick=null;
+        }
+    }
+}
+function updateFlailTurns(ent){
+    if(flailRemote(ent)) return; // The remote peer owns both counting and stamina.
+    const previous=ent._flailOrbitPrevious;
+    ent._flailOrbitPrevious=ent.angle;
+    if(previous==null || ent._flailAttack || ent._flailIsLerping || ent._flailAttackEnd===GameTime){
+        ent._flailOrbitAccum=0;ent._flailOrbitDirection=0;return;
+    }
+    const delta=$.M.angDiff(ent.angle,previous),direction=Math.sign(delta);
+    if(Math.abs(delta)<1e-7) return;
+    if(ent._flailOrbitDirection && direction!==ent._flailOrbitDirection) ent._flailOrbitAccum=0;
+    ent._flailOrbitDirection=direction;
+    ent._flailOrbitAccum=(ent._flailOrbitAccum||0)+Math.abs(delta);
+    while(ent._flailOrbitAccum>=Math.PI*2-1e-9){
+        ent._flailOrbitAccum=Math.max(0,ent._flailOrbitAccum-Math.PI*2);
+        ent._flailTurnSerial=(ent._flailTurnSerial||0)+1;
+        $.S.play('hammerSwing');
+        drainStamina(ent,15);
+        if(ent.stamina<=0){
+            if(!isExhausted(ent)) applyExhaust(ent);
+            beginFlailFold(ent);
+        }
+    }
+}
 
 </script>
 <script>
@@ -5811,7 +6383,7 @@ let PROJECTILES = []; // {kind:'wand'|'arrow', x,y,vx,vy,rot,owner,dmg,ownerImmu
 let WAND_PARTICLES = []; // {x,y,tx,ty,life,maxLife,owner} — particles during charging, attracted to wand tip
 
 // ── Helper: spawns a projectile (wand or arrow) at the weapon tip with given angle and damage.
-function spawnProjectile(owner, kind, angle, dmg, speedOverride, maxDmgPct){
+function spawnProjectile(owner, kind, angle, dmg, speedOverride, maxDmgPct, meta){
   const c = $.POS.tip(owner);
   
   let speed;
@@ -5835,6 +6407,7 @@ function spawnProjectile(owner, kind, angle, dmg, speedOverride, maxDmgPct){
     bornAt: GameTime,
     // Save shooter position for lightning trail effects
     shooterPos: {x: c.x, y: c.y},
+    chargeTime: meta && Number.isFinite(meta.chargeTime) ? meta.chargeTime : 0,
   });
   $.FX.hit({x:c.x, y:c.y-30, t: kind==='wand' ? '✨' : '➹', life:20, big:false, col: kind==='wand'?'#c090ff':'#d9c08a'});
 }
@@ -6365,7 +6938,7 @@ const dC2 = $.POS.body(defender);
   const isExplosion = opts.isExplosion || false;
   const isProjectile = opts.isProjectile || false;
  
-  const knockbackMult = opts.knockbackMult || 1.0;
+  const knockbackMult = opts.knockbackMult ?? 1.0;
   const hitstopFrames = opts.hitstopFrames || 4;
 
   const shakePower = opts.shakePower || (damage > 15 ? 5 : 3);
@@ -6377,7 +6950,11 @@ const dC2 = $.POS.body(defender);
   const playSoundOpt = opts.playSound !== undefined ? opts.playSound : true;
 
   // ─── DAMAGE APPLICATION ───
-  const finalDmg = Math.min(damage, Math.max(1, Math.round(MAX_HP * 0.70))); // 70% max per hit
+  const guardedDamage = (typeof shieldHeld === 'function' && shieldHeld(defender))
+    ? Math.round(damage * 0.5)
+    : damage;
+  const balanceKey=opts.weaponDamageKey || (!isMagic && !isExplosion && !isProjectile && attacker ? weaponKeyOf(attacker) : null);
+  const finalDmg = Math.round(Math.min(guardedDamage, Math.max(1, Math.round(MAX_HP * 0.70))) * weaponDamageMultiplier(balanceKey)); // 70% max per hit
   defender.hp = Math.max(0, defender.hp - finalDmg);
   defender._hitCD = Math.max(defender._hitCD || -1, GameTime + 0.4);
   defender.hitFlash = GameTime + 0.3;
@@ -6403,7 +6980,8 @@ const dC2 = $.POS.body(defender);
     const dx = dC.x - aC.x;
     const dy = dC.y - aC.y;
     const len = Math.hypot(dx, dy) || 1;
-    const kb = sv('bodyKB') * 0.5 * knockbackMult;
+    const shieldKbMult = (typeof shieldHeld === 'function' && shieldHeld(defender)) ? 0.5 : 1;
+    const kb = sv('bodyKB') * 0.5 * knockbackMult * shieldKbMult;
     defender.vx += (dx / len) * kb;
     defender.vy += (dy / len) * kb;
   }
@@ -6791,6 +7369,7 @@ function updateRangedWeaponFire(ent, fireHeld, aimAngleOverride){
         if(chargedEnough){
           const aimAngle = aimAngleOverride != null ? aimAngleOverride
             : (ent === P ? Math.atan2(mY - $.POS.root().y, mX - $.POS.root().x) : ent.angle);
+          if(ent.hasWeapon === false || weaponKeyOf(ent) !== 'wand') return;
           const rageMult = 1 + $.M.clamp(ent.rage||0, 0, 100)/100;
           spawnProjectile(ent, 'wand', aimAngle, WAND_BASE_DMG * rageMult);
           drainStamina(ent, sv('stamswing') * weaponStaminaMult(ent));
@@ -6872,7 +7451,8 @@ function updateRangedWeaponFire(ent, fireHeld, aimAngleOverride){
           });
         }
         
-        spawnProjectile(ent, 'arrow', aimAngle, dmg, BOW_PROJ_SPEED, BOW_MAX_DMG_PCT);
+        if(ent.hasWeapon === false || weaponKeyOf(ent) !== 'bow') return;
+        spawnProjectile(ent, 'arrow', aimAngle, dmg, BOW_PROJ_SPEED, BOW_MAX_DMG_PCT, {chargeTime});
         
         // Drain 15 stamina on release
 const staminaCost = Math.min(15, ent.stamina);
@@ -7318,6 +7898,7 @@ function updateProjectiles(dt){
     for(const ent of defenders){
       if(!ent || ent.hp <= 0 || ent._awaitingReveal) continue;
       if(ent === w.owner && GameTime < w.ownerImmuneUntil) continue;
+      if(!canResolveProjectileContact(w,ent)) continue;
       
       // ─── BLADE BLOCK ──────────────────────────────────────────────────
       if(ent.hasWeapon !== false && !isExhausted(ent)){
@@ -7367,14 +7948,7 @@ function updateProjectiles(dt){
     
     if(blocked){
       // ─── STAMINA COST FOR BLOCKING ─────────────────────────────────
-      const staminaTarget = w.owner || blocker;
-      if(staminaTarget){
-        const projStamCost = blockStaminaCost(staminaTarget, true);
-        drainStamina(staminaTarget, projStamCost);
-if(staminaTarget.stamina <= 0 && !isExhausted(staminaTarget)){
-  applyExhaust(staminaTarget);
-}
-      }
+      applyProjectileContactEffects(w,blocker,true,0);
       $.S.play(w.kind==='wand' ? 'magicHit' : 'arrowHit');
       if(blockedByBlade){
         const flySpdAtBlock = Math.hypot(w.vx, w.vy);
@@ -7400,16 +7974,18 @@ if(staminaTarget.stamina <= 0 && !isExhausted(staminaTarget)){
     for(const ent of defenders){
       if(!ent || ent.hp <= 0 || ent._awaitingReveal) continue;
       if(ent === w.owner && GameTime < w.ownerImmuneUntil) continue;
+      if(!canResolveProjectileContact(w,ent)) continue;
       const c = $.POS.body(ent);
       const hitR = 22 * (isBot(ent) ? sv('cscl')*sv('botscale') : sv('cscl'));
       const d = Math.hypot(c.x-w.x, c.y-w.y);
       if(d < hitR){
         // ─── BOT DODGE ─────────────────────────────────────────────────
-        if(isBot(ent) && (!ent._aiState || ent._aiState.enabled !== false)){
+        if(isBot(ent) && !flailRemote(ent) && (!ent._aiState || ent._aiState.enabled !== false)){
           if(!w._dodgeRolled) w._dodgeRolled = new Set();
           if(!w._dodgeRolled.has(ent)){
             w._dodgeRolled.add(ent);
-            if(Math.random() < PROJECTILE_DODGE_CHANCE){
+            const dodgeChance = projectileDodgeChanceFor(w, PROJECTILE_DODGE_CHANCE);
+            if(Math.random() < dodgeChance){
               const dodgeDir = Math.random() < 0.5 ? -1 : 1;
               const perpX = -Math.sin(w.rot)*dodgeDir, perpY = Math.cos(w.rot)*dodgeDir;
               ent.vx += perpX*4; ent.vy += perpY*4;
@@ -7434,11 +8010,12 @@ if(staminaTarget.stamina <= 0 && !isExhausted(staminaTarget)){
         // ─── UNIFIED applyDamage CALL ───
         // ••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
         const isMagic = w.kind === 'wand';
-        
+        const isArrow = w.kind === 'arrow';
+        const hpBefore=ent.hp;
         applyDamage(ent, dmg, w.owner, {
           isMagic: isMagic,
           isProjectile: true,
-          knockbackMult: isMagic ? 1.5 : 1.0,
+          knockbackMult: (isMagic || isArrow) ? 0 : 1.0,
           hitstopFrames: isMagic ? 5 : 3,
           shakePower: dmg > 15 ? (isMagic ? 6 : 4) : 3,
           textColor: isMagic ? '#c090ff' : '#ff8844',
@@ -7448,9 +8025,11 @@ if(staminaTarget.stamina <= 0 && !isExhausted(staminaTarget)){
         });
         
         // ─── EXTRA KNOCKBACK ───────────────────────────────────────────
-        const nx = d>0.1?(c.x-w.x)/d:0, ny = d>0.1?(c.y-w.y)/d:-1;
-        const kb = w.kind==='wand' ? 14 : 8;
-        ent.x += nx*kb*0.7; ent.y += ny*kb*0.7;
+        if(w.kind!=='wand' && w.kind!=='arrow'){
+          const nx = d>0.1?(c.x-w.x)/d:0, ny = d>0.1?(c.y-w.y)/d:-1;
+          ent.x += nx*8*0.7; ent.y += ny*8*0.7;
+        }
+        applyProjectileContactEffects(w,ent,false,hpBefore-ent.hp);
         
         // ─── EXPLOSION EFFECT ─────────────────────────────────────────
         if(w.kind === 'wand') spawnWandExplosion(w.x, w.y);
@@ -7471,6 +8050,11 @@ if(staminaTarget.stamina <= 0 && !isExhausted(staminaTarget)){
 // before the projectile reaches the bot, and it's a proactive sidestep.
 // This makes bots much harder to hit at range, while regular dodge
 // (PROJECTILE_DODGE_CHANCE) is a last-second evasion.
+function projectileDodgeChanceFor(projectile, baseChance){
+  if(projectile && projectile.kind === 'arrow' && (projectile.chargeTime || 0) > 2) return baseChance * 0.5;
+  return baseChance;
+}
+
 function updateProjectileDodgeAI(){
   if(!dummyOn || PROJECTILES.length === 0) return;
   for(const w of PROJECTILES){
@@ -7492,7 +8076,8 @@ function updateProjectileDodgeAI(){
       if(perp > 46) continue; // Too far off course — won't hit
 
       w._preDodgeRolled.add(bot);
-      if(Math.random() < PROJECTILE_PREDODGE_CHANCE){
+      const dodgeChance = projectileDodgeChanceFor(w, PROJECTILE_PREDODGE_CHANCE);
+      if(Math.random() < dodgeChance){
         const dodgeDir = Math.random() < 0.5 ? -1 : 1;
         bot._dvx = (bot._dvx||0) + (-dirY)*dodgeDir*7;
         bot._dvy = (bot._dvy||0) + (dirX)*dodgeDir*7;
@@ -7929,13 +8514,13 @@ if(chargeTime >= MAGICSTAFF_CHARGE_FULLTIME){
   // ─── WAND (regular wand) AI ────────────────────────────────────────────
   // ••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
   if(bot._wandMode == null) bot._wandMode = 'melee';
-  if(bot._wandModeUntil == null) bot._wandModeUntil = GameTime + rf(7,9);
+  if(bot._wandModeUntil == null) bot._wandModeUntil = GameTime + rf(7,9) * 0.5;
 
   const CLOSE_RANGE = 90;
 
   if(bot._wandMode === 'ranged' && dist < CLOSE_RANGE){
     bot._wandMode = 'melee';
-    bot._wandModeUntil = GameTime + rf(7,9);
+    bot._wandModeUntil = GameTime + rf(7,9) * 0.5;
     bot._wandCharging = false;
     return false;
   }
@@ -7946,7 +8531,7 @@ if(chargeTime >= MAGICSTAFF_CHARGE_FULLTIME){
       bot._wandModeUntil = GameTime + randRange(2,4);
     } else {
       bot._wandMode = 'melee';
-      bot._wandModeUntil = GameTime + rf(7,9);
+      bot._wandModeUntil = GameTime + rf(7,9) * 0.5;
       bot._wandCharging = false;
     }
   }
@@ -7982,6 +8567,40 @@ return true;
 // ─────────────────────────────────────────────────────────────────────────────────
 
 // ••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+
+let projectileContactSerial=Date.now();
+function canResolveProjectileContact(projectile,ent){
+  if(typeof NET_SYNC!=='undefined' && NET_SYNC.active && projectile.owner===D) return false;
+  return typeof FactionRules==='undefined' || FactionRules.canDamage(projectile.owner,ent);
+}
+// A consumed projectile resolves once; thrown weapons call this once per continuous block contact.
+function applyProjectileContactEffects(projectile,ent,blocked,damage){
+  if(!ent || !canResolveProjectileContact(projectile,ent)) return;
+  const remote=typeof NET_SYNC!=='undefined' && NET_SYNC.active && ent===D;
+  const speed=Math.hypot(projectile.vx||0,projectile.vy||0)||1;
+  const dx=(projectile.vx||0)/speed,dy=(projectile.vy||0)/speed;
+  const wand=projectile.kind==='wand';
+  const arrow=projectile.kind==='arrow';
+  const impactImpulse=(wand || arrow) ? 7 : 0;
+  const disarm=wand && ent.hp>0 && ent.hasWeapon!==false && Math.random()<0.3;
+  // Same drag as normal disarm, half its initial velocity => approximately half travel.
+  const kick=disarm ? (6+Math.random()*4)*0.5 : 0;
+  const effect={type:'projectileContact',id:++projectileContactSerial,damage:Math.max(0,damage||0),
+    stamina:blocked?30:0,dx:dx*impactImpulse,dy:dy*impactImpulse,disarm,kx:dx*kick,ky:dy*kick};
+  if(remote){
+    $.NET.send(effect);
+    return;
+  }
+  applyProjectileEffectToEntity(ent,effect);
+}
+function applyProjectileEffectToEntity(ent,effect){
+  if(effect.stamina>0){
+    drainStamina(ent,effect.stamina);
+    if(ent.stamina<=0 && !isExhausted(ent)) applyExhaust(ent);
+  }
+  ent.vx=(ent.vx||0)+effect.dx;ent.vy=(ent.vy||0)+effect.dy;
+  if(effect.disarm && ent.hp>0 && ent.hasWeapon!==false) disarmEntity(ent,effect.kx,effect.ky);
+}
 
 </script>
 <script>
@@ -8346,6 +8965,10 @@ function resolveEntityCollision(a, b){
 
 // ••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••• END MODULE: FX ••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
 
+function canUseSwingBonus(ent){
+  return !(ent && ent._swingBonusSuppressed);
+}
+
 function updateAtkPoints(ent, opponent, dt){
   const exC = $.POS.center(ent);
   const opC = $.POS.body(opponent);
@@ -8364,7 +8987,7 @@ function updateAtkPoints(ent, opponent, dt){
   if(Math.hypot(tipX - opC.x, tipY - opC.y) < 30) ent.atkPts += dt * 1;
 
   // +1 for fast swing
-  if(Math.abs(ent.vel) > sv('swthresh')) ent.atkPts += dt * 1;
+  if(canUseSwingBonus(ent) && Math.abs(ent.vel) > sv('swthresh')) ent.atkPts += dt * 1;
 
   // +2 for LMB click (only for player)
   if(ent === P && mDown) ent.atkPts += dt * 2;
@@ -8422,35 +9045,78 @@ function updateDisbalanceCombo(attacker, defender){
     (attacker === D && typeof AI !== 'undefined' &&
       ((AI._pokeDodgeActive && (GameTime - (D._pokeStartTime || -99)) <= 0.3) ||
        (AI._lungeActive && AI._lungePhase === 'lunge')));
-  const isStrongSwing = Math.abs(attacker.vel) > sv('swthresh') * 2.5;
-  if(combo && GameTime - combo.startedAt <= windowDuration &&
-     combo.target === defender &&
-     (isStrongSwing || isLmbLunge)){
+  const isSpecialLmbClash = attacker && attacker._lmbRefundClashFrame === GameTime;
+  if(combo && combo.target === defender){
+    const expired = GameTime - combo.startedAt > windowDuration;
     delete attacker._disbalanceCombo;
-    const chance = Math.min(100, combo.blocks * 40);
-    const triggered = Math.random() * 100 < chance;
-    if(triggered && !isUnbalanced(defender)) applyDisbalance(defender, attacker);
-    disbalanceComboDebug(attacker,
-      triggered
-        ? (isLmbLunge ? `LUNGE — DISBALANCE! (${chance}%)` : `SWING — DISBALANCE! (${chance}%)`)
-        : `DISBALANCE FAIL (${chance}%)`,
-      triggered ? '#ff8830' : '#ff4040');
-    return triggered;
+    if(!expired && isSpecialLmbClash){
+      const disarmCombo = defender.hasWeapon !== false && Math.random() < 0.30;
+      if(disarmCombo && typeof disarmEntity === 'function'){
+        const aC = $.POS.body(attacker);
+        const dC = $.POS.body(defender);
+        const dx = dC.x - aC.x, dy = dC.y - aC.y;
+        const len = Math.hypot(dx, dy) || 1;
+        const baseSpeed = 7 + Math.random() * 5;
+        applyDisbalance(defender, attacker, 0.4);
+        disarmEntity(defender, dx / len * baseSpeed, dy / len * baseSpeed - 1.5);
+        $.FX.hit({x:dC.x, y:dC.y-52, t:(window.I18N ? window.I18N.t('combat.weaponDropped') : 'WEAPON DROPPED!'), life:40, big:true, col:'#ffaa44'});
+      } else if(!isUnbalanced(defender)) {
+        applyDisbalance(defender, attacker);
+      }
+      disbalanceComboDebug(attacker,
+        disarmCombo ? 'SPECIAL LMB — SHORT DISBALANCE + DISARM!' : 'SPECIAL LMB — DISBALANCE!',
+        disarmCombo ? '#ffaa44' : '#ff8830');
+      return true;
+    }
+    disbalanceComboDebug(attacker, expired ? 'SPECIAL BLOCK EXPIRED' : 'SPECIAL BLOCK MISSED', '#ff4040');
   }
-
   if(!defenderCanBlock) return false;
 
-  // Every weapon block adds a stack and restarts the expiration timer.
+  if(Math.random() >= 0.30) return false;
+
   const state = defender._disbalanceCombo;
   const expired = state && GameTime - state.startedAt > windowDuration;
   const blocks = state && state.target === attacker && !expired ? state.blocks + 1 : 1;
   defender._disbalanceCombo = { target: attacker, blocks, startedAt: GameTime };
+  defender._specialDisbalanceBlockFrame = GameTime;
+  const sc = $.POS.body(defender);
+  $.FX.hit({x:sc.x, y:sc.y-58, t:'КЛАЦ!', life:26, big:false, col:'#b8cad8'});
   disbalanceComboDebug(defender,
-    `Block: ${blocks}x → ${Math.min(100, blocks * 30)}%`,
+    `Special block: ${blocks}x`,
     '#409cff');
   return false;
 }
+function blockClashSoundFor(defender){
+  const key = typeof weaponKeyOf === 'function' ? weaponKeyOf(defender) : null;
+  return $.ISK(key, 'staff', 'magicstaff', 'wand', 'spear', 'hammer') ? 'woodClink' : 'clash';
+}
 
+const LMB_REFUND_WINDOW = 0.6;
+function lmbRefundWindowActive(ent, target){
+  if(!ent || ent._lmbRefundUsed) return false;
+  const pressAt = ent._lmbRefundPressAt;
+  if(pressAt === undefined || pressAt < 0) return false;
+  if(GameTime - pressAt > LMB_REFUND_WINDOW) return false;
+  if(target){
+    const combo = ent._disbalanceCombo;
+    const comboWindow = Math.max(0.1, sv('unbcombo') || 2);
+    if(!combo || combo.target !== target || GameTime - combo.startedAt > comboWindow) return false;
+  }
+  return (ent._lmbRefundCost || 0) > 0;
+}function tryFinishLmbRefund(ent){
+  if(!lmbRefundWindowActive(ent) || !ent._lmbRefundReleased || !ent._lmbRefundClashed) return false;
+  ent.stamina = Math.min(ent.stamMax || ent.stamina || 0, (ent.stamina || 0) + ent._lmbRefundCost);
+  ent._lmbRefundUsed = true;
+  ent._lmbRefundCost = 0;
+  return true;
+}
+function markLmbRefundClash(ent, target){
+  if(!lmbRefundWindowActive(ent, target)) return false;
+  ent._lmbRefundClashed = true;
+  ent._lmbRefundClashFrame = GameTime;
+  tryFinishLmbRefund(ent);
+  return true;
+}
 function swordHit(entA, entB){
   const attacker = entA.isAttacker ? entA : entB;
   const defender = entA.isAttacker ? entB : entA;
@@ -8486,6 +9152,15 @@ function segSegDist(ax,ay,bx,by,cx,cy,dx,dy){
 // ─── SWORD COLLISION DETECTION ──────────────────────────────────────
 // Detects weapon clashes: blade + stamina + knockback + hitstop.
 function checkSwordCollision(entA, entB, dt){
+  // A lunge has its own swept head collision; the other weapon can still hit its owner.
+  if(flailBusy(entA) || flailBusy(entB)){
+    for(const [attacker,defender] of [[entA,entB],[entB,entA]]){
+      if(flailBusy(attacker)) continue;
+      const p=$.POS.pivot(attacker),r=weaponReach(attacker)*sv('swlen')*(isBot(attacker)?sv('botswordscale'):1)*0.82;
+      checkBladeVsBody(attacker,defender,p.x,p.y,p.x+Math.cos(attacker.angle)*r,p.y+Math.sin(attacker.angle)*r);
+    }
+    return;
+  }
 
   // A local player may reuse a bot entity. Skip only two actual AI actors,
   // never an AI actor fighting a locally controlled player slot.
@@ -8520,6 +9195,8 @@ function checkSwordCollision(entA, entB, dt){
   const dirBx = Math.cos(entB.angle), dirBy = Math.sin(entB.angle);
   const spanA = weaponColliderSpan(entA);
   const spanBraw = weaponColliderSpan(entB);
+  const colA = weaponCollisionType(entA);
+  const colB = weaponCollisionType(entB);
   const botScaleB = isBot(entB) ? sv('botswordscale') : 1;
   const spanB = { back: spanBraw.back * botScaleB, front: spanBraw.front * botScaleB };
 
@@ -8573,7 +9250,7 @@ const bodySwB = weaponReach(entB) * sv('swlen') * (isBot(entB)?sv('botswordscale
   const segsB = [[bladeBx,bladeBy, tipBx,tipBy]];
   if(spanB.back > 0) segsB.push([backHandBx,backHandBy, backBx,backBy]);
 
-  if(!isWeaponDisabled(entA) && !isWeaponDisabled(entB)){
+  if(colA !== 'none' && colB !== 'none' && !isWeaponDisabled(entA) && !isWeaponDisabled(entB)){
     let res = null;
     for(const sa of segsA){
       for(const sb of segsB){
@@ -8630,9 +9307,14 @@ const bodySwB = weaponReach(entB) * sv('swlen') * (isBot(entB)?sv('botswordscale
     if(entA._bladeCD <= GameTime){
       entA._bladeCD = GameTime + 0.1;
       const strongSwing = Math.abs(entA.vel) > sv('swthresh')*2.5 || Math.abs(entB.vel) > sv('swthresh')*2.5;
-      doClash(entA, entB, res, strongSwing);
+      const lmbRefundClash = markLmbRefundClash(entA, entB) || markLmbRefundClash(entB, entA);
+	  doClash(entA, entB, res, strongSwing, lmbRefundClash);
       swordHit(entA, entB);
-      if(strongSwing) $.S.play('clashHard'); else $.S.play('clash');
+      if(strongSwing) $.S.play('clashHard'); else {
+        const blockSoundDefender = entA.isAttacker ? entB : entA;
+        const specialBlockSound = blockSoundDefender && blockSoundDefender._specialDisbalanceBlockFrame === GameTime;
+        $.S.play(blockClashSoundFor(blockSoundDefender), specialBlockSound ? 0.75 : undefined);
+      }
       if(typeof triggerHitstop==='function') triggerHitstop(strongSwing?3:2, strongSwing?3:1.5);
       entA._clashFrame = GameTime;
       entB._clashFrame = GameTime;
@@ -8647,8 +9329,8 @@ const bodySwB = weaponReach(entB) * sv('swlen') * (isBot(entB)?sv('botswordscale
   }
 
   // ─── BLADE VS BODY ──────────────────────────────────────────────
-  checkBladeVsBody(entA, entB, pivA.x, pivA.y, bodyTipAx, bodyTipAy);
-  checkBladeVsBody(entB, entA, pivB.x, pivB.y, bodyTipBx, bodyTipBy);
+  if(colA !== 'none') checkBladeVsBody(entA, entB, pivA.x, pivA.y, bodyTipAx, bodyTipAy);
+  if(colB !== 'none') checkBladeVsBody(entB, entA, pivB.x, pivB.y, bodyTipBx, bodyTipBy);
   
   // ─── CROWN SWITCH ──────────────────────────────────────────────────
   const _crownReady = (GameTime - _lastCrownSwitchTime) >= CROWN_SWITCH_COOLDOWN;
@@ -8664,9 +9346,42 @@ const bodySwB = weaponReach(entB) * sv('swlen') * (isBot(entB)?sv('botswordscale
   }
 } // End of checkSwordCollision
 
+function damageSoundForWeapon(ent){
+  return weaponKeyOf(ent) === 'spear' ? 'damage' : (isHeavySwingWeapon(ent) ? 'damageHammer' : 'damage');
+}
+
+function isSoftBodyContactWeaponKey(key) {
+  return key === 'hammer' || key === 'flail' || key === 'wand' || key === 'staff';
+}
+
+function tryApplySoftBodyContact(attacker, defender, bodyCenter, soundType) {
+  if (!isSoftBodyContactWeaponKey(weaponKeyOf(attacker))) return false;
+  if (Math.abs(attacker.vel || 0) >= sv('swthresh') * 0.3) return false;
+  if (attacker.exhausted > 0 || attacker.hasWeapon === false) return true;
+
+  const now = GameTime;
+  if (defender._hitCD === undefined) defender._hitCD = -1;
+  if (defender._hitCD >= now) return true;
+
+  const aC = $.POS.body(attacker);
+  const dx = bodyCenter.x - aC.x;
+  const dy = bodyCenter.y - aC.y;
+  const len = Math.hypot(dx, dy) || 1;
+  const key = weaponKeyOf(attacker);
+  const base = key === 'hammer' ? 3.0 : (key === 'staff' ? 2.2 : 1.8);
+  const kb = Math.max(base, sv('bodyKB') * 0.18);
+  defender.vx += dx / len * kb;
+  defender.vy += dy / len * kb;
+  defender._hitCD = now + 0.18;
+  if ($.S && typeof $.S.play === 'function') $.S.play(soundType || 'damageHammer', 0.14);
+  aiNotifyContact();
+  return true;
+}
+
 // ─── BLADE VS BODY ──────────────────────────────────────────────────────
 // Checks if the attacker's weapon tip hits the defender's body.
 function checkBladeVsBody(attacker, defender, pivX, pivY, tipX2, tipY2) {
+  if(flailBusy(attacker)) return;
   // Skip if opponent is already dead
   if (DEATH.pDead || DEATH.dDead) return;
   // Skip if weapon is disabled (e.g., during disarm)
@@ -8834,18 +9549,19 @@ function checkBladeVsBody(attacker, defender, pivX, pivY, tipX2, tipY2) {
     
     // ─── KNOCKBACK ────────────────────────────────────────────────
     const kbf = sv('bodyKB') * 0.5;
+    const defenderShieldKbMult = (typeof shieldHeld === 'function' && shieldHeld(defender)) ? 0.5 : 1;
     const _noDoubleKB = (attacker._clashFrame || 0) > GameTime - 0.05;
     if (kbf > 0 && !_noDoubleKB) {
       const _bkX = bC.x - $.POS.body(attacker).x;
       const _bkY = bC.y - $.POS.body(attacker).y;
       const _bkL = Math.hypot(_bkX, _bkY) || 1;
-      defender.vx += (_bkX / _bkL) * kbf;
-      defender.vy += (_bkY / _bkL) * kbf;
+      defender.vx += (_bkX / _bkL) * kbf * defenderShieldKbMult;
+      defender.vy += (_bkY / _bkL) * kbf * defenderShieldKbMult;
     }
     
     // ─── DISARM ────────────────────────────────────────────────────
     if (!_isPoke && defender.hasWeapon !== false && attacker.hasWeapon !== false) {
-      const swingPower = Math.abs(attacker.vel) / sv('swthresh');
+      const swingPower = canUseSwingBonus(attacker) ? Math.abs(attacker.vel) / sv('swthresh') : 0;
       let disarmChance = 0.03 + swingPower * 0.07;
       if (weaponHasFlag(attacker, 'disarm')) disarmChance += 0.15;
       if (attacker.rageBuffEnd > GameTime) disarmChance += 0.10;
@@ -9065,6 +9781,7 @@ if (defender === D && attacker === P && typeof AI !== 'undefined' && AI.enabled 
     const _tipOnly = weaponCollisionType(attacker) === 'tip';
     const TIP_MIN_T = 0.7;
     let shouldHit = (!_tipOnly || t2 >= TIP_MIN_T);
+    if (shouldHit && !_isPoke && tryApplySoftBodyContact(attacker, defender, bC, damageSoundForWeapon(attacker))) return;
     
     let finalCondition = (alongBlade < 0.8 || _isPoke) && shouldHit;
     
@@ -9112,18 +9829,19 @@ if (defender === D && attacker === P && typeof AI !== 'undefined' && AI.enabled 
       
       // ─── KNOCKBACK ──────────────────────────────────────────────
       const kbf = sv('bodyKB') * 0.5;
+      const defenderShieldKbMult = (typeof shieldHeld === 'function' && shieldHeld(defender)) ? 0.5 : 1;
       const _noDoubleKB = (attacker._clashFrame || 0) > GameTime - 0.05;
       if (kbf > 0 && !_noDoubleKB) {
         const _bkX = bC.x - $.POS.body(attacker).x;
         const _bkY = bC.y - $.POS.body(attacker).y;
         const _bkL = Math.hypot(_bkX, _bkY) || 1;
-        defender.vx += (_bkX / _bkL) * kbf;
-        defender.vy += (_bkY / _bkL) * kbf;
+        defender.vx += (_bkX / _bkL) * kbf * defenderShieldKbMult;
+        defender.vy += (_bkY / _bkL) * kbf * defenderShieldKbMult;
       }
       
       // ─── DISARM ──────────────────────────────────────────────────
       if (!_isPoke && defender.hasWeapon !== false && attacker.hasWeapon !== false) {
-        const swingPower = Math.abs(attacker.vel) / sv('swthresh');
+        const swingPower = canUseSwingBonus(attacker) ? Math.abs(attacker.vel) / sv('swthresh') : 0;
         let disarmChance = 0.03 + swingPower * 0.07;
         if (weaponHasFlag(attacker, 'disarm')) disarmChance += 0.15;
         if (attacker.rageBuffEnd > GameTime) disarmChance += 0.10;
@@ -9169,20 +9887,21 @@ if (defender === D && attacker === P && typeof AI !== 'undefined' && AI.enabled 
         const _kkX = bC.x - $.POS.body(attacker).x;
         const _kkY = bC.y - $.POS.body(attacker).y;
         const _kkL = Math.hypot(_kkX, _kkY) || 1;
-        defender.vx += (_kkX / _kkL) * 18;
-        defender.vy += (_kkY / _kkL) * 18;
+        defender.vx += (_kkX / _kkL) * 18 * defenderShieldKbMult;
+        defender.vy += (_kkY / _kkL) * 18 * defenderShieldKbMult;
         if(!isUnbalanced(defender)) applyDisbalance(defender, attacker);
       }
       if (weaponHasFlag(attacker, 'knockback_staff')) {
         const _kkX = bC.x - $.POS.body(attacker).x;
         const _kkY = bC.y - $.POS.body(attacker).y;
         const _kkL = Math.hypot(_kkX, _kkY) || 1;
-        defender.vx += (_kkX / _kkL) * 10;
-        defender.vy += (_kkY / _kkL) * 10;
+        defender.vx += (_kkX / _kkL) * 10 * defenderShieldKbMult;
+        defender.vy += (_kkY / _kkL) * 10 * defenderShieldKbMult;
         if(!isUnbalanced(defender)) applyDisbalance(defender, attacker);
       }
       
       // ─── APPLY DAMAGE ────────────────────────────────────────────
+      const hpBeforeDamage = defender.hp;
       const isPoke = _isPoke;
       applyDamage(defender, dmg, attacker, {
         isMagic: false,
@@ -9200,10 +9919,10 @@ if (defender === D && attacker === P && typeof AI !== 'undefined' && AI.enabled 
         $.FX.hit({ x: bC.x, y: bC.y - 36, t: (window.I18N ? window.I18N.t('combat.poke') : 'POKE!'), life: 40, big: true, col: '#ffdd44' });
       }
       
-      $.S.play(isHeavySwingWeapon(attacker) ? 'damageHammer' : 'damage');
+      $.S.play(damageSoundForWeapon(attacker));
       
       if (typeof NET_SYNC !== 'undefined' && $.NET.active() && attacker === P && defender === D) {
-        $.NET.send({ type: 'hit', dmg, newHp: defender.hp });
+        $.NET.send({ type: 'hit', dmg: hpBeforeDamage - defender.hp, newHp: defender.hp });
       }
       
       const _otherBot2 = attacker === P ? defender : (defender === P ? attacker : null);
@@ -9228,6 +9947,11 @@ if (defender === D && attacker === P && typeof AI !== 'undefined' && AI.enabled 
 // and shield bash. Now unified in one function.
 function applyShieldBlockFX(x, y, attacker, defender, opts){
   opts = opts || {};
+  const now = typeof GameTime !== 'undefined' ? GameTime : 0;
+  const cooldown = opts.cooldown != null ? opts.cooldown : 0.18;
+  if(defender && (defender._shieldBlockFxUntil || -1) > now) return false;
+  if(defender) defender._shieldBlockFxUntil = now + cooldown;
+
   const hitstopMag = opts.hitstopMag != null ? opts.hitstopMag : 2;
   const waveDuration = opts.waveDuration != null ? opts.waveDuration : 18;
   $.FX.hit({x, y: y-4, t:'🛡', life:16, big:true, col:'#aaddff'});
@@ -9246,6 +9970,7 @@ function applyShieldBlockFX(x, y, attacker, defender, opts){
   
   // ─── EXTRA EFFECTS ──────────────────────────────────────────────
   // (could add more visual effects here later)
+  return true;
 }
 
 // ─── CLASH RAGE GAIN ──────────────────────────────────────────────────
@@ -9418,6 +10143,8 @@ function dstyleCb(id){
 // ─── RESET PLAYER STATE ──────────────────────────────────────────────
 // ─── RESET / RESTART ──────────────────────────────────────────────────
 function resetPlayerState(options = {}) {
+    P._lastDodgeAt=null;
+    resetFlailCombat(P);
     // Clear dropped weapons
     if (typeof DROPPED_WEAPONS !== 'undefined') {
         DROPPED_WEAPONS.length = 0;
@@ -9455,6 +10182,7 @@ function resetPlayerState(options = {}) {
     // Reset shield-related timers
     P._shieldStunUntil = -1;
     P._shieldBodyHitCD = -1;
+    P._shieldBlockFxUntil = -1;
     P._dodgeActiveUntil = -1;
     P._moveLockUntil = -1;
     P._noSlowUntil = -1;
@@ -9523,6 +10251,8 @@ function resetPlayerState(options = {}) {
 }
 
 function clearEntityChargeState(ent) {
+    if(ent) ent._lastDodgeAt=null;
+    resetFlailCombat(ent);
     if (!ent) return;
     if (ent._wandCharging) {
         ent._wandCharging = false;
@@ -9563,6 +10293,7 @@ function resetBotRoundState(bot, index, totalBots, enableAI) {
     bot.vy = 0;
     bot.vel = 0;
     bot._hitCD = -1;
+    bot._shieldBlockFxUntil = -1;
     bot._swingBlockCD = -1;
     bot._blockSlow = -1;
     bot._debuffActive = false;
@@ -9574,7 +10305,9 @@ function resetBotRoundState(bot, index, totalBots, enableAI) {
     bot._recoverProgress = 0;
     bot._defeated = false;
     if (window._manualBotWeaponType !== undefined) bot._manualWeaponType = window._manualBotWeaponType;
+    if (window._manualBotShieldType !== undefined) bot._manualShieldType = window._manualBotShieldType;
     if (bot._manualWeaponType !== undefined && typeof setWeapon === 'function') setWeapon(bot, bot._manualWeaponType);
+    if (bot._manualShieldType !== undefined && typeof setShield === 'function') setShield(bot, bot._manualShieldType);
     if (bot.hasWeapon === false && typeof setWeapon === 'function') setWeapon(bot, bot.weaponType);
     const ang = totalBots > 0 ? (index / totalBots) * Math.PI * 2 : 0;
     const spawn = typeof factionSpawnPoint === 'function'
@@ -9589,6 +10322,7 @@ function resetBotRoundState(bot, index, totalBots, enableAI) {
     if (bot._aiState) {
         bot._aiState.enabled = enableAI;
         bot._aiState._fakeMDown = false;
+        bot._aiState._shieldHeld = false;
     }
 }
 
@@ -9653,6 +10387,7 @@ const DEATH = { pDead: false, dDead: false, deathCross: [], fadeAlpha: 0, fadeIn
 // ─── DEATH HANDLER ──────────────────────────────────────────────────
 // Called when a character's HP reaches 0. Handles bot removal, victory/defeat logic.
 function handleCombatDeath(ent){
+  resetFlailCombat(ent);
   if(typeof FactionRules!=='undefined' && FactionRules.handleDeath(ent)) return;
   if(ent === P){ triggerDeath(P, false); return; }
   if(!isBot(ent)) return;
@@ -9682,6 +10417,7 @@ function handleCombatDeath(ent){
   }
 }
 function triggerDeath(ent, isBot){
+  resetFlailCombat(ent);
   if(isBot && DEATH.dDead) return;
   if(!isBot && DEATH.pDead) return;
   const bc = $.POS.body(ent);
@@ -9776,7 +10512,7 @@ let blockKnockOn = false;
 
 // ─── CLASH HANDLER ────────────────────────────────────────────────────
 // Called when two weapons collide: deflects defender's blade, pushes both apart, plays effects.
-function doClash(entA, entB, res, strongSwing){
+function doClash(entA, entB, res, strongSwing, lmbRefundClash){
   const ang = Math.atan2(entB.y - entA.y, entB.x - entA.x);
   // Determine attacker/defender based on atkPts (who is more aggressive)
   const atkr = entA.isAttacker ? entA : entB;
@@ -9879,7 +10615,14 @@ function doClash(entA, entB, res, strongSwing){
   }
 
   // ─── EFFECTS ──────────────────────────────────────────────────────
-  $.FX.hit({x:hitX, y:hitY-4, t:'⚡', life:12, big:true, col:'#ffffff'});
+  $.FX.hit({
+    type:'bolt', x:hitX, y:hitY-4, life:12, maxLife:12,
+    count:lmbRefundClash ? 3 : 1,
+    col:lmbRefundClash ? '#9ed8ff' : '#ffffff',
+    tint:lmbRefundClash ? '#66bfff' : null,
+    tintAlpha:lmbRefundClash ? 0.24 : 0,
+    size:lmbRefundClash ? 17 : 15
+  });
   $.FX.hit({x:hitX, y:hitY+14, t:(window.I18N ? window.I18N.t('combat.clash') : 'CLASH!'), life:35, big:false, col:'#ccccaa'});
   // strongSwing creates a flash and cross effect
   if(strongSwing && Math.random() < 0.04) spawnFX('flash', hitX, hitY);
@@ -10091,6 +10834,29 @@ function updateFlickDetect(realAngVel, rawDt) {
 
 // ••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
 
+// Same ordinary flail damage formula; a straight throw uses at least the swing threshold.
+function applyFlailLungeDamage(attacker,defender,speed){
+  if(defender.hp<=0 || defender._hitCD>=GameTime || Math.hypot(defender._dvx||0,defender._dvy||0)>200) return false;
+  let dmg=Math.round(Math.round((Math.round(Math.abs(speed)*30+3))/6)*weaponCutMult(attacker));
+  dmg=Math.max(20,dmg);
+  if(defender===P && mDown) dmg=Math.round(dmg*sv('lmbdmg'));
+  if(defender===D && typeof AI!=='undefined' && AI._fakeMDown) dmg=Math.round(dmg*1.5);
+  if(attacker.rageBuffEnd>GameTime) dmg*=2;
+  if(shieldDef(attacker) && shieldSameSideAsSword(attacker)) dmg=Math.round(dmg*0.85);
+  dmg=Math.round(dmg/((isBot(defender)?sv('cscl')*sv('botscale'):sv('cscl'))||1));
+  dmg=applyCutSwingPenalty(attacker,dmg);
+  if(defender===P && P._multiHitProtection) dmg=Math.round(dmg*P._multiHitProtectionMult);
+  const hp=defender.hp,vx=defender.vx,vy=defender.vy;
+  applyDamage(defender,dmg,attacker,{knockbackMult:0,playSound:false});
+  // applyDamage currently treats a zero knockback option as its default.
+  defender.vx=vx;defender.vy=vy;
+  attacker._flailLastDamage=hp-defender.hp;
+  if(defender.hp===hp) return false;
+  $.S.play(damageSoundForWeapon(attacker));
+  aiNotifyContact();
+  return true;
+}
+
 </script>
 <script>
 // === bundled: src/combat/factions.js ===
@@ -10240,7 +11006,8 @@ function contact(a, b){
     const bc = $.POS.body(ent);
     for(let i = 0; i < 8; i++) spawnBlood(bc.x, bc.y, Math.cos(i * Math.PI / 4), Math.sin(i * Math.PI / 4));
     if(typeof DEATH !== 'undefined' && DEATH && Array.isArray(DEATH.deathCross)){
-      DEATH.deathCross.push({ x: bc.x, y: bc.y, timer: 2.0, isBot: !!isBot });
+      const crossTimer = !isBot && mode === 'coop' ? Math.max(2.0, playerRespawnSeconds()) : 2.0;
+      DEATH.deathCross.push({ x: bc.x, y: bc.y, timer: crossTimer, isBot: !!isBot });
     }
     if(typeof playSound === 'function') $.S.play('death');
   }
@@ -10494,6 +11261,10 @@ function freshAIState(){
   _harassTotalEnd: -1,
   _fakeKeys: { w:false, a:false, s:false, d:false },
   _fakeMDown: false,
+  _shieldHeld: false,
+  _shieldDecisionHeld: false,
+  _shieldDecisionAt: -999,
+  _shieldForceUntil: -1,
   _fakeMX: 0, _fakeMY: 0,
   _retreatMode: false,
   _spinActive: false, _spinAng: 0, _spinEndTime: -1, _spinSpeed: 0,
@@ -10678,6 +11449,7 @@ function applyBotCount(){
     const spawnY = spawn.y;
     const nb = makeEntity(spawnX, spawnY, 0.8, '#4a1a10', { stamRegen: 28 });
     nb._aiState = freshAIState();
+    if(typeof setWeapon === 'function') setWeapon(nb, DEFAULT_WEAPON_KEY, { keepDefault: true });
     maybeSetRandomBotWeapon(nb);
     if(window._manualBotWeaponType !== undefined){
       nb._manualWeaponType = window._manualBotWeaponType;
@@ -10773,6 +11545,10 @@ let AI = {
   _harassTotalEnd: -1,
   _fakeKeys: { w:false, a:false, s:false, d:false },
   _fakeMDown: false,
+  _shieldHeld: false,
+  _shieldDecisionHeld: false,
+  _shieldDecisionAt: -999,
+  _shieldForceUntil: -1,
   _fakeMX: 0, _fakeMY: 0,
   _retreatMode: false,
   _spinActive: false, _spinAng: 0, _spinEndTime: -1, _spinSpeed: 0,
@@ -10828,6 +11604,7 @@ function aiSetPhase(phase){
     if(dummyOn && Math.random() < getAIProfile().rageOnAttackChance){
       D.rageBuffEnd = GameTime + getAIProfile().rageDuration;
       D.rage = 100;
+      aiTryStartRageSwingBurst(AI, D);
       $.FX.hit({x:$.POS.body(D).x, y:$.POS.body(D).y-40, t:'🔥', life:35, big:false, col:'#ff4020'});
     }
     // при начале атаки — если игрок далеко, прокрут
@@ -10840,7 +11617,7 @@ function aiSetPhase(phase){
     }
   } else if(phase === 'retreat'){
     AI._retreatMode = true;
-    AI._phaseEnd = GameTime + rf(5,4);
+    AI._phaseEnd = GameTime + rf(10,8);
     AI._retreatMoveCD = -1;
     AI._circling = false;
     // 50% шанс прокрута при первой точке
@@ -10849,7 +11626,7 @@ function aiSetPhase(phase){
     }
   } else if(phase === 'breather'){
     AI._retreatMode = false;
-    AI._phaseEnd = GameTime + rf(1,2);
+    AI._phaseEnd = GameTime + rf(2,4);
     AI._breatherBackEnd = GameTime + rf(0.2,0.3);
   }
 }
@@ -10895,6 +11672,212 @@ const PROBING_WEAPON_KEYS = [
   'dagger', 'rapier', 'sword', 'longsword', 'greatsword',
   'staff', 'halberd', 'spear', 'wand'
 ];
+const NO_THRUST_WEAPON_KEYS = ['axe', 'hammer', 'flail'];
+const SWING_ONLY_WEAPON_KEYS = ['axe', 'hammer', 'flail'];
+const SWING_BURST_WEAPON_KEYS = ['sword', 'longsword', 'greatsword', 'staff', 'magicstaff', 'wand'];
+const HEAVY_SWING_SPIN_INTERVAL_MULT = 1 / 3;
+const HEAVY_SWING_DODGE_INTERVAL_MULT = 0.5;
+let GLOBAL_HEAVY_SWING_SOUND_UNTIL = 0;
+
+function aiCanThrustWithWeapon(ent){
+  return ent && !NO_THRUST_WEAPON_KEYS.includes(weaponKeyOf(ent));
+}
+
+function aiIsSwingOnlyWeapon(ent){
+  return ent && SWING_ONLY_WEAPON_KEYS.includes(weaponKeyOf(ent));
+}
+
+function aiDodgeTimerMult(ent){
+  const key = weaponKeyOf(ent);
+  if(key === 'hammer') return HEAVY_SWING_DODGE_INTERVAL_MULT * 0.9;
+  if(key === 'sword') return 0.9;
+  return aiIsSwingOnlyWeapon(ent) ? HEAVY_SWING_DODGE_INTERVAL_MULT : 1;
+}
+
+function aiCanUseSwingBurstWeapon(ent){
+  return ent && SWING_BURST_WEAPON_KEYS.includes(weaponKeyOf(ent));
+}
+
+function aiUsesSwingBurst(ai, bot){
+  return aiIsSwingOnlyWeapon(bot) || (ai && ai._swingBurstActive && aiCanUseSwingBurstWeapon(bot));
+}
+
+function aiClearSwingBurst(ai){
+  if(!ai) return;
+  ai._swingBurstActive = false;
+  ai._heavyAttackPhase = null;
+  ai._heavyAttackVariant = 'sweep';
+  ai._heavyStaminaSpent = false;
+  ai._heavySwingSoundPlayed = false;
+  ai._fakeMDown = false;
+}
+
+function aiStartSwingBurst(ai){
+  if(!ai) return;
+  ai._swingBurstActive = true;
+  ai._swingBurstEnd = GameTime + rf(12.5, 2.5);
+  ai._swingBurstCooldown = GameTime + rf(30, 8);
+  ai._probingActive = false;
+  ai._lungeActive = false;
+  ai._feintActive = false;
+  ai._fakeMDown = false;
+}
+
+function aiTryStartRageSwingBurst(ai, bot){
+  if(!ai || !bot || !aiCanUseSwingBurstWeapon(bot) || bot.hasWeapon === false) return;
+  if(Math.random() >= 0.50) return;
+  aiStartSwingBurst(ai);
+}
+
+function aiUpdateSwingBurstStage(ai, bot, distToPlayer, cscl){
+  if(!ai || !bot || aiIsSwingOnlyWeapon(bot)) return;
+  if(ai._swingBurstActive){
+    if(GameTime >= (ai._swingBurstEnd || 0) || !aiCanUseSwingBurstWeapon(bot) || bot.exhausted > 0){
+      aiClearSwingBurst(ai);
+      ai._swingBurstCooldown = GameTime + rf(24, 6);
+    }
+    return;
+  }
+  if(!aiCanUseSwingBurstWeapon(bot) || ai.phase !== 'attack' || bot.hasWeapon === false) return;
+  if(ai._swingBurstCooldown === undefined) ai._swingBurstCooldown = GameTime + rf(8, 6);
+  if(GameTime < ai._swingBurstCooldown || ai._probingActive || ai._lungeActive || ai._spinActive) return;
+  if(distToPlayer > 220 * cscl || bot.stamina < sv('stamswing') * weaponStaminaMult(bot)) return;
+  aiStartSwingBurst(ai);
+}
+
+function aiHeavyAimPoint(bot, pBodyC, angToPlayer, cscl, side, phase, progress, baseAng){
+  const pivot = $.POS.pivot(bot);
+  const base = Number.isFinite(baseAng) ? baseAng : angToPlayer;
+  let ang;
+  let dist = 160 * cscl;
+  if(phase === 'release'){
+    const t = $.M.clamp(progress || 0, 0, 1);
+    const eased = t * t * (3 - 2 * t);
+    const startAng = base + side * (Math.PI * 0.62);
+    const variant = bot && bot._aiState ? bot._aiState._heavyAttackVariant : 'sweep';
+    const arc = variant === 'spin720' ? Math.PI * 4 : (variant === 'spin360' ? Math.PI * 2 : Math.PI * 1.2);
+    ang = startAng - side * arc * eased;
+    dist = 185 * cscl;
+  } else if(phase === 'recover'){
+    ang = base - side * (Math.PI * 0.42);
+    dist = 135 * cscl;
+  } else {
+    const sway = Math.sin(GameTime * 4.0) * 0.12;
+    ang = base + side * (Math.PI * 0.62 + sway);
+  }
+  return {
+    x: pivot.x + Math.cos(ang) * dist,
+    y: pivot.y + Math.sin(ang) * dist,
+  };
+}
+
+function aiHeavyReleaseDuration(ai){
+  if(ai._heavyAttackVariant === 'spin720') return rf(0.85, 0.15);
+  if(ai._heavyAttackVariant === 'spin360') return rf(0.55, 0.10);
+  return rf(0.32, 0.08);
+}
+
+function aiStartHeavyAttack(ai, bot, distToPlayer, cscl, immediateRelease, angToPlayer){
+  if(!ai || !bot || ai._heavyAttackPhase || ai._spinActive) return false;
+  const staminaCost = weaponKeyOf(bot)==='flail' ? 15 : sv('stamswing') * weaponStaminaMult(bot);
+  if(bot.stamina < staminaCost) return false;
+  ai._heavySwingSide = ai._heavySwingSide || (Math.random() < 0.5 ? -1 : 1);
+  ai._heavyAttackPhase = immediateRelease ? 'release' : 'windup';
+  const missedFullSpins = ai._heavyAttackMissedFullSpins || 0;
+  const spinAttack = missedFullSpins >= 2 || Math.random() < 0.30;
+  ai._heavyAttackVariant = spinAttack ? (Math.random() < 0.30 ? 'spin720' : 'spin360') : 'sweep';
+  ai._heavyAttackMissedFullSpins = spinAttack ? 0 : missedFullSpins + 1;
+  ai._heavySwingSoundPlayed = false;
+  ai._heavyStaminaSpent = false;
+  const dur = immediateRelease ? aiHeavyReleaseDuration(ai) : rf(0.22, 0.06);
+  ai._heavyAttackStart = GameTime;
+  ai._heavyAttackEnd = GameTime + dur;
+  ai._heavyAttackDuration = dur;
+  ai._heavyAttackBaseAng = Number.isFinite(angToPlayer) ? angToPlayer : undefined;
+  ai._heavyAttackCD = GameTime + rf(1.55, 0.95);
+  return true;
+}
+
+function aiUpdateHeavyAttack(ai, bot, k, bBodyC, pBodyC, angToPlayer, distToPlayer, cscl){
+  if(!ai || !bot || !ai._heavyAttackPhase) return false;
+  if(!aiUsesSwingBurst(ai, bot) || bot.exhausted > 0 || hasMod(bot, 'weaponRecoil')){
+    ai._heavyAttackPhase = null;
+    ai._fakeMDown = false;
+    return false;
+  }
+  if(ai._heavyAttackPhase === 'windup' && distToPlayer > 125 * cscl) aiMoveToward(k, bBodyC, pBodyC, 75 * cscl, cscl);
+  else if(ai._heavyAttackPhase === 'recover') aiMoveAway(k, bBodyC, pBodyC, 115 * cscl, cscl);
+  else k.w=k.a=k.s=k.d=false;
+
+  const side = ai._heavySwingSide || 1;
+  const progress = (GameTime - (ai._heavyAttackStart || GameTime)) / (ai._heavyAttackDuration || 1);
+  const aim = aiHeavyAimPoint(bot, pBodyC, angToPlayer, cscl, side, ai._heavyAttackPhase, progress, ai._heavyAttackBaseAng);
+  aiPointMouse(bBodyC, aim.x, aim.y, false, ai);
+  ai._fakeMDown = ai._heavyAttackPhase === 'release';
+  if(ai._fakeMDown && !ai._heavyStaminaSpent && weaponKeyOf(bot)!=='flail'){
+    ai._heavyStaminaSpent = true;
+    const staminaCost = sv('stamswing') * weaponStaminaMult(bot);
+    drainStamina(bot, staminaCost);
+    if(bot.stamina <= 0 && !isExhausted(bot)) applyExhaust(bot);
+  }
+  if(ai._fakeMDown && !ai._heavySwingSoundPlayed && weaponKeyOf(bot)!=='flail'){
+    ai._heavySwingSoundPlayed = true;
+    if(GameTime >= GLOBAL_HEAVY_SWING_SOUND_UNTIL && $.S && typeof $.S.play === 'function'){
+      GLOBAL_HEAVY_SWING_SOUND_UNTIL = GameTime + 0.45;
+      $.S.play('hammerSwing');
+    }
+  }
+
+  if(GameTime >= ai._heavyAttackEnd){
+    if(ai._heavyAttackPhase === 'windup'){
+      ai._heavyAttackPhase = 'release';
+      const releaseDur = aiHeavyReleaseDuration(ai);
+      ai._heavyAttackStart = GameTime;
+      ai._heavyAttackDuration = releaseDur;
+      ai._heavyAttackEnd = GameTime + releaseDur;
+    } else if(ai._heavyAttackPhase === 'release'){
+      ai._heavyAttackPhase = 'recover';
+      const recoverDur = rf(0.22, 0.08);
+      ai._heavyAttackStart = GameTime;
+      ai._heavyAttackDuration = recoverDur;
+      ai._heavyAttackEnd = GameTime + recoverDur;
+    } else {
+      ai._heavyAttackPhase = null;
+      ai._fakeMDown = false;
+      ai._heavyAttackVariant = 'sweep';
+      ai._heavyStaminaSpent = false;
+      ai._heavySwingSoundPlayed = false;
+      ai._heavySwingSide = -side;
+    }
+  }
+  return true;
+}
+
+function aiStartSpinFor(ai, bot, durationSec){
+  if(!ai || !bot || ai._spinActive || cb('nospin') || ai.swordStyle === 'SWORD_STYLE_DUELIST') return false;
+  const body = $.POS.body(bot);
+  const pivX = body.x + bot.pvX, pivY = body.y + bot.pvY;
+  const curAngToFakeM = Math.atan2(ai._fakeMY - pivY, ai._fakeMX - pivX);
+  ai._spinActive = true;
+  ai._spinAng = curAngToFakeM;
+  ai._spinEndTime = GameTime + durationSec;
+  ai._spinSpeed = (Math.PI * 2) / durationSec;
+  return true;
+}
+
+function aiStartHeavyEvasiveDodge(ai, bot, angToPlayer){
+  const side = Math.random() < 0.5 ? -1 : 1;
+  const backBias = Math.random() < 0.35 ? Math.PI : 0;
+  const dodgeAng = angToPlayer + side * Math.PI / 2 + backBias * 0.35;
+  ai._botDodgeCooldown = 0.75;
+  ai._dodgeLockUntil = GameTime + 0.25;
+  bot._dvx = Math.cos(dodgeAng) * 7.5;
+  bot._dvy = Math.sin(dodgeAng) * 7.5;
+  if(typeof spawnDust === 'function'){
+    for(let i = 0; i < 8; i++) spawnDust(bot.x, bot.y, -Math.cos(dodgeAng) * 7.5, -Math.sin(dodgeAng) * 7.5);
+  }
+  $.FX.hit({x:bot.x,y:bot.y-30,t:(window.I18N ? window.I18N.t('common.dodge') : 'DODGE'),life:35,big:false,col:'rgba(200,200,200,0.6)'});
+}
 
 // Deliberately short attack made outside body-hit range.
 function aiUpdateProbing(ai, bot, k, bBodyC, pBodyC, distToPlayer, cscl){
@@ -11129,15 +12112,42 @@ function aiNotifyContact(){
   }
 
   // 20% шанс на обычном оружии, 55% у рапиры (она заточена под уколы) —
-  // шаг назад + выпад ЛКМ (цепом не колют и не делают выпад)
+  // шаг назад + выпад ЛКМ; рубящим тяжёлым оружием и цепом боты не колют
   const _lungeChance = $.IS(D, 'rapier') ? 0.55 : 0.2;
-  if(!AI._probingActive && Math.random() < _lungeChance && !AI._lungeActive && $.NOT(D, 'flail')){
+  if(!AI._probingActive && Math.random() < _lungeChance && !AI._lungeActive && aiCanThrustWithWeapon(D)){
     AI._lungeActive = true;
     AI._lungePhase = 'back';
     AI._lungeEnd = GameTime + 0.35;
   }
 }
 
+function aiCanUseShield(bot, ai){
+  if(!bot || !ai || bot.shield <= 0 || ai._fakeMDown) return false;
+  const stamMax = bot.stamMax || 100;
+  const onThreshold = stamMax * 0.10;
+  const offThreshold = stamMax * 0.05;
+  return bot.stamina >= (ai._shieldDecisionHeld ? offThreshold : onThreshold);
+}
+
+function aiResolveShieldHeld(ai, bot, wantShield){
+  const canShield = aiCanUseShield(bot, ai);
+  const forced = GameTime < (ai._shieldForceUntil || -1);
+  const desired = !!wantShield || forced;
+  if(!canShield){
+    if(GameTime - (ai._shieldDecisionAt || -999) >= 1.0){
+      ai._shieldDecisionHeld = false;
+      ai._shieldDecisionAt = GameTime;
+    }
+    ai._shieldHeld = false;
+    return false;
+  }
+  if(GameTime - (ai._shieldDecisionAt || -999) >= 1.0 && ai._shieldDecisionHeld !== desired){
+    ai._shieldDecisionHeld = desired;
+    ai._shieldDecisionAt = GameTime;
+  }
+  ai._shieldHeld = ai._shieldDecisionHeld;
+  return ai._shieldHeld;
+}
 // ── Бросок оружия ботом по уставшему игроку ─────────────────────────────
 // Виды оружия, которые бот готов метнуть (список по запросу): молот, топор,
 // копьё, кинжал, меч.
@@ -11157,10 +12167,11 @@ function estimateThrowRange(def){
  function updateAI(dt, bot){
   if(!bot || bot.hp <= 0 || !dummyOn) return;
   if(!bot._aiState) return;
-  const targetPlayer = typeof FactionRules!=='undefined' ? FactionRules.getBotTarget(bot) : P;
+  const targetPlayer = bot._aiTargetOverride || (typeof FactionRules!=='undefined' ? FactionRules.getBotTarget(bot) : P);
   if(!targetPlayer) return;
   
   const ai = bot._aiState;
+  ai._shieldHeld = false;
   if(!ai.enabled){
     ai._fakeKeys.w=ai._fakeKeys.a=ai._fakeKeys.s=ai._fakeKeys.d=false;
     ai._fakeMDown=false;
@@ -11717,6 +12728,7 @@ if(!ai._isMain){
     if(Math.random() < 0.5){
       bot.rageBuffEnd = GameTime + 4.0;
       bot.rage = 100;
+      aiTryStartRageSwingBurst(ai, bot);
       $.FX.hit({x:$.POS.body(bot).x, y:$.POS.body(bot).y-40, t:'🔥', life:35, big:false, col:'#ff4020'});
     }
     const pBodyC2 = $.POS.body(targetPlayer);
@@ -11767,7 +12779,7 @@ if(ai._contactCD > 0 && ai.phase === 'attack' && ai._contactCD <= GameTime){
     if(Math.random() < retreatChance){
       ai.phase = 'retreat';
       ai._retreatMode = true;
-      ai._phaseEnd = GameTime + rf(5,4);
+      ai._phaseEnd = GameTime + rf(10,8);
       ai._retreatMoveCD = -1;
       ai._circling = false;
       if(Math.random() < 0.5){
@@ -11785,7 +12797,7 @@ if(ai._contactCD > 0 && ai.phase === 'attack' && ai._contactCD <= GameTime){
     } else {
       ai.phase = 'breather';
       ai._retreatMode = false;
-      ai._phaseEnd = GameTime + rf(1,2);
+      ai._phaseEnd = GameTime + rf(2,4);
       ai._breatherBackEnd = GameTime + rf(0.2,0.3);
     }
   }
@@ -11797,6 +12809,7 @@ if(ai._contactCD > 0 && ai.phase === 'attack' && ai._contactCD <= GameTime){
     if(Math.random() < 0.5){
       bot.rageBuffEnd = GameTime + 4.0;
       bot.rage = 100;
+      aiTryStartRageSwingBurst(ai, bot);
       $.FX.hit({x:$.POS.body(bot).x, y:$.POS.body(bot).y-40, t:'🔥', life:35, big:false, col:'#ff4020'});
     }
     const pBodyC4 = $.POS.body(targetPlayer);
@@ -11830,7 +12843,7 @@ if(ai._contactCD > 0 && ai.phase === 'attack' && ai._contactCD <= GameTime){
       ai._probingPhase = 'approach';
       ai._probingEnd = -1;
       ai._probingRetreatStep = 0;
-      ai._probingModeEnd = GameTime + rf(7, 8);
+      ai._probingModeEnd = GameTime + rf(14, 16);
       ai._probingWeaponContact = false;
       ai._probingPauseBlockedUntil = -1;
       ai._spinActive = false;
@@ -11858,34 +12871,29 @@ if(ai._contactCD > 0 && ai.phase === 'attack' && ai._contactCD <= GameTime){
   if(ai._probingActive){
     ai._retreatMode = ai._probingPhase === 'retreat';
     aiUpdateProbing(ai, bot, k, bBodyC, pBodyC, distToPlayer, cscl);
+    aiResolveShieldHeld(ai, bot, ai._probingPhase !== 'strike');
     return;
   }
 
-  // ── ЦЕП: доп. кручения вдвое чаще обычного ────────────
-  // У остальных видов оружия "прокрут" запускается только при входе в фазу
-  // атаки издалека / после контакта и т.п. — для цепа это редко и нерегулярно.
-  // Цеп — оружие вращения по своей сути, поэтому у него отдельный периодический
-  // таймер (в 2 раза чаще базового 10±10-секундного цикла смены тактики).
-  if($.IS(bot, 'flail')){
-    if(ai._flailSpinTimer === undefined) ai._flailSpinTimer = GameTime + rf(2.5,2.5);
-    if(!ai._spinActive && !cb('nospin') && ai.swordStyle !== 'SWORD_STYLE_DUELIST'
-       && GameTime >= ai._flailSpinTimer){
-      ai._flailSpinTimer = GameTime + rf(2.5,2.5);
-      const dur = sv('spindur');
-      const dBodyCF = $.POS.body(bot);
-      const dpivXF = dBodyCF.x + bot.pvX, dpivYF = dBodyCF.y + bot.pvY;
-      const curAngToFakeM = Math.atan2(ai._fakeMY - dpivYF, ai._fakeMX - dpivXF);
-      ai._spinActive = true;
-      ai._spinAng = curAngToFakeM;
-      ai._spinEndTime = GameTime + dur;
-      ai._spinSpeed = (Math.PI*2) / dur;
+  aiUpdateSwingBurstStage(ai, bot, distToPlayer, cscl);
+
+  // ── ТОПОР/МОЛОТ: яростные прокруты втрое чаще обычного ────────────
+  if(aiUsesSwingBurst(ai, bot)){
+    if(ai._heavySpinTimer === undefined) ai._heavySpinTimer = GameTime + rf(10 * HEAVY_SWING_SPIN_INTERVAL_MULT, 10 * HEAVY_SWING_SPIN_INTERVAL_MULT);
+    if(GameTime >= ai._heavySpinTimer){
+      ai._heavySpinTimer = GameTime + rf(10 * HEAVY_SWING_SPIN_INTERVAL_MULT, 10 * HEAVY_SWING_SPIN_INTERVAL_MULT);
+      aiStartSpinFor(ai, bot, sv('spindur'));
     }
   }
 
-  // ── ДОДЖ ВПЕРЁД С УКОЛОМ ──────────────────────
-  if(ai._pokeDodgeTimer===undefined) ai._pokeDodgeTimer = GameTime + rf(5,15);
+  // ── ДОДЖ ВПЕРЁД С УКОЛОМ / БОКОВОЙ УВОРОТ ДЛЯ ТОПОРА-МОЛОТА ──────────────────────
+  if(ai._pokeDodgeTimer===undefined){
+    const dodgeTimerMult = aiDodgeTimerMult(bot);
+    ai._pokeDodgeTimer = GameTime + rf(5 * dodgeTimerMult, 15 * dodgeTimerMult);
+  }
   if(!ai._pokeDodgeActive && GameTime >= ai._pokeDodgeTimer){
-    ai._pokeDodgeTimer = GameTime + rf(5,15);
+    const dodgeTimerMult = aiDodgeTimerMult(bot);
+    ai._pokeDodgeTimer = GameTime + rf(5 * dodgeTimerMult, 15 * dodgeTimerMult);
     // Реальная досягаемость текущего оружия бота — та же формула, что
     // используется для коллайдера удара (см. weaponTipPos/checkBladeVsBody).
     const _botReach = weaponReach(bot) * sv('swlen') * (isBot(bot) ? sv('botswordscale') : 1);
@@ -11897,19 +12905,27 @@ if(ai._contactCD > 0 && ai.phase === 'attack' && ai._contactCD <= GameTime){
                         && bot.exhausted<=0 && bot.unbalanced<=0 && bot.stamina >= 30
                         && distToPlayer > Math.max(400, 55*cscl, _botReach)
                         && !(ai._botDodgeCooldown>0)
-                        && $.NOT(bot, 'flail'); // цепом боты не колют
+                        && aiCanThrustWithWeapon(bot);
     if(_canPokeDodge){
-      ai._pokeDodgeActive = true;
-      ai._pokeDodgeEnd = GameTime + 0.22;
-      ai._botDodgeCooldown = 1.5;
-      ai._dodgeLockUntil = GameTime + 0.3;
-      bot._dvx = Math.cos(angToPlayer)*8;
-      bot._dvy = Math.sin(angToPlayer)*8;
-      bot._pokeStartTime = GameTime;
-      if(typeof spawnDust==='function')
-        for(let i=0;i<8;i++) spawnDust(bot.x,bot.y,-Math.cos(angToPlayer)*8,-Math.sin(angToPlayer)*8);
-      $.FX.hit({x:bot.x,y:bot.y-30,t:(window.I18N ? window.I18N.t('common.dodge') : 'DODGE'),life:35,big:false,col:'rgba(200,200,200,0.6)'});
-    }
+      if(Math.random() < 0.5 && aiCanUseShield(bot, ai)){
+        ai._shieldForceUntil = GameTime + 1.0;
+        aiResolveShieldHeld(ai, bot, true);
+        ai._botDodgeCooldown = 1.0;
+      } else {
+        ai._pokeDodgeActive = true;
+        ai._pokeDodgeEnd = GameTime + 0.22;
+        ai._botDodgeCooldown = 1.5;
+        ai._dodgeLockUntil = GameTime + 0.3;
+        bot._dvx = Math.cos(angToPlayer)*8;
+        bot._dvy = Math.sin(angToPlayer)*8;
+        bot._pokeStartTime = GameTime;
+        if(typeof spawnDust==='function')
+          for(let i=0;i<8;i++) spawnDust(bot.x,bot.y,-Math.cos(angToPlayer)*8,-Math.sin(angToPlayer)*8);
+        $.FX.hit({x:bot.x,y:bot.y-30,t:(window.I18N ? window.I18N.t('common.dodge') : 'DODGE'),life:35,big:false,col:'rgba(200,200,200,0.6)'});
+      }
+} else if(aiIsSwingOnlyWeapon(bot) && ai.phase === 'attack'){
+  aiStartHeavyEvasiveDodge(ai, bot, angToPlayer);
+}
   }
   if(ai._pokeDodgeActive){
     aiPointMouse(bBodyC, pBodyC.x, pBodyC.y, false, ai);
@@ -11975,13 +12991,20 @@ if(ai._contactCD > 0 && ai.phase === 'attack' && ai._contactCD <= GameTime){
     return;
   }
 
+  if(aiUpdateHeavyAttack(ai, bot, k, bBodyC, pBodyC, angToPlayer, distToPlayer, cscl)) return;
+
   // ── COMBAT_HARASS ─────────────────────────────────
   if(ai.tactic === 'COMBAT_HARASS'){
     ai._retreatMode = false;
     const hp = ai._harassPhase;
     if(hp === 'approach'){
       if(!ai._feintActive) aiMoveToward(k, bBodyC, pBodyC, 65*cscl, cscl);
-      if(!ai._spinActive) aiPointMouse(bBodyC, pBodyC.x, pBodyC.y, false, ai);
+      if(!ai._spinActive){
+        if(aiUsesSwingBurst(ai, bot)){
+          const guardAim = aiHeavyAimPoint(bot, pBodyC, angToPlayer, cscl, ai._heavySwingSide || 1, 'recover', 0, angToPlayer);
+          aiPointMouse(bBodyC, guardAim.x, guardAim.y, false, ai);
+        } else aiPointMouse(bBodyC, pBodyC.x, pBodyC.y, false, ai);
+      }
       if(distToPlayer < 90*cscl){
         ai._harassPhase = 'strike';
         ai._harassStrikes = Math.floor(Math.random()*2) + 1;
@@ -11989,6 +13012,10 @@ if(ai._contactCD > 0 && ai.phase === 'attack' && ai._contactCD <= GameTime){
         ai._fakeMDown = true;
       }
     } else if(hp === 'strike'){
+      if(aiUsesSwingBurst(ai, bot)){
+        aiStartHeavyAttack(ai, bot, distToPlayer, cscl, distToPlayer < 80 * cscl, angToPlayer);
+        if(aiUpdateHeavyAttack(ai, bot, k, bBodyC, pBodyC, angToPlayer, distToPlayer, cscl)) return;
+      }
       k.w=k.a=k.s=k.d=false;
       aiPointMouse(bBodyC, pBodyC.x, pBodyC.y, false, ai);
       ai._fakeMDown = true;
@@ -12022,7 +13049,12 @@ if(ai._contactCD > 0 && ai.phase === 'attack' && ai._contactCD <= GameTime){
       const ty = $.M.clamp(pBodyC.y + Math.sin(ai._harassOrbitAng)*orbitR, 60, WORLD_H-60);
       k.a=(tx-bBodyC.x)<-5; k.d=(tx-bBodyC.x)>5;
       k.w=(ty-bBodyC.y)<-5; k.s=(ty-bBodyC.y)>5;
-      if(!ai._spinActive) aiPointMouse(bBodyC, pBodyC.x, pBodyC.y, false, ai);
+      if(!ai._spinActive){
+        if(aiUsesSwingBurst(ai, bot)){
+          const guardAim = aiHeavyAimPoint(bot, pBodyC, angToPlayer, cscl, ai._heavySwingSide || 1, 'recover', 0, angToPlayer);
+          aiPointMouse(bBodyC, guardAim.x, guardAim.y, false, ai);
+        } else aiPointMouse(bBodyC, pBodyC.x, pBodyC.y, false, ai);
+      }
       if(GameTime >= ai._harassTimer) ai._harassPhase = 'approach';
     }
   } else
@@ -12044,9 +13076,19 @@ if(!ai._feintActive){
         ai._posIdx = (ai._posIdx+1)%3;
         ai._posTimer = rf(0.8,0.8);
       }
-      const offsets = [0, sv('aiang')*Math.PI/180, -sv('aiang')*Math.PI/180];
-      const aimAng = angToPlayer + offsets[ai._posIdx];
-      aiPointMouse(bBodyC, bBodyC.x + Math.cos(aimAng)*150*cscl, bBodyC.y + Math.sin(aimAng)*150*cscl, false, ai);
+      if(aiUsesSwingBurst(ai, bot)){
+        if(distToPlayer < 135 * cscl && GameTime >= (ai._heavyAttackCD || 0)){
+          aiStartHeavyAttack(ai, bot, distToPlayer, cscl, distToPlayer < 85 * cscl, angToPlayer);
+          if(aiUpdateHeavyAttack(ai, bot, k, bBodyC, pBodyC, angToPlayer, distToPlayer, cscl)) return;
+        } else {
+          const guardAim = aiHeavyAimPoint(bot, pBodyC, angToPlayer, cscl, ai._heavySwingSide || 1, 'recover', 0, angToPlayer);
+          aiPointMouse(bBodyC, guardAim.x, guardAim.y, false, ai);
+        }
+      } else {
+        const offsets = [0, sv('aiang')*Math.PI/180, -sv('aiang')*Math.PI/180];
+        const aimAng = angToPlayer + offsets[ai._posIdx];
+        aiPointMouse(bBodyC, bBodyC.x + Math.cos(aimAng)*150*cscl, bBodyC.y + Math.sin(aimAng)*150*cscl, false, ai);
+      }
     }
     ai._fakeMDown = false;
 
@@ -12117,6 +13159,7 @@ if(!ai._feintActive){
         if(Math.random() < 0.5){
           bot.rageBuffEnd = GameTime + 4.0;
           bot.rage = 100;
+      aiTryStartRageSwingBurst(ai, bot);
           $.FX.hit({x:$.POS.body(bot).x, y:$.POS.body(bot).y-40, t:'🔥', life:35, big:false, col:'#ff4020'});
         }
         const pBodyC5 = $.POS.body(targetPlayer);
@@ -12222,6 +13265,8 @@ if(!ai._feintActive){
       ai._fakeMX = sx;   ai._fakeMY = sy;
     }
   }
+  const wantsDefensiveShield = ai.phase === 'retreat' || ai.phase === 'breather' || ai._duelistBlocking || (ai.tactic === 'COMBAT_HARASS' && ai._harassPhase === 'orbit');
+  aiResolveShieldHeld(ai, bot, wantsDefensiveShield);
 }
 
 
@@ -12280,6 +13325,100 @@ function updateFeint(k, dt){
   return true; // перехватываем управление
 }
 
+function clearAIIntent(ai){
+  if(!ai) return;
+  ai._fakeKeys.w = ai._fakeKeys.a = ai._fakeKeys.s = ai._fakeKeys.d = false;
+  ai._fakeMDown = false;
+  ai._shieldHeld = false;
+  ai._shieldDecisionHeld = false;
+  ai._shieldDecisionAt = -999;
+  ai._shieldForceUntil = -1;
+}
+
+function nearestEntity(from, list){
+  if(!from || !Array.isArray(list) || !list.length) return null;
+  const fc = $.POS ? $.POS.body(from) : from;
+  let best = null, bestD = Infinity;
+  for(const ent of list){
+    if(!ent || ent === from || ent.hp <= 0 || ent._defeated || ent._awaitingReveal) continue;
+    const ec = $.POS ? $.POS.body(ent) : ent;
+    const d = Math.hypot(ec.x - fc.x, ec.y - fc.y);
+    if(d < bestD){ best = ent; bestD = d; }
+  }
+  return best;
+}
+
+function getPlayerBotEnemyTarget(){
+  const enemies = typeof FactionRules !== 'undefined' ? FactionRules.bots() : ALL_BOTS;
+  return nearestEntity(P, enemies || []);
+}
+
+function getPlayerBotFollowAnchor(){
+  if(typeof FactionRules === 'undefined') return null;
+  return nearestEntity(P, FactionRules.players().filter(ent => ent !== P));
+}
+
+function ensurePlayerBotAIState(){
+  if(!P._playerAiState){
+    P._playerAiState = freshAIState();
+    P._playerAiState._isMain = true;
+    P._playerAiState._mode = 'attack';
+    P._playerAiState.phase = 'attack';
+  }
+  return P._playerAiState;
+}
+
+function setPlayerBotMode(on){
+  const ai = ensurePlayerBotAIState();
+  const enable = !!on;
+  if(enable && P._aiState !== ai) P._playerBotPrevAIState = P._aiState || null;
+  P._playerBotMode = enable;
+  ai.enabled = P._playerBotMode;
+  clearAIIntent(ai);
+  P._aiTargetOverride = null;
+  P._aiState = P._playerBotMode ? ai : (P._playerBotPrevAIState || null);
+  if(!P._playerBotMode){
+    mDown = false;
+    P.lmbWasDown = false;
+  }
+  if(typeof $ !== 'undefined' && $.FX){
+    $.FX.hit({x:P.x,y:P.y-45,t:P._playerBotMode?'AUTO ON':'AUTO OFF',life:45,big:false,col:P._playerBotMode?'#66ffaa':'#ffaa66'});
+  }
+}
+
+function togglePlayerBotMode(){ setPlayerBotMode(!P._playerBotMode); }
+function isPlayerBotMode(){ return !!(P && P._playerBotMode); }
+
+function updatePlayerBotAssistAI(dt){
+  if(!P || P.hp <= 0 || !P._playerBotMode){
+    if(P && P._playerAiState) clearAIIntent(P._playerAiState);
+    return;
+  }
+  const ai = ensurePlayerBotAIState();
+  P._aiState = ai;
+  ai.enabled = true;
+  const target = getPlayerBotEnemyTarget();
+  if(!target){
+    clearAIIntent(ai);
+    return;
+  }
+
+  P._aiTargetOverride = target;
+  updateAI(dt, P);
+  P._aiTargetOverride = null;
+
+  const anchor = getPlayerBotFollowAnchor();
+  if(anchor){
+    const pc = $.POS.body(P);
+    const ac = $.POS.body(anchor);
+    const dist = Math.hypot(ac.x - pc.x, ac.y - pc.y);
+    const cscl = sv('cscl');
+    if(dist > 220 * cscl){
+      aiMoveToward(ai._fakeKeys, pc, ac, 120 * cscl, cscl);
+      if(dist > 360 * cscl) ai._fakeMDown = false;
+    }
+  }
+}
 // ── Диспетчер: подменяет updateAI(dt,bot) для ботов с дальнобойным оружием ──
 function updateAIDispatch(dt, bot){
   if(!bot || bot.hp <= 0 || !dummyOn) return;
@@ -12359,6 +13498,7 @@ function updateAIDispatch(dt, bot){
     KeyI: ['i', 'ш'],
     KeyJ: ['j', 'о'],
     KeyO: ['o', 'щ'],
+    KeyP: ['p', 'з'],
     Digit1: ['1'],
     Enter: ['enter'],
     Escape: ['escape']
@@ -12398,6 +13538,8 @@ function updateAIDispatch(dt, bot){
   // Right-stick weapon response. Increase for faster aim, decrease for slower.
   // 7.5 is exactly 3x the previous 2.5 value.
   const AIM_SMOOTH_SPEED = 14.5;
+  const SHIELD_DASH_CHARGE_MAX = 3.0;
+  const SHIELD_DASH_CHARGE_MIN = 0.18;
 
   const slots = Array.from({length:SLOT_COUNT}, (_, index) => ({
     index,
@@ -12457,6 +13599,7 @@ function updateAIDispatch(dt, bot){
     const next = Math.max(0, Math.min(SLOT_COUNT - 1, Number(slotIndex) || 0));
     if(gamepadSlot > 0) clearManualEntity(slots[gamepadSlot].entity);
     gamepadSlot = next;
+    if(gamepadSlot > 0 && typeof P !== 'undefined') P._shieldHeld=false;
     localStorage.setItem(STORAGE_KEY, String(gamepadSlot));
     if(gamepadSlot > 0 && typeof dummyOn !== 'undefined') dummyOn=true;
     if(gamepadSlot>0){
@@ -12488,6 +13631,7 @@ function updateAIDispatch(dt, bot){
 
   function pressed(pad, index){ return !!(pad.buttons[index] && pad.buttons[index].pressed); }
   function justPressed(pad, index){ return pressed(pad,index) && !padState.previousButtons[index]; }
+  function justReleased(pad, index){ return !pressed(pad,index) && !!padState.previousButtons[index]; }
 
   function cycleWeapon(entity){
     if(!entity || typeof setWeapon !== 'function' || typeof WEAPON_TYPES === 'undefined') return;
@@ -12497,17 +13641,62 @@ function updateAIDispatch(dt, bot){
     if(!entity || typeof setShield !== 'function' || typeof SHIELD_TYPES === 'undefined') return;
     setShield(entity, ((entity.shield || 0) + 1) % SHIELD_TYPES.length);
   }
-  function dodge(entity, moveX, moveY){
-    if(!entity || isExhausted(entity) || isUnbalanced(entity) || (entity._dodgeCD || 0) > GameTime) return;
+  function dodge(entity, moveX, moveY, charge){
+    if(!entity || entity.hp<=0 || isExhausted(entity) || isUnbalanced(entity) || (entity._dodgeCD || 0) > GameTime) return;
+    charge=Math.max(0, Math.min(1, Number(charge)||0));
     let dx=moveX, dy=moveY;
     if(Math.hypot(dx,dy) < 0.1){ dx=Math.cos(entity.angle); dy=Math.sin(entity.angle); }
     const len=Math.hypot(dx,dy)||1;
-    entity._dvx=dx/len*8; entity._dvy=dy/len*8;
+    const dirX=dx/len, dirY=dy/len;
+    const force=8+charge*15;
+    entity._dvx=dirX*force; entity._dvy=dirY*force;
     entity._dodgeCD=GameTime+0.7;
-    entity._dodgeActiveUntil=GameTime+0.3;
-    if(typeof drainStamina==='function') drainStamina(entity,30);
+    entity._dodgeActiveUntil=GameTime+0.3+charge*0.12;
+    if(charge>0) entity._shieldDashBashActiveUntil=entity._dodgeActiveUntil+0.15;
+    spendDodgeStamina(entity,30);
+    if(typeof spawnDust==='function'){
+      for(let i=0;i<8;i++) spawnDust(entity.x+Math.random()*24-12,entity.y+Math.random()*12,-dirX*8,-dirY*8);
+    }
+    if(typeof $!=='undefined' && $.S) $.S.play('dodgeSound');
+    if(typeof DODGE_TRAIL==='undefined') window.DODGE_TRAIL=[];
+    entity._manualDodgeTrailFrames=12;
+    if(typeof $!=='undefined' && $.FX){
+      $.FX.hit({x:entity.x,y:entity.y-30,t:(window.I18N ? window.I18N.t('common.dodge') : 'DODGE'),life:35,big:false,col:'rgba(200,200,200,0.6)'});
+    }
   }
 
+  function canManualShieldDash(entity){
+    return !!(entity && entity.shield>0 && !isExhausted(entity) && typeof shieldHeld==='function' && shieldHeld(entity) && entity.stamina>0);
+  }
+
+  function beginManualDodgePress(entity, moveX, moveY){
+    if(!entity || isExhausted(entity) || isUnbalanced(entity) || (entity._dodgeCD || 0) > GameTime) return;
+    if(canManualShieldDash(entity)){
+      entity._shieldDashCharging=true;
+      entity._shieldDashChargeStart=GameTime;
+      entity._shieldDashChargeMax=SHIELD_DASH_CHARGE_MAX;
+      entity._shieldDashChargeMoveX=moveX;
+      entity._shieldDashChargeMoveY=moveY;
+      entity._shieldDashBashActiveUntil=0;
+      if(!entity._shieldDashChargeSound && typeof playControllableSound==='function'){
+        entity._shieldDashChargeSound=playControllableSound('shieldPush');
+      }
+      return;
+    }
+    dodge(entity,moveX,moveY,0);
+  }
+
+  function endManualDodgePress(entity, moveX, moveY){
+    if(!entity || !entity._shieldDashCharging) return;
+    const held=Math.max(0, Math.min(SHIELD_DASH_CHARGE_MAX, GameTime-(entity._shieldDashChargeStart||GameTime)));
+    const charge=held>=SHIELD_DASH_CHARGE_MIN ? held/SHIELD_DASH_CHARGE_MAX : 0;
+    entity._shieldDashCharging=false;
+    entity._shieldDashChargeStart=0;
+    entity._shieldDashChargePower=charge;
+    if(typeof fadeOutSound==='function') fadeOutSound(entity._shieldDashChargeSound,0.18);
+    entity._shieldDashChargeSound=null;
+    dodge(entity,moveX,moveY,charge);
+  }
   function manualFlickStaminaCost(){
     const gamepadCost = sv('gamepadstamflick');
     return Number.isFinite(gamepadCost) ? gamepadCost : sv('stamflick');
@@ -12618,6 +13807,11 @@ function updateAIDispatch(dt, bot){
       if(attack){
         if(!state.attack){
           entity.lmbHoldStart=GameTime;
+          entity._lmbRefundPressAt=GameTime;
+          entity._lmbRefundCost=0;
+          entity._lmbRefundReleased=false;
+          entity._lmbRefundClashed=false;
+          entity._lmbRefundUsed=false;
           $.S.play(isHeavySwingWeapon(entity)?'hammerSwing':'whoosh');
           if((entity.rageBuffEnd||0)<=GameTime){
             if((entity.rage||0)>=30){
@@ -12628,6 +13822,7 @@ function updateAIDispatch(dt, bot){
               state.holdDrain=Math.max(0,entity.stamina);
             } else if(entity.stamina>=lmbStaminaCost){
               drainStamina(entity,lmbStaminaCost);
+              entity._lmbRefundCost=lmbStaminaCost;
               state.holdDrain=Math.max(0,entity.stamina);
             }
           }
@@ -12639,6 +13834,10 @@ function updateAIDispatch(dt, bot){
           $.FX.hit({x:entity.x,y:entity.y-50,t:(window.I18N ? window.I18N.t('playercontrols.rage') : 'RAGE!'),life:40,big:true,col:'#ff2020'});
         }
       } else {
+        if(state.attack && entity._lmbRefundPressAt>=0 && GameTime-entity._lmbRefundPressAt<=0.6){
+          entity._lmbRefundReleased=true;
+          if(typeof tryFinishLmbRefund==='function') tryFinishLmbRefund(entity);
+        }
         state.holdDrain=0;
         entity.lmbHoldStart=-1;
         if((entity.rageBuffEnd||0)<=GameTime) entity._rageTextShown=false;
@@ -12743,14 +13942,15 @@ function updateAIDispatch(dt, bot){
     ai._fakeMY=center.y+Math.sin(padState.aimAngle)*AIM_RADIUS;
     ai._fakeMDown=pressed(pad,7) && !isExhausted(entity) && entity.stamina>0;
     entity._manualAttackInput=ai._fakeMDown;
+    entity._shieldHeld=pressed(pad,6) && entity.shield>0 && !isExhausted(entity) && entity.stamina>0 && !ai._fakeMDown;
 
     if(typeof updateRangedWeaponFire==='function' && isRangedWeapon(entity)){
       updateRangedWeaponFire(entity, ai._fakeMDown);
       if(typeof updateCrossbowReloadSound==='function') updateCrossbowReloadSound(entity);
     }
-    if(justPressed(pad,0)) dodge(entity,moveX,moveY);
+    if(justPressed(pad,0)) beginManualDodgePress(entity,moveX,moveY);
+    if(justReleased(pad,0)) endManualDodgePress(entity,moveX,moveY);
     if(justPressed(pad,4) && typeof throwWeapon==='function') throwWeapon(entity);
-    if(justPressed(pad,6)) entity._shieldFlipped=!entity._shieldFlipped;
     if(justPressed(pad,14)) cycleWeapon(entity);
     if(justPressed(pad,15)) cycleShield(entity);
     if(justPressed(pad,12)) ai._styleVals=pick(SWORD_STYLES);
@@ -12766,7 +13966,7 @@ function updateAIDispatch(dt, bot){
       if(pad) updateManualEntity(entity,pad,dt);
       else if(entity && entity._aiState){
         const keys=entity._aiState._fakeKeys;
-        keys.w=keys.a=keys.s=keys.d=false; entity._aiState._fakeMDown=false;
+        keys.w=keys.a=keys.s=keys.d=false; entity._aiState._fakeMDown=false; entity._manualAttackInput=false; entity._shieldHeld=false; entity._shieldDashCharging=false;
       }
     }
     if(pad) padState.previousButtons=pad.buttons.map(button=>button.pressed);
@@ -12774,7 +13974,36 @@ function updateAIDispatch(dt, bot){
 
   function afterEntityUpdate(entity,dt){
     if(!entity || !entity._manualControl) return;
+    if(entity._manualDodgeTrailFrames > 0){
+      entity._manualDodgeTrailFrames--;
+      if(typeof DODGE_TRAIL==='undefined') window.DODGE_TRAIL=[];
+      DODGE_TRAIL.push({
+        x:entity.x+Math.random()*10-5,
+        y:entity.y+Math.random()*10-5,
+        life:14,
+        maxLife:14,
+        r:7
+      });
+    }
+    if(entity._shieldDashCharging){
+      if(!canManualShieldDash(entity)){
+        entity._shieldDashCharging=false;
+        if(typeof fadeOutSound==='function') fadeOutSound(entity._shieldDashChargeSound,0.18);
+        entity._shieldDashChargeSound=null;
+      } else {
+        const held=Math.max(0, Math.min(SHIELD_DASH_CHARGE_MAX, GameTime-(entity._shieldDashChargeStart||GameTime)));
+        entity._shieldDashChargePower=held/SHIELD_DASH_CHARGE_MAX;
+        const awayX=-Math.cos(entity._manualAimAngle||entity.angle);
+        const awayY=-Math.sin(entity._manualAimAngle||entity.angle);
+        const retreat=(9+entity._shieldDashChargePower*15)*dt;
+        entity.vx=0; entity.vy=0;
+        entity.x=$.M.clamp(entity.x+awayX*retreat,40,WORLD_W-80);
+        entity.y=$.M.clamp(entity.y+awayY*retreat,40,WORLD_H-40);
+      }
+    }
     const gestureAngle=Number.isFinite(entity._manualAimAngle) ? entity._manualAimAngle : entity.angle;
+    if(weaponKeyOf(entity)==='flail') flailInput(entity,!!entity._manualAttackInput,gestureAngle);
+    else entity._flailPress=false;
     updateManualCombatStaminaV2(entity,!!entity._manualAttackInput,gestureAngle,dt,entity._manualAimVelocity);
   }
 
@@ -12993,9 +14222,19 @@ botUpdateExhaustion(bot, dt);
     bot._lwSpinCD = GameTime + rf(3.0, 4.0);
   }
   if(GameTime < bot._lwSpinUntil){
+    if($.IS(bot, 'flail')){
+      const wantedDir = Math.sign(bot._lwSpinSpeed) || 1;
+      const currentDir = Math.sign(bot.vel || 0) || wantedDir;
+      if(wantedDir !== currentDir && GameTime < (bot._flailDirectionLockUntil || 0)) bot._lwSpinSpeed = Math.abs(bot._lwSpinSpeed) * currentDir;
+      else if(wantedDir !== currentDir) bot._flailDirectionLockUntil = GameTime + 3;
+    }
     bot.angle += bot._lwSpinSpeed * dt;
     bot.vel = bot._lwSpinSpeed;
   } else if($.IS(bot, 'flail') && bot._flailSwingTarget){
+    const wantedDir = Math.sign(bot._flailSwingTarget) || Math.sign(bot.vel || 0) || 1;
+    const currentDir = Math.sign(bot.vel || 0) || wantedDir;
+    if(wantedDir !== currentDir && GameTime < (bot._flailDirectionLockUntil || 0)) bot._flailSwingTarget = Math.abs(bot._flailSwingTarget) * currentDir;
+    else if(wantedDir !== currentDir) bot._flailDirectionLockUntil = GameTime + 3;
     bot.vel = $.M.lerpDT(bot.vel, bot._flailSwingTarget, 0.18, dt);
     if(Math.abs(bot.vel - bot._flailSwingTarget) < 0.05) bot._flailSwingTarget = 0;
   } else if(!isRangedWeapon(bot)){
@@ -13110,6 +14349,10 @@ function updateDummy(dt, bot){
   const _dShWrong = _dShDef && shieldSameSideAsSword(bot);
   const _dShBaseMult = _dShDef ? (1 - 0.15 - _dShWeight*0.1) : 1.0;
   const _dShWrongMult = _dShWrong ? 0.8 : 1.0;
+  if(typeof shieldHeld === 'function' && shieldHeld(bot)){
+    drainStamina(bot, 2 * dt);
+    if(bot.stamina < (bot.stamMax || 100) * 0.10) ai._shieldHeld = false;
+  }
 
   // Движение — пропускаем полностью, если этот бот в этом же кадре уже был
   // передвинут специализированным ranged-контроллером (лук/арбалет/жезл в
@@ -13236,70 +14479,15 @@ if(ai._botDodgeCooldown>0) ai._botDodgeCooldown-=dt;
   const spdMult2 = botDebuffMult;
   // 🔥 ОБРАБОТКА ЦЕПА — ОТДЕЛЬНО, С ВОЗВРАТОМ
   if($.IS(bot, 'flail')){
-    if(bot._manualControl){
-      updateFlailSwing(bot, ta, dt);
-      bot.prevAngle = bot.angle;
-      return;
+    if(!bot._manualControl && bot.rage > 50 && GameTime >= (bot._flailHookCD || 0) && bot.hasWeapon !== false){
+      flailTryHook(bot, ta);
+      bot._flailHookCD = GameTime + rf(1.8, 1.2);
     }
-    // ── ЦЕП: РЕАЛИСТИЧНОЕ ПОВЕДЕНИЕ ДЛЯ БОТА ──
-    if(!bot._flailSpinState) {
-        bot._flailSpinState = 'idle'; // idle | spinning | retracting
-        bot._flailSpinAngle = 0;
-        bot._flailSpinDir = Math.random() < 0.5 ? 1 : -1;
-        bot._flailSpinSpeed = 4.0;
-        bot._flailTimer = 0;
-    }
-    
-    bot._flailTimer -= dt;
-    
-    // ── МЕНЯЕМ СОСТОЯНИЕ КАЖДЫЕ 1-3 СЕКУНДЫ ──
-    if(bot._flailTimer <= 0){
-        const r = Math.random();
-        if(r < 0.4){
-            // 40% — вращение
-            bot._flailSpinState = 'spinning';
-            bot._flailSpinDir = Math.random() < 0.5 ? 1 : -1;
-            bot._flailSpinSpeed = 3.0 + Math.random() * 3.0;
-            bot._flailTimer = 0.8 + Math.random() * 1.5; // 0.8-2.3 сек вращения
-        } else if(r < 0.7){
-            // 30% — пауза (цепь складывается)
-            bot._flailSpinState = 'idle';
-            bot._flailTimer = 0.5 + Math.random() * 1.0; // 0.5-1.5 сек паузы
-        } else {
-            // 30% — резкая смена направления
-            bot._flailSpinState = 'spinning';
-            bot._flailSpinDir *= -1;
-            bot._flailSpinSpeed = 4.0 + Math.random() * 2.0;
-            bot._flailTimer = 0.5 + Math.random() * 1.0;
-        }
-    }
-    
-    // ── ПРИМЕНЯЕМ СОСТОЯНИЕ ──
-    let fakeAng;
-    if(bot._flailSpinState === 'spinning'){
-        // Вращаем прицел по кругу
-        bot._flailSpinAngle += bot._flailSpinDir * bot._flailSpinSpeed * dt;
-        const spinRadius = 80;
-        const fakeX = drc.x + Math.cos(bot._flailSpinAngle) * spinRadius;
-        const fakeY = drc.y + Math.sin(bot._flailSpinAngle) * spinRadius;
-        fakeAng = Math.atan2(fakeY - dpivY, fakeX - dpivX);
-    } else {
-        // Idle — смотрим на игрока (цепь будет складываться)
-        fakeAng = ta;
-    }
-    
-    // Раскручиваем цепь с правильным углом
-    updateFlailSwing(bot, fakeAng, dt);
-    
-    // Если в режиме idle — принудительно ускоряем складывание
-    if(bot._flailSpinState === 'idle'){
-        bot._flailExt = Math.max(0, (bot._flailExt || 0) - 2.0 * dt);
-    }
-    
-    bot.prevAngle = bot.angle;
+    updateFlailSwing(bot,ta,dt,!bot._manualControl);
+    bot.prevAngle=bot.angle;
     return;
   }
-  
+
   // ── ОСТАЛЬНОЕ ОРУЖИЕ (НЕ ЦЕП) ──
   if(hasMod(bot, 'weaponRecoil')){
   bot._disbalanceAngularVelocity = (bot._disbalanceAngularVelocity || 0) * Math.pow(0.12, dt);
@@ -13491,6 +14679,7 @@ function drawBowArrow(ent){
 
 // Рисует тело с body offset (с учётом скейла персонажа)
 function drawPlayer(){
+  if(!P || P._defeated || P.hp <= 0 || P._awaitingReveal) return;
   drawChar(P, sv('cscl'), '#1e4a72', '#2a6a9a');
    drawBowArrow(P);
 }
@@ -14038,6 +15227,21 @@ function drawChar(ent, cscl, torsoCol, headCol){
   drawStatusEffects(ent, cscl);
 }
 
+function drawCameraDriverDebug(ent, cscl){
+  if(!ent || window.DEBUG_CAMERA_DRIVER !== ent) return;
+  const center = $.POS.body(ent);
+  const y = center.y - 52 * cscl;
+  ctx.save();
+  ctx.lineWidth = 2 / CAM_SCALE;
+  ctx.strokeStyle = '#40e8ff';
+  ctx.fillStyle = 'rgba(64,232,255,0.18)';
+  ctx.beginPath();
+  ctx.arc(center.x, y, 7 * cscl, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+  ctx.restore();
+}
+
 function drawOverheadHealthBar(ent, cscl){
   if(!ent || ent===P || ent._manualControl || !cb('overheadbars')) return;
   if((ent._healthBarUntil||0)<=GameTime) return;
@@ -14130,6 +15334,7 @@ function _drawDummySword(){
 
 function drawCursor(){
   if(window.IS_MOBILE) return;
+  if(typeof isPlayerBotMode === 'function' && isPlayerBotMode()) return;
   if(window._keyboardCrosshairVisible === false) return;
   const cx = mouseScreenX, cy = mouseScreenY;
   ctx.strokeStyle=mDown?'rgba(220,160,60,0.85)':'rgba(100,190,255,0.65)'; ctx.lineWidth=1.5;
@@ -14149,10 +15354,18 @@ function drawFX(){
     // through the same visual preset so its size cannot vary by call site.
     const maxLife = f.maxLife || f.life || FLOATING_TEXT_LIFE;
     ctx.globalAlpha=Math.max(0,f.life/maxLife);
-    ctx.font=FLOATING_TEXT_FONT;
-    ctx.fillStyle=f.col||'#ffcc44';
-    ctx.shadowColor='#ff8800'; ctx.shadowBlur=8;
-    ctx.textAlign='center'; ctx.fillText(f.t, f.x, f.y-(maxLife-f.life)*0.4);
+    if(f.type==='bolt'){
+      const p = 1 - f.life / maxLife;
+      ctx.save();
+      ctx.translate(f.x, f.y - p*5);
+      drawSparkImageFX(ctx, f, maxLife);
+      ctx.restore();
+    } else {
+      ctx.font=FLOATING_TEXT_FONT;
+      ctx.fillStyle=f.col||'#ffcc44';
+      ctx.shadowColor=f.col||'#ff8800'; ctx.shadowBlur=8;
+      ctx.textAlign='center'; ctx.fillText(f.t, f.x, f.y-(maxLife-f.life)*0.4);
+    }
     ctx.globalAlpha=1; ctx.shadowBlur=0; f.life -= f.fadeRate || 1;
     if(f.life<=0) hitFX.splice(i,1);
   }
@@ -14160,6 +15373,59 @@ function drawFX(){
 }
 
 // ──────────────── END LAYER: ARENA ────────────────
+const SPARK_EMOJI_URL = 'Source/UI/T_SparkEmoj.png';
+let SPARK_EMOJI_IMG = null;
+function sparkEmojiImage(){
+  if(SPARK_EMOJI_IMG !== null) return SPARK_EMOJI_IMG;
+  SPARK_EMOJI_IMG = new Image();
+  SPARK_EMOJI_IMG.src = SPARK_EMOJI_URL;
+  return SPARK_EMOJI_IMG;
+}
+
+function drawSparkImageFX(ctx, f, maxLife){
+  const img = sparkEmojiImage();
+  const p = 1 - f.life / maxLife;
+  const count = f.count || 1;
+  const size = f.size || 16;
+  const tint = f.tint || null;
+  if(!img || !img.complete || !img.naturalWidth){
+    ctx.strokeStyle=f.col||'#ffcc44';
+    ctx.shadowColor=f.col||'#ffcc44'; ctx.shadowBlur=10;
+    ctx.lineWidth=f.width||2.4;
+    ctx.lineCap='round'; ctx.lineJoin='round';
+    for(let b=0;b<count;b++){
+      const ox=(b-(count-1)/2)*9;
+      ctx.beginPath();
+      ctx.moveTo(ox-2,-11);
+      ctx.lineTo(ox+4,-2);
+      ctx.lineTo(ox-1,-2);
+      ctx.lineTo(ox+3,10);
+      ctx.lineTo(ox-7,-4);
+      ctx.lineTo(ox-1,-4);
+      ctx.closePath();
+      ctx.stroke();
+    }
+    return;
+  }
+  for(let b=0;b<count;b++){
+    const ox=(b-(count-1)/2)*(size*0.55);
+    ctx.save();
+    ctx.translate(ox, -p*4);
+    ctx.scale(-1, 1);
+    ctx.drawImage(img, -size/2, -size/2, size, size);
+    ctx.restore();
+    if(tint){
+      ctx.save();
+      ctx.globalAlpha = f.tintAlpha || 0.28;
+      ctx.globalCompositeOperation = 'source-atop';
+      ctx.fillStyle = tint;
+      ctx.translate(ox, -p*4);
+      ctx.scale(-1, 1);
+      ctx.fillRect(-size/2, -size/2, size, size);
+      ctx.restore();
+    }
+  }
+}
 
 // ════════════════════════════════════════════════════════════════════════════
 
@@ -14326,10 +15592,19 @@ function update(dt){
     P._debuffIntensity = 0;
     P.exhausted = 0;
   }
+  if(typeof updatePlayerBotAssistAI === 'function') updatePlayerBotAssistAI(dt);
+  const playerBotAI = (typeof isPlayerBotMode === 'function' && isPlayerBotMode()) ? P._playerAiState : null;
+  if(playerBotAI){
+    mDown = !!playerBotAI._fakeMDown;
+    mX = playerBotAI._fakeMX;
+    mY = playerBotAI._fakeMY;
+  }
+
   // --- character movement ---
   let mx=0, my=0;
-  if(keys['a']||keys['ф']) mx=-1; if(keys['d']||keys['в']) mx=1;
-  if(keys['w']||keys['ц']) my=-1; if(keys['s']||keys['ы']) my=1;
+  const moveKeys = playerBotAI ? playerBotAI._fakeKeys : keys;
+  if(moveKeys['a']||moveKeys['ф']) mx=-1; if(moveKeys['d']||moveKeys['в']) mx=1;
+  if(moveKeys['w']||moveKeys['ц']) my=-1; if(moveKeys['s']||moveKeys['ы']) my=1;
   if(mx||my){ const l=Math.hypot(mx,my); mx/=l; my/=l; }
   if(P._shieldDashCharging){
     mx = 0; my = 0;
@@ -14340,7 +15615,8 @@ function update(dt){
 if(window.IS_MOBILE && GameTime < (P._shieldHeldUntil || 0) && P.shield>0 && !isExhausted(P) && P.stamina>0) P._shieldHeld = true;
 if(mDown && !(window.IS_MOBILE && GameTime < (P._shieldHeldUntil || 0))) P._shieldHeld = false;
 const shieldDrainActive = typeof shieldHeld === 'function' && shieldHeld(P);
-regenStamina(P, dt, mDown || shieldDrainActive);
+const rangedStaminaUseActive = isRangedWeapon(P) && P._bowCharging;
+regenStamina(P, dt, shieldDrainActive || (!isRangedWeapon(P) && mDown) || rangedStaminaUseActive);
 if(shieldDrainActive){
   drainStamina(P, 2 * dt);
   if(P.stamina <= 0){
@@ -14360,6 +15636,10 @@ if(shieldDrainActive){
   }
 
 
+  if(weaponKeyOf(P)==='flail'){
+    const fp=$.POS.pivot(P);
+    flailInput(P,mDown,Math.atan2(mY-fp.y,mX-fp.x));
+  } else P._flailPress=false;
   const inRageBuff = P.rageBuffEnd > GameTime;
   const lmbStaminaCost = P.stamMax * (sv('lmbcost') / 100) * weaponLmbStaminaMult(P);
 
@@ -14367,13 +15647,17 @@ if(shieldDrainActive){
     // -- Staff/Crossbow: LMB fully replaces rage buff — shooting instead --
     P.lmbWasDown = mDown;
     P.lmbHoldStart = -1;
+    P._lmbRefundPressAt = -1;
+    P._lmbRefundCost = 0;
+    P._lmbRefundReleased = false;
+    P._lmbRefundClashed = false;
     if(isExhausted(P)) mDown = false; // exhaustion cancels LMB just like before
     updateRangedWeaponFire(P, mDown);
     updateCrossbowReloadSound(P);
   } else {
     P._wandCharging = false;
     // -- RAGE BUFF: while LMB held spends 30/sec, extends buff --------------
-    if(inRageBuff && mDown){
+    if(inRageBuff && mDown && weaponKeyOf(P)!=='flail'){
       P.rage = Math.max(0, P.rage - 30 * dt);
       if(P.rage > 0) P.rageBuffEnd = Math.max(P.rageBuffEnd, GameTime + 0.1);
     }
@@ -14396,6 +15680,11 @@ if(shieldDrainActive){
       if(!P.lmbWasDown){
         P.lmbWasDown = true;
         P.lmbHoldStart = GameTime;
+        P._lmbRefundPressAt = GameTime;
+        P._lmbRefundCost = 0;
+        P._lmbRefundReleased = false;
+        P._lmbRefundClashed = false;
+        P._lmbRefundUsed = false;
         
         if (!isRangedWeapon(P)) {
           $.S.play('hammerSwing');
@@ -14410,6 +15699,7 @@ if(shieldDrainActive){
             P._lmbHoldDrainRate = P.stamina;
           } else {
             drainStamina(P, lmbStaminaCost);
+            P._lmbRefundCost = lmbStaminaCost;
             // Fixed remainder should be exactly enough for one second of hold.
             P._lmbHoldDrainRate = P.stamina;
           }
@@ -14424,6 +15714,10 @@ if(shieldDrainActive){
         drainStamina(P, (P._lmbHoldDrainRate || 0) * dt);
       }
     } else {
+      if(P.lmbWasDown && P._lmbRefundPressAt >= 0 && GameTime - P._lmbRefundPressAt <= 0.6){
+        P._lmbRefundReleased = true;
+        if(typeof tryFinishLmbRefund === 'function') tryFinishLmbRefund(P);
+      }
       P.lmbWasDown = false;
       P.lmbHoldStart = -1;
       P._lmbHoldDrainRate = 0;
@@ -14857,9 +16151,12 @@ if (hasMod(P, 'weaponRecoil')) {
   }
 
   // --- Flick and swing detection ---
+  const aimPivotDist = Math.hypot(effectiveMX - pivX, effectiveMY - pivY);
+  const minSwingAimRadius = Math.max(18, weaponReach(P) * sv('swlen') * 0.18);
+  P._swingBonusSuppressed = aimPivotDist < minSwingAimRadius;
   const _flickAimAngle = Number.isFinite(ta) ? ta : P.angle;
   const _flickPrevAngle = P._flickPrevAngle;
-  P._realAngVel = _flickPrevAngle === undefined ? 0 : $.M.angDiff(_flickAimAngle, _flickPrevAngle) / Math.max(dt, 0.001);
+  P._realAngVel = (P._swingBonusSuppressed || _flickPrevAngle === undefined) ? 0 : $.M.angDiff(_flickAimAngle, _flickPrevAngle) / Math.max(dt, 0.001);
   P._flickPrevAngle = _flickAimAngle;
   const orbitSwingPenaltyReady = () => GameTime - (P._lastOrbitSwingPenaltyTime || -99) >= 1.3;
   const markOrbitSwingPenalty = () => { P._lastOrbitSwingPenaltyTime = GameTime; };
@@ -14874,10 +16171,10 @@ if (hasMod(P, 'weaponRecoil')) {
     $.S.play('whoosh');
   }
   if(!P._swingCD) P._swingCD = -1;
-  if(P.hasWeapon === false || isRangedWeapon(P)){
+  if(P.hasWeapon === false || isRangedWeapon(P) || $.IS(P, 'flail')){
     P._swingFX = false;
   } else {
-    if(!isExhausted(P) && updateFlickDetect(P._realAngVel ?? P.vel, dt) && (P._swingBlockCD||0) < GameTime){
+    if(!P._swingBonusSuppressed && !isExhausted(P) && updateFlickDetect(P._realAngVel ?? P.vel, dt) && (P._swingBlockCD||0) < GameTime){
       if($.IS(P, 'flail') && P._flailExt < 0.97){
         // Ignore
       } else if (!(GameTime < (P._dodgeActiveUntil||0))) {
@@ -14890,7 +16187,7 @@ if (hasMod(P, 'weaponRecoil')) {
     }
 
     const swingThreshold = $.IS(P, 'flail') ? sv('swthresh') * 5 : sv('swthresh');
-    if(!isExhausted(P) && Math.abs(P.vel) > swingThreshold && (P._swingBlockCD||0) < GameTime){
+    if(!P._swingBonusSuppressed && !isExhausted(P) && Math.abs(P.vel) > swingThreshold && (P._swingBlockCD||0) < GameTime){
       if($.IS(P, 'flail') && P._flailExt < 0.97){
         P._swingFX = false;
       } else {
@@ -14977,6 +16274,42 @@ const FRAME_MIN_MS = 1000 / TARGET_FPS;
 const FIXED_DT = 1 / SIM_TICK_RATE;
 let lastRenderT = 0;
 let accumulator = 0; // accumulated real time
+const PERF_PROFILER_WARN_MS = 12;
+let PERF_PROFILER_LAST_LOG = 0;
+
+function perfProfilerEnabled(){
+  return typeof cb === 'function' && cb('perfprof') && typeof performance !== 'undefined';
+}
+
+function perfProfilerState(){
+  if(!dummyOn || !ALL_BOTS || !ALL_BOTS.length) return '';
+  const bot = ALL_BOTS.find(b => b && b.hp > 0 && !b._manualControl) || ALL_BOTS.find(b => b && b.hp > 0);
+  if(!bot) return '';
+  const ai = bot._aiState || AI || {};
+  const parts = [
+    `weapon=${typeof weaponKeyOf === 'function' ? weaponKeyOf(bot) : '?'}`,
+    `phase=${ai.phase || '-'}`,
+    `heavy=${ai._heavyAttackPhase || '-'}`,
+    `variant=${ai._heavyAttackVariant || '-'}`,
+    `spin=${ai._spinActive ? '1' : '0'}`,
+    `vel=${Math.abs(bot.vel || 0).toFixed(2)}`,
+  ];
+  if(bot._flailState) parts.push(`flail=${bot._flailState}`, `ext=${(bot._flailExt || 0).toFixed(2)}`);
+  return parts.join(' ');
+}
+
+function perfProfilerLog(totalMs, spans){
+  const now = performance.now();
+  if(totalMs < PERF_PROFILER_WARN_MS || now < PERF_PROFILER_LAST_LOG + 250) return;
+  PERF_PROFILER_LAST_LOG = now;
+  const top = spans
+    .filter(s => s.ms >= 0.2)
+    .sort((a,b) => b.ms - a.ms)
+    .slice(0, 6)
+    .map(s => `${s.name}:${s.ms.toFixed(2)}ms`)
+    .join(' ');
+  console.log(`[perf] tick ${totalMs.toFixed(2)}ms ${top} ${perfProfilerState()}`);
+}
 
 // =======================================================================================
 // MODULE: VISIBILITY  (pause game and music on tab/page switch)
@@ -15013,11 +16346,21 @@ function loop(ts){
   while(accumulator >= FIXED_DT && steps < maxSteps){
     accumulator -= FIXED_DT;
     const dt = FIXED_DT * sv('gamespeed');
+    const perfOn = perfProfilerEnabled();
+    const perfStart = perfOn ? performance.now() : 0;
+    const perfSpans = perfOn ? [] : null;
+    let perfMark = perfStart;
+    const perfStep = perfOn ? (name)=>{
+      const now = performance.now();
+      perfSpans.push({name, ms: now - perfMark});
+      perfMark = now;
+    } : null;
     GameTime += dt;
     update(dt);
     duelUpdate(dt);
     updateDroppedWeapons(dt);
     updateProjectiles(dt);
+    if(perfOn) perfStep('core+ranged');
     
     if(P._wandCharging) updateWandChargeParticles(dt, P);
     if(dummyOn){ for(const _wb of ALL_BOTS){ if(_wb.hp > 0 && _wb._wandCharging) updateWandChargeParticles(dt, _wb); } }
@@ -15035,6 +16378,7 @@ function loop(ts){
 // ?? SINGLE SHAKE FOR ALL
 updateChargeShake(P, dt);
     if(typeof LocalPlayerControls!=='undefined') LocalPlayerControls.update(dt);
+    if(perfOn) perfStep('fx+local');
     if(dummyOn){
       for(const bot of ALL_BOTS){
         if(!revealBotIfReady(bot)) continue;
@@ -15045,7 +16389,9 @@ updateChargeShake(P, dt);
       }
       updateMainBotRotation(dt);
     }
+    if(perfOn) perfStep('bot');
     
+    updateFlailCombat(dt);
     updateFlailExtension(P, dt);
     if(dummyOn){ for(const bot of ALL_BOTS){ if(bot.hp > 0) updateFlailExtension(bot, dt); } }
 if(dummyOn) {
@@ -15053,6 +16399,7 @@ if(dummyOn) {
     if(bot.hp > 0) updateChargeShake(bot, dt);
   }
 }
+    if(perfOn) perfStep('flail+shake');
 	
 	
     if(dummyOn){
@@ -15068,11 +16415,16 @@ if(dummyOn) {
         }
       }
     }
+    if(perfOn) perfStep('melee');
     if(typeof enforceCameraCage === 'function') enforceCameraCage();
     updateBalls(dt);
     updateBlood(dt);
     updateFX(dt);
     if(typeof window._dodgeTick==='function') window._dodgeTick(dt);
+    if(perfOn){
+      perfStep('tail');
+      perfProfilerLog(performance.now() - perfStart, perfSpans);
+    }
     steps++;
   }
 
@@ -15316,6 +16668,11 @@ function shouldIgnoreGameplayKeydown(){
 }
 window.addEventListener('keydown', e=>{
   const lockBrowserKeys = browserInputLocked();
+  if(e.code==='KeyP' && !e.repeat){
+    if(typeof togglePlayerBotMode === 'function') togglePlayerBotMode();
+    e.preventDefault();
+    return;
+  }
   if((e.code==='Equal' || e.code==='NumpadAdd') && !e.repeat){
     window._keyboardCrosshairVisible = window._keyboardCrosshairVisible === false;
     e.preventDefault();
@@ -15357,6 +16714,7 @@ window.addEventListener('keydown', e=>{
   }
   if(k==='x'||k==='ч'){
     D.shield=(D.shield+1)%SHIELD_TYPES.length; setShield(D,D.shield);
+    window._manualBotShieldType = D.shield;
     const n=SHIELD_TYPES[D.shield]; $.FX.hit({x:D.x,y:D.y-40,t:(window.I18N?window.I18N.t('main.shieldBot',{name:n?n.name:window.I18N.t('main.shieldNone')}):('SHIELD D: '+(n?n.name:'none'))),life:60,big:false,col:'#ffaa44'});
   }
 if(k==='c'||k==='с'){ // player weapon switch
@@ -15685,6 +17043,7 @@ requestAnimationFrame(loop);
     e.preventDefault();
     if(typeof D==='undefined' || typeof setShield!=='function') return;
     D.shield = (D.shield+1)%SHIELD_TYPES.length; setShield(D, D.shield);
+    window._manualBotShieldType = D.shield;
   }, {passive: false});
 
   // ── BOT WEAPON (cycle weapon type for bot) ──────────────────────────────
@@ -15965,7 +17324,7 @@ window.doRestart=function(){
 
   // fireDodge — works on all devices (PC + mobile)
   window.fireDodge=function(dx, dy, bypassCooldown, chargedPower){
-    if(typeof P==='undefined') return;
+    if(typeof P==='undefined' || P.hp<=0 || isExhausted(P) || isUnbalanced(P) || Math.hypot(dx,dy)<0.001) return;
     if(!bypassCooldown&&window._dodgeCooldownMob>0) return;
     const len=Math.hypot(dx,dy)||1;
     const charge = Math.max(0, Math.min(1, chargedPower || 0));
@@ -15986,7 +17345,7 @@ window.doRestart=function(){
     // Dodge cooldown: if shield is on the same side as sword — cooldown is 3x longer
     const _dodgeSameSide = typeof shieldDef==='function' && shieldDef(P) && shieldSameSideAsSword(P);
     window._dodgeCooldownMob = _dodgeSameSide ? 0.8*3 : 0.8;
-    if(P.stamina!==undefined) drainStamina(P, 30 + charge * 15);
+    if(P.stamina!==undefined) spendDodgeStamina(P,30 + charge * 15);
     if(typeof spawnDust==='function')
       for(let i=0;i<8 + Math.round(charge * 10);i++) spawnDust(P.x+Math.random()*24-12,P.y+Math.random()*12,-dx/len*(8 + charge*5),-dy/len*(8 + charge*5));
     $.S.play('dodgeSound');
@@ -17068,6 +18427,9 @@ var NET_CORE = (function(){
         }
         if(msg.type==='readyGame') NET_SYNC.onReadyGame(msg);
         if(msg.type==='hit')       NET_SYNC.onHit(msg);
+        if(msg.type==='flailHit') NET_SYNC.onFlailHit(msg);
+        if(msg.type==='projectileContact') NET_SYNC.onProjectileContact(msg);
+        if(msg.type==='flailCancel') NET_SYNC.onFlailCancel(msg);
         if(msg.type==='pvp_reset') NET_SYNC.onPvpReset(msg);
         if(msg.type==='freeze'){ if(typeof DEATH!=='undefined'){DEATH.fadeIn=true;} }
         if(msg.type==='champion'){ if(typeof window._onChampionMsg==='function') window._onChampionMsg(msg.name); }
@@ -17191,6 +18553,7 @@ var NET_CHAT = (function(){
 
 var NET_SYNC = (function(){
   var _active=false, _peerName='';
+  let _flailPacketSerial=0, _lastRemoteFlailPacket=-1, _cancelledFlailId=0;
   var _cur={x:0,y:0,angle:0,vx:0,vy:0,hp:100,stamina:100,rage:0,vel:0,bx:0,by:0,pvX:0,pvY:-8};
   var _acceptAnyHp=false; // принимать HP в любую сторону после ресета
 
@@ -17276,6 +18639,12 @@ var NET_SYNC = (function(){
     d.ub=Math.round((p.unbalanced||0)*10);  // дисбаланс
     d.rb=p.rageBuffEnd>GameTime?Math.round((p.rageBuffEnd-GameTime)*10):0; // ярость
     d.wt=p.weaponType||0;                    // вид оружия (индекс в WEAPON_TYPES)
+    d.fq=++_flailPacketSerial;
+    d.ft=p._flailTurnSerial||0;
+    d.fl=p._flailFoldLocked?1:0;
+    d.fe=Math.round((p._flailExt||0)*1000);
+    const fa=p._flailAttack;
+    d.fa=fa?{id:fa.id,p:fa.phase==='out'?1:2,x:fa.x/WORLD_W,y:fa.y/WORLD_H,a:fa.angle}:null;
     d.hw=p.hasWeapon===false?0:1;            // вооружён ли (0 = обезоружен)
     return d;
   }
@@ -17339,6 +18708,9 @@ var NET_SYNC = (function(){
 
   // ── Включение/выключение PVP ──
   function setNetPVP(on, peerNameOverride, isSender){
+    resetFlailCombat(P); resetFlailCombat(D);
+    P._lastDodgeAt=null; D._lastDodgeAt=null;
+    _lastRemoteFlailPacket=-1; _cancelledFlailId=0; _lastFlailHit=0; _lastProjectileContact=0; D._flailRemoteTurns=null;
     const dtoggle=document.getElementById('dtoggle');
     const mobSpawn=document.getElementById('mob-spawn-btn');
     if(on){
@@ -17416,6 +18788,8 @@ var NET_SYNC = (function(){
   // sendReset: победитель отправляет команду с позициями обоих
   // iWon=true: я победил (D умер у меня) => на другой стороне умер P
   function sendReset(iWon){
+    resetFlailCombat(P); resetFlailCombat(D);
+    P._lastDodgeAt=null; D._lastDodgeAt=null;
     if(iWon && typeof addWin==='function') addWin(false); // PVP победа игрока
     _lastSent={nx:-9,ny:-9,vx:-9,vy:-9,angle:-9,vel:-9,hp:-9,stamina:-9,rage:-9};
     _acceptAnyHp=true;
@@ -17471,6 +18845,8 @@ function onPvpReset(msg){
   
   // Сбрасываем P (игрока)
   if(P.hasWeapon===false && typeof setWeapon==='function') setWeapon(P, P.weaponType);
+  resetFlailCombat(P); resetFlailCombat(D);
+    P._lastDodgeAt=null; D._lastDodgeAt=null;
   P.hp=100; P.stamina=P.stamMax||100; P.rage=0;
   P.exhausted=0; P.unbalanced=0; P.vx=0; P.vy=0;
   P.hitFlash=0; P.rageBuffEnd=-1; P._dvx=0; P._dvy=0;
@@ -17547,6 +18923,25 @@ function onPvpReset(msg){
       // при хендшейке и при подборе оружия на карте, поэтому здесь трогаем
       // только индекс, а не пере-рандомизируем спрайт через setWeapon().
       if(msg.wt!=null && msg.wt!==D.weaponType){ D.weaponType=msg.wt; }
+      if(Number.isSafeInteger(msg.fq) && msg.fq>_lastRemoteFlailPacket){
+        _lastRemoteFlailPacket=msg.fq;
+        D._flailFoldLocked=msg.fl===1;
+        if(Number.isSafeInteger(msg.ft) && msg.ft>=0){
+          const previous=D._flailRemoteTurns;
+          if(previous!=null && msg.ft>previous && weaponKeyOf(D)==='flail'){
+            for(let i=0;i<Math.min(3,msg.ft-previous);i++) $.S.play('hammerSwing');
+          }
+          D._flailRemoteTurns=msg.ft;
+        }
+        if(Number.isFinite(msg.fe)) D._flailExt=Math.max(0,Math.min(1,msg.fe/1000));
+        const a=msg.fa;
+        if(a && Number.isSafeInteger(a.id) && a.id>_cancelledFlailId && [a.x,a.y,a.a].every(Number.isFinite) && (a.p===1 || a.p===2)){
+          const prev=D._flailAttack;
+          D._flailNetTarget={x:a.x*WORLD_W,y:a.y*WORLD_H};
+          D._flailAttack={id:a.id,phase:a.p===1?'out':'back',x:prev?.id===a.id?prev.x:a.x*WORLD_W,y:prev?.id===a.id?prev.y:a.y*WORLD_H,angle:a.a};
+        } else D._flailAttack=null;
+        D._flailNetTime=GameTime;
+      }
       // Обезоруживание противника — иначе D продолжает драться "вооружённым"
       // даже после того, как оппонент выбил у себя оружие (и наоборот).
       if(msg.hw!=null){
@@ -17581,6 +18976,39 @@ function onPvpReset(msg){
     if(P.hp<=0&&typeof triggerDeath==='function') triggerDeath(P,false);
   }
 
+  let _lastProjectileContact=0;
+  function onProjectileContact(msg){
+    if(!_active || !Number.isSafeInteger(msg.id) || msg.id<=_lastProjectileContact ||
+       ![msg.damage,msg.stamina,msg.dx,msg.dy,msg.kx,msg.ky].every(Number.isFinite) ||
+       msg.damage<0 || msg.damage>MAX_HP || (msg.stamina!==0 && msg.stamina!==30) ||
+       Math.hypot(msg.dx,msg.dy)>7.01 || Math.hypot(msg.kx,msg.ky)>5.01) return;
+    _lastProjectileContact=msg.id;
+    if(P.hp<=0) return;
+    if(msg.damage>0) onHit({newHp:Math.max(0,P.hp-msg.damage),dmg:msg.damage});
+    applyProjectileEffectToEntity(P,msg);
+  }
+  let _lastFlailHit=0;
+  function onFlailHit(msg){
+    if(!_active || !Number.isSafeInteger(msg.id) || msg.id<=Math.max(_lastFlailHit,_cancelledFlailId) ||
+       !Number.isFinite(msg.newHp) || !Number.isFinite(msg.dmg) || msg.dmg<0 || msg.newHp<0 ||
+       (msg.pullHalf !== undefined && typeof msg.pullHalf !== 'boolean')) return;
+    _lastFlailHit=msg.id;
+    if(P.hp<=0) return;
+    if(msg.dmg>0) onHit({...msg,newHp:Math.min(P.hp,msg.newHp)});
+    startFlailPull(P,D,msg.id,{halfPath:msg.pullHalf===true});
+  }
+  function onFlailCancel(msg){
+    if(!_active || !Number.isSafeInteger(msg.id)) return;
+    if(P._flailPull?.owner===D && P._flailPull.id===msg.id) P._flailPull=null;
+    if(msg.retract===true){
+      // Release the victim, but retain the visible head for the incoming return snapshots.
+      _lastFlailHit=Math.max(_lastFlailHit,msg.id);
+      if(D._flailAttack?.id===msg.id) D._flailAttack.phase='back';
+    } else {
+      _cancelledFlailId=Math.max(_cancelledFlailId,msg.id);
+      if(D._flailAttack?.id===msg.id) D._flailAttack=null;
+    }
+  }
   function onDisconnected(){ _pendingStart=false; setNetPVP(false); NET_CHAT.log('👋 ПВП завершён'); }
 
   // ── Tick — буфер интерполяции → D ──
@@ -17631,7 +19059,7 @@ function onPvpReset(msg){
     D.pvY += (_cur.pvY - D.pvY) * st;
   }
 
-  return { onConnected,onDisconnected,onState,onHit,onReadyGame,onPingUpdate,startGame,disconnect,tick,
+  return { onConnected,onDisconnected,onState,onHit,onFlailHit,onFlailCancel,onProjectileContact,onReadyGame,onPingUpdate,startGame,disconnect,tick,
     setPeerName(n){_peerName=n;}, get active(){return _active;}, get peerName(){return _peerName;},
     forceResync, sendReset, onPvpReset };
 })();
@@ -18133,6 +19561,28 @@ function onPvpReset(msg){
 // Keeps the legacy gamepad menu layer active, but prevents its direct player-1
 // dodge action when the same physical pad is assigned to another local slot.
 (function(){
+  function shouldBlockPlayerOneGamepadDodge(source){
+    return window.LocalPlayerControls &&
+      window.LocalPlayerControls.getGamepadSlot()>0 &&
+      source === 'GamepadDodge';
+  }
+
+  if(typeof window.beginDodgePress === 'function'){
+    const playerOneBeginDodgePress=window.beginDodgePress;
+    window.beginDodgePress=function(source){
+      if(shouldBlockPlayerOneGamepadDodge(source)) return false;
+      return playerOneBeginDodgePress.apply(this,arguments);
+    };
+  }
+
+  if(typeof window.endDodgePress === 'function'){
+    const playerOneEndDodgePress=window.endDodgePress;
+    window.endDodgePress=function(source){
+      if(shouldBlockPlayerOneGamepadDodge(source)) return false;
+      return playerOneEndDodgePress.apply(this,arguments);
+    };
+  }
+
   if(typeof window.doDodge !== 'function') return;
   const playerOneDodge=window.doDodge;
   window.doDodge=function(){
@@ -18244,6 +19694,7 @@ function onPvpReset(msg){
       spawnBot:    { index: 1,  action: 'spawnBot' },
       musicToggle: { index: 2,  action: 'musicToggle' },
       throwWeapon: { index: 4,  action: 'throwWeapon' },
+      playerBot:   { index: 8,  action: 'playerBot' },
       pause:       { index: 9,  action: 'pause' },
       dpadUp:      { index: 12, action: 'swordStyle' },
       dpadLeft:    { index: 14, action: 'swapWeapon' },
@@ -18841,23 +20292,36 @@ function onPvpReset(msg){
   let _lastMenuOpenDiagLog = 0;
 
   // ── ПОИСК ЭЛЕМЕНТОВ ПОД КУРСОРОМ ────────────────────────────────────
+  const MENU_CLICKABLE_SELECTOR = [
+    'button', '.ov-btn', '.menu-btn', '[role="button"]',
+    '[onclick]', 'input[type="range"]', 'input[type="checkbox"]',
+    'input[type="text"]', 'input[type="number"]', 'select',
+    'label[for]', 'a[href]'
+  ].join(', ');
+
+  function isVisibleMenuTarget(el) {
+    if (!el) return false;
+    const style = window.getComputedStyle(el);
+    if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') return false;
+    const rect = el.getBoundingClientRect();
+    return rect.width > 0 && rect.height > 0;
+  }
+
+  function resolveMenuTarget(el) {
+    if (!el) return null;
+    if (el.tagName === 'LABEL' && el.htmlFor) {
+      const target = document.getElementById(el.htmlFor);
+      if (target && isVisibleMenuTarget(target)) return target;
+    }
+    return el;
+  }
+
   function findElementAtPosition(x, y) {
     const elements = document.elementsFromPoint(x, y);
 
-    const clickableSelectors = [
-      'button', '.ov-btn', '.menu-btn', '[role="button"]',
-      '[onclick]', 'input[type="range"]', 'input[type="text"]',
-      'input[type="number"]', 'a[href]'
-    ];
-
     for (const el of elements) {
-      for (const selector of clickableSelectors) {
-        if (el.matches && el.matches(selector)) {
-          const style = window.getComputedStyle(el);
-          if (style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0') {
-            return el;
-          }
-        }
+      if (el.matches && el.matches(MENU_CLICKABLE_SELECTOR) && isVisibleMenuTarget(el)) {
+        return resolveMenuTarget(el);
       }
     }
 
@@ -18874,19 +20338,14 @@ function onPvpReset(msg){
     // "ближайший элемент" никогда не найдёт сам input, и клавиатура
     // геймпада никогда не откроется, кроме как при попадании пиксель в
     // пиксель.
-    const allButtons = document.querySelectorAll(
-      'button, .ov-btn, .menu-btn, [role="button"], [onclick], ' +
-      'input[type="range"], input[type="text"], input[type="number"], a[href]'
-    );
+    const allButtons = document.querySelectorAll(MENU_CLICKABLE_SELECTOR);
     let nearest = null;
     let nearestDist = Infinity;
 
     for (const el of allButtons) {
       try {
-        const style = window.getComputedStyle(el);
-        if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') continue;
+        if (!isVisibleMenuTarget(el)) continue;
         const rect = el.getBoundingClientRect();
-        if (rect.width === 0 || rect.height === 0) continue;
 
         const cx = rect.left + rect.width / 2;
         const cy = rect.top + rect.height / 2;
@@ -18894,7 +20353,7 @@ function onPvpReset(msg){
 
         if (dist < nearestDist) {
           nearestDist = dist;
-          nearest = el;
+          nearest = resolveMenuTarget(el);
         }
       } catch(e) {}
     }
@@ -18931,22 +20390,67 @@ function onPvpReset(msg){
     slider.dispatchEvent(new Event('change', { bubbles: true }));
   }
 
+  function setSliderFromCursor(slider, clientX) {
+    const min = parseFloat(slider.min) || 0;
+    const max = parseFloat(slider.max) || 100;
+    const step = parseFloat(slider.step) || 1;
+    const range = max - min;
+    if (range <= 0) return;
+
+    const rect = slider.getBoundingClientRect();
+    if (!rect.width) return;
+
+    let ratio = (clientX - rect.left) / rect.width;
+    ratio = Math.max(0, Math.min(1, ratio));
+
+    let value = min + ratio * range;
+    value = Math.round(value / step) * step;
+    value = Math.max(min, Math.min(max, value));
+
+    const decimals = (String(step).split('.')[1] || '').length;
+    value = parseFloat(value.toFixed(decimals));
+
+    if (value === parseFloat(slider.value)) return;
+    slider.value = value;
+    slider.dispatchEvent(new Event('input', { bubbles: true }));
+    slider.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+
+  function toggleCheckbox(checkbox) {
+    checkbox.checked = !checkbox.checked;
+    checkbox.dispatchEvent(new Event('input', { bubbles: true }));
+    checkbox.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+
+  function cycleSelect(select, dir) {
+    const options = Array.from(select.options || []).filter(opt => !opt.disabled);
+    if (options.length <= 0) return;
+    const current = Math.max(0, options.findIndex(opt => opt.value === select.value));
+    const next = options[(current + (dir || 1) + options.length) % options.length];
+    if (!next || next.value === select.value) return;
+    select.value = next.value;
+    select.dispatchEvent(new Event('input', { bubbles: true }));
+    select.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+
   function clickMenuButton() {
     const btn = findNearestButton(menuCursorX, menuCursorY);
     if (!btn) return;
 
     if (btn.tagName === 'INPUT' && btn.type === 'range') {
-      // RT/A на слайдере — двигаем на один "видимый" шаг вправо (10% от
-      // диапазона), а не пытаемся симулировать клик мышью (клик по
-      // input[type=range] в браузере ничего не двигает — отсюда был баг
-      // "не получается двигать ползунки с RT"). Основной способ регулировки
-      // всё же левый стик при наведении (см. pollGamepad), это лишь на
-      // случай короткого точечного нажатия.
-      adjustSlider(btn, 0.1);
+      setSliderFromCursor(btn, menuCursorX);
+      return;
+    }
+    if (btn.tagName === 'INPUT' && btn.type === 'checkbox') {
+      toggleCheckbox(btn);
       return;
     }
     if (btn.tagName === 'INPUT' && (btn.type === 'text' || !btn.type)) {
       openVirtualKeyboard(btn);
+      return;
+    }
+    if (btn.tagName === 'SELECT') {
+      cycleSelect(btn, 1);
       return;
     }
 
@@ -19043,7 +20547,7 @@ function onPvpReset(msg){
 
       const KNOWN_ACTIONS = new Set([
         'attack','dodge','swapWeapon','shield','shieldFlip','shieldType','swordStyle',
-        'throwWeapon','spawnBot','musicToggle','pause'
+        'throwWeapon','spawnBot','musicToggle','playerBot','pause'
       ]);
 
       for (const line of lines) {
@@ -19093,6 +20597,7 @@ function onPvpReset(msg){
     dodge()       { if (!isAnyMenuOpen()) PUBLIC_API_ACTIONS.dodge(); },
     spawnBot()    { if (!isAnyMenuOpen()) PUBLIC_API_ACTIONS.spawnBot(); },
     musicToggle() { if (!isAnyMenuOpen()) PUBLIC_API_ACTIONS.musicToggle(); },
+    playerBot()   { if (!isAnyMenuOpen() && window.togglePlayerBotMode) window.togglePlayerBotMode(); },
     pause() {
       if (isAnyMenuOpen()) {
         const settingsOv = document.getElementById('mob-settings-overlay');
@@ -19169,6 +20674,11 @@ function onPvpReset(msg){
   function setGamepadShieldHeld(held) {
     shieldHeld = held;
     if (typeof P === 'undefined') return;
+    const localControlsOwnPad = window.LocalPlayerControls && window.LocalPlayerControls.getGamepadSlot() > 0;
+    if (localControlsOwnPad) {
+      P._shieldHeld = false;
+      return;
+    }
     if (!held) {
       P._shieldHeld = false;
       return;

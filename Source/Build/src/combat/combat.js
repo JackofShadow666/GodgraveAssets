@@ -1812,11 +1812,11 @@ function doClash(entA, entB, res, strongSwing, lmbRefundClash){
   // ─── EFFECTS ──────────────────────────────────────────────────────
   $.FX.hit({
     type:'bolt', x:hitX, y:hitY-4, life:12, maxLife:12,
-    count:lmbRefundClash ? 3 : 1,
+    count:1,
     col:lmbRefundClash ? '#9ed8ff' : '#ffffff',
     tint:lmbRefundClash ? '#66bfff' : null,
     tintAlpha:lmbRefundClash ? 0.24 : 0,
-    size:lmbRefundClash ? 17 : 15
+    size:15
   });
   $.FX.hit({x:hitX, y:hitY+14, t:(window.I18N ? window.I18N.t('combat.clash') : 'CLASH!'), life:35, big:false, col:'#ccccaa'});
   // strongSwing creates a flash and cross effect

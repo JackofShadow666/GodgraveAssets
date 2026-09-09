@@ -1,36 +1,36 @@
-03:16:32 [INFO] Project root: F:\Jack\Project\Godgrave\Public\Godgrave\Source\Build
-03:16:32 [INFO] Reading Build.html
-03:16:32 [INFO] Found 30 local module(s)
-03:16:32 [INFO] Inlining src/core/i18n.js
-03:16:32 [INFO] Skipping external script: https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js
-03:16:32 [INFO] Inlining src/core/engine.js
-03:16:32 [INFO] Inlining src/core/math.js
-03:16:32 [INFO] Inlining src/core/entity.js
-03:16:32 [INFO] Inlining src/core/debug-config.js
-03:16:32 [INFO] Inlining src/core/settings.js
-03:16:32 [INFO] Inlining src/systems/fx.js
-03:16:32 [INFO] Inlining src/systems/buff.js
-03:16:32 [INFO] Inlining src/systems/audio.js
-03:16:32 [INFO] Inlining src/systems/sprites.js
-03:16:32 [INFO] Inlining src/combat/weapons.js
-03:16:32 [INFO] Inlining src/combat/flail.js
-03:16:32 [INFO] Inlining src/combat/ranged.js
-03:16:32 [INFO] Inlining src/combat/debug-balls.js
-03:16:32 [INFO] Inlining src/combat/combat.js
-03:16:32 [INFO] Inlining src/combat/factions.js
-03:16:32 [INFO] Inlining src/ai/ai.js
-03:16:32 [INFO] Inlining src/input/keyboard-layout.js
-03:16:32 [INFO] Inlining src/input/player-controls.js
-03:16:32 [INFO] Inlining src/arena/arena.js
-03:16:32 [INFO] Inlining src/ui/hud.js
-03:16:32 [INFO] Inlining src/main.js
-03:16:32 [INFO] Inlining src/ui/mobile.js
-03:16:32 [INFO] Inlining src/network/net-ui.js
-03:16:32 [INFO] Inlining src/network/net-core.js
-03:16:32 [INFO] Inlining src/network/net-sync.js
-03:16:32 [INFO] Inlining src/network/net-lobby.js
-03:16:32 [INFO] Inlining src/network/net-effects.js
-03:16:32 [INFO] Inlining src/input/gamepad-adapter.js
-03:16:32 [INFO] Inlining src/input/gamepad-controls.js
-03:16:32 [INFO] Writing Build.standalone.html
-03:16:32 [INFO] Created Build.standalone.html: 30 local modules inlined.
+01:05:46 [INFO] Project root: F:\Jack\Project\Godgrave\Public\Godgrave\Source\Build
+01:05:46 [INFO] Reading Build.html
+01:05:46 [INFO] Found 30 local module(s)
+01:05:46 [INFO] Inlining src/core/i18n.js
+01:05:46 [INFO] Skipping external script: https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js
+01:05:46 [INFO] Inlining src/core/engine.js
+01:05:46 [INFO] Inlining src/core/math.js
+01:05:46 [INFO] Inlining src/core/entity.js
+01:05:46 [INFO] Inlining src/core/debug-config.js
+01:05:46 [INFO] Inlining src/core/settings.js
+01:05:46 [INFO] Inlining src/systems/fx.js
+01:05:46 [INFO] Inlining src/systems/buff.js
+01:05:46 [INFO] Inlining src/systems/audio.js
+01:05:46 [INFO] Inlining src/systems/sprites.js
+01:05:46 [INFO] Inlining src/combat/weapons.js
+01:05:46 [INFO] Inlining src/combat/flail.js
+01:05:46 [INFO] Inlining src/combat/ranged.js
+01:05:46 [INFO] Inlining src/combat/debug-balls.js
+01:05:46 [INFO] Inlining src/combat/combat.js
+01:05:46 [INFO] Inlining src/combat/factions.js
+01:05:46 [INFO] Inlining src/ai/ai.js
+01:05:46 [INFO] Inlining src/input/keyboard-layout.js
+01:05:46 [INFO] Inlining src/input/player-controls.js
+01:05:46 [INFO] Inlining src/arena/arena.js
+01:05:46 [INFO] Inlining src/ui/hud.js
+01:05:46 [INFO] Inlining src/main.js
+01:05:46 [INFO] Inlining src/ui/mobile.js
+01:05:46 [INFO] Inlining src/network/net-ui.js
+01:05:46 [INFO] Inlining src/network/net-core.js
+01:05:46 [INFO] Inlining src/network/net-sync.js
+01:05:46 [INFO] Inlining src/network/net-lobby.js
+01:05:46 [INFO] Inlining src/network/net-effects.js
+01:05:46 [INFO] Inlining src/input/gamepad-adapter.js
+01:05:46 [INFO] Inlining src/input/gamepad-controls.js
+01:05:46 [INFO] Writing Build.standalone.html
+01:05:46 [INFO] Created Build.standalone.html: 30 local modules inlined.
