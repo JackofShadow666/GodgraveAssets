@@ -708,7 +708,7 @@ if (w.weaponType === 'spear' && Math.abs(w.angVel) > 0.1) {
           const nx = d > 0.1 ? (c.x - w.x)/d : 0, ny = d > 0.1 ? (c.y - w.y)/d : -1;
           ent.vx += nx * 6; ent.vy += ny * 6;
           
-          $.S.play(isHeavySwingWeaponType(w.weaponType) ? 'damageHammer' : 'damage');
+          $.S.play((WEAPON_TYPES[w.weaponType]?.key === 'spear') ? 'damage' : (isHeavySwingWeaponType(w.weaponType) ? 'damageHammer' : 'damage')); 
           
           w.x = c.x - nx*hitR; w.y = c.y - ny*hitR;
           bounceWeapon(w, -nx, -ny, 0.6);

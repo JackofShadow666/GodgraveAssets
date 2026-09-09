@@ -489,6 +489,10 @@ const bodySwB = weaponReach(entB) * sv('swlen') * (isBot(entB)?sv('botswordscale
   }
 } // End of checkSwordCollision
 
+function damageSoundForWeapon(ent){
+  return weaponKeyOf(ent) === 'spear' ? 'damage' : (isHeavySwingWeapon(ent) ? 'damageHammer' : 'damage');
+}
+
 function isSoftBodyContactWeaponKey(key) {
   return key === 'hammer' || key === 'flail' || key === 'wand' || key === 'staff';
 }
@@ -919,7 +923,7 @@ if (defender === D && attacker === P && typeof AI !== 'undefined' && AI.enabled 
     const _tipOnly = weaponCollisionType(attacker) === 'tip';
     const TIP_MIN_T = 0.7;
     let shouldHit = (!_tipOnly || t2 >= TIP_MIN_T);
-    if (shouldHit && !_isPoke && tryApplySoftBodyContact(attacker, defender, bC, isHeavySwingWeapon(attacker) ? 'damageHammer' : 'damage')) return;
+    if (shouldHit && !_isPoke && tryApplySoftBodyContact(attacker, defender, bC, damageSoundForWeapon(attacker))) return;
     
     let finalCondition = (alongBlade < 0.8 || _isPoke) && shouldHit;
     
@@ -1056,7 +1060,7 @@ if (defender === D && attacker === P && typeof AI !== 'undefined' && AI.enabled 
         $.FX.hit({ x: bC.x, y: bC.y - 36, t: (window.I18N ? window.I18N.t('combat.poke') : 'POKE!'), life: 40, big: true, col: '#ffdd44' });
       }
       
-      $.S.play(isHeavySwingWeapon(attacker) ? 'damageHammer' : 'damage');
+      $.S.play(damageSoundForWeapon(attacker));
       
       if (typeof NET_SYNC !== 'undefined' && $.NET.active() && attacker === P && defender === D) {
         $.NET.send({ type: 'hit', dmg, newHp: defender.hp });
