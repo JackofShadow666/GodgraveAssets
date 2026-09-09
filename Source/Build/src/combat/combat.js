@@ -274,8 +274,7 @@ function updateDisbalanceCombo(attacker, defender){
   const blocks = state && state.target === attacker && !expired ? state.blocks + 1 : 1;
   defender._disbalanceCombo = { target: attacker, blocks, startedAt: GameTime };
   defender._specialDisbalanceBlockFrame = GameTime;
-  const sc = $.POS.body(defender);
-  $.FX.hit({x:sc.x, y:sc.y-58, t:'КЛАЦ!', life:26, big:false, col:'#b8cad8'});
+  defender._specialDisbalanceBlockLabelFrame = GameTime;
   disbalanceComboDebug(defender,
     `Special block: ${blocks}x`,
     '#409cff');
@@ -1818,7 +1817,9 @@ function doClash(entA, entB, res, strongSwing, lmbRefundClash){
     tintAlpha:lmbRefundClash ? 0.24 : 0,
     size:15
   });
-  $.FX.hit({x:hitX, y:hitY+14, t:(window.I18N ? window.I18N.t('combat.clash') : 'CLASH!'), life:35, big:false, col:'#ccccaa'});
+  const clashLabelDefender = entA.isAttacker ? entB : entA;
+  const specialClashLabel = clashLabelDefender && clashLabelDefender._specialDisbalanceBlockLabelFrame === GameTime;
+  $.FX.hit({x:hitX, y:hitY+14, t:(window.I18N ? window.I18N.t('combat.clash') : 'CLASH!'), life:35, big:false, col:specialClashLabel ? '#b8cad8' : '#ccccaa'});
   // strongSwing creates a flash and cross effect
   if(strongSwing && Math.random() < 0.04) spawnFX('flash', hitX, hitY);
   // Cross FX at the clash point
