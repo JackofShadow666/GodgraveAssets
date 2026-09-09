@@ -36,6 +36,7 @@ const SFX_FOLDERS = {
   whoosh:         'Source/Sound/Sword/SwordSwing/',  // фильтр: без Agressive
   whooshRage:     'Source/Sound/Sword/SwordSwing/',  // фильтр: Agressive
   damage:         'Source/Sound/Damage/Sword/',
+  woodClink:      'Source/Sound/WoodClink/',
   rage:           'Source/Sound/Rage/',
   bladeblind:     'Source/Sound/Shield/',
   shieldblock:    'Source/Sound/Shield/',
@@ -83,7 +84,26 @@ let audioDBReady = false;
 // ?? КЛЮЧ ДЛЯ localStorage
 // ====================================================================
 const ASSETS_CACHE_KEY = 'godgrave_assets_list_v1';
-const ASSETS_VERSION = '1.1';
+const ASSETS_VERSION = '1.2';
+
+const SFX_MAX_BY_TYPE = {
+  damage: 15,
+  damageHammer: 8,
+};
+
+function sfxNumberFromUrl(url){
+  const m = String(url || '').match(/_(\d+)\.(mp3|wav|ogg)$/i);
+  return m ? parseInt(m[1], 10) : null;
+}
+
+function applySfxLimit(type, matches){
+  const max = SFX_MAX_BY_TYPE[type];
+  if(!max) return matches;
+  return matches.filter(u => {
+    const n = sfxNumberFromUrl(u);
+    return n == null || n <= max;
+  });
+}
 
 async function loadAudioDB() {
   // ====================================================================
@@ -207,6 +227,7 @@ async function loadAudioDB() {
     if (type === 'magicExplode')   matches = matches.filter(u => u.toLowerCase().includes('explode'));
 	
     if (type === 'crossbowReload') matches = matches.filter(u => u.toLowerCase().includes('reload'));
+    matches = applySfxLimit(type, matches);
 
     if (type === 'music') {
       MUSIC_LIST_FULL = matches;
@@ -327,6 +348,7 @@ $.S = $.S || {
   hammer(){ return window['playSound']('hammerSwing'); },
   damage(){ return window['playSound']('damage'); },
   damageHammer(){ return window['playSound']('damageHammer'); },
+  woodClink(){ return window['playSound']('woodClink'); },
   clash(){ return window['playSound']('clash'); },
   clashHard(){ return window['playSound']('clashHard'); },
   rage(){ return window['playSound']('rage'); },

@@ -269,6 +269,11 @@ function updateDisbalanceCombo(attacker, defender){
   return false;
 }
 
+function blockClashSoundFor(defender){
+  const key = typeof weaponKeyOf === 'function' ? weaponKeyOf(defender) : null;
+  return $.ISK(key, 'staff', 'magicstaff', 'wand', 'spear', 'hammer') ? 'woodClink' : 'clash';
+}
+
 function swordHit(entA, entB){
   const attacker = entA.isAttacker ? entA : entB;
   const defender = entA.isAttacker ? entB : entA;
@@ -452,7 +457,7 @@ const bodySwB = weaponReach(entB) * sv('swlen') * (isBot(entB)?sv('botswordscale
       const strongSwing = Math.abs(entA.vel) > sv('swthresh')*2.5 || Math.abs(entB.vel) > sv('swthresh')*2.5;
       doClash(entA, entB, res, strongSwing);
       swordHit(entA, entB);
-      if(strongSwing) $.S.play('clashHard'); else $.S.play('clash');
+      if(strongSwing) $.S.play('clashHard'); else $.S.play(blockClashSoundFor(entA.isAttacker ? entB : entA));
       if(typeof triggerHitstop==='function') triggerHitstop(strongSwing?3:2, strongSwing?3:1.5);
       entA._clashFrame = GameTime;
       entB._clashFrame = GameTime;
