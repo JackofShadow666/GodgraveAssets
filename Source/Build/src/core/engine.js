@@ -75,6 +75,14 @@ function worldToScreen(x, y){
 }
 
 function updateMouseWorld(){
+  if(typeof isPlayerBotMode === 'function' && isPlayerBotMode() && P && P._playerAiState){
+    const aim = worldToScreen(P._playerAiState._fakeMX, P._playerAiState._fakeMY);
+    mouseScreenX = aim.x;
+    mouseScreenY = aim.y;
+    mX = P._playerAiState._fakeMX;
+    mY = P._playerAiState._fakeMY;
+    return;
+  }
   const p = screenToWorld(mouseScreenX, mouseScreenY);
   mX = p.x;
   mY = p.y;

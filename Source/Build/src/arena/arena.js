@@ -284,6 +284,10 @@ function updateDummy(dt, bot){
   const _dShWrong = _dShDef && shieldSameSideAsSword(bot);
   const _dShBaseMult = _dShDef ? (1 - 0.15 - _dShWeight*0.1) : 1.0;
   const _dShWrongMult = _dShWrong ? 0.8 : 1.0;
+  if(typeof shieldHeld === 'function' && shieldHeld(bot)){
+    drainStamina(bot, 2 * dt);
+    if(bot.stamina < (bot.stamMax || 100) * 0.10) ai._shieldHeld = false;
+  }
 
   // Движение — пропускаем полностью, если этот бот в этом же кадре уже был
   // передвинут специализированным ranged-контроллером (лук/арбалет/жезл в
@@ -665,6 +669,7 @@ function drawBowArrow(ent){
 
 // Рисует тело с body offset (с учётом скейла персонажа)
 function drawPlayer(){
+  if(!P || P._defeated || P.hp <= 0 || P._awaitingReveal) return;
   drawChar(P, sv('cscl'), '#1e4a72', '#2a6a9a');
    drawBowArrow(P);
 }
@@ -1209,7 +1214,6 @@ function drawChar(ent, cscl, torsoCol, headCol){
   }
   ctx.restore();
   drawOverheadHealthBar(ent, cscl);
-  drawCameraDriverDebug(ent, cscl);
   drawStatusEffects(ent, cscl);
 }
 
@@ -1320,6 +1324,7 @@ function _drawDummySword(){
 
 function drawCursor(){
   if(window.IS_MOBILE) return;
+  if(typeof isPlayerBotMode === 'function' && isPlayerBotMode()) return;
   if(window._keyboardCrosshairVisible === false) return;
   const cx = mouseScreenX, cy = mouseScreenY;
   ctx.strokeStyle=mDown?'rgba(220,160,60,0.85)':'rgba(100,190,255,0.65)'; ctx.lineWidth=1.5;

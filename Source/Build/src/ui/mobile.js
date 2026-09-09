@@ -144,6 +144,7 @@
     e.preventDefault();
     if(typeof D==='undefined' || typeof setShield!=='function') return;
     D.shield = (D.shield+1)%SHIELD_TYPES.length; setShield(D, D.shield);
+    window._manualBotShieldType = D.shield;
   }, {passive: false});
 
   // ── BOT WEAPON (cycle weapon type for bot) ──────────────────────────────

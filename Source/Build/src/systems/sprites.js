@@ -148,7 +148,8 @@ function shieldHeld(ent){
   const def = shieldDef(ent);
   if(!def || isShieldSuppressed(ent)) return false;
   const isPlayer = typeof P !== 'undefined' && ent===P;
-  if(!isPlayer) return true;
+  if(ent && ent._manualControl) return !!ent._shieldHeld;
+  if(!isPlayer) return !!(ent && ent._aiState && ent._aiState._shieldHeld);
   if(typeof mDown !== 'undefined' && mDown) return false;
   return !!ent._shieldHeld;
 }
@@ -156,7 +157,7 @@ function shieldHeld(ent){
 // Щит на той же стороне что меч (курсор) = флип активен
 function shieldSameSideAsSword(ent){
   const isPlayer = typeof P !== 'undefined' && ent === P;
-  if(isPlayer) return typeof shieldHeld === 'function' && shieldHeld(ent);
+  if(isPlayer || (ent && ent._manualControl)) return typeof shieldHeld === 'function' && shieldHeld(ent);
   return !!ent._shieldFlipped;
 }
 // Эффективный масштаб меча: -40% размера, если щит держат в той же руке, что и меч
@@ -310,7 +311,8 @@ function assignRandomSkin(ent){
 
 // Использует те же правила восстановления, что и игрок.
 function botRegenStamina(bot, dt){
-  regenStamina(bot, dt, !!(bot._aiState && bot._aiState._fakeMDown));
+  const ai = bot && bot._aiState;
+  regenStamina(bot, dt, !!(ai && (ai._fakeMDown || ai._shieldHeld)));
 }
 
 // Обновляет усталость и дисбаланс

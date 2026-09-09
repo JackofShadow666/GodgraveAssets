@@ -12,6 +12,8 @@
   // Right-stick weapon response. Increase for faster aim, decrease for slower.
   // 7.5 is exactly 3x the previous 2.5 value.
   const AIM_SMOOTH_SPEED = 14.5;
+  const SHIELD_DASH_CHARGE_MAX = 3.0;
+  const SHIELD_DASH_CHARGE_MIN = 0.18;
 
   const slots = Array.from({length:SLOT_COUNT}, (_, index) => ({
     index,
@@ -71,6 +73,7 @@
     const next = Math.max(0, Math.min(SLOT_COUNT - 1, Number(slotIndex) || 0));
     if(gamepadSlot > 0) clearManualEntity(slots[gamepadSlot].entity);
     gamepadSlot = next;
+    if(gamepadSlot > 0 && typeof P !== 'undefined') P._shieldHeld=false;
     localStorage.setItem(STORAGE_KEY, String(gamepadSlot));
     if(gamepadSlot > 0 && typeof dummyOn !== 'undefined') dummyOn=true;
     if(gamepadSlot>0){
@@ -102,6 +105,7 @@
 
   function pressed(pad, index){ return !!(pad.buttons[index] && pad.buttons[index].pressed); }
   function justPressed(pad, index){ return pressed(pad,index) && !padState.previousButtons[index]; }
+  function justReleased(pad, index){ return !pressed(pad,index) && !!padState.previousButtons[index]; }
 
   function cycleWeapon(entity){
     if(!entity || typeof setWeapon !== 'function' || typeof WEAPON_TYPES === 'undefined') return;
@@ -111,15 +115,18 @@
     if(!entity || typeof setShield !== 'function' || typeof SHIELD_TYPES === 'undefined') return;
     setShield(entity, ((entity.shield || 0) + 1) % SHIELD_TYPES.length);
   }
-  function dodge(entity, moveX, moveY){
+  function dodge(entity, moveX, moveY, charge){
     if(!entity || isExhausted(entity) || isUnbalanced(entity) || (entity._dodgeCD || 0) > GameTime) return;
+    charge=Math.max(0, Math.min(1, Number(charge)||0));
     let dx=moveX, dy=moveY;
     if(Math.hypot(dx,dy) < 0.1){ dx=Math.cos(entity.angle); dy=Math.sin(entity.angle); }
     const len=Math.hypot(dx,dy)||1;
     const dirX=dx/len, dirY=dy/len;
-    entity._dvx=dirX*8; entity._dvy=dirY*8;
+    const force=8+charge*15;
+    entity._dvx=dirX*force; entity._dvy=dirY*force;
     entity._dodgeCD=GameTime+0.7;
-    entity._dodgeActiveUntil=GameTime+0.3;
+    entity._dodgeActiveUntil=GameTime+0.3+charge*0.12;
+    if(charge>0) entity._shieldDashBashActiveUntil=entity._dodgeActiveUntil+0.15;
     if(typeof drainStamina==='function') drainStamina(entity,30);
     if(typeof spawnDust==='function'){
       for(let i=0;i<8;i++) spawnDust(entity.x+Math.random()*24-12,entity.y+Math.random()*12,-dirX*8,-dirY*8);
@@ -132,6 +139,38 @@
     }
   }
 
+  function canManualShieldDash(entity){
+    return !!(entity && entity.shield>0 && !isExhausted(entity) && typeof shieldHeld==='function' && shieldHeld(entity) && entity.stamina>0);
+  }
+
+  function beginManualDodgePress(entity, moveX, moveY){
+    if(!entity || isExhausted(entity) || isUnbalanced(entity) || (entity._dodgeCD || 0) > GameTime) return;
+    if(canManualShieldDash(entity)){
+      entity._shieldDashCharging=true;
+      entity._shieldDashChargeStart=GameTime;
+      entity._shieldDashChargeMax=SHIELD_DASH_CHARGE_MAX;
+      entity._shieldDashChargeMoveX=moveX;
+      entity._shieldDashChargeMoveY=moveY;
+      entity._shieldDashBashActiveUntil=0;
+      if(!entity._shieldDashChargeSound && typeof playControllableSound==='function'){
+        entity._shieldDashChargeSound=playControllableSound('shieldPush');
+      }
+      return;
+    }
+    dodge(entity,moveX,moveY,0);
+  }
+
+  function endManualDodgePress(entity, moveX, moveY){
+    if(!entity || !entity._shieldDashCharging) return;
+    const held=Math.max(0, Math.min(SHIELD_DASH_CHARGE_MAX, GameTime-(entity._shieldDashChargeStart||GameTime)));
+    const charge=held>=SHIELD_DASH_CHARGE_MIN ? held/SHIELD_DASH_CHARGE_MAX : 0;
+    entity._shieldDashCharging=false;
+    entity._shieldDashChargeStart=0;
+    entity._shieldDashChargePower=charge;
+    if(typeof fadeOutSound==='function') fadeOutSound(entity._shieldDashChargeSound,0.18);
+    entity._shieldDashChargeSound=null;
+    dodge(entity,moveX,moveY,charge);
+  }
   function manualFlickStaminaCost(){
     const gamepadCost = sv('gamepadstamflick');
     return Number.isFinite(gamepadCost) ? gamepadCost : sv('stamflick');
@@ -367,14 +406,15 @@
     ai._fakeMY=center.y+Math.sin(padState.aimAngle)*AIM_RADIUS;
     ai._fakeMDown=pressed(pad,7) && !isExhausted(entity) && entity.stamina>0;
     entity._manualAttackInput=ai._fakeMDown;
+    entity._shieldHeld=pressed(pad,6) && entity.shield>0 && !isExhausted(entity) && entity.stamina>0 && !ai._fakeMDown;
 
     if(typeof updateRangedWeaponFire==='function' && isRangedWeapon(entity)){
       updateRangedWeaponFire(entity, ai._fakeMDown);
       if(typeof updateCrossbowReloadSound==='function') updateCrossbowReloadSound(entity);
     }
-    if(justPressed(pad,0)) dodge(entity,moveX,moveY);
+    if(justPressed(pad,0)) beginManualDodgePress(entity,moveX,moveY);
+    if(justReleased(pad,0)) endManualDodgePress(entity,moveX,moveY);
     if(justPressed(pad,4) && typeof throwWeapon==='function') throwWeapon(entity);
-    if(justPressed(pad,6)) entity._shieldFlipped=!entity._shieldFlipped;
     if(justPressed(pad,14)) cycleWeapon(entity);
     if(justPressed(pad,15)) cycleShield(entity);
     if(justPressed(pad,12)) ai._styleVals=pick(SWORD_STYLES);
@@ -390,7 +430,7 @@
       if(pad) updateManualEntity(entity,pad,dt);
       else if(entity && entity._aiState){
         const keys=entity._aiState._fakeKeys;
-        keys.w=keys.a=keys.s=keys.d=false; entity._aiState._fakeMDown=false;
+        keys.w=keys.a=keys.s=keys.d=false; entity._aiState._fakeMDown=false; entity._shieldHeld=false; entity._shieldDashCharging=false;
       }
     }
     if(pad) padState.previousButtons=pad.buttons.map(button=>button.pressed);
@@ -408,6 +448,22 @@
         maxLife:14,
         r:7
       });
+    }
+    if(entity._shieldDashCharging){
+      if(!canManualShieldDash(entity)){
+        entity._shieldDashCharging=false;
+        if(typeof fadeOutSound==='function') fadeOutSound(entity._shieldDashChargeSound,0.18);
+        entity._shieldDashChargeSound=null;
+      } else {
+        const held=Math.max(0, Math.min(SHIELD_DASH_CHARGE_MAX, GameTime-(entity._shieldDashChargeStart||GameTime)));
+        entity._shieldDashChargePower=held/SHIELD_DASH_CHARGE_MAX;
+        const awayX=-Math.cos(entity._manualAimAngle||entity.angle);
+        const awayY=-Math.sin(entity._manualAimAngle||entity.angle);
+        const retreat=(9+entity._shieldDashChargePower*15)*dt;
+        entity.vx=0; entity.vy=0;
+        entity.x=$.M.clamp(entity.x+awayX*retreat,40,WORLD_W-80);
+        entity.y=$.M.clamp(entity.y+awayY*retreat,40,WORLD_H-40);
+      }
     }
     const gestureAngle=Number.isFinite(entity._manualAimAngle) ? entity._manualAimAngle : entity.angle;
     updateManualCombatStaminaV2(entity,!!entity._manualAttackInput,gestureAngle,dt,entity._manualAimVelocity);

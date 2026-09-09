@@ -45,18 +45,23 @@
         .sub { color: #94a3b8; margin-bottom: 28px; font-size: 0.85rem; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; }
         .drop-zone {
             background: rgba(30, 41, 59, 0.5);
-            border: 2px dashed rgba(56, 189, 248, 0.5);
-            border-radius: 40px;
-            padding: 28px 20px;
+            border: 1px dashed rgba(56, 189, 248, 0.5);
+            border-radius: 18px;
+            padding: 6px 10px;
             text-align: center;
             cursor: pointer;
-            margin-bottom: 28px;
+            margin-bottom: 10px;
             transition: 0.2s;
+            min-height: 34px;
         }
+        .drop-zone.loaded { display:flex; align-items:center; gap:8px; padding:4px 8px; width:max-content; max-width:100%; border-style:solid; }
+        .drop-zone.loaded .drop-hint { display:none; }
+        .drop-zone.loaded .file-label { padding:3px 9px; font-size:.68rem; }
+        .drop-zone.loaded #fileNameDisplay { margin:0 !important; max-width:420px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
         .drop-zone.drag-over { border-color: #38bdf8; background: rgba(56,189,248,0.2); transform: scale(0.98); }
         .file-label {
             background: linear-gradient(95deg, #1e293b, #0f172a);
-            padding: 10px 24px;
+            padding: 6px 14px;
             border-radius: 60px;
             display: inline-flex;
             gap: 10px;
@@ -108,6 +113,11 @@
             border: 1px solid #2d3a5a;
         }
         .canvas-wrapper { position: relative; margin-bottom: 20px; cursor: crosshair; }
+        .manual-panel { display:none; gap:10px; align-items:center; flex-wrap:wrap; background:rgba(30,41,59,.55); padding:8px 12px; border-radius:18px; margin-top:10px; }
+        .manual-panel.active { display:flex; }
+        .manual-time { font-family:monospace; color:#7dd3fc; font-size:.75rem; }
+        .manual-help { color:#cbd5e1; font-size:.72rem; }
+        .manual-mode canvas { cursor:crosshair; outline:2px solid rgba(74,222,128,.55); }
         canvas {
             display: block;
             width: 100%;
@@ -187,8 +197,8 @@
 
     <div class="drop-zone" id="dropZone">
         <label class="file-label">🎵 ВЫБРАТЬ MP3<input type="file" id="fileInput" accept="audio/mpeg,audio/mp3"></label>
-        <div style="margin-top: 8px; font-size:0.7rem;">⬇️ перетащите файл сюда</div>
-        <div id="fileNameDisplay" style="margin-top: 6px; font-size:0.7rem; color:#7dd3fc;"></div>
+        <div class="drop-hint" style="margin-top:4px; font-size:0.65rem;">⬇️ перетащите файл сюда</div>
+        <div id="fileNameDisplay" style="margin-top:4px; font-size:0.68rem; color:#7dd3fc;"></div>
     </div>
 
     <div id="controlsPanel" style="display:none;">
@@ -198,6 +208,8 @@
             <div class="param-group name-group"><label>🏷️ префикс</label><input type="text" id="exportBaseName" placeholder="имя"></div>
             <div class="param-group"><label>📀 формат</label><select id="exportFormat"><option value="mp3">MP3</option><option value="wav">WAV</option></select></div>
             <button id="autoSplitBtn" class="primary">🔪 авторазделение</button>
+            <button id="manualSplitBtn">✋ ручное разделение</button>
+            <button id="playFullBtn">▶ весь трек</button>
             <button id="resetSegmentsBtn" class="danger">↺ сброс всех</button>
         </div>
     </div>
@@ -207,15 +219,22 @@
             <div class="canvas-wrapper">
                 <canvas id="waveCanvas" width="1000" height="170"></canvas>
             </div>
+            <div class="manual-panel" id="manualPanel">
+                <span class="manual-help">🖱️ Зажмите кнопку мыши на таймлайне и протяните область как лассо.</span>
+                <span class="manual-time" id="manualRangeVal">область не выбрана</span>
+                <button id="cancelManualBtn">✖ отмена</button>
+            </div>
             <div class="timeline-controls">
                 <div class="fade-panel">
-                    <label>🎚️ FADE-IN <input type="range" id="fadeInSlider" min="0" max="2.5" step="0.01" value="0.2"> <span id="fadeInVal">0.20</span>с</label>
-                    <label>🎚️ FADE-OUT <input type="range" id="fadeOutSlider" min="0" max="2.5" step="0.01" value="0.2"> <span id="fadeOutVal">0.20</span>с</label>
+                    <label>🎚️ FADE-IN <input type="range" id="fadeInSlider" min="0" max="2.5" step="0.01" value="0"> <span id="fadeInVal">0.00</span>с</label>
+                    <label>🎚️ FADE-OUT <input type="range" id="fadeOutSlider" min="0" max="2.5" step="0.01" value="0"> <span id="fadeOutVal">0.00</span>с</label>
                     <button id="applyFadeBtn" class="success" style="padding:4px 14px;">✅ применить</button>
                     <button id="clearFadeBtn" class="danger" style="padding:4px 12px;">❌ сброс фейдов</button>
+                     <button id="clearAllFadesBtn" class="danger" style="padding:4px 12px;">🧹 сбросить все фейды</button>
+                     <button id="autoAllFadesBtn" class="success" style="padding:4px 12px;">✨ автофейды всем</button>
                 </div>
             </div>
-            <div style="font-size:0.7rem; color:#94a3b8; margin-top:12px;">💡 клик на сегмент — выделить. Тяни за белые маркеры (левая/правая граница) | фейды применяются к выделенному</div>
+            <div style="font-size:0.7rem; color:#94a3b8; margin-top:12px;">💡 клик на сегмент — выделить. Тяни за белые края — менять границы, за середину — двигать сегмент целиком. ✂ на карточке делит сегмент пополам. Фейды по умолчанию выключены.</div>
         </div>
     </div>
 
@@ -224,7 +243,8 @@
             <div style="display:flex; justify-content:space-between; flex-wrap:wrap; margin-bottom:12px;">
                 <span>🧩 <span id="segCount">0</span> сегментов</span>
                 <div><button id="copyNamesBtn" class="success" style="padding:4px 12px;">📋 копировать имена</button>
-                <button id="downloadAllZipBtn" class="primary" style="padding:4px 12px;">📦 ZIP все</button></div>
+                <button id="downloadAllZipBtn" class="primary" style="padding:4px 12px;">📦 ZIP все</button>
+                <button id="downloadAllSeparateBtn" class="success" style="padding:4px 12px;">⬇️ все поочереди</button></div>
             </div>
             <div id="segmentItemsList" style="display:flex; flex-wrap:wrap; gap:8px;"></div>
         </div>
@@ -248,6 +268,11 @@
         const exportBaseName = document.getElementById('exportBaseName');
         const exportFormat = document.getElementById('exportFormat');
         const autoSplitBtn = document.getElementById('autoSplitBtn');
+        const manualSplitBtn = document.getElementById('manualSplitBtn');
+        const playFullBtn = document.getElementById('playFullBtn');
+        const manualPanel = document.getElementById('manualPanel');
+        const manualRangeVal = document.getElementById('manualRangeVal');
+        const cancelManualBtn = document.getElementById('cancelManualBtn');
         const resetSegmentsBtn = document.getElementById('resetSegmentsBtn');
         const fadeInSlider = document.getElementById('fadeInSlider');
         const fadeOutSlider = document.getElementById('fadeOutSlider');
@@ -255,8 +280,11 @@
         const fadeOutVal = document.getElementById('fadeOutVal');
         const applyFadeBtn = document.getElementById('applyFadeBtn');
         const clearFadeBtn = document.getElementById('clearFadeBtn');
+        const clearAllFadesBtn = document.getElementById('clearAllFadesBtn');
+        const autoAllFadesBtn = document.getElementById('autoAllFadesBtn');
         const copyNamesBtn = document.getElementById('copyNamesBtn');
         const downloadAllZipBtn = document.getElementById('downloadAllZipBtn');
+        const downloadAllSeparateBtn = document.getElementById('downloadAllSeparateBtn');
         const segCountSpan = document.getElementById('segCount');
         const segmentItemsList = document.getElementById('segmentItemsList');
 
@@ -271,6 +299,15 @@
         let dragSegIdx = -1;
         let startMouseX = 0;
         let startTimeVal = 0;
+        let startSegStart = 0;
+        let startSegEnd = 0;
+        let suppressCanvasClick = false;
+        let dragMoved = false;
+        let manualMode = false;
+        let manualSelecting = false;
+        let manualAnchor = 0;
+        let manualSelStart = null;
+        let manualSelEnd = null;
 
         function initAudioContext() { if(!audioCtx) { audioCtx = new (window.AudioContext||window.webkitAudioContext)(); } if(audioCtx.state === 'suspended') audioCtx.resume(); return audioCtx; }
 
@@ -309,7 +346,7 @@
                 }
                 intervals=merged;
             }
-            return intervals.map(s=>({start:s.start, end:s.end, fadeIn:0.15, fadeOut:0.15}));
+            return intervals.map(s=>({start:s.start, end:s.end, fadeIn:0, fadeOut:0}));
         }
 
         function applyAutoSplit(){
@@ -320,6 +357,65 @@
             selectedSegmentIdx = segments.length>0 ? 0 : -1;
             refreshUI();
         }
+
+
+        function updateManualUI(){
+            if(!workingBuffer) return;
+            if(manualSelStart===null || manualSelEnd===null){
+                manualRangeVal.innerText = 'область не выбрана';
+                drawWaveform();
+                return;
+            }
+            const a=Math.min(manualSelStart,manualSelEnd), b=Math.max(manualSelStart,manualSelEnd);
+            manualRangeVal.innerText = `${a.toFixed(2)}с → ${b.toFixed(2)}с (${(b-a).toFixed(2)}с)`;
+            drawWaveform(a,b);
+        }
+
+        function openManualSplit(){
+            if(!workingBuffer) return;
+            manualMode = true;
+            manualSelecting = false;
+            manualSelStart = null;
+            manualSelEnd = null;
+            manualPanel.classList.add('active');
+            waveCanvas.parentElement.classList.add('manual-mode');
+            updateManualUI();
+        }
+
+        function closeManualSplit(){
+            manualMode = false;
+            manualSelecting = false;
+            manualSelStart = null;
+            manualSelEnd = null;
+            manualPanel.classList.remove('active');
+            waveCanvas.parentElement.classList.remove('manual-mode');
+            refreshUI();
+        }
+
+        function createManualSegment(){
+            if(!workingBuffer || manualSelStart===null || manualSelEnd===null) return;
+            let start = Math.min(manualSelStart, manualSelEnd);
+            let end = Math.max(manualSelStart, manualSelEnd);
+            if(end-start < 0.03) return alert('фрагмент слишком короткий');
+            let seg = {start,end,fadeIn:0,fadeOut:0};
+            segments.push(seg); segments.sort((a,b)=>a.start-b.start);
+            selectedSegmentIdx = segments.indexOf(seg);
+            closeManualSplit();
+        }
+
+        function splitSegment(index){
+            if(index<0 || index>=segments.length) return;
+            const s = segments[index], mid=(s.start+s.end)/2;
+            if(s.end-s.start < 0.06) return;
+            const left={start:s.start,end:mid,fadeIn:s.fadeIn,fadeOut:0};
+            const right={start:mid,end:s.end,fadeIn:0,fadeOut:s.fadeOut};
+            segments.splice(index,1,left,right);
+            selectedSegmentIdx=index;
+            refreshUI();
+        }
+
+        function clearAllFades(){ segments.forEach(s=>{s.fadeIn=0;s.fadeOut=0;}); refreshUI(); }
+        function autoAllFades(){ segments.forEach(s=>{ const d=s.end-s.start; const f=Math.min(0.15,d/4); s.fadeIn=f; s.fadeOut=f; }); refreshUI(); }
 
         function getSegmentFileName(index) {
             let base = exportBaseName.value.trim();
@@ -351,12 +447,14 @@
                 fadeInVal.innerText = s.fadeIn.toFixed(2);
                 fadeOutVal.innerText = s.fadeOut.toFixed(2);
             } else {
-                fadeInSlider.value = 0.2;
-                fadeOutSlider.value = 0.2;
+                fadeInSlider.value = 0;
+                fadeOutSlider.value = 0;
+                fadeInVal.innerText = '0.00';
+                fadeOutVal.innerText = '0.00';
             }
         }
 
-        function drawWaveform(){
+        function drawWaveform(manualA=null, manualB=null){
             if(!waveCanvas || !workingBuffer) return;
             const w = waveCanvas.clientWidth, h = 170;
             waveCanvas.width = w; waveCanvas.height = h;
@@ -377,6 +475,11 @@
                 let y1 = (1+min)*(h/2);
                 let y2 = (1+max)*(h/2);
                 ctx.beginPath(); ctx.moveTo(x,y1); ctx.lineTo(x,y2); ctx.stroke();
+            }
+            if(manualA!==null && manualB!==null && workingBuffer.duration){
+                const mx1=(manualA/workingBuffer.duration)*w, mx2=(manualB/workingBuffer.duration)*w;
+                ctx.fillStyle='#22c55e'; ctx.globalAlpha=.18; ctx.fillRect(mx1,0,mx2-mx1,h); ctx.globalAlpha=1;
+                ctx.strokeStyle='#4ade80'; ctx.lineWidth=2; ctx.strokeRect(mx1,1,Math.max(1,mx2-mx1),h-2);
             }
             if(segments.length && workingBuffer.duration){
                 segments.forEach((seg,idx)=>{
@@ -440,6 +543,9 @@
                         await downloadBuffer(buf, name);
                     }
                 });
+            });
+            document.querySelectorAll('.splitSeg').forEach(btn=>{
+                btn.addEventListener('click',(e)=>{ e.stopPropagation(); splitSegment(parseInt(btn.dataset.idx)); });
             });
             document.querySelectorAll('.deleteSegBtn').forEach(btn=>{
                 btn.addEventListener('click',(e)=>{
@@ -542,32 +648,46 @@
             URL.revokeObjectURL(url);
         }
 
+        function canvasMouseTime(e){
+            const rect=waveCanvas.getBoundingClientRect();
+            const scaleX=waveCanvas.width/rect.width;
+            const mouseX=(e.clientX-rect.left)*scaleX;
+            return Math.max(0,Math.min(workingBuffer.duration,(mouseX/waveCanvas.width)*workingBuffer.duration));
+        }
+
         function handleMouseDown(e){
-            if(!workingBuffer || segments.length===0) return;
+            if(!workingBuffer) return;
+            if(manualMode){
+                manualSelecting = true;
+                manualAnchor = canvasMouseTime(e);
+                manualSelStart = manualAnchor;
+                manualSelEnd = manualAnchor;
+                suppressCanvasClick = true;
+                updateManualUI();
+                e.preventDefault();
+                return;
+            }
+            if(segments.length===0) return;
             const rect = waveCanvas.getBoundingClientRect();
             const scaleX = waveCanvas.width / rect.width;
             const mouseX = (e.clientX - rect.left) * scaleX;
             const totalW = waveCanvas.width;
             const thresholdPx = 12;
+            dragMoved = false;
             for(let i=0;i<segments.length;i++){
-                let s = segments[i];
-                let xStart = (s.start/workingBuffer.duration)*totalW;
-                let xEnd = (s.end/workingBuffer.duration)*totalW;
-                if(Math.abs(mouseX - xStart) < thresholdPx){
-                    isDragging = true;
-                    dragEdge = 'left';
-                    dragSegIdx = i;
-                    startMouseX = mouseX;
-                    startTimeVal = s.start;
-                    e.preventDefault();
-                    return;
-                }
-                if(Math.abs(mouseX - xEnd) < thresholdPx){
-                    isDragging = true;
-                    dragEdge = 'right';
-                    dragSegIdx = i;
-                    startMouseX = mouseX;
-                    startTimeVal = s.end;
+                let seg = segments[i];
+                let xStart = (seg.start/workingBuffer.duration)*totalW;
+                let xEnd = (seg.end/workingBuffer.duration)*totalW;
+                if(mouseX>=xStart-thresholdPx && mouseX<=xEnd+thresholdPx){
+                    selectedSegmentIdx = i;
+                    refreshUI();
+                    if(Math.abs(mouseX-xStart)<thresholdPx){
+                        isDragging=true; dragEdge='left'; dragSegIdx=i; startMouseX=mouseX; startTimeVal=seg.start;
+                    } else if(Math.abs(mouseX-xEnd)<thresholdPx){
+                        isDragging=true; dragEdge='right'; dragSegIdx=i; startMouseX=mouseX; startTimeVal=seg.end;
+                    } else if(mouseX>xStart && mouseX<xEnd){
+                        isDragging=true; dragEdge='move'; dragSegIdx=i; startMouseX=mouseX; startSegStart=seg.start; startSegEnd=seg.end;
+                    }
                     e.preventDefault();
                     return;
                 }
@@ -575,21 +695,30 @@
         }
 
         function handleMouseMove(e){
+            if(manualMode && manualSelecting && workingBuffer){
+                manualSelEnd = canvasMouseTime(e);
+                updateManualUI();
+                return;
+            }
             if(!isDragging || dragSegIdx===-1 || !workingBuffer) return;
             const rect = waveCanvas.getBoundingClientRect();
             const scaleX = waveCanvas.width / rect.width;
             const mouseX = (e.clientX - rect.left) * scaleX;
             const deltaX = mouseX - startMouseX;
+            if(Math.abs(deltaX)<2) return;
+            dragMoved = true;
             const deltaTime = (deltaX / waveCanvas.width) * workingBuffer.duration;
             let newTime = startTimeVal + deltaTime;
             newTime = Math.max(0, Math.min(workingBuffer.duration, newTime));
             let seg = segments[dragSegIdx];
             if(dragEdge === 'left'){
-                if(newTime < seg.end - 0.03) seg.start = newTime;
-                else seg.start = seg.end - 0.03;
-            } else {
-                if(newTime > seg.start + 0.03) seg.end = newTime;
-                else seg.end = seg.start + 0.03;
+                seg.start = Math.min(seg.end-0.03,newTime);
+            } else if(dragEdge === 'right') {
+                seg.end = Math.max(seg.start+0.03,newTime);
+            } else if(dragEdge === 'move') {
+                const len = startSegEnd-startSegStart;
+                let ns = Math.max(0, Math.min(workingBuffer.duration-len, startSegStart+deltaTime));
+                seg.start = ns; seg.end = ns + len;
             }
             segments.sort((a,b)=>a.start - b.start);
             selectedSegmentIdx = segments.findIndex(s=>s===seg);
@@ -597,17 +726,32 @@
         }
 
         function handleMouseUp(){
+            if(manualMode && manualSelecting){
+                manualSelecting = false;
+                if(manualSelStart!==null && manualSelEnd!==null && Math.abs(manualSelEnd-manualSelStart)>=0.03){
+                    createManualSegment();
+                } else {
+                    manualSelStart=null; manualSelEnd=null;
+                    updateManualUI();
+                }
+                return;
+            }
+            suppressCanvasClick = dragMoved;
             isDragging = false;
             dragSegIdx = -1;
             dragEdge = null;
+            dragMoved = false;
         }
 
+        let canvasEventsAttached=false;
         function attachCanvasEvents(){
+            if(canvasEventsAttached) return; canvasEventsAttached=true;
             waveCanvas.addEventListener('mousedown', handleMouseDown);
             window.addEventListener('mousemove', handleMouseMove);
             window.addEventListener('mouseup', handleMouseUp);
             waveCanvas.addEventListener('click', (e)=>{
-                if(isDragging) return;
+                if(manualMode){ suppressCanvasClick=false; return; }
+                if(isDragging || suppressCanvasClick){ suppressCanvasClick=false; return; }
                 const rect = waveCanvas.getBoundingClientRect();
                 const scaleX = waveCanvas.width / rect.width;
                 const mouseX = (e.clientX - rect.left) * scaleX;
@@ -652,6 +796,11 @@
         fadeOutSlider.addEventListener('input',()=>{ fadeOutVal.innerText = parseFloat(fadeOutSlider.value).toFixed(2); if(selectedSegmentIdx>=0) applyFadeToSelected(); });
         applyFadeBtn.addEventListener('click', applyFadeToSelected);
         clearFadeBtn.addEventListener('click', clearFadeSelected);
+        clearAllFadesBtn.addEventListener('click', clearAllFades);
+        autoAllFadesBtn.addEventListener('click', autoAllFades);
+        manualSplitBtn.addEventListener('click', openManualSplit);
+        cancelManualBtn.addEventListener('click', closeManualSplit);
+        playFullBtn.addEventListener('click',()=>{ if(workingBuffer) playBuffer(workingBuffer); });
         resetSegmentsBtn.addEventListener('click',()=>{ segments=[]; selectedSegmentIdx=-1; refreshUI(); });
         autoSplitBtn.addEventListener('click', applyAutoSplit);
 
@@ -698,7 +847,20 @@
             let a = document.createElement('a'); a.href=url; a.download=(exportBaseName.value.trim()||currentFileName)+"_segments.zip"; a.click();
             URL.revokeObjectURL(url);
         }
+
+        async function downloadAllSeparate(){
+            if(segments.length===0) return alert('нет сегментов');
+            for(let i=0;i<segments.length;i++){
+                const buf = extractSegmentWithFade(segments[i]);
+                if(!buf) continue;
+                const name = getSegmentFileName(i+1);
+                await downloadBuffer(buf, name);
+                // Небольшая пауза помогает браузеру корректно обработать серию отдельных загрузок.
+                await new Promise(r=>setTimeout(r, 180));
+            }
+        }
         downloadAllZipBtn.addEventListener('click', downloadAllZip);
+        downloadAllSeparateBtn.addEventListener('click', downloadAllSeparate);
         copyNamesBtn.addEventListener('click',()=>{
             if(!segments.length) return;
             let names = segments.map((_,i)=>getSegmentFileName(i+1));
@@ -716,6 +878,7 @@
                 currentFileName = file.name.replace(/\.[^/.]+$/,'');
                 exportBaseName.value = currentFileName;
                 fileNameDisplay.innerText = `📁 ${file.name}`;
+                dropZone.classList.add('loaded');
                 controlsPanel.style.display = 'block';
                 timelineArea.style.display = 'block';
                 segmentsPanelDiv.style.display = 'block';

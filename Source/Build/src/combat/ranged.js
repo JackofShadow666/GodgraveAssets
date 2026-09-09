@@ -626,7 +626,10 @@ const dC2 = $.POS.body(defender);
   const playSoundOpt = opts.playSound !== undefined ? opts.playSound : true;
 
   // ─── DAMAGE APPLICATION ───
-  const finalDmg = Math.min(damage, Math.max(1, Math.round(MAX_HP * 0.70))); // 70% max per hit
+  const guardedDamage = (typeof shieldHeld === 'function' && shieldHeld(defender))
+    ? Math.round(damage * 0.5)
+    : damage;
+  const finalDmg = Math.min(guardedDamage, Math.max(1, Math.round(MAX_HP * 0.70))); // 70% max per hit
   defender.hp = Math.max(0, defender.hp - finalDmg);
   defender._hitCD = Math.max(defender._hitCD || -1, GameTime + 0.4);
   defender.hitFlash = GameTime + 0.3;
@@ -652,7 +655,8 @@ const dC2 = $.POS.body(defender);
     const dx = dC.x - aC.x;
     const dy = dC.y - aC.y;
     const len = Math.hypot(dx, dy) || 1;
-    const kb = sv('bodyKB') * 0.5 * knockbackMult;
+    const shieldKbMult = (typeof shieldHeld === 'function' && shieldHeld(defender)) ? 0.5 : 1;
+    const kb = sv('bodyKB') * 0.5 * knockbackMult * shieldKbMult;
     defender.vx += (dx / len) * kb;
     defender.vy += (dy / len) * kb;
   }

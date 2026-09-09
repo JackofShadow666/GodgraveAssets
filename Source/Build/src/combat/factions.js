@@ -144,7 +144,8 @@ function contact(a, b){
     const bc = $.POS.body(ent);
     for(let i = 0; i < 8; i++) spawnBlood(bc.x, bc.y, Math.cos(i * Math.PI / 4), Math.sin(i * Math.PI / 4));
     if(typeof DEATH !== 'undefined' && DEATH && Array.isArray(DEATH.deathCross)){
-      DEATH.deathCross.push({ x: bc.x, y: bc.y, timer: 2.0, isBot: !!isBot });
+      const crossTimer = !isBot && mode === 'coop' ? Math.max(2.0, playerRespawnSeconds()) : 2.0;
+      DEATH.deathCross.push({ x: bc.x, y: bc.y, timer: crossTimer, isBot: !!isBot });
     }
     if(typeof playSound === 'function') $.S.play('death');
   }

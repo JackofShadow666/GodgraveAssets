@@ -16,10 +16,19 @@ function update(dt){
     P._debuffIntensity = 0;
     P.exhausted = 0;
   }
+  if(typeof updatePlayerBotAssistAI === 'function') updatePlayerBotAssistAI(dt);
+  const playerBotAI = (typeof isPlayerBotMode === 'function' && isPlayerBotMode()) ? P._playerAiState : null;
+  if(playerBotAI){
+    mDown = !!playerBotAI._fakeMDown;
+    mX = playerBotAI._fakeMX;
+    mY = playerBotAI._fakeMY;
+  }
+
   // --- character movement ---
   let mx=0, my=0;
-  if(keys['a']||keys['ф']) mx=-1; if(keys['d']||keys['в']) mx=1;
-  if(keys['w']||keys['ц']) my=-1; if(keys['s']||keys['ы']) my=1;
+  const moveKeys = playerBotAI ? playerBotAI._fakeKeys : keys;
+  if(moveKeys['a']||moveKeys['ф']) mx=-1; if(moveKeys['d']||moveKeys['в']) mx=1;
+  if(moveKeys['w']||moveKeys['ц']) my=-1; if(moveKeys['s']||moveKeys['ы']) my=1;
   if(mx||my){ const l=Math.hypot(mx,my); mx/=l; my/=l; }
   if(P._shieldDashCharging){
     mx = 0; my = 0;
@@ -547,9 +556,12 @@ if (hasMod(P, 'weaponRecoil')) {
   }
 
   // --- Flick and swing detection ---
+  const aimPivotDist = Math.hypot(effectiveMX - pivX, effectiveMY - pivY);
+  const minSwingAimRadius = Math.max(18, weaponReach(P) * sv('swlen') * 0.18);
+  P._swingBonusSuppressed = aimPivotDist < minSwingAimRadius;
   const _flickAimAngle = Number.isFinite(ta) ? ta : P.angle;
   const _flickPrevAngle = P._flickPrevAngle;
-  P._realAngVel = _flickPrevAngle === undefined ? 0 : $.M.angDiff(_flickAimAngle, _flickPrevAngle) / Math.max(dt, 0.001);
+  P._realAngVel = (P._swingBonusSuppressed || _flickPrevAngle === undefined) ? 0 : $.M.angDiff(_flickAimAngle, _flickPrevAngle) / Math.max(dt, 0.001);
   P._flickPrevAngle = _flickAimAngle;
   const orbitSwingPenaltyReady = () => GameTime - (P._lastOrbitSwingPenaltyTime || -99) >= 1.3;
   const markOrbitSwingPenalty = () => { P._lastOrbitSwingPenaltyTime = GameTime; };
@@ -567,7 +579,7 @@ if (hasMod(P, 'weaponRecoil')) {
   if(P.hasWeapon === false || isRangedWeapon(P)){
     P._swingFX = false;
   } else {
-    if(!isExhausted(P) && updateFlickDetect(P._realAngVel ?? P.vel, dt) && (P._swingBlockCD||0) < GameTime){
+    if(!P._swingBonusSuppressed && !isExhausted(P) && updateFlickDetect(P._realAngVel ?? P.vel, dt) && (P._swingBlockCD||0) < GameTime){
       if($.IS(P, 'flail') && P._flailExt < 0.97){
         // Ignore
       } else if (!(GameTime < (P._dodgeActiveUntil||0))) {
@@ -580,7 +592,7 @@ if (hasMod(P, 'weaponRecoil')) {
     }
 
     const swingThreshold = $.IS(P, 'flail') ? sv('swthresh') * 5 : sv('swthresh');
-    if(!isExhausted(P) && Math.abs(P.vel) > swingThreshold && (P._swingBlockCD||0) < GameTime){
+    if(!P._swingBonusSuppressed && !isExhausted(P) && Math.abs(P.vel) > swingThreshold && (P._swingBlockCD||0) < GameTime){
       if($.IS(P, 'flail') && P._flailExt < 0.97){
         P._swingFX = false;
       } else {
@@ -1006,6 +1018,11 @@ function shouldIgnoreGameplayKeydown(){
 }
 window.addEventListener('keydown', e=>{
   const lockBrowserKeys = browserInputLocked();
+  if(e.code==='KeyP' && !e.repeat){
+    if(typeof togglePlayerBotMode === 'function') togglePlayerBotMode();
+    e.preventDefault();
+    return;
+  }
   if((e.code==='Equal' || e.code==='NumpadAdd') && !e.repeat){
     window._keyboardCrosshairVisible = window._keyboardCrosshairVisible === false;
     e.preventDefault();
@@ -1047,6 +1064,7 @@ window.addEventListener('keydown', e=>{
   }
   if(k==='x'||k==='ч'){
     D.shield=(D.shield+1)%SHIELD_TYPES.length; setShield(D,D.shield);
+    window._manualBotShieldType = D.shield;
     const n=SHIELD_TYPES[D.shield]; $.FX.hit({x:D.x,y:D.y-40,t:(window.I18N?window.I18N.t('main.shieldBot',{name:n?n.name:window.I18N.t('main.shieldNone')}):('SHIELD D: '+(n?n.name:'none'))),life:60,big:false,col:'#ffaa44'});
   }
 if(k==='c'||k==='с'){ // player weapon switch

@@ -1,5 +1,5 @@
 ; Список файлов из папок Music и Sound
-; Создано: 05.08.2026 11:55:58
+; Создано: 09.09.2026 17:22:00
 ; Корневая папка: F:\Jack\Project\Godgrave\Public\Godgrave\Source
 
 === Папка: Music ===
@@ -57,11 +57,26 @@ Source\Sound\Bow\BowTension\SFX_BowTension.mp3
 Source\Sound\Damage\Hummer\SFX_DamageHummer_01.mp3
 Source\Sound\Damage\Hummer\SFX_DamageHummer_02.mp3
 Source\Sound\Damage\Hummer\SFX_DamageHummer_03.mp3
+Source\Sound\Damage\Hummer\SFX_DamageHummer_04.mp3
+Source\Sound\Damage\Hummer\SFX_DamageHummer_05.mp3
+Source\Sound\Damage\Hummer\SFX_DamageHummer_06.mp3
+Source\Sound\Damage\Hummer\SFX_DamageHummer_07.mp3
+Source\Sound\Damage\Hummer\SFX_DamageHummer_08.mp3
 Source\Sound\Damage\Sword\SFX_DamageSword_01.mp3
 Source\Sound\Damage\Sword\SFX_DamageSword_02.mp3
 Source\Sound\Damage\Sword\SFX_DamageSword_03.mp3
 Source\Sound\Damage\Sword\SFX_DamageSword_04.mp3
 Source\Sound\Damage\Sword\SFX_DamageSword_05.mp3
+Source\Sound\Damage\Sword\SFX_DamageSword_06.mp3
+Source\Sound\Damage\Sword\SFX_DamageSword_07.mp3
+Source\Sound\Damage\Sword\SFX_DamageSword_08.mp3
+Source\Sound\Damage\Sword\SFX_DamageSword_09.mp3
+Source\Sound\Damage\Sword\SFX_DamageSword_10.mp3
+Source\Sound\Damage\Sword\SFX_DamageSword_11.mp3
+Source\Sound\Damage\Sword\SFX_DamageSword_12.mp3
+Source\Sound\Damage\Sword\SFX_DamageSword_13.mp3
+Source\Sound\Damage\Sword\SFX_DamageSword_14.mp3
+Source\Sound\Damage\Sword\SFX_DamageSword_15.mp3
 Source\Sound\Destructable\kling_20260710_Text_to_Audio_Dark_fanta_1708_0.mp3
 Source\Sound\Destructable\kling_20260710_Text_to_Audio_Dark_fanta_1708_1.mp3
 Source\Sound\Destructable\kling_20260710_Text_to_Audio_Dark_fanta_1708_2.mp3
@@ -93,6 +108,7 @@ Source\Sound\Ref\bleedingC.mp3
 Source\Sound\Ref\chainig.mp3
 Source\Sound\Ref\DarkMagic.mp3
 Source\Sound\Ref\Gate.mp3
+Source\Sound\Ref\kling_20260909_Text_to_Audio____________4332_1.mp3
 Source\Sound\Ref\openchest.mp3
 Source\Sound\Ref\step.mp3
 Source\Sound\Ref\takeswordA.mp3
@@ -144,6 +160,12 @@ Source\Sound\Ui\SFX_UI_Pickup_01.mp3
 Source\Sound\Ui\SFX_UI_Tap_01.mp3
 Source\Sound\Ui\SFX_UI_Tap_02.mp3
 Source\Sound\Ui\SFX_UI_Win_01.mp3
+Source\Sound\WoodClink\SFX_WoodClink_01.mp3
+Source\Sound\WoodClink\SFX_WoodClink_02.mp3
+Source\Sound\WoodClink\SFX_WoodClink_03.mp3
+Source\Sound\WoodClink\SFX_WoodClink_04.mp3
+Source\Sound\WoodClink\SFX_WoodClink_05.mp3
+Source\Sound\WoodClink\SFX_WoodClink_06.mp3
 
 === Папка: Character ===
 Source\Character\Knight\T_Character_01.png
@@ -309,11 +331,7 @@ Source\Font\index.html
 Source\Font\MedievalSharp-Regular.ttf
 
 === Папка: Env ===
-Source\Env\Editor\AGENTS.md
 Source\Env\Editor\Editor.html
-Source\Env\Editor\MAP.md
-Source\Env\Editor\WorldMapGenerator.html
-Source\Env\Editor\WorldMapGeneratorOLD.html
 Source\Env\Foliadge\ChatGPT Image 4 ���. 2026 �., 01_12_14.png
 Source\Env\Foliadge\ChatGPT Image 4 ���. 2026 �., 01_12_36 (1).png
 Source\Env\Foliadge\ChatGPT Image 4 ���. 2026 �., 01_12_36 (2).png

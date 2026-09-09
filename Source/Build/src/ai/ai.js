@@ -86,6 +86,10 @@ function freshAIState(){
   _harassTotalEnd: -1,
   _fakeKeys: { w:false, a:false, s:false, d:false },
   _fakeMDown: false,
+  _shieldHeld: false,
+  _shieldDecisionHeld: false,
+  _shieldDecisionAt: -999,
+  _shieldForceUntil: -1,
   _fakeMX: 0, _fakeMY: 0,
   _retreatMode: false,
   _spinActive: false, _spinAng: 0, _spinEndTime: -1, _spinSpeed: 0,
@@ -270,6 +274,7 @@ function applyBotCount(){
     const spawnY = spawn.y;
     const nb = makeEntity(spawnX, spawnY, 0.8, '#4a1a10', { stamRegen: 28 });
     nb._aiState = freshAIState();
+    if(typeof setWeapon === 'function') setWeapon(nb, DEFAULT_WEAPON_KEY, { keepDefault: true });
     maybeSetRandomBotWeapon(nb);
     if(window._manualBotWeaponType !== undefined){
       nb._manualWeaponType = window._manualBotWeaponType;
@@ -365,6 +370,10 @@ let AI = {
   _harassTotalEnd: -1,
   _fakeKeys: { w:false, a:false, s:false, d:false },
   _fakeMDown: false,
+  _shieldHeld: false,
+  _shieldDecisionHeld: false,
+  _shieldDecisionAt: -999,
+  _shieldForceUntil: -1,
   _fakeMX: 0, _fakeMY: 0,
   _retreatMode: false,
   _spinActive: false, _spinAng: 0, _spinEndTime: -1, _spinSpeed: 0,
@@ -420,6 +429,7 @@ function aiSetPhase(phase){
     if(dummyOn && Math.random() < getAIProfile().rageOnAttackChance){
       D.rageBuffEnd = GameTime + getAIProfile().rageDuration;
       D.rage = 100;
+      aiTryStartRageSwingBurst(AI, D);
       $.FX.hit({x:$.POS.body(D).x, y:$.POS.body(D).y-40, t:'🔥', life:35, big:false, col:'#ff4020'});
     }
     // при начале атаки — если игрок далеко, прокрут
@@ -432,7 +442,7 @@ function aiSetPhase(phase){
     }
   } else if(phase === 'retreat'){
     AI._retreatMode = true;
-    AI._phaseEnd = GameTime + rf(5,4);
+    AI._phaseEnd = GameTime + rf(10,8);
     AI._retreatMoveCD = -1;
     AI._circling = false;
     // 50% шанс прокрута при первой точке
@@ -441,7 +451,7 @@ function aiSetPhase(phase){
     }
   } else if(phase === 'breather'){
     AI._retreatMode = false;
-    AI._phaseEnd = GameTime + rf(1,2);
+    AI._phaseEnd = GameTime + rf(2,4);
     AI._breatherBackEnd = GameTime + rf(0.2,0.3);
   }
 }
@@ -487,6 +497,212 @@ const PROBING_WEAPON_KEYS = [
   'dagger', 'rapier', 'sword', 'longsword', 'greatsword',
   'staff', 'halberd', 'spear', 'wand'
 ];
+const NO_THRUST_WEAPON_KEYS = ['axe', 'hammer', 'flail'];
+const SWING_ONLY_WEAPON_KEYS = ['axe', 'hammer'];
+const SWING_BURST_WEAPON_KEYS = ['sword', 'longsword', 'greatsword', 'staff', 'magicstaff', 'wand'];
+const HEAVY_SWING_SPIN_INTERVAL_MULT = 1 / 3;
+const HEAVY_SWING_DODGE_INTERVAL_MULT = 0.5;
+let GLOBAL_HEAVY_SWING_SOUND_UNTIL = 0;
+
+function aiCanThrustWithWeapon(ent){
+  return ent && !NO_THRUST_WEAPON_KEYS.includes(weaponKeyOf(ent));
+}
+
+function aiIsSwingOnlyWeapon(ent){
+  return ent && SWING_ONLY_WEAPON_KEYS.includes(weaponKeyOf(ent));
+}
+
+function aiDodgeTimerMult(ent){
+  const key = weaponKeyOf(ent);
+  if(key === 'hammer') return HEAVY_SWING_DODGE_INTERVAL_MULT * 0.9;
+  if(key === 'sword') return 0.9;
+  return aiIsSwingOnlyWeapon(ent) ? HEAVY_SWING_DODGE_INTERVAL_MULT : 1;
+}
+
+function aiCanUseSwingBurstWeapon(ent){
+  return ent && SWING_BURST_WEAPON_KEYS.includes(weaponKeyOf(ent));
+}
+
+function aiUsesSwingBurst(ai, bot){
+  return aiIsSwingOnlyWeapon(bot) || (ai && ai._swingBurstActive && aiCanUseSwingBurstWeapon(bot));
+}
+
+function aiClearSwingBurst(ai){
+  if(!ai) return;
+  ai._swingBurstActive = false;
+  ai._heavyAttackPhase = null;
+  ai._heavyAttackVariant = 'sweep';
+  ai._heavyStaminaSpent = false;
+  ai._heavySwingSoundPlayed = false;
+  ai._fakeMDown = false;
+}
+
+function aiStartSwingBurst(ai){
+  if(!ai) return;
+  ai._swingBurstActive = true;
+  ai._swingBurstEnd = GameTime + rf(12.5, 2.5);
+  ai._swingBurstCooldown = GameTime + rf(30, 8);
+  ai._probingActive = false;
+  ai._lungeActive = false;
+  ai._feintActive = false;
+  ai._fakeMDown = false;
+}
+
+function aiTryStartRageSwingBurst(ai, bot){
+  if(!ai || !bot || !aiCanUseSwingBurstWeapon(bot) || bot.hasWeapon === false) return;
+  if(Math.random() >= 0.50) return;
+  aiStartSwingBurst(ai);
+}
+
+function aiUpdateSwingBurstStage(ai, bot, distToPlayer, cscl){
+  if(!ai || !bot || aiIsSwingOnlyWeapon(bot)) return;
+  if(ai._swingBurstActive){
+    if(GameTime >= (ai._swingBurstEnd || 0) || !aiCanUseSwingBurstWeapon(bot) || bot.exhausted > 0){
+      aiClearSwingBurst(ai);
+      ai._swingBurstCooldown = GameTime + rf(24, 6);
+    }
+    return;
+  }
+  if(!aiCanUseSwingBurstWeapon(bot) || ai.phase !== 'attack' || bot.hasWeapon === false) return;
+  if(ai._swingBurstCooldown === undefined) ai._swingBurstCooldown = GameTime + rf(8, 6);
+  if(GameTime < ai._swingBurstCooldown || ai._probingActive || ai._lungeActive || ai._spinActive) return;
+  if(distToPlayer > 220 * cscl || bot.stamina < sv('stamswing') * weaponStaminaMult(bot)) return;
+  aiStartSwingBurst(ai);
+}
+
+function aiHeavyAimPoint(bot, pBodyC, angToPlayer, cscl, side, phase, progress, baseAng){
+  const pivot = $.POS.pivot(bot);
+  const base = Number.isFinite(baseAng) ? baseAng : angToPlayer;
+  let ang;
+  let dist = 160 * cscl;
+  if(phase === 'release'){
+    const t = $.M.clamp(progress || 0, 0, 1);
+    const eased = t * t * (3 - 2 * t);
+    const startAng = base + side * (Math.PI * 0.62);
+    const variant = bot && bot._aiState ? bot._aiState._heavyAttackVariant : 'sweep';
+    const arc = variant === 'spin720' ? Math.PI * 4 : (variant === 'spin360' ? Math.PI * 2 : Math.PI * 1.2);
+    ang = startAng - side * arc * eased;
+    dist = 185 * cscl;
+  } else if(phase === 'recover'){
+    ang = base - side * (Math.PI * 0.42);
+    dist = 135 * cscl;
+  } else {
+    const sway = Math.sin(GameTime * 4.0) * 0.12;
+    ang = base + side * (Math.PI * 0.62 + sway);
+  }
+  return {
+    x: pivot.x + Math.cos(ang) * dist,
+    y: pivot.y + Math.sin(ang) * dist,
+  };
+}
+
+function aiHeavyReleaseDuration(ai){
+  if(ai._heavyAttackVariant === 'spin720') return rf(0.85, 0.15);
+  if(ai._heavyAttackVariant === 'spin360') return rf(0.55, 0.10);
+  return rf(0.32, 0.08);
+}
+
+function aiStartHeavyAttack(ai, bot, distToPlayer, cscl, immediateRelease, angToPlayer){
+  if(!ai || !bot || ai._heavyAttackPhase || ai._spinActive) return false;
+  const staminaCost = sv('stamswing') * weaponStaminaMult(bot);
+  if(bot.stamina < staminaCost) return false;
+  ai._heavySwingSide = ai._heavySwingSide || (Math.random() < 0.5 ? -1 : 1);
+  ai._heavyAttackPhase = immediateRelease ? 'release' : 'windup';
+  const missedFullSpins = ai._heavyAttackMissedFullSpins || 0;
+  const spinAttack = missedFullSpins >= 2 || Math.random() < 0.30;
+  ai._heavyAttackVariant = spinAttack ? (Math.random() < 0.30 ? 'spin720' : 'spin360') : 'sweep';
+  ai._heavyAttackMissedFullSpins = spinAttack ? 0 : missedFullSpins + 1;
+  ai._heavySwingSoundPlayed = false;
+  ai._heavyStaminaSpent = false;
+  const dur = immediateRelease ? aiHeavyReleaseDuration(ai) : rf(0.22, 0.06);
+  ai._heavyAttackStart = GameTime;
+  ai._heavyAttackEnd = GameTime + dur;
+  ai._heavyAttackDuration = dur;
+  ai._heavyAttackBaseAng = Number.isFinite(angToPlayer) ? angToPlayer : undefined;
+  ai._heavyAttackCD = GameTime + rf(1.55, 0.95);
+  return true;
+}
+
+function aiUpdateHeavyAttack(ai, bot, k, bBodyC, pBodyC, angToPlayer, distToPlayer, cscl){
+  if(!ai || !bot || !ai._heavyAttackPhase) return false;
+  if(!aiUsesSwingBurst(ai, bot) || bot.exhausted > 0 || hasMod(bot, 'weaponRecoil')){
+    ai._heavyAttackPhase = null;
+    ai._fakeMDown = false;
+    return false;
+  }
+  if(ai._heavyAttackPhase === 'windup' && distToPlayer > 125 * cscl) aiMoveToward(k, bBodyC, pBodyC, 75 * cscl, cscl);
+  else if(ai._heavyAttackPhase === 'recover') aiMoveAway(k, bBodyC, pBodyC, 115 * cscl, cscl);
+  else k.w=k.a=k.s=k.d=false;
+
+  const side = ai._heavySwingSide || 1;
+  const progress = (GameTime - (ai._heavyAttackStart || GameTime)) / (ai._heavyAttackDuration || 1);
+  const aim = aiHeavyAimPoint(bot, pBodyC, angToPlayer, cscl, side, ai._heavyAttackPhase, progress, ai._heavyAttackBaseAng);
+  aiPointMouse(bBodyC, aim.x, aim.y, false, ai);
+  ai._fakeMDown = ai._heavyAttackPhase === 'release';
+  if(ai._fakeMDown && !ai._heavyStaminaSpent){
+    ai._heavyStaminaSpent = true;
+    const staminaCost = sv('stamswing') * weaponStaminaMult(bot);
+    drainStamina(bot, staminaCost);
+    if(bot.stamina <= 0 && !isExhausted(bot)) applyExhaust(bot);
+  }
+  if(ai._fakeMDown && !ai._heavySwingSoundPlayed){
+    ai._heavySwingSoundPlayed = true;
+    if(GameTime >= GLOBAL_HEAVY_SWING_SOUND_UNTIL && $.S && typeof $.S.play === 'function'){
+      GLOBAL_HEAVY_SWING_SOUND_UNTIL = GameTime + 0.45;
+      $.S.play('hammerSwing');
+    }
+  }
+
+  if(GameTime >= ai._heavyAttackEnd){
+    if(ai._heavyAttackPhase === 'windup'){
+      ai._heavyAttackPhase = 'release';
+      const releaseDur = aiHeavyReleaseDuration(ai);
+      ai._heavyAttackStart = GameTime;
+      ai._heavyAttackDuration = releaseDur;
+      ai._heavyAttackEnd = GameTime + releaseDur;
+    } else if(ai._heavyAttackPhase === 'release'){
+      ai._heavyAttackPhase = 'recover';
+      const recoverDur = rf(0.22, 0.08);
+      ai._heavyAttackStart = GameTime;
+      ai._heavyAttackDuration = recoverDur;
+      ai._heavyAttackEnd = GameTime + recoverDur;
+    } else {
+      ai._heavyAttackPhase = null;
+      ai._fakeMDown = false;
+      ai._heavyAttackVariant = 'sweep';
+      ai._heavyStaminaSpent = false;
+      ai._heavySwingSoundPlayed = false;
+      ai._heavySwingSide = -side;
+    }
+  }
+  return true;
+}
+
+function aiStartSpinFor(ai, bot, durationSec){
+  if(!ai || !bot || ai._spinActive || cb('nospin') || ai.swordStyle === 'SWORD_STYLE_DUELIST') return false;
+  const body = $.POS.body(bot);
+  const pivX = body.x + bot.pvX, pivY = body.y + bot.pvY;
+  const curAngToFakeM = Math.atan2(ai._fakeMY - pivY, ai._fakeMX - pivX);
+  ai._spinActive = true;
+  ai._spinAng = curAngToFakeM;
+  ai._spinEndTime = GameTime + durationSec;
+  ai._spinSpeed = (Math.PI * 2) / durationSec;
+  return true;
+}
+
+function aiStartHeavyEvasiveDodge(ai, bot, angToPlayer){
+  const side = Math.random() < 0.5 ? -1 : 1;
+  const backBias = Math.random() < 0.35 ? Math.PI : 0;
+  const dodgeAng = angToPlayer + side * Math.PI / 2 + backBias * 0.35;
+  ai._botDodgeCooldown = 0.75;
+  ai._dodgeLockUntil = GameTime + 0.25;
+  bot._dvx = Math.cos(dodgeAng) * 7.5;
+  bot._dvy = Math.sin(dodgeAng) * 7.5;
+  if(typeof spawnDust === 'function'){
+    for(let i = 0; i < 8; i++) spawnDust(bot.x, bot.y, -Math.cos(dodgeAng) * 7.5, -Math.sin(dodgeAng) * 7.5);
+  }
+  $.FX.hit({x:bot.x,y:bot.y-30,t:(window.I18N ? window.I18N.t('common.dodge') : 'DODGE'),life:35,big:false,col:'rgba(200,200,200,0.6)'});
+}
 
 // Deliberately short attack made outside body-hit range.
 function aiUpdateProbing(ai, bot, k, bBodyC, pBodyC, distToPlayer, cscl){
@@ -721,15 +937,42 @@ function aiNotifyContact(){
   }
 
   // 20% шанс на обычном оружии, 55% у рапиры (она заточена под уколы) —
-  // шаг назад + выпад ЛКМ (цепом не колют и не делают выпад)
+  // шаг назад + выпад ЛКМ; рубящим тяжёлым оружием и цепом боты не колют
   const _lungeChance = $.IS(D, 'rapier') ? 0.55 : 0.2;
-  if(!AI._probingActive && Math.random() < _lungeChance && !AI._lungeActive && $.NOT(D, 'flail')){
+  if(!AI._probingActive && Math.random() < _lungeChance && !AI._lungeActive && aiCanThrustWithWeapon(D)){
     AI._lungeActive = true;
     AI._lungePhase = 'back';
     AI._lungeEnd = GameTime + 0.35;
   }
 }
 
+function aiCanUseShield(bot, ai){
+  if(!bot || !ai || bot.shield <= 0 || ai._fakeMDown) return false;
+  const stamMax = bot.stamMax || 100;
+  const onThreshold = stamMax * 0.10;
+  const offThreshold = stamMax * 0.05;
+  return bot.stamina >= (ai._shieldDecisionHeld ? offThreshold : onThreshold);
+}
+
+function aiResolveShieldHeld(ai, bot, wantShield){
+  const canShield = aiCanUseShield(bot, ai);
+  const forced = GameTime < (ai._shieldForceUntil || -1);
+  const desired = !!wantShield || forced;
+  if(!canShield){
+    if(GameTime - (ai._shieldDecisionAt || -999) >= 1.0){
+      ai._shieldDecisionHeld = false;
+      ai._shieldDecisionAt = GameTime;
+    }
+    ai._shieldHeld = false;
+    return false;
+  }
+  if(GameTime - (ai._shieldDecisionAt || -999) >= 1.0 && ai._shieldDecisionHeld !== desired){
+    ai._shieldDecisionHeld = desired;
+    ai._shieldDecisionAt = GameTime;
+  }
+  ai._shieldHeld = ai._shieldDecisionHeld;
+  return ai._shieldHeld;
+}
 // ── Бросок оружия ботом по уставшему игроку ─────────────────────────────
 // Виды оружия, которые бот готов метнуть (список по запросу): молот, топор,
 // копьё, кинжал, меч.
@@ -749,10 +992,11 @@ function estimateThrowRange(def){
  function updateAI(dt, bot){
   if(!bot || bot.hp <= 0 || !dummyOn) return;
   if(!bot._aiState) return;
-  const targetPlayer = typeof FactionRules!=='undefined' ? FactionRules.getBotTarget(bot) : P;
+  const targetPlayer = bot._aiTargetOverride || (typeof FactionRules!=='undefined' ? FactionRules.getBotTarget(bot) : P);
   if(!targetPlayer) return;
   
   const ai = bot._aiState;
+  ai._shieldHeld = false;
   if(!ai.enabled){
     ai._fakeKeys.w=ai._fakeKeys.a=ai._fakeKeys.s=ai._fakeKeys.d=false;
     ai._fakeMDown=false;
@@ -1309,6 +1553,7 @@ if(!ai._isMain){
     if(Math.random() < 0.5){
       bot.rageBuffEnd = GameTime + 4.0;
       bot.rage = 100;
+      aiTryStartRageSwingBurst(ai, bot);
       $.FX.hit({x:$.POS.body(bot).x, y:$.POS.body(bot).y-40, t:'🔥', life:35, big:false, col:'#ff4020'});
     }
     const pBodyC2 = $.POS.body(targetPlayer);
@@ -1359,7 +1604,7 @@ if(ai._contactCD > 0 && ai.phase === 'attack' && ai._contactCD <= GameTime){
     if(Math.random() < retreatChance){
       ai.phase = 'retreat';
       ai._retreatMode = true;
-      ai._phaseEnd = GameTime + rf(5,4);
+      ai._phaseEnd = GameTime + rf(10,8);
       ai._retreatMoveCD = -1;
       ai._circling = false;
       if(Math.random() < 0.5){
@@ -1377,7 +1622,7 @@ if(ai._contactCD > 0 && ai.phase === 'attack' && ai._contactCD <= GameTime){
     } else {
       ai.phase = 'breather';
       ai._retreatMode = false;
-      ai._phaseEnd = GameTime + rf(1,2);
+      ai._phaseEnd = GameTime + rf(2,4);
       ai._breatherBackEnd = GameTime + rf(0.2,0.3);
     }
   }
@@ -1389,6 +1634,7 @@ if(ai._contactCD > 0 && ai.phase === 'attack' && ai._contactCD <= GameTime){
     if(Math.random() < 0.5){
       bot.rageBuffEnd = GameTime + 4.0;
       bot.rage = 100;
+      aiTryStartRageSwingBurst(ai, bot);
       $.FX.hit({x:$.POS.body(bot).x, y:$.POS.body(bot).y-40, t:'🔥', life:35, big:false, col:'#ff4020'});
     }
     const pBodyC4 = $.POS.body(targetPlayer);
@@ -1422,7 +1668,7 @@ if(ai._contactCD > 0 && ai.phase === 'attack' && ai._contactCD <= GameTime){
       ai._probingPhase = 'approach';
       ai._probingEnd = -1;
       ai._probingRetreatStep = 0;
-      ai._probingModeEnd = GameTime + rf(7, 8);
+      ai._probingModeEnd = GameTime + rf(14, 16);
       ai._probingWeaponContact = false;
       ai._probingPauseBlockedUntil = -1;
       ai._spinActive = false;
@@ -1450,7 +1696,19 @@ if(ai._contactCD > 0 && ai.phase === 'attack' && ai._contactCD <= GameTime){
   if(ai._probingActive){
     ai._retreatMode = ai._probingPhase === 'retreat';
     aiUpdateProbing(ai, bot, k, bBodyC, pBodyC, distToPlayer, cscl);
+    aiResolveShieldHeld(ai, bot, ai._probingPhase !== 'strike');
     return;
+  }
+
+  aiUpdateSwingBurstStage(ai, bot, distToPlayer, cscl);
+
+  // ── ТОПОР/МОЛОТ: яростные прокруты втрое чаще обычного ────────────
+  if(aiUsesSwingBurst(ai, bot)){
+    if(ai._heavySpinTimer === undefined) ai._heavySpinTimer = GameTime + rf(10 * HEAVY_SWING_SPIN_INTERVAL_MULT, 10 * HEAVY_SWING_SPIN_INTERVAL_MULT);
+    if(GameTime >= ai._heavySpinTimer){
+      ai._heavySpinTimer = GameTime + rf(10 * HEAVY_SWING_SPIN_INTERVAL_MULT, 10 * HEAVY_SWING_SPIN_INTERVAL_MULT);
+      aiStartSpinFor(ai, bot, sv('spindur'));
+    }
   }
 
   // ── ЦЕП: доп. кручения вдвое чаще обычного ────────────
@@ -1474,10 +1732,14 @@ if(ai._contactCD > 0 && ai.phase === 'attack' && ai._contactCD <= GameTime){
     }
   }
 
-  // ── ДОДЖ ВПЕРЁД С УКОЛОМ ──────────────────────
-  if(ai._pokeDodgeTimer===undefined) ai._pokeDodgeTimer = GameTime + rf(5,15);
+  // ── ДОДЖ ВПЕРЁД С УКОЛОМ / БОКОВОЙ УВОРОТ ДЛЯ ТОПОРА-МОЛОТА ──────────────────────
+  if(ai._pokeDodgeTimer===undefined){
+    const dodgeTimerMult = aiDodgeTimerMult(bot);
+    ai._pokeDodgeTimer = GameTime + rf(5 * dodgeTimerMult, 15 * dodgeTimerMult);
+  }
   if(!ai._pokeDodgeActive && GameTime >= ai._pokeDodgeTimer){
-    ai._pokeDodgeTimer = GameTime + rf(5,15);
+    const dodgeTimerMult = aiDodgeTimerMult(bot);
+    ai._pokeDodgeTimer = GameTime + rf(5 * dodgeTimerMult, 15 * dodgeTimerMult);
     // Реальная досягаемость текущего оружия бота — та же формула, что
     // используется для коллайдера удара (см. weaponTipPos/checkBladeVsBody).
     const _botReach = weaponReach(bot) * sv('swlen') * (isBot(bot) ? sv('botswordscale') : 1);
@@ -1489,18 +1751,29 @@ if(ai._contactCD > 0 && ai.phase === 'attack' && ai._contactCD <= GameTime){
                         && bot.exhausted<=0 && bot.unbalanced<=0 && bot.stamina >= 30
                         && distToPlayer > Math.max(400, 55*cscl, _botReach)
                         && !(ai._botDodgeCooldown>0)
-                        && $.NOT(bot, 'flail'); // цепом боты не колют
+                        && aiCanThrustWithWeapon(bot);
     if(_canPokeDodge){
-      ai._pokeDodgeActive = true;
-      ai._pokeDodgeEnd = GameTime + 0.22;
-      ai._botDodgeCooldown = 1.5;
-      ai._dodgeLockUntil = GameTime + 0.3;
-      bot._dvx = Math.cos(angToPlayer)*8;
-      bot._dvy = Math.sin(angToPlayer)*8;
-      bot._pokeStartTime = GameTime;
-      if(typeof spawnDust==='function')
-        for(let i=0;i<8;i++) spawnDust(bot.x,bot.y,-Math.cos(angToPlayer)*8,-Math.sin(angToPlayer)*8);
-      $.FX.hit({x:bot.x,y:bot.y-30,t:(window.I18N ? window.I18N.t('common.dodge') : 'DODGE'),life:35,big:false,col:'rgba(200,200,200,0.6)'});
+      if(Math.random() < 0.5 && aiCanUseShield(bot, ai)){
+        ai._shieldForceUntil = GameTime + 1.0;
+        aiResolveShieldHeld(ai, bot, true);
+        ai._botDodgeCooldown = 1.0;
+      } else {
+        ai._pokeDodgeActive = true;
+        ai._pokeDodgeEnd = GameTime + 0.22;
+        ai._botDodgeCooldown = 1.5;
+        ai._dodgeLockUntil = GameTime + 0.3;
+        bot._dvx = Math.cos(angToPlayer)*8;
+        bot._dvy = Math.sin(angToPlayer)*8;
+        bot._pokeStartTime = GameTime;
+        if(typeof spawnDust==='function')
+          for(let i=0;i<8;i++) spawnDust(bot.x,bot.y,-Math.cos(angToPlayer)*8,-Math.sin(angToPlayer)*8);
+        $.FX.hit({x:bot.x,y:bot.y-30,t:(window.I18N ? window.I18N.t('common.dodge') : 'DODGE'),life:35,big:false,col:'rgba(200,200,200,0.6)'});
+      }
+    } else if(aiIsSwingOnlyWeapon(bot) && ai.phase==='attack' && !ai._lungeActive && !ai._feintActive && !ai._spinActive
+              && bot.exhausted<=0 && bot.unbalanced<=0 && bot.stamina >= 25
+              && distToPlayer < Math.max(180 * cscl, _botReach * 1.25)
+              && !(ai._botDodgeCooldown>0)){
+      aiStartHeavyEvasiveDodge(ai, bot, angToPlayer);
     }
   }
   if(ai._pokeDodgeActive){
@@ -1567,13 +1840,20 @@ if(ai._contactCD > 0 && ai.phase === 'attack' && ai._contactCD <= GameTime){
     return;
   }
 
+  if(aiUpdateHeavyAttack(ai, bot, k, bBodyC, pBodyC, angToPlayer, distToPlayer, cscl)) return;
+
   // ── COMBAT_HARASS ─────────────────────────────────
   if(ai.tactic === 'COMBAT_HARASS'){
     ai._retreatMode = false;
     const hp = ai._harassPhase;
     if(hp === 'approach'){
       if(!ai._feintActive) aiMoveToward(k, bBodyC, pBodyC, 65*cscl, cscl);
-      if(!ai._spinActive) aiPointMouse(bBodyC, pBodyC.x, pBodyC.y, false, ai);
+      if(!ai._spinActive){
+        if(aiUsesSwingBurst(ai, bot)){
+          const guardAim = aiHeavyAimPoint(bot, pBodyC, angToPlayer, cscl, ai._heavySwingSide || 1, 'recover', 0, angToPlayer);
+          aiPointMouse(bBodyC, guardAim.x, guardAim.y, false, ai);
+        } else aiPointMouse(bBodyC, pBodyC.x, pBodyC.y, false, ai);
+      }
       if(distToPlayer < 90*cscl){
         ai._harassPhase = 'strike';
         ai._harassStrikes = Math.floor(Math.random()*2) + 1;
@@ -1581,6 +1861,10 @@ if(ai._contactCD > 0 && ai.phase === 'attack' && ai._contactCD <= GameTime){
         ai._fakeMDown = true;
       }
     } else if(hp === 'strike'){
+      if(aiUsesSwingBurst(ai, bot)){
+        aiStartHeavyAttack(ai, bot, distToPlayer, cscl, distToPlayer < 80 * cscl, angToPlayer);
+        if(aiUpdateHeavyAttack(ai, bot, k, bBodyC, pBodyC, angToPlayer, distToPlayer, cscl)) return;
+      }
       k.w=k.a=k.s=k.d=false;
       aiPointMouse(bBodyC, pBodyC.x, pBodyC.y, false, ai);
       ai._fakeMDown = true;
@@ -1614,7 +1898,12 @@ if(ai._contactCD > 0 && ai.phase === 'attack' && ai._contactCD <= GameTime){
       const ty = $.M.clamp(pBodyC.y + Math.sin(ai._harassOrbitAng)*orbitR, 60, WORLD_H-60);
       k.a=(tx-bBodyC.x)<-5; k.d=(tx-bBodyC.x)>5;
       k.w=(ty-bBodyC.y)<-5; k.s=(ty-bBodyC.y)>5;
-      if(!ai._spinActive) aiPointMouse(bBodyC, pBodyC.x, pBodyC.y, false, ai);
+      if(!ai._spinActive){
+        if(aiUsesSwingBurst(ai, bot)){
+          const guardAim = aiHeavyAimPoint(bot, pBodyC, angToPlayer, cscl, ai._heavySwingSide || 1, 'recover', 0, angToPlayer);
+          aiPointMouse(bBodyC, guardAim.x, guardAim.y, false, ai);
+        } else aiPointMouse(bBodyC, pBodyC.x, pBodyC.y, false, ai);
+      }
       if(GameTime >= ai._harassTimer) ai._harassPhase = 'approach';
     }
   } else
@@ -1636,9 +1925,19 @@ if(!ai._feintActive){
         ai._posIdx = (ai._posIdx+1)%3;
         ai._posTimer = rf(0.8,0.8);
       }
-      const offsets = [0, sv('aiang')*Math.PI/180, -sv('aiang')*Math.PI/180];
-      const aimAng = angToPlayer + offsets[ai._posIdx];
-      aiPointMouse(bBodyC, bBodyC.x + Math.cos(aimAng)*150*cscl, bBodyC.y + Math.sin(aimAng)*150*cscl, false, ai);
+      if(aiUsesSwingBurst(ai, bot)){
+        if(distToPlayer < 135 * cscl && GameTime >= (ai._heavyAttackCD || 0)){
+          aiStartHeavyAttack(ai, bot, distToPlayer, cscl, distToPlayer < 85 * cscl, angToPlayer);
+          if(aiUpdateHeavyAttack(ai, bot, k, bBodyC, pBodyC, angToPlayer, distToPlayer, cscl)) return;
+        } else {
+          const guardAim = aiHeavyAimPoint(bot, pBodyC, angToPlayer, cscl, ai._heavySwingSide || 1, 'recover', 0, angToPlayer);
+          aiPointMouse(bBodyC, guardAim.x, guardAim.y, false, ai);
+        }
+      } else {
+        const offsets = [0, sv('aiang')*Math.PI/180, -sv('aiang')*Math.PI/180];
+        const aimAng = angToPlayer + offsets[ai._posIdx];
+        aiPointMouse(bBodyC, bBodyC.x + Math.cos(aimAng)*150*cscl, bBodyC.y + Math.sin(aimAng)*150*cscl, false, ai);
+      }
     }
     ai._fakeMDown = false;
 
@@ -1709,6 +2008,7 @@ if(!ai._feintActive){
         if(Math.random() < 0.5){
           bot.rageBuffEnd = GameTime + 4.0;
           bot.rage = 100;
+      aiTryStartRageSwingBurst(ai, bot);
           $.FX.hit({x:$.POS.body(bot).x, y:$.POS.body(bot).y-40, t:'🔥', life:35, big:false, col:'#ff4020'});
         }
         const pBodyC5 = $.POS.body(targetPlayer);
@@ -1814,6 +2114,8 @@ if(!ai._feintActive){
       ai._fakeMX = sx;   ai._fakeMY = sy;
     }
   }
+  const wantsDefensiveShield = ai.phase === 'retreat' || ai.phase === 'breather' || ai._duelistBlocking || (ai.tactic === 'COMBAT_HARASS' && ai._harassPhase === 'orbit');
+  aiResolveShieldHeld(ai, bot, wantsDefensiveShield);
 }
 
 
@@ -1872,6 +2174,100 @@ function updateFeint(k, dt){
   return true; // перехватываем управление
 }
 
+function clearAIIntent(ai){
+  if(!ai) return;
+  ai._fakeKeys.w = ai._fakeKeys.a = ai._fakeKeys.s = ai._fakeKeys.d = false;
+  ai._fakeMDown = false;
+  ai._shieldHeld = false;
+  ai._shieldDecisionHeld = false;
+  ai._shieldDecisionAt = -999;
+  ai._shieldForceUntil = -1;
+}
+
+function nearestEntity(from, list){
+  if(!from || !Array.isArray(list) || !list.length) return null;
+  const fc = $.POS ? $.POS.body(from) : from;
+  let best = null, bestD = Infinity;
+  for(const ent of list){
+    if(!ent || ent === from || ent.hp <= 0 || ent._defeated || ent._awaitingReveal) continue;
+    const ec = $.POS ? $.POS.body(ent) : ent;
+    const d = Math.hypot(ec.x - fc.x, ec.y - fc.y);
+    if(d < bestD){ best = ent; bestD = d; }
+  }
+  return best;
+}
+
+function getPlayerBotEnemyTarget(){
+  const enemies = typeof FactionRules !== 'undefined' ? FactionRules.bots() : ALL_BOTS;
+  return nearestEntity(P, enemies || []);
+}
+
+function getPlayerBotFollowAnchor(){
+  if(typeof FactionRules === 'undefined') return null;
+  return nearestEntity(P, FactionRules.players().filter(ent => ent !== P));
+}
+
+function ensurePlayerBotAIState(){
+  if(!P._playerAiState){
+    P._playerAiState = freshAIState();
+    P._playerAiState._isMain = true;
+    P._playerAiState._mode = 'attack';
+    P._playerAiState.phase = 'attack';
+  }
+  return P._playerAiState;
+}
+
+function setPlayerBotMode(on){
+  const ai = ensurePlayerBotAIState();
+  const enable = !!on;
+  if(enable && P._aiState !== ai) P._playerBotPrevAIState = P._aiState || null;
+  P._playerBotMode = enable;
+  ai.enabled = P._playerBotMode;
+  clearAIIntent(ai);
+  P._aiTargetOverride = null;
+  P._aiState = P._playerBotMode ? ai : (P._playerBotPrevAIState || null);
+  if(!P._playerBotMode){
+    mDown = false;
+    P.lmbWasDown = false;
+  }
+  if(typeof $ !== 'undefined' && $.FX){
+    $.FX.hit({x:P.x,y:P.y-45,t:P._playerBotMode?'AUTO ON':'AUTO OFF',life:45,big:false,col:P._playerBotMode?'#66ffaa':'#ffaa66'});
+  }
+}
+
+function togglePlayerBotMode(){ setPlayerBotMode(!P._playerBotMode); }
+function isPlayerBotMode(){ return !!(P && P._playerBotMode); }
+
+function updatePlayerBotAssistAI(dt){
+  if(!P || P.hp <= 0 || !P._playerBotMode){
+    if(P && P._playerAiState) clearAIIntent(P._playerAiState);
+    return;
+  }
+  const ai = ensurePlayerBotAIState();
+  P._aiState = ai;
+  ai.enabled = true;
+  const target = getPlayerBotEnemyTarget();
+  if(!target){
+    clearAIIntent(ai);
+    return;
+  }
+
+  P._aiTargetOverride = target;
+  updateAI(dt, P);
+  P._aiTargetOverride = null;
+
+  const anchor = getPlayerBotFollowAnchor();
+  if(anchor){
+    const pc = $.POS.body(P);
+    const ac = $.POS.body(anchor);
+    const dist = Math.hypot(ac.x - pc.x, ac.y - pc.y);
+    const cscl = sv('cscl');
+    if(dist > 220 * cscl){
+      aiMoveToward(ai._fakeKeys, pc, ac, 120 * cscl, cscl);
+      if(dist > 360 * cscl) ai._fakeMDown = false;
+    }
+  }
+}
 // ── Диспетчер: подменяет updateAI(dt,bot) для ботов с дальнобойным оружием ──
 function updateAIDispatch(dt, bot){
   if(!bot || bot.hp <= 0 || !dummyOn) return;

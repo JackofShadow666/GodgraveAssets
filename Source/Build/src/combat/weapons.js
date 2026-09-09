@@ -644,7 +644,8 @@ if(bounced){
           
           if(hitShield){
             applyShieldBlockFX(w.x, w.y, null, null, {waveAngle: Math.atan2(w.vy, w.vx)});
-          } else {
+          } else if((w._deflectFxUntil || 0) <= GameTime) {
+            w._deflectFxUntil = GameTime + 0.5;
             const strongHit = flySpdPre > 6;
             $.FX.hit({x:w.x, y:w.y-8, t:(window.I18N ? window.I18N.t('combat.clash') : 'CLASH!'), life:28, big:strongHit, col:'#ccccaa'});
             $.S.play(strongHit ? 'clashHard' : 'clash');

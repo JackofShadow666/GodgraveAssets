@@ -322,7 +322,7 @@ function getPoolAudio(url){
 
 // -- Звуки UI: hover и tap на кнопках ----------------------------------------
 $.S = $.S || {
-  play(type){ return window['playSound'](type); },
+  play(type, volume){ return window['playSound'](type, volume); },
   swing(){ return window['playSound']('whoosh'); },
   hammer(){ return window['playSound']('hammerSwing'); },
   damage(){ return window['playSound']('damage'); },
@@ -352,7 +352,7 @@ document.addEventListener('click', e=>{
   if(e.target.closest('button, .menu-btn, .ov-btn')) $.S.play('uiTap');
 });
 
-function playSound(sfxType) {
+function playSound(sfxType, volume) {
   if (!audioEnabledFlag) return;
   let arr = SFX_DB[sfxType];
   if (sfxType === 'clashHard' && Math.random() < 0.05 && SFX_DB['clashHard_rare']?.length)
@@ -365,10 +365,10 @@ function playSound(sfxType) {
   const url = arr[idx];
   const audio = getPoolAudio(url);
   audio.currentTime = 0;
-  audio.volume = 0.5;
+  audio.volume = volume != null ? volume : 0.5;
   audio.play().catch(() => {
     // Если pool объект не готов — fallback new Audio
-    const fb = new Audio(url); fb.volume = 0.5; fb.play().catch(()=>{});
+    const fb = new Audio(url); fb.volume = volume != null ? volume : 0.5; fb.play().catch(()=>{});
   });
 }
 

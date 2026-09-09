@@ -160,6 +160,10 @@ function resolveEntityCollision(a, b){
 
 // ••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••• END MODULE: FX ••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
 
+function canUseSwingBonus(ent){
+  return !(ent && ent._swingBonusSuppressed);
+}
+
 function updateAtkPoints(ent, opponent, dt){
   const exC = $.POS.center(ent);
   const opC = $.POS.body(opponent);
@@ -178,7 +182,7 @@ function updateAtkPoints(ent, opponent, dt){
   if(Math.hypot(tipX - opC.x, tipY - opC.y) < 30) ent.atkPts += dt * 1;
 
   // +1 for fast swing
-  if(Math.abs(ent.vel) > sv('swthresh')) ent.atkPts += dt * 1;
+  if(canUseSwingBonus(ent) && Math.abs(ent.vel) > sv('swthresh')) ent.atkPts += dt * 1;
 
   // +2 for LMB click (only for player)
   if(ent === P && mDown) ent.atkPts += dt * 2;
@@ -236,7 +240,7 @@ function updateDisbalanceCombo(attacker, defender){
     (attacker === D && typeof AI !== 'undefined' &&
       ((AI._pokeDodgeActive && (GameTime - (D._pokeStartTime || -99)) <= 0.3) ||
        (AI._lungeActive && AI._lungePhase === 'lunge')));
-  const isStrongSwing = Math.abs(attacker.vel) > sv('swthresh') * 2.5;
+  const isStrongSwing = canUseSwingBonus(attacker) && Math.abs(attacker.vel) > sv('swthresh') * 2.5;
   if(combo && GameTime - combo.startedAt <= windowDuration &&
      combo.target === defender &&
      (isStrongSwing || isLmbLunge)){
@@ -334,6 +338,8 @@ function checkSwordCollision(entA, entB, dt){
   const dirBx = Math.cos(entB.angle), dirBy = Math.sin(entB.angle);
   const spanA = weaponColliderSpan(entA);
   const spanBraw = weaponColliderSpan(entB);
+  const colA = weaponCollisionType(entA);
+  const colB = weaponCollisionType(entB);
   const botScaleB = isBot(entB) ? sv('botswordscale') : 1;
   const spanB = { back: spanBraw.back * botScaleB, front: spanBraw.front * botScaleB };
 
@@ -387,7 +393,7 @@ const bodySwB = weaponReach(entB) * sv('swlen') * (isBot(entB)?sv('botswordscale
   const segsB = [[bladeBx,bladeBy, tipBx,tipBy]];
   if(spanB.back > 0) segsB.push([backHandBx,backHandBy, backBx,backBy]);
 
-  if(!isWeaponDisabled(entA) && !isWeaponDisabled(entB)){
+  if(colA !== 'none' && colB !== 'none' && !isWeaponDisabled(entA) && !isWeaponDisabled(entB)){
     let res = null;
     for(const sa of segsA){
       for(const sb of segsB){
@@ -461,8 +467,8 @@ const bodySwB = weaponReach(entB) * sv('swlen') * (isBot(entB)?sv('botswordscale
   }
 
   // ─── BLADE VS BODY ──────────────────────────────────────────────
-  checkBladeVsBody(entA, entB, pivA.x, pivA.y, bodyTipAx, bodyTipAy);
-  checkBladeVsBody(entB, entA, pivB.x, pivB.y, bodyTipBx, bodyTipBy);
+  if(colA !== 'none') checkBladeVsBody(entA, entB, pivA.x, pivA.y, bodyTipAx, bodyTipAy);
+  if(colB !== 'none') checkBladeVsBody(entB, entA, pivB.x, pivB.y, bodyTipBx, bodyTipBy);
   
   // ─── CROWN SWITCH ──────────────────────────────────────────────────
   const _crownReady = (GameTime - _lastCrownSwitchTime) >= CROWN_SWITCH_COOLDOWN;
@@ -477,6 +483,34 @@ const bodySwB = weaponReach(entB) * sv('swlen') * (isBot(entB)?sv('botswordscale
   if(_crownReady && isBot(entB) && entB._aiState?._isMain && entA === P){
   }
 } // End of checkSwordCollision
+
+function isSoftBodyContactWeaponKey(key) {
+  return key === 'hammer' || key === 'flail' || key === 'wand' || key === 'staff';
+}
+
+function tryApplySoftBodyContact(attacker, defender, bodyCenter, soundType) {
+  if (!isSoftBodyContactWeaponKey(weaponKeyOf(attacker))) return false;
+  if (Math.abs(attacker.vel || 0) >= sv('swthresh') * 0.3) return false;
+  if (attacker.exhausted > 0 || attacker.hasWeapon === false) return true;
+
+  const now = GameTime;
+  if (defender._hitCD === undefined) defender._hitCD = -1;
+  if (defender._hitCD >= now) return true;
+
+  const aC = $.POS.body(attacker);
+  const dx = bodyCenter.x - aC.x;
+  const dy = bodyCenter.y - aC.y;
+  const len = Math.hypot(dx, dy) || 1;
+  const key = weaponKeyOf(attacker);
+  const base = key === 'hammer' ? 3.0 : (key === 'staff' ? 2.2 : 1.8);
+  const kb = Math.max(base, sv('bodyKB') * 0.18);
+  defender.vx += dx / len * kb;
+  defender.vy += dy / len * kb;
+  defender._hitCD = now + 0.18;
+  if ($.S && typeof $.S.play === 'function') $.S.play(soundType || 'damageHammer', 0.14);
+  aiNotifyContact();
+  return true;
+}
 
 // ─── BLADE VS BODY ──────────────────────────────────────────────────────
 // Checks if the attacker's weapon tip hits the defender's body.
@@ -648,18 +682,19 @@ function checkBladeVsBody(attacker, defender, pivX, pivY, tipX2, tipY2) {
     
     // ─── KNOCKBACK ────────────────────────────────────────────────
     const kbf = sv('bodyKB') * 0.5;
+    const defenderShieldKbMult = (typeof shieldHeld === 'function' && shieldHeld(defender)) ? 0.5 : 1;
     const _noDoubleKB = (attacker._clashFrame || 0) > GameTime - 0.05;
     if (kbf > 0 && !_noDoubleKB) {
       const _bkX = bC.x - $.POS.body(attacker).x;
       const _bkY = bC.y - $.POS.body(attacker).y;
       const _bkL = Math.hypot(_bkX, _bkY) || 1;
-      defender.vx += (_bkX / _bkL) * kbf;
-      defender.vy += (_bkY / _bkL) * kbf;
+      defender.vx += (_bkX / _bkL) * kbf * defenderShieldKbMult;
+      defender.vy += (_bkY / _bkL) * kbf * defenderShieldKbMult;
     }
     
     // ─── DISARM ────────────────────────────────────────────────────
     if (!_isPoke && defender.hasWeapon !== false && attacker.hasWeapon !== false) {
-      const swingPower = Math.abs(attacker.vel) / sv('swthresh');
+      const swingPower = canUseSwingBonus(attacker) ? Math.abs(attacker.vel) / sv('swthresh') : 0;
       let disarmChance = 0.03 + swingPower * 0.07;
       if (weaponHasFlag(attacker, 'disarm')) disarmChance += 0.15;
       if (attacker.rageBuffEnd > GameTime) disarmChance += 0.10;
@@ -879,6 +914,7 @@ if (defender === D && attacker === P && typeof AI !== 'undefined' && AI.enabled 
     const _tipOnly = weaponCollisionType(attacker) === 'tip';
     const TIP_MIN_T = 0.7;
     let shouldHit = (!_tipOnly || t2 >= TIP_MIN_T);
+    if (shouldHit && !_isPoke && tryApplySoftBodyContact(attacker, defender, bC, isHeavySwingWeapon(attacker) ? 'damageHammer' : 'damage')) return;
     
     let finalCondition = (alongBlade < 0.8 || _isPoke) && shouldHit;
     
@@ -926,18 +962,19 @@ if (defender === D && attacker === P && typeof AI !== 'undefined' && AI.enabled 
       
       // ─── KNOCKBACK ──────────────────────────────────────────────
       const kbf = sv('bodyKB') * 0.5;
+      const defenderShieldKbMult = (typeof shieldHeld === 'function' && shieldHeld(defender)) ? 0.5 : 1;
       const _noDoubleKB = (attacker._clashFrame || 0) > GameTime - 0.05;
       if (kbf > 0 && !_noDoubleKB) {
         const _bkX = bC.x - $.POS.body(attacker).x;
         const _bkY = bC.y - $.POS.body(attacker).y;
         const _bkL = Math.hypot(_bkX, _bkY) || 1;
-        defender.vx += (_bkX / _bkL) * kbf;
-        defender.vy += (_bkY / _bkL) * kbf;
+        defender.vx += (_bkX / _bkL) * kbf * defenderShieldKbMult;
+        defender.vy += (_bkY / _bkL) * kbf * defenderShieldKbMult;
       }
       
       // ─── DISARM ──────────────────────────────────────────────────
       if (!_isPoke && defender.hasWeapon !== false && attacker.hasWeapon !== false) {
-        const swingPower = Math.abs(attacker.vel) / sv('swthresh');
+        const swingPower = canUseSwingBonus(attacker) ? Math.abs(attacker.vel) / sv('swthresh') : 0;
         let disarmChance = 0.03 + swingPower * 0.07;
         if (weaponHasFlag(attacker, 'disarm')) disarmChance += 0.15;
         if (attacker.rageBuffEnd > GameTime) disarmChance += 0.10;
@@ -983,16 +1020,16 @@ if (defender === D && attacker === P && typeof AI !== 'undefined' && AI.enabled 
         const _kkX = bC.x - $.POS.body(attacker).x;
         const _kkY = bC.y - $.POS.body(attacker).y;
         const _kkL = Math.hypot(_kkX, _kkY) || 1;
-        defender.vx += (_kkX / _kkL) * 18;
-        defender.vy += (_kkY / _kkL) * 18;
+        defender.vx += (_kkX / _kkL) * 18 * defenderShieldKbMult;
+        defender.vy += (_kkY / _kkL) * 18 * defenderShieldKbMult;
         if(!isUnbalanced(defender)) applyDisbalance(defender, attacker);
       }
       if (weaponHasFlag(attacker, 'knockback_staff')) {
         const _kkX = bC.x - $.POS.body(attacker).x;
         const _kkY = bC.y - $.POS.body(attacker).y;
         const _kkL = Math.hypot(_kkX, _kkY) || 1;
-        defender.vx += (_kkX / _kkL) * 10;
-        defender.vy += (_kkY / _kkL) * 10;
+        defender.vx += (_kkX / _kkL) * 10 * defenderShieldKbMult;
+        defender.vy += (_kkY / _kkL) * 10 * defenderShieldKbMult;
         if(!isUnbalanced(defender)) applyDisbalance(defender, attacker);
       }
       
@@ -1042,6 +1079,11 @@ if (defender === D && attacker === P && typeof AI !== 'undefined' && AI.enabled 
 // and shield bash. Now unified in one function.
 function applyShieldBlockFX(x, y, attacker, defender, opts){
   opts = opts || {};
+  const now = typeof GameTime !== 'undefined' ? GameTime : 0;
+  const cooldown = opts.cooldown != null ? opts.cooldown : 0.18;
+  if(defender && (defender._shieldBlockFxUntil || -1) > now) return false;
+  if(defender) defender._shieldBlockFxUntil = now + cooldown;
+
   const hitstopMag = opts.hitstopMag != null ? opts.hitstopMag : 2;
   const waveDuration = opts.waveDuration != null ? opts.waveDuration : 18;
   $.FX.hit({x, y: y-4, t:'🛡', life:16, big:true, col:'#aaddff'});
@@ -1060,6 +1102,7 @@ function applyShieldBlockFX(x, y, attacker, defender, opts){
   
   // ─── EXTRA EFFECTS ──────────────────────────────────────────────
   // (could add more visual effects here later)
+  return true;
 }
 
 // ─── CLASH RAGE GAIN ──────────────────────────────────────────────────
@@ -1269,6 +1312,7 @@ function resetPlayerState(options = {}) {
     // Reset shield-related timers
     P._shieldStunUntil = -1;
     P._shieldBodyHitCD = -1;
+    P._shieldBlockFxUntil = -1;
     P._dodgeActiveUntil = -1;
     P._moveLockUntil = -1;
     P._noSlowUntil = -1;
@@ -1377,6 +1421,7 @@ function resetBotRoundState(bot, index, totalBots, enableAI) {
     bot.vy = 0;
     bot.vel = 0;
     bot._hitCD = -1;
+    bot._shieldBlockFxUntil = -1;
     bot._swingBlockCD = -1;
     bot._blockSlow = -1;
     bot._debuffActive = false;
@@ -1388,7 +1433,9 @@ function resetBotRoundState(bot, index, totalBots, enableAI) {
     bot._recoverProgress = 0;
     bot._defeated = false;
     if (window._manualBotWeaponType !== undefined) bot._manualWeaponType = window._manualBotWeaponType;
+    if (window._manualBotShieldType !== undefined) bot._manualShieldType = window._manualBotShieldType;
     if (bot._manualWeaponType !== undefined && typeof setWeapon === 'function') setWeapon(bot, bot._manualWeaponType);
+    if (bot._manualShieldType !== undefined && typeof setShield === 'function') setShield(bot, bot._manualShieldType);
     if (bot.hasWeapon === false && typeof setWeapon === 'function') setWeapon(bot, bot.weaponType);
     const ang = totalBots > 0 ? (index / totalBots) * Math.PI * 2 : 0;
     const spawn = typeof factionSpawnPoint === 'function'
@@ -1403,6 +1450,7 @@ function resetBotRoundState(bot, index, totalBots, enableAI) {
     if (bot._aiState) {
         bot._aiState.enabled = enableAI;
         bot._aiState._fakeMDown = false;
+        bot._aiState._shieldHeld = false;
     }
 }
 

@@ -21,6 +21,7 @@
     KeyI: ['i', 'ш'],
     KeyJ: ['j', 'о'],
     KeyO: ['o', 'щ'],
+    KeyP: ['p', 'з'],
     Digit1: ['1'],
     Enter: ['enter'],
     Escape: ['escape']

@@ -64,6 +64,7 @@
       spawnBot:    { index: 1,  action: 'spawnBot' },
       musicToggle: { index: 2,  action: 'musicToggle' },
       throwWeapon: { index: 4,  action: 'throwWeapon' },
+      playerBot:   { index: 8,  action: 'playerBot' },
       pause:       { index: 9,  action: 'pause' },
       dpadUp:      { index: 12, action: 'swordStyle' },
       dpadLeft:    { index: 14, action: 'swapWeapon' },
@@ -661,23 +662,36 @@
   let _lastMenuOpenDiagLog = 0;
 
   // ── ПОИСК ЭЛЕМЕНТОВ ПОД КУРСОРОМ ────────────────────────────────────
+  const MENU_CLICKABLE_SELECTOR = [
+    'button', '.ov-btn', '.menu-btn', '[role="button"]',
+    '[onclick]', 'input[type="range"]', 'input[type="checkbox"]',
+    'input[type="text"]', 'input[type="number"]', 'select',
+    'label[for]', 'a[href]'
+  ].join(', ');
+
+  function isVisibleMenuTarget(el) {
+    if (!el) return false;
+    const style = window.getComputedStyle(el);
+    if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') return false;
+    const rect = el.getBoundingClientRect();
+    return rect.width > 0 && rect.height > 0;
+  }
+
+  function resolveMenuTarget(el) {
+    if (!el) return null;
+    if (el.tagName === 'LABEL' && el.htmlFor) {
+      const target = document.getElementById(el.htmlFor);
+      if (target && isVisibleMenuTarget(target)) return target;
+    }
+    return el;
+  }
+
   function findElementAtPosition(x, y) {
     const elements = document.elementsFromPoint(x, y);
 
-    const clickableSelectors = [
-      'button', '.ov-btn', '.menu-btn', '[role="button"]',
-      '[onclick]', 'input[type="range"]', 'input[type="text"]',
-      'input[type="number"]', 'a[href]'
-    ];
-
     for (const el of elements) {
-      for (const selector of clickableSelectors) {
-        if (el.matches && el.matches(selector)) {
-          const style = window.getComputedStyle(el);
-          if (style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0') {
-            return el;
-          }
-        }
+      if (el.matches && el.matches(MENU_CLICKABLE_SELECTOR) && isVisibleMenuTarget(el)) {
+        return resolveMenuTarget(el);
       }
     }
 
@@ -694,19 +708,14 @@
     // "ближайший элемент" никогда не найдёт сам input, и клавиатура
     // геймпада никогда не откроется, кроме как при попадании пиксель в
     // пиксель.
-    const allButtons = document.querySelectorAll(
-      'button, .ov-btn, .menu-btn, [role="button"], [onclick], ' +
-      'input[type="range"], input[type="text"], input[type="number"], a[href]'
-    );
+    const allButtons = document.querySelectorAll(MENU_CLICKABLE_SELECTOR);
     let nearest = null;
     let nearestDist = Infinity;
 
     for (const el of allButtons) {
       try {
-        const style = window.getComputedStyle(el);
-        if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') continue;
+        if (!isVisibleMenuTarget(el)) continue;
         const rect = el.getBoundingClientRect();
-        if (rect.width === 0 || rect.height === 0) continue;
 
         const cx = rect.left + rect.width / 2;
         const cy = rect.top + rect.height / 2;
@@ -714,7 +723,7 @@
 
         if (dist < nearestDist) {
           nearestDist = dist;
-          nearest = el;
+          nearest = resolveMenuTarget(el);
         }
       } catch(e) {}
     }
@@ -751,22 +760,67 @@
     slider.dispatchEvent(new Event('change', { bubbles: true }));
   }
 
+  function setSliderFromCursor(slider, clientX) {
+    const min = parseFloat(slider.min) || 0;
+    const max = parseFloat(slider.max) || 100;
+    const step = parseFloat(slider.step) || 1;
+    const range = max - min;
+    if (range <= 0) return;
+
+    const rect = slider.getBoundingClientRect();
+    if (!rect.width) return;
+
+    let ratio = (clientX - rect.left) / rect.width;
+    ratio = Math.max(0, Math.min(1, ratio));
+
+    let value = min + ratio * range;
+    value = Math.round(value / step) * step;
+    value = Math.max(min, Math.min(max, value));
+
+    const decimals = (String(step).split('.')[1] || '').length;
+    value = parseFloat(value.toFixed(decimals));
+
+    if (value === parseFloat(slider.value)) return;
+    slider.value = value;
+    slider.dispatchEvent(new Event('input', { bubbles: true }));
+    slider.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+
+  function toggleCheckbox(checkbox) {
+    checkbox.checked = !checkbox.checked;
+    checkbox.dispatchEvent(new Event('input', { bubbles: true }));
+    checkbox.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+
+  function cycleSelect(select, dir) {
+    const options = Array.from(select.options || []).filter(opt => !opt.disabled);
+    if (options.length <= 0) return;
+    const current = Math.max(0, options.findIndex(opt => opt.value === select.value));
+    const next = options[(current + (dir || 1) + options.length) % options.length];
+    if (!next || next.value === select.value) return;
+    select.value = next.value;
+    select.dispatchEvent(new Event('input', { bubbles: true }));
+    select.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+
   function clickMenuButton() {
     const btn = findNearestButton(menuCursorX, menuCursorY);
     if (!btn) return;
 
     if (btn.tagName === 'INPUT' && btn.type === 'range') {
-      // RT/A на слайдере — двигаем на один "видимый" шаг вправо (10% от
-      // диапазона), а не пытаемся симулировать клик мышью (клик по
-      // input[type=range] в браузере ничего не двигает — отсюда был баг
-      // "не получается двигать ползунки с RT"). Основной способ регулировки
-      // всё же левый стик при наведении (см. pollGamepad), это лишь на
-      // случай короткого точечного нажатия.
-      adjustSlider(btn, 0.1);
+      setSliderFromCursor(btn, menuCursorX);
+      return;
+    }
+    if (btn.tagName === 'INPUT' && btn.type === 'checkbox') {
+      toggleCheckbox(btn);
       return;
     }
     if (btn.tagName === 'INPUT' && (btn.type === 'text' || !btn.type)) {
       openVirtualKeyboard(btn);
+      return;
+    }
+    if (btn.tagName === 'SELECT') {
+      cycleSelect(btn, 1);
       return;
     }
 
@@ -863,7 +917,7 @@
 
       const KNOWN_ACTIONS = new Set([
         'attack','dodge','swapWeapon','shield','shieldFlip','shieldType','swordStyle',
-        'throwWeapon','spawnBot','musicToggle','pause'
+        'throwWeapon','spawnBot','musicToggle','playerBot','pause'
       ]);
 
       for (const line of lines) {
@@ -913,6 +967,7 @@
     dodge()       { if (!isAnyMenuOpen()) PUBLIC_API_ACTIONS.dodge(); },
     spawnBot()    { if (!isAnyMenuOpen()) PUBLIC_API_ACTIONS.spawnBot(); },
     musicToggle() { if (!isAnyMenuOpen()) PUBLIC_API_ACTIONS.musicToggle(); },
+    playerBot()   { if (!isAnyMenuOpen() && window.togglePlayerBotMode) window.togglePlayerBotMode(); },
     pause() {
       if (isAnyMenuOpen()) {
         const settingsOv = document.getElementById('mob-settings-overlay');
@@ -989,6 +1044,11 @@
   function setGamepadShieldHeld(held) {
     shieldHeld = held;
     if (typeof P === 'undefined') return;
+    const localControlsOwnPad = window.LocalPlayerControls && window.LocalPlayerControls.getGamepadSlot() > 0;
+    if (localControlsOwnPad) {
+      P._shieldHeld = false;
+      return;
+    }
     if (!held) {
       P._shieldHeld = false;
       return;
