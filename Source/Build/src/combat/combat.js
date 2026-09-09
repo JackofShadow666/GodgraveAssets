@@ -241,26 +241,29 @@ function updateDisbalanceCombo(attacker, defender){
       ((AI._pokeDodgeActive && (GameTime - (D._pokeStartTime || -99)) <= 0.3) ||
        (AI._lungeActive && AI._lungePhase === 'lunge')));
   const isSpecialLmbClash = attacker && attacker._lmbRefundClashFrame === GameTime;
-  if(combo && GameTime - combo.startedAt <= windowDuration &&
-     combo.target === defender && isSpecialLmbClash){
+  if(combo && combo.target === defender){
+    const expired = GameTime - combo.startedAt > windowDuration;
     delete attacker._disbalanceCombo;
-    const disarmCombo = defender.hasWeapon !== false && Math.random() < 0.30;
-    if(disarmCombo && typeof disarmEntity === 'function'){
-      const aC = $.POS.body(attacker);
-      const dC = $.POS.body(defender);
-      const dx = dC.x - aC.x, dy = dC.y - aC.y;
-      const len = Math.hypot(dx, dy) || 1;
-      const baseSpeed = 7 + Math.random() * 5;
-      applyDisbalance(defender, attacker, 0.4);
-      disarmEntity(defender, dx / len * baseSpeed, dy / len * baseSpeed - 1.5);
-      $.FX.hit({x:dC.x, y:dC.y-52, t:(window.I18N ? window.I18N.t('combat.weaponDropped') : 'WEAPON DROPPED!'), life:40, big:true, col:'#ffaa44'});
-    } else if(!isUnbalanced(defender)) {
-      applyDisbalance(defender, attacker);
+    if(!expired && isSpecialLmbClash){
+      const disarmCombo = defender.hasWeapon !== false && Math.random() < 0.30;
+      if(disarmCombo && typeof disarmEntity === 'function'){
+        const aC = $.POS.body(attacker);
+        const dC = $.POS.body(defender);
+        const dx = dC.x - aC.x, dy = dC.y - aC.y;
+        const len = Math.hypot(dx, dy) || 1;
+        const baseSpeed = 7 + Math.random() * 5;
+        applyDisbalance(defender, attacker, 0.4);
+        disarmEntity(defender, dx / len * baseSpeed, dy / len * baseSpeed - 1.5);
+        $.FX.hit({x:dC.x, y:dC.y-52, t:(window.I18N ? window.I18N.t('combat.weaponDropped') : 'WEAPON DROPPED!'), life:40, big:true, col:'#ffaa44'});
+      } else if(!isUnbalanced(defender)) {
+        applyDisbalance(defender, attacker);
+      }
+      disbalanceComboDebug(attacker,
+        disarmCombo ? 'SPECIAL LMB — SHORT DISBALANCE + DISARM!' : 'SPECIAL LMB — DISBALANCE!',
+        disarmCombo ? '#ffaa44' : '#ff8830');
+      return true;
     }
-    disbalanceComboDebug(attacker,
-      disarmCombo ? 'SPECIAL LMB — SHORT DISBALANCE + DISARM!' : 'SPECIAL LMB — DISBALANCE!',
-      disarmCombo ? '#ffaa44' : '#ff8830');
-    return true;
+    disbalanceComboDebug(attacker, expired ? 'SPECIAL BLOCK EXPIRED' : 'SPECIAL BLOCK MISSED', '#ff4040');
   }
   if(!defenderCanBlock) return false;
 
@@ -272,7 +275,7 @@ function updateDisbalanceCombo(attacker, defender){
   defender._disbalanceCombo = { target: attacker, blocks, startedAt: GameTime };
   defender._specialDisbalanceBlockFrame = GameTime;
   const sc = $.POS.body(defender);
-  $.FX.hit({x:sc.x, y:sc.y-58, t:'КЛАЦ!', life:26, big:false, col:'#40b8ff'});
+  $.FX.hit({x:sc.x, y:sc.y-58, t:'КЛАЦ!', life:26, big:false, col:'#b8cad8'});
   disbalanceComboDebug(defender,
     `Special block: ${blocks}x`,
     '#409cff');
@@ -284,22 +287,26 @@ function blockClashSoundFor(defender){
 }
 
 const LMB_REFUND_WINDOW = 0.6;
-function lmbRefundWindowActive(ent){
+function lmbRefundWindowActive(ent, target){
   if(!ent || ent._lmbRefundUsed) return false;
   const pressAt = ent._lmbRefundPressAt;
   if(pressAt === undefined || pressAt < 0) return false;
   if(GameTime - pressAt > LMB_REFUND_WINDOW) return false;
+  if(target){
+    const combo = ent._disbalanceCombo;
+    const comboWindow = Math.max(0.1, sv('unbcombo') || 2);
+    if(!combo || combo.target !== target || GameTime - combo.startedAt > comboWindow) return false;
+  }
   return (ent._lmbRefundCost || 0) > 0;
-}
-function tryFinishLmbRefund(ent){
+}function tryFinishLmbRefund(ent){
   if(!lmbRefundWindowActive(ent) || !ent._lmbRefundReleased || !ent._lmbRefundClashed) return false;
   ent.stamina = Math.min(ent.stamMax || ent.stamina || 0, (ent.stamina || 0) + ent._lmbRefundCost);
   ent._lmbRefundUsed = true;
   ent._lmbRefundCost = 0;
   return true;
 }
-function markLmbRefundClash(ent){
-  if(!lmbRefundWindowActive(ent)) return false;
+function markLmbRefundClash(ent, target){
+  if(!lmbRefundWindowActive(ent, target)) return false;
   ent._lmbRefundClashed = true;
   ent._lmbRefundClashFrame = GameTime;
   tryFinishLmbRefund(ent);
@@ -495,7 +502,7 @@ const bodySwB = weaponReach(entB) * sv('swlen') * (isBot(entB)?sv('botswordscale
     if(entA._bladeCD <= GameTime){
       entA._bladeCD = GameTime + 0.1;
       const strongSwing = Math.abs(entA.vel) > sv('swthresh')*2.5 || Math.abs(entB.vel) > sv('swthresh')*2.5;
-      const lmbRefundClash = markLmbRefundClash(entA) || markLmbRefundClash(entB);
+      const lmbRefundClash = markLmbRefundClash(entA, entB) || markLmbRefundClash(entB, entA);
 	  doClash(entA, entB, res, strongSwing, lmbRefundClash);
       swordHit(entA, entB);
       if(strongSwing) $.S.play('clashHard'); else {
@@ -1803,11 +1810,14 @@ function doClash(entA, entB, res, strongSwing, lmbRefundClash){
   }
 
   // ─── EFFECTS ──────────────────────────────────────────────────────
-  if(lmbRefundClash){
-    $.FX.hit({type:'bolt', x:hitX, y:hitY-4, life:12, maxLife:12, count:3, col:'#40b8ff'});
-  } else {
-    $.FX.hit({x:hitX, y:hitY-4, t:'⚡', life:12, big:false, col:'#ffffff'});
-  }
+  $.FX.hit({
+    type:'bolt', x:hitX, y:hitY-4, life:12, maxLife:12,
+    count:lmbRefundClash ? 3 : 1,
+    col:lmbRefundClash ? '#9ed8ff' : '#ffffff',
+    tint:lmbRefundClash ? '#66bfff' : null,
+    tintAlpha:lmbRefundClash ? 0.24 : 0,
+    size:lmbRefundClash ? 17 : 15
+  });
   $.FX.hit({x:hitX, y:hitY+14, t:(window.I18N ? window.I18N.t('combat.clash') : 'CLASH!'), life:35, big:false, col:'#ccccaa'});
   // strongSwing creates a flash and cross effect
   if(strongSwing && Math.random() < 0.04) spawnFX('flash', hitX, hitY);

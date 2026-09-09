@@ -1301,25 +1301,9 @@ function drawFX(){
     ctx.globalAlpha=Math.max(0,f.life/maxLife);
     if(f.type==='bolt'){
       const p = 1 - f.life / maxLife;
-      const count = f.count || 1;
       ctx.save();
       ctx.translate(f.x, f.y - p*5);
-      ctx.strokeStyle=f.col||'#ffcc44';
-      ctx.shadowColor=f.col||'#ffcc44'; ctx.shadowBlur=10;
-      ctx.lineWidth=f.width||2.4;
-      ctx.lineCap='round'; ctx.lineJoin='round';
-      for(let b=0;b<count;b++){
-        const ox=(b-(count-1)/2)*9;
-        ctx.beginPath();
-        ctx.moveTo(ox-2,-11);
-        ctx.lineTo(ox+4,-2);
-        ctx.lineTo(ox-1,-2);
-        ctx.lineTo(ox+3,10);
-        ctx.lineTo(ox-7,-4);
-        ctx.lineTo(ox-1,-4);
-        ctx.closePath();
-        ctx.stroke();
-      }
+      drawSparkImageFX(ctx, f, maxLife);
       ctx.restore();
     } else {
       ctx.font=FLOATING_TEXT_FONT;
@@ -1334,5 +1318,58 @@ function drawFX(){
 }
 
 // ──────────────── END LAYER: ARENA ────────────────
+const SPARK_EMOJI_URL = 'Source/UI/T_SparkEmoj.png';
+let SPARK_EMOJI_IMG = null;
+function sparkEmojiImage(){
+  if(SPARK_EMOJI_IMG !== null) return SPARK_EMOJI_IMG;
+  SPARK_EMOJI_IMG = new Image();
+  SPARK_EMOJI_IMG.src = SPARK_EMOJI_URL;
+  return SPARK_EMOJI_IMG;
+}
+
+function drawSparkImageFX(ctx, f, maxLife){
+  const img = sparkEmojiImage();
+  const p = 1 - f.life / maxLife;
+  const count = f.count || 1;
+  const size = f.size || 16;
+  const tint = f.tint || null;
+  if(!img || !img.complete || !img.naturalWidth){
+    ctx.strokeStyle=f.col||'#ffcc44';
+    ctx.shadowColor=f.col||'#ffcc44'; ctx.shadowBlur=10;
+    ctx.lineWidth=f.width||2.4;
+    ctx.lineCap='round'; ctx.lineJoin='round';
+    for(let b=0;b<count;b++){
+      const ox=(b-(count-1)/2)*9;
+      ctx.beginPath();
+      ctx.moveTo(ox-2,-11);
+      ctx.lineTo(ox+4,-2);
+      ctx.lineTo(ox-1,-2);
+      ctx.lineTo(ox+3,10);
+      ctx.lineTo(ox-7,-4);
+      ctx.lineTo(ox-1,-4);
+      ctx.closePath();
+      ctx.stroke();
+    }
+    return;
+  }
+  for(let b=0;b<count;b++){
+    const ox=(b-(count-1)/2)*(size*0.55);
+    ctx.save();
+    ctx.translate(ox, -p*4);
+    ctx.scale(-1, 1);
+    ctx.drawImage(img, -size/2, -size/2, size, size);
+    ctx.restore();
+    if(tint){
+      ctx.save();
+      ctx.globalAlpha = f.tintAlpha || 0.28;
+      ctx.globalCompositeOperation = 'source-atop';
+      ctx.fillStyle = tint;
+      ctx.translate(ox, -p*4);
+      ctx.scale(-1, 1);
+      ctx.fillRect(-size/2, -size/2, size, size);
+      ctx.restore();
+    }
+  }
+}
 
 // ════════════════════════════════════════════════════════════════════════════
