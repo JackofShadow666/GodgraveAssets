@@ -471,7 +471,7 @@ standingRegenMult
 );
 }
 
-function applyDisbalance(ent, source){
+function applyDisbalance(ent, source, durationOverride){
 if(isUnbalanced(ent)){
 return false;
 }
@@ -481,11 +481,12 @@ return false;
 // while slowdown continues for the remaining duration.
 const duration = Math.max(
 0.1,
-typeof sv === 'function'
+durationOverride !== undefined
+? durationOverride
+: (typeof sv === 'function'
 ? sv('unbdur')
-: DISBALANCE_DURATION
+: DISBALANCE_DURATION)
 );
-
 const recoilDuration = Math.min(
 DISBALANCE_RECOIL_DURATION,
 duration

@@ -1687,11 +1687,12 @@ function updateProjectiles(dt){
         // ─── UNIFIED applyDamage CALL ───
         // ••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
         const isMagic = w.kind === 'wand';
+        const isArrow = w.kind === 'arrow';
         const hpBefore=ent.hp;
         applyDamage(ent, dmg, w.owner, {
           isMagic: isMagic,
           isProjectile: true,
-          knockbackMult: isMagic ? 0 : 1.0,
+          knockbackMult: (isMagic || isArrow) ? 0 : 1.0,
           hitstopFrames: isMagic ? 5 : 3,
           shakePower: dmg > 15 ? (isMagic ? 6 : 4) : 3,
           textColor: isMagic ? '#c090ff' : '#ff8844',
@@ -1701,7 +1702,7 @@ function updateProjectiles(dt){
         });
         
         // ─── EXTRA KNOCKBACK ───────────────────────────────────────────
-        if(w.kind!=='wand'){
+        if(w.kind!=='wand' && w.kind!=='arrow'){
           const nx = d>0.1?(c.x-w.x)/d:0, ny = d>0.1?(c.y-w.y)/d:-1;
           ent.x += nx*8*0.7; ent.y += ny*8*0.7;
         }
@@ -2256,11 +2257,13 @@ function applyProjectileContactEffects(projectile,ent,blocked,damage){
   const speed=Math.hypot(projectile.vx||0,projectile.vy||0)||1;
   const dx=(projectile.vx||0)/speed,dy=(projectile.vy||0)/speed;
   const wand=projectile.kind==='wand';
+  const arrow=projectile.kind==='arrow';
+  const impactImpulse=(wand || arrow) ? 7 : 0;
   const disarm=wand && ent.hp>0 && ent.hasWeapon!==false && Math.random()<0.3;
   // Same drag as normal disarm, half its initial velocity => approximately half travel.
   const kick=disarm ? (6+Math.random()*4)*0.5 : 0;
   const effect={type:'projectileContact',id:++projectileContactSerial,damage:Math.max(0,damage||0),
-    stamina:blocked?30:0,dx:wand?dx*7:0,dy:wand?dy*7:0,disarm,kx:dx*kick,ky:dy*kick};
+    stamina:blocked?30:0,dx:dx*impactImpulse,dy:dy*impactImpulse,disarm,kx:dx*kick,ky:dy*kick};
   if(remote){
     $.NET.send(effect);
     return;

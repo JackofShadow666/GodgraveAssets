@@ -1748,12 +1748,9 @@ if(ai._contactCD > 0 && ai.phase === 'attack' && ai._contactCD <= GameTime){
           for(let i=0;i<8;i++) spawnDust(bot.x,bot.y,-Math.cos(angToPlayer)*8,-Math.sin(angToPlayer)*8);
         $.FX.hit({x:bot.x,y:bot.y-30,t:(window.I18N ? window.I18N.t('common.dodge') : 'DODGE'),life:35,big:false,col:'rgba(200,200,200,0.6)'});
       }
-    } else if(aiIsSwingOnlyWeapon(bot) && ai.phase==='attack' && !ai._lungeActive && !ai._feintActive && !ai._spinActive
-              && bot.exhausted<=0 && bot.unbalanced<=0 && bot.stamina >= 25
-              && distToPlayer < Math.max(180 * cscl, _botReach * 1.25)
-              && !(ai._botDodgeCooldown>0)){
-      aiStartHeavyEvasiveDodge(ai, bot, angToPlayer);
-    }
+} else if(aiIsSwingOnlyWeapon(bot) && ai.phase === 'attack'){
+  aiStartHeavyEvasiveDodge(ai, bot, angToPlayer);
+}
   }
   if(ai._pokeDodgeActive){
     aiPointMouse(bBodyC, pBodyC.x, pBodyC.y, false, ai);

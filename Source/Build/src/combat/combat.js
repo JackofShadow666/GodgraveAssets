@@ -240,40 +240,71 @@ function updateDisbalanceCombo(attacker, defender){
     (attacker === D && typeof AI !== 'undefined' &&
       ((AI._pokeDodgeActive && (GameTime - (D._pokeStartTime || -99)) <= 0.3) ||
        (AI._lungeActive && AI._lungePhase === 'lunge')));
-  const isStrongSwing = canUseSwingBonus(attacker) && Math.abs(attacker.vel) > sv('swthresh') * 2.5;
+  const isSpecialLmbClash = attacker && attacker._lmbRefundClashFrame === GameTime;
   if(combo && GameTime - combo.startedAt <= windowDuration &&
-     combo.target === defender &&
-     (isStrongSwing || isLmbLunge)){
+     combo.target === defender && isSpecialLmbClash){
     delete attacker._disbalanceCombo;
-    const chance = Math.min(100, combo.blocks * 40);
-    const triggered = Math.random() * 100 < chance;
-    if(triggered && !isUnbalanced(defender)) applyDisbalance(defender, attacker);
+    const disarmCombo = defender.hasWeapon !== false && Math.random() < 0.30;
+    if(disarmCombo && typeof disarmEntity === 'function'){
+      const aC = $.POS.body(attacker);
+      const dC = $.POS.body(defender);
+      const dx = dC.x - aC.x, dy = dC.y - aC.y;
+      const len = Math.hypot(dx, dy) || 1;
+      const baseSpeed = 7 + Math.random() * 5;
+      applyDisbalance(defender, attacker, 0.4);
+      disarmEntity(defender, dx / len * baseSpeed, dy / len * baseSpeed - 1.5);
+      $.FX.hit({x:dC.x, y:dC.y-52, t:(window.I18N ? window.I18N.t('combat.weaponDropped') : 'WEAPON DROPPED!'), life:40, big:true, col:'#ffaa44'});
+    } else if(!isUnbalanced(defender)) {
+      applyDisbalance(defender, attacker);
+    }
     disbalanceComboDebug(attacker,
-      triggered
-        ? (isLmbLunge ? `LUNGE — DISBALANCE! (${chance}%)` : `SWING — DISBALANCE! (${chance}%)`)
-        : `DISBALANCE FAIL (${chance}%)`,
-      triggered ? '#ff8830' : '#ff4040');
-    return triggered;
+      disarmCombo ? 'SPECIAL LMB — SHORT DISBALANCE + DISARM!' : 'SPECIAL LMB — DISBALANCE!',
+      disarmCombo ? '#ffaa44' : '#ff8830');
+    return true;
   }
-
   if(!defenderCanBlock) return false;
 
-  // Every weapon block adds a stack and restarts the expiration timer.
+  if(Math.random() >= 0.30) return false;
+
   const state = defender._disbalanceCombo;
   const expired = state && GameTime - state.startedAt > windowDuration;
   const blocks = state && state.target === attacker && !expired ? state.blocks + 1 : 1;
   defender._disbalanceCombo = { target: attacker, blocks, startedAt: GameTime };
+  defender._specialDisbalanceBlockFrame = GameTime;
+  const sc = $.POS.body(defender);
+  $.FX.hit({x:sc.x, y:sc.y-58, t:'КЛАЦ!', life:26, big:false, col:'#40b8ff'});
   disbalanceComboDebug(defender,
-    `Block: ${blocks}x → ${Math.min(100, blocks * 30)}%`,
+    `Special block: ${blocks}x`,
     '#409cff');
   return false;
 }
-
 function blockClashSoundFor(defender){
   const key = typeof weaponKeyOf === 'function' ? weaponKeyOf(defender) : null;
   return $.ISK(key, 'staff', 'magicstaff', 'wand', 'spear', 'hammer') ? 'woodClink' : 'clash';
 }
 
+const LMB_REFUND_WINDOW = 0.6;
+function lmbRefundWindowActive(ent){
+  if(!ent || ent._lmbRefundUsed) return false;
+  const pressAt = ent._lmbRefundPressAt;
+  if(pressAt === undefined || pressAt < 0) return false;
+  if(GameTime - pressAt > LMB_REFUND_WINDOW) return false;
+  return (ent._lmbRefundCost || 0) > 0;
+}
+function tryFinishLmbRefund(ent){
+  if(!lmbRefundWindowActive(ent) || !ent._lmbRefundReleased || !ent._lmbRefundClashed) return false;
+  ent.stamina = Math.min(ent.stamMax || ent.stamina || 0, (ent.stamina || 0) + ent._lmbRefundCost);
+  ent._lmbRefundUsed = true;
+  ent._lmbRefundCost = 0;
+  return true;
+}
+function markLmbRefundClash(ent){
+  if(!lmbRefundWindowActive(ent)) return false;
+  ent._lmbRefundClashed = true;
+  ent._lmbRefundClashFrame = GameTime;
+  tryFinishLmbRefund(ent);
+  return true;
+}
 function swordHit(entA, entB){
   const attacker = entA.isAttacker ? entA : entB;
   const defender = entA.isAttacker ? entB : entA;
@@ -464,9 +495,14 @@ const bodySwB = weaponReach(entB) * sv('swlen') * (isBot(entB)?sv('botswordscale
     if(entA._bladeCD <= GameTime){
       entA._bladeCD = GameTime + 0.1;
       const strongSwing = Math.abs(entA.vel) > sv('swthresh')*2.5 || Math.abs(entB.vel) > sv('swthresh')*2.5;
-      doClash(entA, entB, res, strongSwing);
+      const lmbRefundClash = markLmbRefundClash(entA) || markLmbRefundClash(entB);
+	  doClash(entA, entB, res, strongSwing, lmbRefundClash);
       swordHit(entA, entB);
-      if(strongSwing) $.S.play('clashHard'); else $.S.play(blockClashSoundFor(entA.isAttacker ? entB : entA));
+      if(strongSwing) $.S.play('clashHard'); else {
+        const blockSoundDefender = entA.isAttacker ? entB : entA;
+        const specialBlockSound = blockSoundDefender && blockSoundDefender._specialDisbalanceBlockFrame === GameTime;
+        $.S.play(blockClashSoundFor(blockSoundDefender), specialBlockSound ? 0.75 : undefined);
+      }
       if(typeof triggerHitstop==='function') triggerHitstop(strongSwing?3:2, strongSwing?3:1.5);
       entA._clashFrame = GameTime;
       entB._clashFrame = GameTime;
@@ -1664,7 +1700,7 @@ let blockKnockOn = false;
 
 // ─── CLASH HANDLER ────────────────────────────────────────────────────
 // Called when two weapons collide: deflects defender's blade, pushes both apart, plays effects.
-function doClash(entA, entB, res, strongSwing){
+function doClash(entA, entB, res, strongSwing, lmbRefundClash){
   const ang = Math.atan2(entB.y - entA.y, entB.x - entA.x);
   // Determine attacker/defender based on atkPts (who is more aggressive)
   const atkr = entA.isAttacker ? entA : entB;
@@ -1767,7 +1803,11 @@ function doClash(entA, entB, res, strongSwing){
   }
 
   // ─── EFFECTS ──────────────────────────────────────────────────────
-  $.FX.hit({x:hitX, y:hitY-4, t:'⚡', life:12, big:true, col:'#ffffff'});
+  if(lmbRefundClash){
+    $.FX.hit({type:'bolt', x:hitX, y:hitY-4, life:12, maxLife:12, count:3, col:'#40b8ff'});
+  } else {
+    $.FX.hit({x:hitX, y:hitY-4, t:'⚡', life:12, big:false, col:'#ffffff'});
+  }
   $.FX.hit({x:hitX, y:hitY+14, t:(window.I18N ? window.I18N.t('combat.clash') : 'CLASH!'), life:35, big:false, col:'#ccccaa'});
   // strongSwing creates a flash and cross effect
   if(strongSwing && Math.random() < 0.04) spawnFX('flash', hitX, hitY);

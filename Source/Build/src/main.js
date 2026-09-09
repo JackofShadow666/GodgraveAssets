@@ -39,7 +39,8 @@ function update(dt){
 if(window.IS_MOBILE && GameTime < (P._shieldHeldUntil || 0) && P.shield>0 && !isExhausted(P) && P.stamina>0) P._shieldHeld = true;
 if(mDown && !(window.IS_MOBILE && GameTime < (P._shieldHeldUntil || 0))) P._shieldHeld = false;
 const shieldDrainActive = typeof shieldHeld === 'function' && shieldHeld(P);
-regenStamina(P, dt, mDown || shieldDrainActive);
+const rangedStaminaUseActive = isRangedWeapon(P) && P._bowCharging;
+regenStamina(P, dt, shieldDrainActive || (!isRangedWeapon(P) && mDown) || rangedStaminaUseActive);
 if(shieldDrainActive){
   drainStamina(P, 2 * dt);
   if(P.stamina <= 0){
@@ -70,6 +71,10 @@ if(shieldDrainActive){
     // -- Staff/Crossbow: LMB fully replaces rage buff — shooting instead --
     P.lmbWasDown = mDown;
     P.lmbHoldStart = -1;
+    P._lmbRefundPressAt = -1;
+    P._lmbRefundCost = 0;
+    P._lmbRefundReleased = false;
+    P._lmbRefundClashed = false;
     if(isExhausted(P)) mDown = false; // exhaustion cancels LMB just like before
     updateRangedWeaponFire(P, mDown);
     updateCrossbowReloadSound(P);
@@ -99,6 +104,11 @@ if(shieldDrainActive){
       if(!P.lmbWasDown){
         P.lmbWasDown = true;
         P.lmbHoldStart = GameTime;
+        P._lmbRefundPressAt = GameTime;
+        P._lmbRefundCost = 0;
+        P._lmbRefundReleased = false;
+        P._lmbRefundClashed = false;
+        P._lmbRefundUsed = false;
         
         if (!isRangedWeapon(P)) {
           $.S.play('hammerSwing');
@@ -113,6 +123,7 @@ if(shieldDrainActive){
             P._lmbHoldDrainRate = P.stamina;
           } else {
             drainStamina(P, lmbStaminaCost);
+            P._lmbRefundCost = lmbStaminaCost;
             // Fixed remainder should be exactly enough for one second of hold.
             P._lmbHoldDrainRate = P.stamina;
           }
@@ -127,6 +138,10 @@ if(shieldDrainActive){
         drainStamina(P, (P._lmbHoldDrainRate || 0) * dt);
       }
     } else {
+      if(P.lmbWasDown && P._lmbRefundPressAt >= 0 && GameTime - P._lmbRefundPressAt <= 0.6){
+        P._lmbRefundReleased = true;
+        if(typeof tryFinishLmbRefund === 'function') tryFinishLmbRefund(P);
+      }
       P.lmbWasDown = false;
       P.lmbHoldStart = -1;
       P._lmbHoldDrainRate = 0;

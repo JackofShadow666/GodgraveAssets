@@ -439,11 +439,12 @@ function onPvpReset(msg){
   let _lastFlailHit=0;
   function onFlailHit(msg){
     if(!_active || !Number.isSafeInteger(msg.id) || msg.id<=Math.max(_lastFlailHit,_cancelledFlailId) ||
-       !Number.isFinite(msg.newHp) || !Number.isFinite(msg.dmg) || msg.dmg<0 || msg.newHp<0) return;
+       !Number.isFinite(msg.newHp) || !Number.isFinite(msg.dmg) || msg.dmg<0 || msg.newHp<0 ||
+       (msg.pullHalf !== undefined && typeof msg.pullHalf !== 'boolean')) return;
     _lastFlailHit=msg.id;
     if(P.hp<=0) return;
-    onHit({...msg,newHp:Math.min(P.hp,msg.newHp)});
-    startFlailPull(P,D,msg.id);
+    if(msg.dmg>0) onHit({...msg,newHp:Math.min(P.hp,msg.newHp)});
+    startFlailPull(P,D,msg.id,{halfPath:msg.pullHalf===true});
   }
   function onFlailCancel(msg){
     if(!_active || !Number.isSafeInteger(msg.id)) return;

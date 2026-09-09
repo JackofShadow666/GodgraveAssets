@@ -57,12 +57,13 @@ test('first obstacle prevents a victim hit',()=>{
  const c=world();c.D.hasWeapon=false;c.boxesOn=true;c.BOXES.push({x:390,y:270,w:10,h:60});
  c.flailInput(c.P,true,0);c.tick(130);assert.equal(c.D.hp,100);assert.equal(c.D.x,500);
 });
-test('raised shield blocks damage and pull',()=>{
+test('raised shield blocks damage and pulls halfway with disbalance',()=>{
  const c=world();c.D.shield=1;c.D.hasWeapon=false;c.flailInput(c.P,true,0);c.tick(130);
- assert.equal(c.D.hp,100);assert.equal(c.D.x,500);
+ assert.equal(c.D.hp,100);assert.equal(c.D.testBuff.id,'DISBALANCE');assert(Math.abs(c.D.x-c.P.x-142.5)<.01);
 });
 test('weapon block succeeds with roll below 50 percent',()=>{
- const c=world();c.D.angle=Math.PI;c.Math.random=()=>.49;c.flailInput(c.P,true,0);c.tick(130);assert.equal(c.D.hp,100);
+ const c=world();c.D.angle=Math.PI;c.Math.random=()=>.49;c.flailInput(c.P,true,0);c.tick(130);
+ assert.equal(c.D.hp,100);assert.equal(c.D.testBuff.id,'DISBALANCE');assert(Math.abs(c.D.x-c.P.x-142.5)<.01);
 });
 test('failed weapon block rolls only once, then hits',()=>{
  const c=world();c.D.angle=Math.PI;let rolls=0;c.Math.random=()=>{rolls++;return .5;};
@@ -92,6 +93,10 @@ test('remote attacker never damages locally',()=>{
 test('online hit is sent once and remote position is not locally pulled',()=>{
  const c=world();c.NET_SYNC.active=true;c.D.hasWeapon=false;c.flailInput(c.P,true,0);c.tick(130);
  assert.equal(c.sent.filter(m=>m.type==='flailHit').length,1);assert.equal(c.D.x,500);
+});
+test('online shield block sends zero damage and half pull intent',()=>{
+ const c=world();c.NET_SYNC.active=true;c.D.shield=1;c.D.hasWeapon=false;c.flailInput(c.P,true,0);c.tick(130);
+ const msg=c.sent.find(m=>m.type==='flailHit');assert(msg);assert.equal(msg.dmg,0);assert.equal(msg.pullHalf,true);assert.equal(c.D.hp,100);assert.equal(c.D.x,500);
 });
 test('fixed node count and finite physics over spin/reversal/teleport',()=>{
  const c=world();

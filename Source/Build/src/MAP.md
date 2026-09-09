@@ -77,7 +77,7 @@ First read for most `src/` tasks. Use it to avoid broad project searches.
 - Weapon stats/swap/drop/throw/shield: `src/combat/weapons.js`; flail-only -> `src/combat/flail.js`; ranged -> `src/combat/ranged.js`.
 - Bow dodge discount: `spendDodgeStamina` in `src/combat/weapons.js`, called only on successful dodges in `src/ui/mobile.js` and `src/input/player-controls.js`; timestamp persists across weapon swaps and resets per round.
 - Damage balance: optional table column 19 `damageMult` defaults to 0.5 for flail and 1 for other weapons; applied in `src/combat/ranged.js` `applyDamage` after minimum/cap calculations. Thrown weapons pass their original type explicitly.
-- Projectile block/wand impact: `src/combat/ranged.js`, plus thrown-weapon block contacts in `src/combat/weapons.js`; reliable `projectileContact` events route through `src/network/net-core.js` and `net-sync.js`, applied once on the defender owner.
+- Projectile block/wand/arrow impact: `src/combat/ranged.js`, plus thrown-weapon block contacts in `src/combat/weapons.js`; reliable `projectileContact` events route through `src/network/net-core.js` and `net-sync.js`, applied once on the defender owner.
 - Bot behavior/balance: `src/ai/ai.js`, then weapon/combat file for the affected mechanic. Flail bot hook/direction timing is split between `src/arena/arena.js` and `src/combat/flail.js`.
 - HUD/wins/health/stamina labels: `src/ui/hud.js`, then `src/core/i18n.js` for text.
 - Settings slider/checkbox/default: `Build.html` data controls, `src/core/i18n.js` label text, `src/core/settings.js` cache/bindings, then the consuming gameplay file.

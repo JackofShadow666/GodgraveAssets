@@ -512,9 +512,16 @@ function finishFlailLunge(ent){
     ent._flailAccumAngle=0; ent._flailPrevAngle=ent.angle;
     ent._flailFreeAngle=ent.angle; ent.vel=0;
 }
-function startFlailPull(target,owner,id){
+function flailPullStopFor(target,owner,halfPath){
+    const normalStop=SWORD_LEN*flailWorldScale(owner);
+    if(!halfPath) return normalStop;
+    const c=$.POS.body(target), o=$.POS.body(owner);
+    const dist=Math.hypot(o.x-c.x,o.y-c.y);
+    return Math.max(normalStop,(dist+normalStop)*0.5);
+}
+function startFlailPull(target,owner,id,opts){
     if(target.hp<=0 || target._flailPull) return;
-    target._flailPull={owner,id,time:0,stop:SWORD_LEN*flailWorldScale(owner)};
+    target._flailPull={owner,id,time:0,stop:flailPullStopFor(target,owner,opts?.halfPath)};
     const recoil=Math.min(DISBALANCE_RECOIL_DURATION,1.5);
     startBuff(target,'DISBALANCE',recoil,1.5-recoil);
 }
@@ -563,6 +570,9 @@ function updateFlailLunge(ent,dt,entities){
             } else if(hit.other){
                 if(hit.kind==='shield') applyShieldBlockFX(nx,ny,ent,hit.other);
                 else $.S.play(blockClashSoundFor(hit.other));
+                a.target=hit.other;
+                if(!flailRemote(hit.other)) startFlailPull(hit.other,ent,a.id,{halfPath:true});
+                else $.NET.send({type:'flailHit',id:a.id,newHp:hit.other.hp,dmg:0,pullHalf:true});
             }
         }
         a.x=nx; a.y=ny;

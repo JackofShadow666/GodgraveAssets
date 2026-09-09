@@ -1,5 +1,5 @@
 ; Список файлов из папок Music и Sound
-; Создано: 09.09.2026 17:22:00
+; Создано: 10.09.2026 0:45:10
 ; Корневая папка: F:\Jack\Project\Godgrave\Public\Godgrave\Source
 
 === Папка: Music ===
@@ -54,6 +54,7 @@ Source\Sound\Bow\BowPush\SFX_BowPush_04.mp3
 Source\Sound\Bow\BowReload\SFX_BowReload_01.mp3
 Source\Sound\Bow\BowReload\SFX_BowReload_02.mp3
 Source\Sound\Bow\BowTension\SFX_BowTension.mp3
+Source\Sound\Damage\Hummer\clinkwood.mp3
 Source\Sound\Damage\Hummer\SFX_DamageHummer_01.mp3
 Source\Sound\Damage\Hummer\SFX_DamageHummer_02.mp3
 Source\Sound\Damage\Hummer\SFX_DamageHummer_03.mp3
@@ -322,6 +323,7 @@ Source\UI\T_BarMiddle.png
 Source\UI\T_LocationPreview.png
 Source\UI\T_MaskA � �����.png
 Source\UI\T_MaskA.png
+Source\UI\T_SparkEmoj.png
 Source\UI\UISystem.html
 
 === Папка: Font ===

@@ -1299,10 +1299,34 @@ function drawFX(){
     // through the same visual preset so its size cannot vary by call site.
     const maxLife = f.maxLife || f.life || FLOATING_TEXT_LIFE;
     ctx.globalAlpha=Math.max(0,f.life/maxLife);
-    ctx.font=FLOATING_TEXT_FONT;
-    ctx.fillStyle=f.col||'#ffcc44';
-    ctx.shadowColor='#ff8800'; ctx.shadowBlur=8;
-    ctx.textAlign='center'; ctx.fillText(f.t, f.x, f.y-(maxLife-f.life)*0.4);
+    if(f.type==='bolt'){
+      const p = 1 - f.life / maxLife;
+      const count = f.count || 1;
+      ctx.save();
+      ctx.translate(f.x, f.y - p*5);
+      ctx.strokeStyle=f.col||'#ffcc44';
+      ctx.shadowColor=f.col||'#ffcc44'; ctx.shadowBlur=10;
+      ctx.lineWidth=f.width||2.4;
+      ctx.lineCap='round'; ctx.lineJoin='round';
+      for(let b=0;b<count;b++){
+        const ox=(b-(count-1)/2)*9;
+        ctx.beginPath();
+        ctx.moveTo(ox-2,-11);
+        ctx.lineTo(ox+4,-2);
+        ctx.lineTo(ox-1,-2);
+        ctx.lineTo(ox+3,10);
+        ctx.lineTo(ox-7,-4);
+        ctx.lineTo(ox-1,-4);
+        ctx.closePath();
+        ctx.stroke();
+      }
+      ctx.restore();
+    } else {
+      ctx.font=FLOATING_TEXT_FONT;
+      ctx.fillStyle=f.col||'#ffcc44';
+      ctx.shadowColor=f.col||'#ff8800'; ctx.shadowBlur=8;
+      ctx.textAlign='center'; ctx.fillText(f.t, f.x, f.y-(maxLife-f.life)*0.4);
+    }
     ctx.globalAlpha=1; ctx.shadowBlur=0; f.life -= f.fadeRate || 1;
     if(f.life<=0) hitFX.splice(i,1);
   }

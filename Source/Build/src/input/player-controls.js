@@ -281,6 +281,11 @@
       if(attack){
         if(!state.attack){
           entity.lmbHoldStart=GameTime;
+          entity._lmbRefundPressAt=GameTime;
+          entity._lmbRefundCost=0;
+          entity._lmbRefundReleased=false;
+          entity._lmbRefundClashed=false;
+          entity._lmbRefundUsed=false;
           $.S.play(isHeavySwingWeapon(entity)?'hammerSwing':'whoosh');
           if((entity.rageBuffEnd||0)<=GameTime){
             if((entity.rage||0)>=30){
@@ -291,6 +296,7 @@
               state.holdDrain=Math.max(0,entity.stamina);
             } else if(entity.stamina>=lmbStaminaCost){
               drainStamina(entity,lmbStaminaCost);
+              entity._lmbRefundCost=lmbStaminaCost;
               state.holdDrain=Math.max(0,entity.stamina);
             }
           }
@@ -302,6 +308,10 @@
           $.FX.hit({x:entity.x,y:entity.y-50,t:(window.I18N ? window.I18N.t('playercontrols.rage') : 'RAGE!'),life:40,big:true,col:'#ff2020'});
         }
       } else {
+        if(state.attack && entity._lmbRefundPressAt>=0 && GameTime-entity._lmbRefundPressAt<=0.6){
+          entity._lmbRefundReleased=true;
+          if(typeof tryFinishLmbRefund==='function') tryFinishLmbRefund(entity);
+        }
         state.holdDrain=0;
         entity.lmbHoldStart=-1;
         if((entity.rageBuffEnd||0)<=GameTime) entity._rageTextShown=false;

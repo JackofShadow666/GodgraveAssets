@@ -70,8 +70,19 @@ await test('roll at thirty percent fails; an unarmed victim still gets pushed',(
  assert(c.D.hasWeapon);assert.equal(c.D.vx,7);
  c.D.hasWeapon=false;c.applyProjectileContactEffects({kind:'wand',owner:c.P,vx:7,vy:0},c.D,false,0);assert.equal(c.D.vx,14);assert.equal(c.DROPPED_WEAPONS.length,0);
 });
+await test('arrow impulse is seven on hit and block',()=>{
+ for(const blocked of [false,true]){
+  const c=world();c.applyProjectileContactEffects({kind:'arrow',owner:c.P,vx:3,vy:4},c.D,blocked,0);
+  assert(Math.abs(Math.hypot(c.D.vx,c.D.vy)-7)<1e-9);
+  assert.equal(c.D.stamina,blocked?70:100);
+ }
+});
 await test('wand body hit has one directional impulse, not extra body knockback',()=>{
  const c=world();c.D.hasWeapon=false;c.PROJECTILES.push({kind:'wand',owner:c.P,ownerImmuneUntil:10,x:c.D.x,y:100,vx:7,vy:0,rot:0,dmg:20,bornAt:0});
+ c.updateProjectiles(0);assert.equal(c.D.vx,7);assert.equal(c.D.vy,0);assert.equal(c.D.x,200);assert.equal(c.D.hp,80);
+});
+await test('arrow body hit has one directional impulse, not extra body knockback',()=>{
+ const c=world();c.D.hasWeapon=false;c.PROJECTILES.push({kind:'arrow',owner:c.P,ownerImmuneUntil:10,x:c.D.x,y:100,vx:7,vy:0,rot:0,dmg:20,bornAt:0});
  c.updateProjectiles(0);assert.equal(c.D.vx,7);assert.equal(c.D.vy,0);assert.equal(c.D.x,200);assert.equal(c.D.hp,80);
 });
 await test('long-drawn arrows halve both bot dodge chances',()=>{
