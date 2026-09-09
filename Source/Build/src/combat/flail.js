@@ -14,6 +14,7 @@ const FLAIL_RING_LEN = 11;  // локальный размер одного зв
 const FLAIL_MAX_LAG_PX = 50; // макс. боковой "провис" цепи у самого кончика (в местных единицах, база до слайдера)
 
 function drawFlailSprite(ctx2, ent, length, glowColor, glowBlur){
+    if(ent._flailNodes){ drawFlailChain(ctx2, ent, glowColor, glowBlur); return; }
     if(glowColor){ ctx2.shadowColor = glowColor; ctx2.shadowBlur = glowBlur; }
 
     const headImg  = ent._weaponImg;       // кончик = навершие (из Tip/)
@@ -115,7 +116,8 @@ function flailRingCountForExt(ext){
 // targetAng — угол на цель (курсор у игрока / положение противника у бота),
 // rawDt — РЕАЛЬНАЯ дельта кадра (не фиксированный физический тик).
 
-function updateFlailSwing(ent, targetAng, rawDt){
+function updateFlailSwing(ent, targetAng, rawDt, directAim = false){
+    if(!directAim && ent._flailState==='AXE_SWING') ent._flailState='FOLLOW';
     // ⚠️ КОНСТАНТЫ В САМОМ НАЧАЛЕ
     // ⚠️ КОНСТАНТЫ В САМОМ НАЧАЛЕ
     const FLAIL_GROW_MIN_ANGLE = isBot(ent) ? 0.15 : 0.65; // +0.1 для игрока
@@ -135,8 +137,16 @@ function updateFlailSwing(ent, targetAng, rawDt){
         ent._flailWasAtMax = false;
     }
 
-    const cursorDelta = $.M.angDiff(targetAng, ent._flailPrevCursorAngle || targetAng);
+    const cursorDelta = $.M.angDiff(targetAng, ent._flailPrevCursorAngle ?? targetAng);
     ent._flailPrevCursorAngle = targetAng;
+
+    if(ent._flailOrbitPrevious==null) ent._flailOrbitPrevious=ent.angle;
+    if(isExhausted(ent) || isUnbalanced(ent) ||
+       (!ent._flailFoldLocked && !ent._flailAttack && detectFlailFlick(ent,cursorDelta,rawDt))){
+        beginFlailFold(ent);
+    }
+    if(ent._flailAttack) return;
+    if(ent._flailFoldLocked){ updateForcedFlailFold(ent,targetAng,rawDt); return; }
 
     const MAX_CURSOR_DELTA = 0.5;
     const clampedDelta = $.M.clamp(cursorDelta, -MAX_CURSOR_DELTA, MAX_CURSOR_DELTA);
@@ -147,8 +157,8 @@ function updateFlailSwing(ent, targetAng, rawDt){
 
     // ── Накопитель устойчивого вращения ──
     if (isMouseMoving) {
-        // ДЛЯ БОТОВ: ускоряем накопление в 3 раза
-        const accumMult = isBot(ent) ? 3.0 : 2.0;
+        // ДЛЯ БОТОВ: ускоряем накопление мягче, чтобы цепь не раскрывалась за пол-оборота.
+        const accumMult = isBot(ent) ? 1.5 : 2.0;
         if (ent._flailAccumDir === 0 || mouseDirection === ent._flailAccumDir) {
             ent._flailAccumAngle = (ent._flailAccumAngle || 0) + Math.abs(clampedDelta) * accumMult;
         } else {
@@ -170,7 +180,18 @@ function updateFlailSwing(ent, targetAng, rawDt){
     const isShort = ringCount <= 4;
     const isLong = ringCount > 4;
 
-    const directionChanged = isMouseMoving && mouseDirection !== ent._flailDirection;
+    let directionChanged = isMouseMoving && mouseDirection !== ent._flailDirection;
+    if(directAim && isBot(ent) && directionChanged && GameTime < (ent._flailDirectionLockUntil || 0)){
+        directionChanged = false;
+    }
+    if(directAim){
+        // Follow the axe AI's sweep/spin target; retain the chain's flick and status rules.
+        ent._flailState='AXE_SWING';
+        ent.angle+=$.M.clamp($.M.angDiff(targetAng,ent.angle),-11.2*rawDt,11.2*rawDt);
+        const botGrowMult = isBot(ent) ? 0.5 : 1.0;
+        ent._flailExt=$.M.clamp((ent._flailExt||0)+(isRealSpin?botGrowMult:-0.84)*rawDt,0,1);
+        ent._flailFreeAngle=ent.angle;ent._flailIsLerping=false;
+    }
 
     // ── СОСТОЯНИЕ 1: FOLLOW ──
        if (ent._flailState === 'FOLLOW') {
@@ -182,13 +203,14 @@ function updateFlailSwing(ent, targetAng, rawDt){
             ent._flailState = 'SPIN';
             ent._flailFreeAngle = ent.angle;
             ent._flailDirection = mouseDirection;
+            if(isBot(ent)) ent._flailDirectionLockUntil = GameTime + 3;
             ent._flailSpinSpeed = Math.min(5.0, mouseSpeed * 0.8);
             // Боты получают бонусную скорость
             if(isBot(ent)) ent._flailSpinSpeed = Math.min(5.0, ent._flailSpinSpeed * 1.5);
             // Сбрасываем lerp если начали вращение
             ent._flailIsLerping = false;
         } else if (isRealSpin) {
-            ent._flailExt = Math.min(1, ent._flailExt + 0.5 * rawDt);
+            ent._flailExt = Math.min(1, ent._flailExt + 1.0 * rawDt);
             ent._flailIsLerping = false;
         } else {
             ent._flailExt = Math.max(0, ent._flailExt - 1.5 * rawDt);
@@ -209,9 +231,11 @@ function updateFlailSwing(ent, targetAng, rawDt){
             ent._flailTimeInState = 0;
             // НЕ ОБНУЛЯЕМ ent._flailSpinSpeed!
         }
-        ent._flailFreeAngle += ent._flailDirection * ent._flailSpinSpeed * 1.5 * rawDt;
-        ent.angle = ent._flailFreeAngle;
-        ent._flailExt = Math.min(1, ent._flailExt + 0.1 * rawDt);
+        if(ent._flailState==='SPIN'){
+            ent._flailFreeAngle += ent._flailDirection * ent._flailSpinSpeed * 2.1 * rawDt;
+            ent.angle = ent._flailFreeAngle;
+            ent._flailExt = Math.min(1, ent._flailExt + 0.2 * rawDt);
+        }
     }
 
     // ── СОСТОЯНИЕ 3: RETRACT ──
@@ -231,6 +255,7 @@ function updateFlailSwing(ent, targetAng, rawDt){
             // Возобновляем вращение, но с плавным набором скорости
             ent._flailState = 'SPIN';
             ent._flailDirection = mouseDirection;
+            if(isBot(ent)) ent._flailDirectionLockUntil = GameTime + 3;
             // Скорость растёт плавно от текущей, а не резко
             const targetSpinSpeed = Math.min(5.0, mouseSpeed * 0.6);
             ent._flailSpinSpeed = ent._flailSpinSpeed * 0.6 + targetSpinSpeed * 0.4;
@@ -243,7 +268,7 @@ function updateFlailSwing(ent, targetAng, rawDt){
         }
         
         // ⚡ ВРАЩЕНИЕ ПРОДОЛЖАЕТСЯ (инерция) - НЕ ЗАТУХАЕТ, ПОКА ЦЕПЬ НЕ СКРУТИТСЯ
-        ent._flailFreeAngle += ent._flailDirection * ent._flailSpinSpeed * 1.5 * rawDt;
+        ent._flailFreeAngle += ent._flailDirection * ent._flailSpinSpeed * 2.1 * rawDt;
         ent.angle = ent._flailFreeAngle;
         
         // Медленное скручивание цепи
@@ -287,7 +312,7 @@ function updateFlailSwing(ent, targetAng, rawDt){
 
     // ── Угловая скорость ──
     if (ent._flailPrevAngle !== undefined && ent._flailPrevAngle !== null) {
-        const MAX_ANGLE_STEP = 8 * rawDt;
+        const MAX_ANGLE_STEP = 11.2 * rawDt;
         const rawStep = $.M.angDiff(ent.angle, ent._flailPrevAngle);
         const clampedStep = Math.max(-MAX_ANGLE_STEP, Math.min(MAX_ANGLE_STEP, rawStep));
         ent.angle = ent._flailPrevAngle + clampedStep;
@@ -346,3 +371,411 @@ function flailScaleFor(ent){
 // ──────────────── END LAYER: WEAPONS_FLAIL ────────────────
 
 // ════════════════════════════════════════════════════════════════════════════
+
+// Lunge authority belongs to the attacking peer; ring simulation is cosmetic.
+const FLAIL_LUNGE_OUT_TIME = 0.18;
+const FLAIL_LUNGE_RETURN_TIME = 0.32;
+const FLAIL_PULL_TIME = 0.6;
+const FLAIL_NODE_COUNT = 17;
+let flailAttackSerial = Date.now();
+
+function flailWorldScale(ent){
+    return effSwordScale(ent) * sv('swlen') * (isBot(ent) ? sv('botswordscale') : 1);
+}
+function flailRemote(ent){ return typeof NET_SYNC !== 'undefined' && NET_SYNC.active && ent === D; }
+function flailBusy(ent){ return !!ent._flailAttack || ent._flailAttackEnd === GameTime; }
+function resetFlailCombat(ent){
+    if(!ent) return;
+    if(ent===P && ent._flailAttack && typeof NET_SYNC!=='undefined' && NET_SYNC.active)
+        $.NET.send({type:'flailCancel',id:ent._flailAttack.id});
+    if(ent._flailAttack && ent._flailAttack.target && ent._flailAttack.target._flailPull?.owner === ent)
+        ent._flailAttack.target._flailPull = null;
+    ent._flailAttack = null;
+    ent._flailPull = null;
+    ent._flailNodes = null;
+    ent._flailDrawNodes = null;
+    ent._flailChainAngle = null;
+    ent._flailPress = false;
+    ent._flailAttackEnd = -1;
+    ent._flailNetTime = -1;
+    ent._flailNetTarget = null;
+    ent._flailFoldLocked=false;
+    ent._flailFlick=null;
+    ent._flailOrbitPrevious=null;
+    ent._flailOrbitAccum=0;
+    ent._flailOrbitDirection=0;
+}
+function flailTryHook(ent, angle){
+    flailInput(ent, true, angle);
+    flailInput(ent, false, angle);
+}
+
+function flailInput(ent, down, angle){
+    const pressed = down && !ent._flailPress;
+    ent._flailPress = !!down;
+    if(!pressed || flailRemote(ent) || weaponKeyOf(ent) !== 'flail' || flailBusy(ent) || ent._flailFoldLocked || isUnbalanced(ent) ||
+       ent.hp <= 0 || ent.hasWeapon === false || isExhausted(ent) || !(ent.rage >= 50)) return;
+    const pivot = $.POS.pivot(ent), scale = flailWorldScale(ent);
+    ent.rage -= 50;
+    ent._flailAttack = { id: ++flailAttackSerial, phase: 'out', angle, time: 0,
+        reach: SWORD_LEN * FLAIL_MAX_SCALE * scale * 1.5, x: pivot.x, y: pivot.y,
+        speed: Math.max(Math.abs(ent.vel || 0), sv('swthresh')),
+        tested: new Set(), target: null };
+    ent._flailIsLerping = false;
+    $.S.play('hammerSwing');
+}
+// Earliest intersection of a swept point with an expanded rectangle.
+function flailRectHit(ax, ay, bx, by, x, y, w, h, radius){
+    let lo = 0, hi = 1;
+    for(const [a, d, min, max] of [[ax,bx-ax,x-radius,x+w+radius],[ay,by-ay,y-radius,y+h+radius]]){
+        if(Math.abs(d) < 1e-9){ if(a < min || a > max) return null; }
+        else {
+            let t0 = (min-a)/d, t1 = (max-a)/d;
+            if(t0 > t1) [t0,t1] = [t1,t0];
+            lo = Math.max(lo,t0); hi = Math.min(hi,t1);
+            if(lo > hi) return null;
+        }
+    }
+    return lo;
+}
+function flailCircleHit(ax,ay,bx,by,cx,cy,r){
+    const dx=bx-ax, dy=by-ay, ox=ax-cx, oy=ay-cy;
+    const c=ox*ox+oy*oy-r*r;
+    if(c<=0) return 0;
+    const a=dx*dx+dy*dy, b=ox*dx+oy*dy, disc=b*b-a*c;
+    if(a<1e-9 || disc<0) return null;
+    const t=(-b-Math.sqrt(disc))/a;
+    return t>=0 && t<=1 ? t : null;
+}
+function flailCapsuleHit(ax,ay,bx,by,cx,cy,dx,dy,r){
+    const len=Math.hypot(dx-cx,dy-cy);
+    if(len<1e-9) return flailCircleHit(ax,ay,bx,by,cx,cy,r);
+    const ux=(dx-cx)/len, uy=(dy-cy)/len;
+    const t=flailRectHit((ax-cx)*ux+(ay-cy)*uy, -(ax-cx)*uy+(ay-cy)*ux,
+        (bx-cx)*ux+(by-cy)*uy, -(bx-cx)*uy+(by-cy)*ux, 0,-r,len,2*r,0);
+    const hits=[t,flailCircleHit(ax,ay,bx,by,cx,cy,r),flailCircleHit(ax,ay,bx,by,dx,dy,r)].filter(v=>v!==null);
+    return hits.length ? Math.min(...hits) : null;
+}
+function flailWallHit(ax,ay,bx,by,r){
+    let first=null;
+    const consider=t=>{ if(t!==null && (first===null || t<first)) first=t; };
+    if(typeof boxesOn!=='undefined' && boxesOn){
+        for(const b of BOXES) consider(flailRectHit(ax,ay,bx,by,b.x,b.y,b.w,b.h,r));
+    }
+    if(bx<r) consider(Math.max(0,(r-ax)/(bx-ax)));
+    if(bx>WORLD_W-r) consider(Math.max(0,(WORLD_W-r-ax)/(bx-ax)));
+    if(by<r) consider(Math.max(0,(r-ay)/(by-ay)));
+    if(by>WORLD_H-r) consider(Math.max(0,(WORLD_H-r-ay)/(by-ay)));
+    return first;
+}
+function flailLungeContact(ent,a,nx,ny,entities){
+    const radius=5*flailWorldScale(ent), hits=[];
+    const wall=flailWallHit(a.x,a.y,nx,ny,radius);
+    if(wall!==null) hits.push({t:wall,kind:'wall'});
+    for(const other of entities){
+        if(other===ent || other.hp<=0 || other._defeated || other._awaitingReveal ||
+            (typeof FactionRules!=='undefined' && !FactionRules.canDamage(ent,other))) continue;
+        const c=$.POS.body(other);
+        if(shieldHeld(other)){
+            const sh=shieldCenter(other,ent.x);
+            if(sh){
+                const w=other._shieldW||20, h=other._shieldH||30;
+                const t=flailRectHit(a.x,a.y,nx,ny,sh.x-w/2,sh.y-h/2,w,h,radius);
+                if(t!==null) hits.push({t,kind:'shield',other});
+            }
+        }
+        if(!a.tested.has(other) && !isWeaponDisabled(other) && weaponCollisionType(other)!=='none'){
+            const p=$.POS.pivot(other), span=weaponColliderSpan(other);
+            const sc=sv('swlen')*(isBot(other)?sv('botswordscale'):1);
+            const dx=Math.cos(other.angle), dy=Math.sin(other.angle);
+            const t=flailCapsuleHit(a.x,a.y,nx,ny,p.x-dx*span.back*sc,p.y-dy*span.back*sc,
+                p.x+dx*span.front*sc,p.y+dy*span.front*sc,radius+BLADE_W/2);
+            if(t!==null) hits.push({t,kind:'weapon',other});
+        }
+        const t=flailCircleHit(a.x,a.y,nx,ny,c.x,c.y,14*sv('cscl')+radius);
+        if(t!==null) hits.push({t,kind:'body',other});
+    }
+    hits.sort((a,b)=>a.t-b.t);
+    for(const hit of hits){
+        if(hit.kind==='weapon'){
+            a.tested.add(hit.other);
+            if(Math.random()>=0.5) continue;
+        }
+        return hit;
+    }
+    return null;
+}
+function finishFlailLunge(ent){
+    ent._flailAttack=null;
+    ent._flailAttackEnd=GameTime;
+    ent._flailState='FOLLOW'; ent._flailExt=0; ent._flailSpinSpeed=0;
+    ent._flailAccumAngle=0; ent._flailPrevAngle=ent.angle;
+    ent._flailFreeAngle=ent.angle; ent.vel=0;
+}
+function startFlailPull(target,owner,id){
+    if(target.hp<=0 || target._flailPull) return;
+    target._flailPull={owner,id,time:0,stop:SWORD_LEN*flailWorldScale(owner)};
+    const recoil=Math.min(DISBALANCE_RECOIL_DURATION,1.5);
+    startBuff(target,'DISBALANCE',recoil,1.5-recoil);
+}
+function updateFlailPull(ent,dt){
+    const pull=ent._flailPull;
+    if(!pull || flailRemote(ent)) return;
+    const owner=pull.owner;
+    pull.time+=dt;
+    if(ent.hp<=0 || owner.hp<=0 || owner.hasWeapon===false || weaponKeyOf(owner)!=='flail' ||
+       pull.time>FLAIL_PULL_TIME || (!flailRemote(owner) && owner._flailAttack?.id!==pull.id)){
+        ent._flailPull=null; return;
+    }
+    const c=$.POS.body(ent), o=$.POS.body(owner), dx=o.x-c.x, dy=o.y-c.y;
+    const dist=Math.hypot(dx,dy), stop=Math.max(pull.stop,32*sv('cscl'));
+    if(dist<=stop){ ent._flailPull=null; return; }
+    const step=Math.min(dist-stop,SWORD_LEN*FLAIL_MAX_SCALE*flailWorldScale(owner)/0.3*dt);
+    const nx=c.x+dx/dist*step, ny=c.y+dy/dist*step;
+    const wall=flailWallHit(c.x,c.y,nx,ny,14*sv('cscl'));
+    const fraction=wall===null ? 1 : Math.max(0,wall-0.001);
+    ent.x=$.M.clamp(ent.x+(nx-c.x)*fraction,40,WORLD_W-80);
+    ent.y=$.M.clamp(ent.y+(ny-c.y)*fraction,40,WORLD_H-40);
+    ent.vx=0; ent.vy=0; ent._dvx=0; ent._dvy=0;
+    if(wall!==null) ent._flailPull=null;
+}
+function updateFlailLunge(ent,dt,entities){
+    const a=ent._flailAttack;
+    if(!a || flailRemote(ent)) return;
+    if(ent.hp<=0 || ent.hasWeapon===false || weaponKeyOf(ent)!=='flail'){
+        resetFlailCombat(ent); return;
+    }
+    const p=$.POS.pivot(ent);
+    a.time+=dt;
+    ent.angle=a.angle; ent.vel=0;
+    if(a.phase==='out'){
+        const distance=a.reach*Math.min(1,a.time/FLAIL_LUNGE_OUT_TIME);
+        let nx=p.x+Math.cos(a.angle)*distance, ny=p.y+Math.sin(a.angle)*distance;
+        const hit=flailLungeContact(ent,a,nx,ny,entities);
+        if(hit){
+            nx=a.x+(nx-a.x)*hit.t; ny=a.y+(ny-a.y)*hit.t;
+            if(hit.kind==='body'){
+                if(applyFlailLungeDamage(ent,hit.other,a.speed)){
+                    a.target=hit.other;
+                    if(!flailRemote(hit.other)) startFlailPull(hit.other,ent,a.id);
+                    else $.NET.send({type:'flailHit',id:a.id,newHp:hit.other.hp,dmg:ent._flailLastDamage});
+                }
+            } else if(hit.other){
+                if(hit.kind==='shield') applyShieldBlockFX(nx,ny,ent,hit.other);
+                else $.S.play(blockClashSoundFor(hit.other));
+            }
+        }
+        a.x=nx; a.y=ny;
+        if(hit || a.time>=FLAIL_LUNGE_OUT_TIME){ a.phase='back'; a.time=0; }
+    } else {
+        if(a.target && a.target.hp>0 && a.time<FLAIL_PULL_TIME &&
+           (flailRemote(a.target) || a.target._flailPull?.owner===ent)){
+            const c=$.POS.body(a.target); a.x=c.x; a.y=c.y;
+        } else {
+            const dx=p.x-a.x,dy=p.y-a.y,dist=Math.hypot(dx,dy);
+            const step=a.reach/FLAIL_LUNGE_RETURN_TIME*dt;
+            if(dist<=step || a.time>FLAIL_PULL_TIME+FLAIL_LUNGE_RETURN_TIME){finishFlailLunge(ent);return;}
+            a.x+=dx/dist*step; a.y+=dy/dist*step;
+        }
+    }
+}
+// Fixed-size Verlet chain; endpoints are authoritative, internal nodes are visual only.
+function updateFlailChain(ent,dt){
+    if(flailRemote(ent) && ent._flailAttack && ent._flailNetTarget){
+        const t=1-Math.exp(-30*dt);
+        ent._flailAttack.x+=(ent._flailNetTarget.x-ent._flailAttack.x)*t;
+        ent._flailAttack.y+=(ent._flailNetTarget.y-ent._flailAttack.y)*t;
+    }
+    const scale=flailWorldScale(ent), p=$.POS.pivot(ent), a=ent._flailAttack;
+    const length=weaponLenFor(ent)*scale;
+    const hx=a?a.x:p.x+Math.cos(ent.angle)*length;
+    const hy=a?a.y:p.y+Math.sin(ent.angle)*length;
+    const chainAngle=Math.atan2(hy-p.y,hx-p.x);
+    const angularSpeed=ent._flailChainAngle==null ? 0 : $.M.clamp(
+        $.M.angDiff(chainAngle,ent._flailChainAngle)/Math.max(dt,0.001),-11.2,11.2);
+    ent._flailChainAngle=chainAngle;
+    const normalX=-Math.sin(chainAngle), normalY=Math.cos(chainAngle);
+    const spin=a?0:angularSpeed;
+    const headLen=FLAIL_HEAD_LEN*scale;
+    const distance=Math.hypot(hx-p.x,hy-p.y)||1;
+    const endX=hx-(hx-p.x)/distance*Math.min(headLen,distance);
+    const endY=hy-(hy-p.y)/distance*Math.min(headLen,distance);
+    let nodes=ent._flailNodes;
+    if(!nodes || Math.hypot(nodes[0].x-p.x,nodes[0].y-p.y)>Math.max(100,length)){
+        nodes=ent._flailNodes=Array.from({length:FLAIL_NODE_COUNT},(_,i)=>{
+            const t=i/(FLAIL_NODE_COUNT-1),x=p.x+(endX-p.x)*t,y=p.y+(endY-p.y)*t;
+            return {x,y,px:x,py:y};
+        });
+    }
+    const n=nodes.length-1;
+    const taut=a && a.phase==='out';
+    const slack=taut?0:Math.min(0.22,0.16/(1+Math.abs(ent.vel||0)*0.15));
+    const segment=Math.max(1,Math.hypot(endX-p.x,endY-p.y)*(1+slack)/n);
+    const damp=Math.exp(-8*dt);
+    for(let i=1;i<n;i++){
+        const v=nodes[i], x=v.x,y=v.y;
+        // Centrifugal tension plus lag opposite the actual rotation, not a fixed screen-side bend.
+        const lagForce=-spin*120*scale*dt*dt;
+        v.x+=(x-v.px)*damp+normalX*lagForce;
+        v.y+=(y-v.py)*damp+normalY*lagForce+500*scale*dt*dt/(1+Math.abs(spin));
+        v.px=x;v.py=y;
+    }
+    for(let pass=0;pass<6;pass++){
+        nodes[0].x=p.x;nodes[0].y=p.y;nodes[n].x=endX;nodes[n].y=endY;
+        for(let i=0;i<n;i++){
+            const u=nodes[i],v=nodes[i+1],dx=v.x-u.x,dy=v.y-u.y,d=Math.hypot(dx,dy)||1;
+            const error=(d-segment)/d;
+            const w=i===0 || i+1===n ? 1 : 0.5;
+            if(i!==0){u.x+=dx*error*w;u.y+=dy*error*w;}
+            if(i+1!==n){v.x-=dx*error*w;v.y-=dy*error*w;}
+        }
+    }
+    // The anchored tip must not make slack buckle ahead of a rotating chain.
+    if(Math.abs(spin)>0.3){
+        const direction=Math.sign(spin);
+        for(let i=1;i<n;i++){
+            const v=nodes[i],side=(v.x-p.x)*normalX+(v.y-p.y)*normalY;
+            if(side*direction>0){
+                const dx=normalX*side,dy=normalY*side;
+                v.x-=dx;v.y-=dy;v.px-=dx;v.py-=dy;
+            }
+        }
+    }
+    nodes[0].x=p.x;nodes[0].y=p.y;nodes[n].x=endX;nodes[n].y=endY;
+    // Keep Verlet history independent of visual bend amplitude. With the head anchored,
+    // the visible chain bows toward rotation (the head trails the hand), not behind it.
+    const drawn=ent._flailDrawNodes || (ent._flailDrawNodes=nodes.map(()=>({x:0,y:0})));
+    const bendScale=Math.abs(spin)>0.3 ? -0.5 : 0.5;
+    for(let i=0;i<=n;i++){
+        const v=nodes[i],side=(v.x-p.x)*normalX+(v.y-p.y)*normalY;
+        drawn[i].x=v.x+normalX*side*(bendScale-1);
+        drawn[i].y=v.y+normalY*side*(bendScale-1);
+    }
+    ent._flailHeadX=hx;ent._flailHeadY=hy;
+}
+function drawFlailChain(c,ent,glow,blur){
+    const nodes=ent._flailDrawNodes || ent._flailNodes, scale=flailWorldScale(ent);
+    c.save();
+    c.setTransform(CAM_SCALE,0,0,CAM_SCALE,-CAM_X*CAM_SCALE,-CAM_Y*CAM_SCALE);
+    if(glow){c.shadowColor=glow;c.shadowBlur=blur;}
+    let total=0;
+    for(let i=1;i<nodes.length;i++) total+=Math.hypot(nodes[i].x-nodes[i-1].x,nodes[i].y-nodes[i-1].y);
+    const count=Math.min(80,Math.max(2,Math.ceil(total/(FLAIL_RING_LEN*scale))));
+    let index=1, walked=0;
+    for(let i=0;i<count;i++){
+        const distance=(i+0.5)/count*total;
+        let u=nodes[index-1],v=nodes[index],len=Math.hypot(v.x-u.x,v.y-u.y);
+        while(index<nodes.length-1 && walked+len<distance){walked+=len;index++;u=nodes[index-1];v=nodes[index];len=Math.hypot(v.x-u.x,v.y-u.y);}
+        const t=Math.min(1,(distance-walked)/Math.max(len,0.001));
+        const img=i%2?ent._flailRing2Img:ent._flailRing1Img;
+        c.save();c.translate(u.x+(v.x-u.x)*t,u.y+(v.y-u.y)*t);c.rotate(Math.atan2(v.y-u.y,v.x-u.x)+Math.PI/2);
+        const h=FLAIL_RING_LEN*scale;
+        if(img && img.complete && img.naturalWidth){const w=h*spriteAspectFor(img);c.drawImage(img,-w/2,-h/2,w,h);}
+        else {c.strokeStyle='#aaa';c.lineWidth=2*scale;c.strokeRect(-2*scale,-h/2,4*scale,h);}
+        c.restore();
+    }
+    const last=nodes[nodes.length-1],img=ent._weaponImg,h=FLAIL_HEAD_LEN*scale;
+    c.translate(ent._flailHeadX,ent._flailHeadY);
+    c.rotate(Math.atan2(ent._flailHeadY-last.y,ent._flailHeadX-last.x)+Math.PI/2);
+    if(img && img.complete && img.naturalWidth){const w=h*spriteAspectFor(img);c.drawImage(img,-w/2,0,w,h);}
+    c.restore();
+}
+function updateFlailCombat(dt){
+    const entities=[P,...(dummyOn?ALL_BOTS:[])];
+    if(typeof NET_SYNC!=='undefined' && NET_SYNC.active && !entities.includes(D)) entities.push(D);
+    for(const ent of entities) updateFlailPull(ent,dt);
+    for(const ent of entities){
+        if(ent.hp<=0 || ent._defeated || ent.hasWeapon===false || weaponKeyOf(ent)!=='flail'){
+            if(ent._flailAttack || ent._flailNodes) resetFlailCombat(ent);
+            continue;
+        }
+        if(flailRemote(ent) && GameTime-(ent._flailNetTime||0)>1) ent._flailAttack=null;
+        if(!flailRemote(ent) && (isExhausted(ent) || isUnbalanced(ent))) beginFlailFold(ent);
+        updateFlailLunge(ent,dt,entities);
+        updateFlailTurns(ent);
+        updateFlailChain(ent,dt);
+    }
+}
+
+// Three quick directional strokes (out/back/out), independent of extension and global sword flick settings.
+function detectFlailFlick(ent,delta,dt){
+    let f=ent._flailFlick;
+    if(!f || (f.time+=dt)>0.7) f=ent._flailFlick={time:0,dir:0,amp:0,turns:0};
+    if(Math.abs(delta)/Math.max(dt,0.001)<2.5) return false;
+    if(!f.dir) f.time=0; // Start the gesture window on movement, not on an arbitrary idle tick.
+    const dir=Math.sign(delta),amp=Math.abs(delta);
+    if(f.dir && dir!==f.dir){
+        f.turns=f.amp>=0.18 && f.amp<=1.6 ? f.turns+1 : 0;
+        f.amp=0;
+    }
+    f.dir=dir;f.amp+=amp;
+    if(f.amp>1.6) f.turns=0;
+    if(f.turns>=2 && f.amp>=0.18){ent._flailFlick=null;return true;}
+    return false;
+}
+function beginFlailFold(ent){
+    if(ent._flailFoldLocked) return;
+    ent._flailFoldLocked=true;
+    ent._flailExt=Math.max(0,ent._flailExt||0);
+    ent._flailFlick=null;ent._flailAccumAngle=0;ent._flailIsLerping=false;
+    ent._flailFreeAngle=ent.angle;
+    // DISBALANCE changes ent.vel before this tick; retain the chain's own momentum.
+    const wasSpinning=(ent._flailState==='SPIN' || ent._flailState==='RETRACT') &&
+        Number.isFinite(ent._flailSpinSpeed) && ent._flailSpinSpeed>0;
+    if(!wasSpinning){
+        const velocity=ent._flailLagVel ?? ent.vel ?? 0;
+        ent._flailDirection=Math.sign(velocity)||ent._flailDirection||1;
+        ent._flailSpinSpeed=Math.min(5,Math.abs(velocity)/2.1);
+    }
+    ent._flailState='RETRACT';
+    const a=ent._flailAttack;
+    if(a){
+        if(a.target?._flailPull?.owner===ent) a.target._flailPull=null;
+        if(ent===P && typeof NET_SYNC!=='undefined' && NET_SYNC.active)
+            $.NET.send({type:'flailCancel',id:a.id,retract:true});
+        a.target=null;a.phase='back';a.time=0;
+    }
+}
+function updateForcedFlailFold(ent,targetAng,dt){
+    const previous=ent.angle;
+    if((ent._flailExt||0)>0){
+        ent.angle+=ent._flailDirection*ent._flailSpinSpeed*2.1*dt;
+        ent._flailExt=Math.max(0,ent._flailExt-0.84*dt);
+    }
+    ent._flailFreeAngle=ent.angle;
+    ent._flailPrevAngle=ent.angle;
+    ent.vel=$.M.angDiff(ent.angle,previous)/Math.max(dt,0.001);
+    ent._flailLagVel=ent.vel;
+    if(ent._flailExt<=0){
+        ent._flailSpinSpeed=0;ent.vel=0;ent._flailWasAtMax=false;
+        if(!isExhausted(ent) && !isUnbalanced(ent)){
+            ent._flailFoldLocked=false;ent._flailState='FOLLOW';
+            ent._flailLerpStartAngle=ent.angle;ent._flailLerpTargetAngle=targetAng;
+            ent._flailLerpTimer=0;ent._flailLerpDuration=1;ent._flailIsLerping=true;
+            ent._flailFlick=null;
+        }
+    }
+}
+function updateFlailTurns(ent){
+    if(flailRemote(ent)) return; // The remote peer owns both counting and stamina.
+    const previous=ent._flailOrbitPrevious;
+    ent._flailOrbitPrevious=ent.angle;
+    if(previous==null || ent._flailAttack || ent._flailIsLerping || ent._flailAttackEnd===GameTime){
+        ent._flailOrbitAccum=0;ent._flailOrbitDirection=0;return;
+    }
+    const delta=$.M.angDiff(ent.angle,previous),direction=Math.sign(delta);
+    if(Math.abs(delta)<1e-7) return;
+    if(ent._flailOrbitDirection && direction!==ent._flailOrbitDirection) ent._flailOrbitAccum=0;
+    ent._flailOrbitDirection=direction;
+    ent._flailOrbitAccum=(ent._flailOrbitAccum||0)+Math.abs(delta);
+    while(ent._flailOrbitAccum>=Math.PI*2-1e-9){
+        ent._flailOrbitAccum=Math.max(0,ent._flailOrbitAccum-Math.PI*2);
+        ent._flailTurnSerial=(ent._flailTurnSerial||0)+1;
+        $.S.play('hammerSwing');
+        drainStamina(ent,15);
+        if(ent.stamina<=0){
+            if(!isExhausted(ent)) applyExhaust(ent);
+            beginFlailFold(ent);
+        }
+    }
+}

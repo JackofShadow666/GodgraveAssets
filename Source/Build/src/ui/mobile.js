@@ -425,7 +425,7 @@ window.doRestart=function(){
 
   // fireDodge — works on all devices (PC + mobile)
   window.fireDodge=function(dx, dy, bypassCooldown, chargedPower){
-    if(typeof P==='undefined') return;
+    if(typeof P==='undefined' || P.hp<=0 || isExhausted(P) || isUnbalanced(P) || Math.hypot(dx,dy)<0.001) return;
     if(!bypassCooldown&&window._dodgeCooldownMob>0) return;
     const len=Math.hypot(dx,dy)||1;
     const charge = Math.max(0, Math.min(1, chargedPower || 0));
@@ -446,7 +446,7 @@ window.doRestart=function(){
     // Dodge cooldown: if shield is on the same side as sword — cooldown is 3x longer
     const _dodgeSameSide = typeof shieldDef==='function' && shieldDef(P) && shieldSameSideAsSword(P);
     window._dodgeCooldownMob = _dodgeSameSide ? 0.8*3 : 0.8;
-    if(P.stamina!==undefined) drainStamina(P, 30 + charge * 15);
+    if(P.stamina!==undefined) spendDodgeStamina(P,30 + charge * 15);
     if(typeof spawnDust==='function')
       for(let i=0;i<8 + Math.round(charge * 10);i++) spawnDust(P.x+Math.random()*24-12,P.y+Math.random()*12,-dx/len*(8 + charge*5),-dy/len*(8 + charge*5));
     $.S.play('dodgeSound');

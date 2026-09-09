@@ -167,9 +167,19 @@ botUpdateExhaustion(bot, dt);
     bot._lwSpinCD = GameTime + rf(3.0, 4.0);
   }
   if(GameTime < bot._lwSpinUntil){
+    if($.IS(bot, 'flail')){
+      const wantedDir = Math.sign(bot._lwSpinSpeed) || 1;
+      const currentDir = Math.sign(bot.vel || 0) || wantedDir;
+      if(wantedDir !== currentDir && GameTime < (bot._flailDirectionLockUntil || 0)) bot._lwSpinSpeed = Math.abs(bot._lwSpinSpeed) * currentDir;
+      else if(wantedDir !== currentDir) bot._flailDirectionLockUntil = GameTime + 3;
+    }
     bot.angle += bot._lwSpinSpeed * dt;
     bot.vel = bot._lwSpinSpeed;
   } else if($.IS(bot, 'flail') && bot._flailSwingTarget){
+    const wantedDir = Math.sign(bot._flailSwingTarget) || Math.sign(bot.vel || 0) || 1;
+    const currentDir = Math.sign(bot.vel || 0) || wantedDir;
+    if(wantedDir !== currentDir && GameTime < (bot._flailDirectionLockUntil || 0)) bot._flailSwingTarget = Math.abs(bot._flailSwingTarget) * currentDir;
+    else if(wantedDir !== currentDir) bot._flailDirectionLockUntil = GameTime + 3;
     bot.vel = $.M.lerpDT(bot.vel, bot._flailSwingTarget, 0.18, dt);
     if(Math.abs(bot.vel - bot._flailSwingTarget) < 0.05) bot._flailSwingTarget = 0;
   } else if(!isRangedWeapon(bot)){
@@ -414,70 +424,15 @@ if(ai._botDodgeCooldown>0) ai._botDodgeCooldown-=dt;
   const spdMult2 = botDebuffMult;
   // 🔥 ОБРАБОТКА ЦЕПА — ОТДЕЛЬНО, С ВОЗВРАТОМ
   if($.IS(bot, 'flail')){
-    if(bot._manualControl){
-      updateFlailSwing(bot, ta, dt);
-      bot.prevAngle = bot.angle;
-      return;
+    if(!bot._manualControl && bot.rage > 50 && GameTime >= (bot._flailHookCD || 0) && bot.hasWeapon !== false){
+      flailTryHook(bot, ta);
+      bot._flailHookCD = GameTime + rf(1.8, 1.2);
     }
-    // ── ЦЕП: РЕАЛИСТИЧНОЕ ПОВЕДЕНИЕ ДЛЯ БОТА ──
-    if(!bot._flailSpinState) {
-        bot._flailSpinState = 'idle'; // idle | spinning | retracting
-        bot._flailSpinAngle = 0;
-        bot._flailSpinDir = Math.random() < 0.5 ? 1 : -1;
-        bot._flailSpinSpeed = 4.0;
-        bot._flailTimer = 0;
-    }
-    
-    bot._flailTimer -= dt;
-    
-    // ── МЕНЯЕМ СОСТОЯНИЕ КАЖДЫЕ 1-3 СЕКУНДЫ ──
-    if(bot._flailTimer <= 0){
-        const r = Math.random();
-        if(r < 0.4){
-            // 40% — вращение
-            bot._flailSpinState = 'spinning';
-            bot._flailSpinDir = Math.random() < 0.5 ? 1 : -1;
-            bot._flailSpinSpeed = 3.0 + Math.random() * 3.0;
-            bot._flailTimer = 0.8 + Math.random() * 1.5; // 0.8-2.3 сек вращения
-        } else if(r < 0.7){
-            // 30% — пауза (цепь складывается)
-            bot._flailSpinState = 'idle';
-            bot._flailTimer = 0.5 + Math.random() * 1.0; // 0.5-1.5 сек паузы
-        } else {
-            // 30% — резкая смена направления
-            bot._flailSpinState = 'spinning';
-            bot._flailSpinDir *= -1;
-            bot._flailSpinSpeed = 4.0 + Math.random() * 2.0;
-            bot._flailTimer = 0.5 + Math.random() * 1.0;
-        }
-    }
-    
-    // ── ПРИМЕНЯЕМ СОСТОЯНИЕ ──
-    let fakeAng;
-    if(bot._flailSpinState === 'spinning'){
-        // Вращаем прицел по кругу
-        bot._flailSpinAngle += bot._flailSpinDir * bot._flailSpinSpeed * dt;
-        const spinRadius = 80;
-        const fakeX = drc.x + Math.cos(bot._flailSpinAngle) * spinRadius;
-        const fakeY = drc.y + Math.sin(bot._flailSpinAngle) * spinRadius;
-        fakeAng = Math.atan2(fakeY - dpivY, fakeX - dpivX);
-    } else {
-        // Idle — смотрим на игрока (цепь будет складываться)
-        fakeAng = ta;
-    }
-    
-    // Раскручиваем цепь с правильным углом
-    updateFlailSwing(bot, fakeAng, dt);
-    
-    // Если в режиме idle — принудительно ускоряем складывание
-    if(bot._flailSpinState === 'idle'){
-        bot._flailExt = Math.max(0, (bot._flailExt || 0) - 2.0 * dt);
-    }
-    
-    bot.prevAngle = bot.angle;
+    updateFlailSwing(bot,ta,dt,!bot._manualControl);
+    bot.prevAngle=bot.angle;
     return;
   }
-  
+
   // ── ОСТАЛЬНОЕ ОРУЖИЕ (НЕ ЦЕП) ──
   if(hasMod(bot, 'weaponRecoil')){
   bot._disbalanceAngularVelocity = (bot._disbalanceAngularVelocity || 0) * Math.pow(0.12, dt);

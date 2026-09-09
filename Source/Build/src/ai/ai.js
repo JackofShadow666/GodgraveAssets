@@ -498,7 +498,7 @@ const PROBING_WEAPON_KEYS = [
   'staff', 'halberd', 'spear', 'wand'
 ];
 const NO_THRUST_WEAPON_KEYS = ['axe', 'hammer', 'flail'];
-const SWING_ONLY_WEAPON_KEYS = ['axe', 'hammer'];
+const SWING_ONLY_WEAPON_KEYS = ['axe', 'hammer', 'flail'];
 const SWING_BURST_WEAPON_KEYS = ['sword', 'longsword', 'greatsword', 'staff', 'magicstaff', 'wand'];
 const HEAVY_SWING_SPIN_INTERVAL_MULT = 1 / 3;
 const HEAVY_SWING_DODGE_INTERVAL_MULT = 0.5;
@@ -604,7 +604,7 @@ function aiHeavyReleaseDuration(ai){
 
 function aiStartHeavyAttack(ai, bot, distToPlayer, cscl, immediateRelease, angToPlayer){
   if(!ai || !bot || ai._heavyAttackPhase || ai._spinActive) return false;
-  const staminaCost = sv('stamswing') * weaponStaminaMult(bot);
+  const staminaCost = weaponKeyOf(bot)==='flail' ? 15 : sv('stamswing') * weaponStaminaMult(bot);
   if(bot.stamina < staminaCost) return false;
   ai._heavySwingSide = ai._heavySwingSide || (Math.random() < 0.5 ? -1 : 1);
   ai._heavyAttackPhase = immediateRelease ? 'release' : 'windup';
@@ -639,13 +639,13 @@ function aiUpdateHeavyAttack(ai, bot, k, bBodyC, pBodyC, angToPlayer, distToPlay
   const aim = aiHeavyAimPoint(bot, pBodyC, angToPlayer, cscl, side, ai._heavyAttackPhase, progress, ai._heavyAttackBaseAng);
   aiPointMouse(bBodyC, aim.x, aim.y, false, ai);
   ai._fakeMDown = ai._heavyAttackPhase === 'release';
-  if(ai._fakeMDown && !ai._heavyStaminaSpent){
+  if(ai._fakeMDown && !ai._heavyStaminaSpent && weaponKeyOf(bot)!=='flail'){
     ai._heavyStaminaSpent = true;
     const staminaCost = sv('stamswing') * weaponStaminaMult(bot);
     drainStamina(bot, staminaCost);
     if(bot.stamina <= 0 && !isExhausted(bot)) applyExhaust(bot);
   }
-  if(ai._fakeMDown && !ai._heavySwingSoundPlayed){
+  if(ai._fakeMDown && !ai._heavySwingSoundPlayed && weaponKeyOf(bot)!=='flail'){
     ai._heavySwingSoundPlayed = true;
     if(GameTime >= GLOBAL_HEAVY_SWING_SOUND_UNTIL && $.S && typeof $.S.play === 'function'){
       GLOBAL_HEAVY_SWING_SOUND_UNTIL = GameTime + 0.45;
@@ -1708,27 +1708,6 @@ if(ai._contactCD > 0 && ai.phase === 'attack' && ai._contactCD <= GameTime){
     if(GameTime >= ai._heavySpinTimer){
       ai._heavySpinTimer = GameTime + rf(10 * HEAVY_SWING_SPIN_INTERVAL_MULT, 10 * HEAVY_SWING_SPIN_INTERVAL_MULT);
       aiStartSpinFor(ai, bot, sv('spindur'));
-    }
-  }
-
-  // ── ЦЕП: доп. кручения вдвое чаще обычного ────────────
-  // У остальных видов оружия "прокрут" запускается только при входе в фазу
-  // атаки издалека / после контакта и т.п. — для цепа это редко и нерегулярно.
-  // Цеп — оружие вращения по своей сути, поэтому у него отдельный периодический
-  // таймер (в 2 раза чаще базового 10±10-секундного цикла смены тактики).
-  if($.IS(bot, 'flail')){
-    if(ai._flailSpinTimer === undefined) ai._flailSpinTimer = GameTime + rf(2.5,2.5);
-    if(!ai._spinActive && !cb('nospin') && ai.swordStyle !== 'SWORD_STYLE_DUELIST'
-       && GameTime >= ai._flailSpinTimer){
-      ai._flailSpinTimer = GameTime + rf(2.5,2.5);
-      const dur = sv('spindur');
-      const dBodyCF = $.POS.body(bot);
-      const dpivXF = dBodyCF.x + bot.pvX, dpivYF = dBodyCF.y + bot.pvY;
-      const curAngToFakeM = Math.atan2(ai._fakeMY - dpivYF, ai._fakeMX - dpivXF);
-      ai._spinActive = true;
-      ai._spinAng = curAngToFakeM;
-      ai._spinEndTime = GameTime + dur;
-      ai._spinSpeed = (Math.PI*2) / dur;
     }
   }
 

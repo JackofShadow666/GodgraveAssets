@@ -60,7 +60,7 @@ let PROJECTILES = []; // {kind:'wand'|'arrow', x,y,vx,vy,rot,owner,dmg,ownerImmu
 let WAND_PARTICLES = []; // {x,y,tx,ty,life,maxLife,owner} — particles during charging, attracted to wand tip
 
 // ── Helper: spawns a projectile (wand or arrow) at the weapon tip with given angle and damage.
-function spawnProjectile(owner, kind, angle, dmg, speedOverride, maxDmgPct){
+function spawnProjectile(owner, kind, angle, dmg, speedOverride, maxDmgPct, meta){
   const c = $.POS.tip(owner);
   
   let speed;
@@ -84,6 +84,7 @@ function spawnProjectile(owner, kind, angle, dmg, speedOverride, maxDmgPct){
     bornAt: GameTime,
     // Save shooter position for lightning trail effects
     shooterPos: {x: c.x, y: c.y},
+    chargeTime: meta && Number.isFinite(meta.chargeTime) ? meta.chargeTime : 0,
   });
   $.FX.hit({x:c.x, y:c.y-30, t: kind==='wand' ? '✨' : '➹', life:20, big:false, col: kind==='wand'?'#c090ff':'#d9c08a'});
 }
@@ -614,7 +615,7 @@ const dC2 = $.POS.body(defender);
   const isExplosion = opts.isExplosion || false;
   const isProjectile = opts.isProjectile || false;
  
-  const knockbackMult = opts.knockbackMult || 1.0;
+  const knockbackMult = opts.knockbackMult ?? 1.0;
   const hitstopFrames = opts.hitstopFrames || 4;
 
   const shakePower = opts.shakePower || (damage > 15 ? 5 : 3);
@@ -629,7 +630,8 @@ const dC2 = $.POS.body(defender);
   const guardedDamage = (typeof shieldHeld === 'function' && shieldHeld(defender))
     ? Math.round(damage * 0.5)
     : damage;
-  const finalDmg = Math.min(guardedDamage, Math.max(1, Math.round(MAX_HP * 0.70))); // 70% max per hit
+  const balanceKey=opts.weaponDamageKey || (!isMagic && !isExplosion && !isProjectile && attacker ? weaponKeyOf(attacker) : null);
+  const finalDmg = Math.round(Math.min(guardedDamage, Math.max(1, Math.round(MAX_HP * 0.70))) * weaponDamageMultiplier(balanceKey)); // 70% max per hit
   defender.hp = Math.max(0, defender.hp - finalDmg);
   defender._hitCD = Math.max(defender._hitCD || -1, GameTime + 0.4);
   defender.hitFlash = GameTime + 0.3;
@@ -1044,6 +1046,7 @@ function updateRangedWeaponFire(ent, fireHeld, aimAngleOverride){
         if(chargedEnough){
           const aimAngle = aimAngleOverride != null ? aimAngleOverride
             : (ent === P ? Math.atan2(mY - $.POS.root().y, mX - $.POS.root().x) : ent.angle);
+          if(ent.hasWeapon === false || weaponKeyOf(ent) !== 'wand') return;
           const rageMult = 1 + $.M.clamp(ent.rage||0, 0, 100)/100;
           spawnProjectile(ent, 'wand', aimAngle, WAND_BASE_DMG * rageMult);
           drainStamina(ent, sv('stamswing') * weaponStaminaMult(ent));
@@ -1125,7 +1128,8 @@ function updateRangedWeaponFire(ent, fireHeld, aimAngleOverride){
           });
         }
         
-        spawnProjectile(ent, 'arrow', aimAngle, dmg, BOW_PROJ_SPEED, BOW_MAX_DMG_PCT);
+        if(ent.hasWeapon === false || weaponKeyOf(ent) !== 'bow') return;
+        spawnProjectile(ent, 'arrow', aimAngle, dmg, BOW_PROJ_SPEED, BOW_MAX_DMG_PCT, {chargeTime});
         
         // Drain 15 stamina on release
 const staminaCost = Math.min(15, ent.stamina);
@@ -1571,6 +1575,7 @@ function updateProjectiles(dt){
     for(const ent of defenders){
       if(!ent || ent.hp <= 0 || ent._awaitingReveal) continue;
       if(ent === w.owner && GameTime < w.ownerImmuneUntil) continue;
+      if(!canResolveProjectileContact(w,ent)) continue;
       
       // ─── BLADE BLOCK ──────────────────────────────────────────────────
       if(ent.hasWeapon !== false && !isExhausted(ent)){
@@ -1620,14 +1625,7 @@ function updateProjectiles(dt){
     
     if(blocked){
       // ─── STAMINA COST FOR BLOCKING ─────────────────────────────────
-      const staminaTarget = w.owner || blocker;
-      if(staminaTarget){
-        const projStamCost = blockStaminaCost(staminaTarget, true);
-        drainStamina(staminaTarget, projStamCost);
-if(staminaTarget.stamina <= 0 && !isExhausted(staminaTarget)){
-  applyExhaust(staminaTarget);
-}
-      }
+      applyProjectileContactEffects(w,blocker,true,0);
       $.S.play(w.kind==='wand' ? 'magicHit' : 'arrowHit');
       if(blockedByBlade){
         const flySpdAtBlock = Math.hypot(w.vx, w.vy);
@@ -1653,16 +1651,18 @@ if(staminaTarget.stamina <= 0 && !isExhausted(staminaTarget)){
     for(const ent of defenders){
       if(!ent || ent.hp <= 0 || ent._awaitingReveal) continue;
       if(ent === w.owner && GameTime < w.ownerImmuneUntil) continue;
+      if(!canResolveProjectileContact(w,ent)) continue;
       const c = $.POS.body(ent);
       const hitR = 22 * (isBot(ent) ? sv('cscl')*sv('botscale') : sv('cscl'));
       const d = Math.hypot(c.x-w.x, c.y-w.y);
       if(d < hitR){
         // ─── BOT DODGE ─────────────────────────────────────────────────
-        if(isBot(ent) && (!ent._aiState || ent._aiState.enabled !== false)){
+        if(isBot(ent) && !flailRemote(ent) && (!ent._aiState || ent._aiState.enabled !== false)){
           if(!w._dodgeRolled) w._dodgeRolled = new Set();
           if(!w._dodgeRolled.has(ent)){
             w._dodgeRolled.add(ent);
-            if(Math.random() < PROJECTILE_DODGE_CHANCE){
+            const dodgeChance = projectileDodgeChanceFor(w, PROJECTILE_DODGE_CHANCE);
+            if(Math.random() < dodgeChance){
               const dodgeDir = Math.random() < 0.5 ? -1 : 1;
               const perpX = -Math.sin(w.rot)*dodgeDir, perpY = Math.cos(w.rot)*dodgeDir;
               ent.vx += perpX*4; ent.vy += perpY*4;
@@ -1687,11 +1687,11 @@ if(staminaTarget.stamina <= 0 && !isExhausted(staminaTarget)){
         // ─── UNIFIED applyDamage CALL ───
         // ••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
         const isMagic = w.kind === 'wand';
-        
+        const hpBefore=ent.hp;
         applyDamage(ent, dmg, w.owner, {
           isMagic: isMagic,
           isProjectile: true,
-          knockbackMult: isMagic ? 1.5 : 1.0,
+          knockbackMult: isMagic ? 0 : 1.0,
           hitstopFrames: isMagic ? 5 : 3,
           shakePower: dmg > 15 ? (isMagic ? 6 : 4) : 3,
           textColor: isMagic ? '#c090ff' : '#ff8844',
@@ -1701,9 +1701,11 @@ if(staminaTarget.stamina <= 0 && !isExhausted(staminaTarget)){
         });
         
         // ─── EXTRA KNOCKBACK ───────────────────────────────────────────
-        const nx = d>0.1?(c.x-w.x)/d:0, ny = d>0.1?(c.y-w.y)/d:-1;
-        const kb = w.kind==='wand' ? 14 : 8;
-        ent.x += nx*kb*0.7; ent.y += ny*kb*0.7;
+        if(w.kind!=='wand'){
+          const nx = d>0.1?(c.x-w.x)/d:0, ny = d>0.1?(c.y-w.y)/d:-1;
+          ent.x += nx*8*0.7; ent.y += ny*8*0.7;
+        }
+        applyProjectileContactEffects(w,ent,false,hpBefore-ent.hp);
         
         // ─── EXPLOSION EFFECT ─────────────────────────────────────────
         if(w.kind === 'wand') spawnWandExplosion(w.x, w.y);
@@ -1724,6 +1726,11 @@ if(staminaTarget.stamina <= 0 && !isExhausted(staminaTarget)){
 // before the projectile reaches the bot, and it's a proactive sidestep.
 // This makes bots much harder to hit at range, while regular dodge
 // (PROJECTILE_DODGE_CHANCE) is a last-second evasion.
+function projectileDodgeChanceFor(projectile, baseChance){
+  if(projectile && projectile.kind === 'arrow' && (projectile.chargeTime || 0) > 2) return baseChance * 0.5;
+  return baseChance;
+}
+
 function updateProjectileDodgeAI(){
   if(!dummyOn || PROJECTILES.length === 0) return;
   for(const w of PROJECTILES){
@@ -1745,7 +1752,8 @@ function updateProjectileDodgeAI(){
       if(perp > 46) continue; // Too far off course — won't hit
 
       w._preDodgeRolled.add(bot);
-      if(Math.random() < PROJECTILE_PREDODGE_CHANCE){
+      const dodgeChance = projectileDodgeChanceFor(w, PROJECTILE_PREDODGE_CHANCE);
+      if(Math.random() < dodgeChance){
         const dodgeDir = Math.random() < 0.5 ? -1 : 1;
         bot._dvx = (bot._dvx||0) + (-dirY)*dodgeDir*7;
         bot._dvy = (bot._dvy||0) + (dirX)*dodgeDir*7;
@@ -2182,13 +2190,13 @@ if(chargeTime >= MAGICSTAFF_CHARGE_FULLTIME){
   // ─── WAND (regular wand) AI ────────────────────────────────────────────
   // ••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
   if(bot._wandMode == null) bot._wandMode = 'melee';
-  if(bot._wandModeUntil == null) bot._wandModeUntil = GameTime + rf(7,9);
+  if(bot._wandModeUntil == null) bot._wandModeUntil = GameTime + rf(7,9) * 0.5;
 
   const CLOSE_RANGE = 90;
 
   if(bot._wandMode === 'ranged' && dist < CLOSE_RANGE){
     bot._wandMode = 'melee';
-    bot._wandModeUntil = GameTime + rf(7,9);
+    bot._wandModeUntil = GameTime + rf(7,9) * 0.5;
     bot._wandCharging = false;
     return false;
   }
@@ -2199,7 +2207,7 @@ if(chargeTime >= MAGICSTAFF_CHARGE_FULLTIME){
       bot._wandModeUntil = GameTime + randRange(2,4);
     } else {
       bot._wandMode = 'melee';
-      bot._wandModeUntil = GameTime + rf(7,9);
+      bot._wandModeUntil = GameTime + rf(7,9) * 0.5;
       bot._wandCharging = false;
     }
   }
@@ -2235,3 +2243,35 @@ return true;
 // ─────────────────────────────────────────────────────────────────────────────────
 
 // ••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+
+let projectileContactSerial=Date.now();
+function canResolveProjectileContact(projectile,ent){
+  if(typeof NET_SYNC!=='undefined' && NET_SYNC.active && projectile.owner===D) return false;
+  return typeof FactionRules==='undefined' || FactionRules.canDamage(projectile.owner,ent);
+}
+// A consumed projectile resolves once; thrown weapons call this once per continuous block contact.
+function applyProjectileContactEffects(projectile,ent,blocked,damage){
+  if(!ent || !canResolveProjectileContact(projectile,ent)) return;
+  const remote=typeof NET_SYNC!=='undefined' && NET_SYNC.active && ent===D;
+  const speed=Math.hypot(projectile.vx||0,projectile.vy||0)||1;
+  const dx=(projectile.vx||0)/speed,dy=(projectile.vy||0)/speed;
+  const wand=projectile.kind==='wand';
+  const disarm=wand && ent.hp>0 && ent.hasWeapon!==false && Math.random()<0.3;
+  // Same drag as normal disarm, half its initial velocity => approximately half travel.
+  const kick=disarm ? (6+Math.random()*4)*0.5 : 0;
+  const effect={type:'projectileContact',id:++projectileContactSerial,damage:Math.max(0,damage||0),
+    stamina:blocked?30:0,dx:wand?dx*7:0,dy:wand?dy*7:0,disarm,kx:dx*kick,ky:dy*kick};
+  if(remote){
+    $.NET.send(effect);
+    return;
+  }
+  applyProjectileEffectToEntity(ent,effect);
+}
+function applyProjectileEffectToEntity(ent,effect){
+  if(effect.stamina>0){
+    drainStamina(ent,effect.stamina);
+    if(ent.stamina<=0 && !isExhausted(ent)) applyExhaust(ent);
+  }
+  ent.vx=(ent.vx||0)+effect.dx;ent.vy=(ent.vy||0)+effect.dy;
+  if(effect.disarm && ent.hp>0 && ent.hasWeapon!==false) disarmEntity(ent,effect.kx,effect.ky);
+}

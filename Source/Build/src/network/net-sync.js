@@ -2,6 +2,7 @@
 
 var NET_SYNC = (function(){
   var _active=false, _peerName='';
+  let _flailPacketSerial=0, _lastRemoteFlailPacket=-1, _cancelledFlailId=0;
   var _cur={x:0,y:0,angle:0,vx:0,vy:0,hp:100,stamina:100,rage:0,vel:0,bx:0,by:0,pvX:0,pvY:-8};
   var _acceptAnyHp=false; // принимать HP в любую сторону после ресета
 
@@ -87,6 +88,12 @@ var NET_SYNC = (function(){
     d.ub=Math.round((p.unbalanced||0)*10);  // дисбаланс
     d.rb=p.rageBuffEnd>GameTime?Math.round((p.rageBuffEnd-GameTime)*10):0; // ярость
     d.wt=p.weaponType||0;                    // вид оружия (индекс в WEAPON_TYPES)
+    d.fq=++_flailPacketSerial;
+    d.ft=p._flailTurnSerial||0;
+    d.fl=p._flailFoldLocked?1:0;
+    d.fe=Math.round((p._flailExt||0)*1000);
+    const fa=p._flailAttack;
+    d.fa=fa?{id:fa.id,p:fa.phase==='out'?1:2,x:fa.x/WORLD_W,y:fa.y/WORLD_H,a:fa.angle}:null;
     d.hw=p.hasWeapon===false?0:1;            // вооружён ли (0 = обезоружен)
     return d;
   }
@@ -150,6 +157,9 @@ var NET_SYNC = (function(){
 
   // ── Включение/выключение PVP ──
   function setNetPVP(on, peerNameOverride, isSender){
+    resetFlailCombat(P); resetFlailCombat(D);
+    P._lastDodgeAt=null; D._lastDodgeAt=null;
+    _lastRemoteFlailPacket=-1; _cancelledFlailId=0; _lastFlailHit=0; _lastProjectileContact=0; D._flailRemoteTurns=null;
     const dtoggle=document.getElementById('dtoggle');
     const mobSpawn=document.getElementById('mob-spawn-btn');
     if(on){
@@ -227,6 +237,8 @@ var NET_SYNC = (function(){
   // sendReset: победитель отправляет команду с позициями обоих
   // iWon=true: я победил (D умер у меня) => на другой стороне умер P
   function sendReset(iWon){
+    resetFlailCombat(P); resetFlailCombat(D);
+    P._lastDodgeAt=null; D._lastDodgeAt=null;
     if(iWon && typeof addWin==='function') addWin(false); // PVP победа игрока
     _lastSent={nx:-9,ny:-9,vx:-9,vy:-9,angle:-9,vel:-9,hp:-9,stamina:-9,rage:-9};
     _acceptAnyHp=true;
@@ -282,6 +294,8 @@ function onPvpReset(msg){
   
   // Сбрасываем P (игрока)
   if(P.hasWeapon===false && typeof setWeapon==='function') setWeapon(P, P.weaponType);
+  resetFlailCombat(P); resetFlailCombat(D);
+    P._lastDodgeAt=null; D._lastDodgeAt=null;
   P.hp=100; P.stamina=P.stamMax||100; P.rage=0;
   P.exhausted=0; P.unbalanced=0; P.vx=0; P.vy=0;
   P.hitFlash=0; P.rageBuffEnd=-1; P._dvx=0; P._dvy=0;
@@ -358,6 +372,25 @@ function onPvpReset(msg){
       // при хендшейке и при подборе оружия на карте, поэтому здесь трогаем
       // только индекс, а не пере-рандомизируем спрайт через setWeapon().
       if(msg.wt!=null && msg.wt!==D.weaponType){ D.weaponType=msg.wt; }
+      if(Number.isSafeInteger(msg.fq) && msg.fq>_lastRemoteFlailPacket){
+        _lastRemoteFlailPacket=msg.fq;
+        D._flailFoldLocked=msg.fl===1;
+        if(Number.isSafeInteger(msg.ft) && msg.ft>=0){
+          const previous=D._flailRemoteTurns;
+          if(previous!=null && msg.ft>previous && weaponKeyOf(D)==='flail'){
+            for(let i=0;i<Math.min(3,msg.ft-previous);i++) $.S.play('hammerSwing');
+          }
+          D._flailRemoteTurns=msg.ft;
+        }
+        if(Number.isFinite(msg.fe)) D._flailExt=Math.max(0,Math.min(1,msg.fe/1000));
+        const a=msg.fa;
+        if(a && Number.isSafeInteger(a.id) && a.id>_cancelledFlailId && [a.x,a.y,a.a].every(Number.isFinite) && (a.p===1 || a.p===2)){
+          const prev=D._flailAttack;
+          D._flailNetTarget={x:a.x*WORLD_W,y:a.y*WORLD_H};
+          D._flailAttack={id:a.id,phase:a.p===1?'out':'back',x:prev?.id===a.id?prev.x:a.x*WORLD_W,y:prev?.id===a.id?prev.y:a.y*WORLD_H,angle:a.a};
+        } else D._flailAttack=null;
+        D._flailNetTime=GameTime;
+      }
       // Обезоруживание противника — иначе D продолжает драться "вооружённым"
       // даже после того, как оппонент выбил у себя оружие (и наоборот).
       if(msg.hw!=null){
@@ -392,6 +425,38 @@ function onPvpReset(msg){
     if(P.hp<=0&&typeof triggerDeath==='function') triggerDeath(P,false);
   }
 
+  let _lastProjectileContact=0;
+  function onProjectileContact(msg){
+    if(!_active || !Number.isSafeInteger(msg.id) || msg.id<=_lastProjectileContact ||
+       ![msg.damage,msg.stamina,msg.dx,msg.dy,msg.kx,msg.ky].every(Number.isFinite) ||
+       msg.damage<0 || msg.damage>MAX_HP || (msg.stamina!==0 && msg.stamina!==30) ||
+       Math.hypot(msg.dx,msg.dy)>7.01 || Math.hypot(msg.kx,msg.ky)>5.01) return;
+    _lastProjectileContact=msg.id;
+    if(P.hp<=0) return;
+    if(msg.damage>0) onHit({newHp:Math.max(0,P.hp-msg.damage),dmg:msg.damage});
+    applyProjectileEffectToEntity(P,msg);
+  }
+  let _lastFlailHit=0;
+  function onFlailHit(msg){
+    if(!_active || !Number.isSafeInteger(msg.id) || msg.id<=Math.max(_lastFlailHit,_cancelledFlailId) ||
+       !Number.isFinite(msg.newHp) || !Number.isFinite(msg.dmg) || msg.dmg<0 || msg.newHp<0) return;
+    _lastFlailHit=msg.id;
+    if(P.hp<=0) return;
+    onHit({...msg,newHp:Math.min(P.hp,msg.newHp)});
+    startFlailPull(P,D,msg.id);
+  }
+  function onFlailCancel(msg){
+    if(!_active || !Number.isSafeInteger(msg.id)) return;
+    if(P._flailPull?.owner===D && P._flailPull.id===msg.id) P._flailPull=null;
+    if(msg.retract===true){
+      // Release the victim, but retain the visible head for the incoming return snapshots.
+      _lastFlailHit=Math.max(_lastFlailHit,msg.id);
+      if(D._flailAttack?.id===msg.id) D._flailAttack.phase='back';
+    } else {
+      _cancelledFlailId=Math.max(_cancelledFlailId,msg.id);
+      if(D._flailAttack?.id===msg.id) D._flailAttack=null;
+    }
+  }
   function onDisconnected(){ _pendingStart=false; setNetPVP(false); NET_CHAT.log('👋 ПВП завершён'); }
 
   // ── Tick — буфер интерполяции → D ──
@@ -442,7 +507,7 @@ function onPvpReset(msg){
     D.pvY += (_cur.pvY - D.pvY) * st;
   }
 
-  return { onConnected,onDisconnected,onState,onHit,onReadyGame,onPingUpdate,startGame,disconnect,tick,
+  return { onConnected,onDisconnected,onState,onHit,onFlailHit,onFlailCancel,onProjectileContact,onReadyGame,onPingUpdate,startGame,disconnect,tick,
     setPeerName(n){_peerName=n;}, get active(){return _active;}, get peerName(){return _peerName;},
     forceResync, sendReset, onPvpReset };
 })();

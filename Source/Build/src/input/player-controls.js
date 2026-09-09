@@ -116,7 +116,7 @@
     setShield(entity, ((entity.shield || 0) + 1) % SHIELD_TYPES.length);
   }
   function dodge(entity, moveX, moveY, charge){
-    if(!entity || isExhausted(entity) || isUnbalanced(entity) || (entity._dodgeCD || 0) > GameTime) return;
+    if(!entity || entity.hp<=0 || isExhausted(entity) || isUnbalanced(entity) || (entity._dodgeCD || 0) > GameTime) return;
     charge=Math.max(0, Math.min(1, Number(charge)||0));
     let dx=moveX, dy=moveY;
     if(Math.hypot(dx,dy) < 0.1){ dx=Math.cos(entity.angle); dy=Math.sin(entity.angle); }
@@ -127,7 +127,7 @@
     entity._dodgeCD=GameTime+0.7;
     entity._dodgeActiveUntil=GameTime+0.3+charge*0.12;
     if(charge>0) entity._shieldDashBashActiveUntil=entity._dodgeActiveUntil+0.15;
-    if(typeof drainStamina==='function') drainStamina(entity,30);
+    spendDodgeStamina(entity,30);
     if(typeof spawnDust==='function'){
       for(let i=0;i<8;i++) spawnDust(entity.x+Math.random()*24-12,entity.y+Math.random()*12,-dirX*8,-dirY*8);
     }
@@ -430,7 +430,7 @@
       if(pad) updateManualEntity(entity,pad,dt);
       else if(entity && entity._aiState){
         const keys=entity._aiState._fakeKeys;
-        keys.w=keys.a=keys.s=keys.d=false; entity._aiState._fakeMDown=false; entity._shieldHeld=false; entity._shieldDashCharging=false;
+        keys.w=keys.a=keys.s=keys.d=false; entity._aiState._fakeMDown=false; entity._manualAttackInput=false; entity._shieldHeld=false; entity._shieldDashCharging=false;
       }
     }
     if(pad) padState.previousButtons=pad.buttons.map(button=>button.pressed);
@@ -466,6 +466,8 @@
       }
     }
     const gestureAngle=Number.isFinite(entity._manualAimAngle) ? entity._manualAimAngle : entity.angle;
+    if(weaponKeyOf(entity)==='flail') flailInput(entity,!!entity._manualAttackInput,gestureAngle);
+    else entity._flailPress=false;
     updateManualCombatStaminaV2(entity,!!entity._manualAttackInput,gestureAngle,dt,entity._manualAimVelocity);
   }
 

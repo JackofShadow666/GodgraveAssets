@@ -59,6 +59,10 @@ if(shieldDrainActive){
   }
 
 
+  if(weaponKeyOf(P)==='flail'){
+    const fp=$.POS.pivot(P);
+    flailInput(P,mDown,Math.atan2(mY-fp.y,mX-fp.x));
+  } else P._flailPress=false;
   const inRageBuff = P.rageBuffEnd > GameTime;
   const lmbStaminaCost = P.stamMax * (sv('lmbcost') / 100) * weaponLmbStaminaMult(P);
 
@@ -72,7 +76,7 @@ if(shieldDrainActive){
   } else {
     P._wandCharging = false;
     // -- RAGE BUFF: while LMB held spends 30/sec, extends buff --------------
-    if(inRageBuff && mDown){
+    if(inRageBuff && mDown && weaponKeyOf(P)!=='flail'){
       P.rage = Math.max(0, P.rage - 30 * dt);
       if(P.rage > 0) P.rageBuffEnd = Math.max(P.rageBuffEnd, GameTime + 0.1);
     }
@@ -576,7 +580,7 @@ if (hasMod(P, 'weaponRecoil')) {
     $.S.play('whoosh');
   }
   if(!P._swingCD) P._swingCD = -1;
-  if(P.hasWeapon === false || isRangedWeapon(P)){
+  if(P.hasWeapon === false || isRangedWeapon(P) || $.IS(P, 'flail')){
     P._swingFX = false;
   } else {
     if(!P._swingBonusSuppressed && !isExhausted(P) && updateFlickDetect(P._realAngVel ?? P.vel, dt) && (P._swingBlockCD||0) < GameTime){
@@ -679,6 +683,42 @@ const FRAME_MIN_MS = 1000 / TARGET_FPS;
 const FIXED_DT = 1 / SIM_TICK_RATE;
 let lastRenderT = 0;
 let accumulator = 0; // accumulated real time
+const PERF_PROFILER_WARN_MS = 12;
+let PERF_PROFILER_LAST_LOG = 0;
+
+function perfProfilerEnabled(){
+  return typeof cb === 'function' && cb('perfprof') && typeof performance !== 'undefined';
+}
+
+function perfProfilerState(){
+  if(!dummyOn || !ALL_BOTS || !ALL_BOTS.length) return '';
+  const bot = ALL_BOTS.find(b => b && b.hp > 0 && !b._manualControl) || ALL_BOTS.find(b => b && b.hp > 0);
+  if(!bot) return '';
+  const ai = bot._aiState || AI || {};
+  const parts = [
+    `weapon=${typeof weaponKeyOf === 'function' ? weaponKeyOf(bot) : '?'}`,
+    `phase=${ai.phase || '-'}`,
+    `heavy=${ai._heavyAttackPhase || '-'}`,
+    `variant=${ai._heavyAttackVariant || '-'}`,
+    `spin=${ai._spinActive ? '1' : '0'}`,
+    `vel=${Math.abs(bot.vel || 0).toFixed(2)}`,
+  ];
+  if(bot._flailState) parts.push(`flail=${bot._flailState}`, `ext=${(bot._flailExt || 0).toFixed(2)}`);
+  return parts.join(' ');
+}
+
+function perfProfilerLog(totalMs, spans){
+  const now = performance.now();
+  if(totalMs < PERF_PROFILER_WARN_MS || now < PERF_PROFILER_LAST_LOG + 250) return;
+  PERF_PROFILER_LAST_LOG = now;
+  const top = spans
+    .filter(s => s.ms >= 0.2)
+    .sort((a,b) => b.ms - a.ms)
+    .slice(0, 6)
+    .map(s => `${s.name}:${s.ms.toFixed(2)}ms`)
+    .join(' ');
+  console.log(`[perf] tick ${totalMs.toFixed(2)}ms ${top} ${perfProfilerState()}`);
+}
 
 // =======================================================================================
 // MODULE: VISIBILITY  (pause game and music on tab/page switch)
@@ -715,11 +755,21 @@ function loop(ts){
   while(accumulator >= FIXED_DT && steps < maxSteps){
     accumulator -= FIXED_DT;
     const dt = FIXED_DT * sv('gamespeed');
+    const perfOn = perfProfilerEnabled();
+    const perfStart = perfOn ? performance.now() : 0;
+    const perfSpans = perfOn ? [] : null;
+    let perfMark = perfStart;
+    const perfStep = perfOn ? (name)=>{
+      const now = performance.now();
+      perfSpans.push({name, ms: now - perfMark});
+      perfMark = now;
+    } : null;
     GameTime += dt;
     update(dt);
     duelUpdate(dt);
     updateDroppedWeapons(dt);
     updateProjectiles(dt);
+    if(perfOn) perfStep('core+ranged');
     
     if(P._wandCharging) updateWandChargeParticles(dt, P);
     if(dummyOn){ for(const _wb of ALL_BOTS){ if(_wb.hp > 0 && _wb._wandCharging) updateWandChargeParticles(dt, _wb); } }
@@ -737,6 +787,7 @@ function loop(ts){
 // ?? SINGLE SHAKE FOR ALL
 updateChargeShake(P, dt);
     if(typeof LocalPlayerControls!=='undefined') LocalPlayerControls.update(dt);
+    if(perfOn) perfStep('fx+local');
     if(dummyOn){
       for(const bot of ALL_BOTS){
         if(!revealBotIfReady(bot)) continue;
@@ -747,7 +798,9 @@ updateChargeShake(P, dt);
       }
       updateMainBotRotation(dt);
     }
+    if(perfOn) perfStep('bot');
     
+    updateFlailCombat(dt);
     updateFlailExtension(P, dt);
     if(dummyOn){ for(const bot of ALL_BOTS){ if(bot.hp > 0) updateFlailExtension(bot, dt); } }
 if(dummyOn) {
@@ -755,6 +808,7 @@ if(dummyOn) {
     if(bot.hp > 0) updateChargeShake(bot, dt);
   }
 }
+    if(perfOn) perfStep('flail+shake');
 	
 	
     if(dummyOn){
@@ -770,11 +824,16 @@ if(dummyOn) {
         }
       }
     }
+    if(perfOn) perfStep('melee');
     if(typeof enforceCameraCage === 'function') enforceCameraCage();
     updateBalls(dt);
     updateBlood(dt);
     updateFX(dt);
     if(typeof window._dodgeTick==='function') window._dodgeTick(dt);
+    if(perfOn){
+      perfStep('tail');
+      perfProfilerLog(performance.now() - perfStart, perfSpans);
+    }
     steps++;
   }
 

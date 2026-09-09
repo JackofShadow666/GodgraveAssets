@@ -309,6 +309,15 @@ function segSegDist(ax,ay,bx,by,cx,cy,dx,dy){
 // ─── SWORD COLLISION DETECTION ──────────────────────────────────────
 // Detects weapon clashes: blade + stamina + knockback + hitstop.
 function checkSwordCollision(entA, entB, dt){
+  // A lunge has its own swept head collision; the other weapon can still hit its owner.
+  if(flailBusy(entA) || flailBusy(entB)){
+    for(const [attacker,defender] of [[entA,entB],[entB,entA]]){
+      if(flailBusy(attacker)) continue;
+      const p=$.POS.pivot(attacker),r=weaponReach(attacker)*sv('swlen')*(isBot(attacker)?sv('botswordscale'):1)*0.82;
+      checkBladeVsBody(attacker,defender,p.x,p.y,p.x+Math.cos(attacker.angle)*r,p.y+Math.sin(attacker.angle)*r);
+    }
+    return;
+  }
 
   // A local player may reuse a bot entity. Skip only two actual AI actors,
   // never an AI actor fighting a locally controlled player slot.
@@ -524,6 +533,7 @@ function tryApplySoftBodyContact(attacker, defender, bodyCenter, soundType) {
 // ─── BLADE VS BODY ──────────────────────────────────────────────────────
 // Checks if the attacker's weapon tip hits the defender's body.
 function checkBladeVsBody(attacker, defender, pivX, pivY, tipX2, tipY2) {
+  if(flailBusy(attacker)) return;
   // Skip if opponent is already dead
   if (DEATH.pDead || DEATH.dDead) return;
   // Skip if weapon is disabled (e.g., during disarm)
@@ -1043,6 +1053,7 @@ if (defender === D && attacker === P && typeof AI !== 'undefined' && AI.enabled 
       }
       
       // ─── APPLY DAMAGE ────────────────────────────────────────────
+      const hpBeforeDamage = defender.hp;
       const isPoke = _isPoke;
       applyDamage(defender, dmg, attacker, {
         isMagic: false,
@@ -1063,7 +1074,7 @@ if (defender === D && attacker === P && typeof AI !== 'undefined' && AI.enabled 
       $.S.play(damageSoundForWeapon(attacker));
       
       if (typeof NET_SYNC !== 'undefined' && $.NET.active() && attacker === P && defender === D) {
-        $.NET.send({ type: 'hit', dmg, newHp: defender.hp });
+        $.NET.send({ type: 'hit', dmg: hpBeforeDamage - defender.hp, newHp: defender.hp });
       }
       
       const _otherBot2 = attacker === P ? defender : (defender === P ? attacker : null);
@@ -1284,6 +1295,8 @@ function dstyleCb(id){
 // ─── RESET PLAYER STATE ──────────────────────────────────────────────
 // ─── RESET / RESTART ──────────────────────────────────────────────────
 function resetPlayerState(options = {}) {
+    P._lastDodgeAt=null;
+    resetFlailCombat(P);
     // Clear dropped weapons
     if (typeof DROPPED_WEAPONS !== 'undefined') {
         DROPPED_WEAPONS.length = 0;
@@ -1390,6 +1403,8 @@ function resetPlayerState(options = {}) {
 }
 
 function clearEntityChargeState(ent) {
+    if(ent) ent._lastDodgeAt=null;
+    resetFlailCombat(ent);
     if (!ent) return;
     if (ent._wandCharging) {
         ent._wandCharging = false;
@@ -1524,6 +1539,7 @@ const DEATH = { pDead: false, dDead: false, deathCross: [], fadeAlpha: 0, fadeIn
 // ─── DEATH HANDLER ──────────────────────────────────────────────────
 // Called when a character's HP reaches 0. Handles bot removal, victory/defeat logic.
 function handleCombatDeath(ent){
+  resetFlailCombat(ent);
   if(typeof FactionRules!=='undefined' && FactionRules.handleDeath(ent)) return;
   if(ent === P){ triggerDeath(P, false); return; }
   if(!isBot(ent)) return;
@@ -1553,6 +1569,7 @@ function handleCombatDeath(ent){
   }
 }
 function triggerDeath(ent, isBot){
+  resetFlailCombat(ent);
   if(isBot && DEATH.dDead) return;
   if(!isBot && DEATH.pDead) return;
   const bc = $.POS.body(ent);
@@ -1961,3 +1978,26 @@ function updateFlickDetect(realAngVel, rawDt) {
 // ─────────────────────────────────────────────────────────────────────────────────
 
 // ••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+
+// Same ordinary flail damage formula; a straight throw uses at least the swing threshold.
+function applyFlailLungeDamage(attacker,defender,speed){
+  if(defender.hp<=0 || defender._hitCD>=GameTime || Math.hypot(defender._dvx||0,defender._dvy||0)>200) return false;
+  let dmg=Math.round(Math.round((Math.round(Math.abs(speed)*30+3))/6)*weaponCutMult(attacker));
+  dmg=Math.max(20,dmg);
+  if(defender===P && mDown) dmg=Math.round(dmg*sv('lmbdmg'));
+  if(defender===D && typeof AI!=='undefined' && AI._fakeMDown) dmg=Math.round(dmg*1.5);
+  if(attacker.rageBuffEnd>GameTime) dmg*=2;
+  if(shieldDef(attacker) && shieldSameSideAsSword(attacker)) dmg=Math.round(dmg*0.85);
+  dmg=Math.round(dmg/((isBot(defender)?sv('cscl')*sv('botscale'):sv('cscl'))||1));
+  dmg=applyCutSwingPenalty(attacker,dmg);
+  if(defender===P && P._multiHitProtection) dmg=Math.round(dmg*P._multiHitProtectionMult);
+  const hp=defender.hp,vx=defender.vx,vy=defender.vy;
+  applyDamage(defender,dmg,attacker,{knockbackMult:0,playSound:false});
+  // applyDamage currently treats a zero knockback option as its default.
+  defender.vx=vx;defender.vy=vy;
+  attacker._flailLastDamage=hp-defender.hp;
+  if(defender.hp===hp) return false;
+  $.S.play(damageSoundForWeapon(attacker));
+  aiNotifyContact();
+  return true;
+}

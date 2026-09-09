@@ -52,7 +52,7 @@ const WEAPON_TYPES = [
 	
   // Цеп: scale ниже — резервное значение, реальная длина в бою динамическая
   // (см. МОДУЛЬ ЦЕПА: flailScaleFor/updateFlailExtension).
-  { key:'flail',    name:'Цеп',         category:'flail', throwSpeed: 8, scale: 0.7,
+  { key:'flail',    damageMult:0.5, name:'Цеп',         category:'flail', throwSpeed: 8, scale: 0.7,
     dmgBase: 8, dmgPerSpeed: 6, maxDmgPercent: 0.20, spinMin: 0.24, spinMax: 0.24,
     weight: 1.2, staminaMult: 1.5, cutMult: 2, pierceMult: 0.1, collision: 'tip', flags: 'disarm,knockback', lmbStaminaMult: 1.0 },
   // ── Дальнобойное оружие (см. МОДУЛЬ ДАЛЬНЕГО БОЯ ниже) ──────────────────
@@ -74,7 +74,7 @@ const WEAPON_TYPES = [
 // ── Загрузка параметров оружия с сервера (WeaponTalbe.txt) ─────────────────
 // Формат файла — по одной строке на вид оружия, поля через '|':
 //   key|name|category|throwSpeed|scale|dmgBase|dmgPerSpeed|maxDmgPercent|spinMin|spinMax
-//     |weight|staminaMult|cutMult|pierceMult|collision|flags|chargeTime|lmbStaminaMult
+//     |weight|staminaMult|cutMult|pierceMult|collision|flags|chargeTime|lmbStaminaMult|damageMult
 // chargeTime — время накопления заряда перед выстрелом, сек (используется
 //   только жезлом; для остального оружия можно не указывать — не используется).
 // lmbStaminaMult — множитель стоимости стамины ЛКМ-удара (сверху общего % из
@@ -107,6 +107,7 @@ async function loadWeaponTable(){
       if(p.length < 5) continue; // минимум key|name|category|throwSpeed|scale
       parsed.push({
         key: p[0], name: p[1], category: p[2],
+        damageMult: p[18] !== undefined && p[18] !== '' && Number.isFinite(Number(p[18])) ? Math.max(0,Number(p[18])) : (p[0]==='flail'?0.5:1),
         throwSpeed:    p[3]  !== undefined ? parseFloat(p[3])  : 16,
         scale:         p[4]  !== undefined ? parseFloat(p[4])  : 1.0,
         dmgBase:       p[5]  !== undefined ? parseFloat(p[5])  : 8,
@@ -249,6 +250,7 @@ let DROPPED_WEAPONS = [];
 
 // Экипирует entity оружием типа typeIdx (случайный вариант из папки этого вида)
 function setWeapon(ent, typeIdx, options) {
+  resetFlailCombat(ent);
   if (!ent) return;
   if (typeof typeIdx === 'string') typeIdx = weaponTypeIndexByKey(typeIdx);
   if (!Number.isFinite(typeIdx)) typeIdx = 0;
@@ -407,6 +409,34 @@ function droppedWeaponPixelLen(ent){
   return currentWeaponPixelLen(ent);
 }
 
+function cancelRangedCharge(ent){
+  if(ent._wandCharging){
+    ent._wandCharging = false;
+    if(ent._wandChargeSoundObj){ fadeOutSound(ent._wandChargeSoundObj, 0.2); ent._wandChargeSoundObj = null; }
+  }
+  if(ent._bowCharging){
+    ent._bowCharging = false;
+    ent._bowSpawnCD = 0;
+    if(ent._bowTensionSound){ fadeOutSound(ent._bowTensionSound, 0.2); ent._bowTensionSound = null; }
+    clearBowTensionFX();
+  }
+  if(ent._magicCharging){
+    ent._magicCharging = false;
+    if(ent._magicChargeSoundObj){ fadeOutSound(ent._magicChargeSoundObj, 0.2); ent._magicChargeSoundObj = null; }
+    clearMagicStaffFX(ent);
+  }
+  if(ent._magicStaffState){
+    ent._magicStaffState.isHeld = false;
+    ent._magicStaffState.hasFired = false;
+    ent._magicStaffState.rageConsumed = false;
+    ent._magicStaffState.staminaConsumed = false;
+    ent._magicStaffState._penaltyApplied = false;
+    ent._magicStaffState._penaltyTimer = 0;
+    ent._magicStaffState.rageDrainTimer = 0;
+    ent._magicStaffState._releaseProcessed = false;
+  }
+}
+
 // Разоружает entity: оружие падает на карту как подбираемый предмет
 function disarmEntity(ent, kickVx, kickVy){
   if(ent.hasWeapon === false) return;
@@ -444,6 +474,7 @@ function disarmEntity(ent, kickVx, kickVy){
     rot: dropAngle,
     angVel: randSpin(defW, 0.8), // чуть быстрее вращение
   });
+  cancelRangedCharge(ent);
   ent.hasWeapon = false;
   ent._weaponImg = null;
   ent._weaponUrl = null;
@@ -489,6 +520,7 @@ function throwWeapon(ent){
     angVel: randSpin(def, 1),
   });
   
+  cancelRangedCharge(ent);
   ent.hasWeapon = false;
   ent._weaponImg = null;
   ent._weaponUrl = null;
@@ -636,6 +668,10 @@ if(bounced){
         }
 
         if(deflected){
+          if(w._projectileBlockContact!==ent){
+            applyProjectileContactEffects(w,ent,true,0);
+            w._projectileBlockContact=ent;
+          }
           // 🔥 ВРАЩЕНИЕ ПРИ ОТСКОКЕ ОТ МЕЧА/ЩИТА (уже в bounceWeapon)
           // но добавим на всякий случай
           if (w.weaponType === 'spear' && !w.isThrow) {
@@ -656,6 +692,8 @@ if(bounced){
         }
       }
     }
+
+    if(!deflected) w._projectileBlockContact=null;
 
     // Затухание скорости
     const velocityDecay = Math.pow(0.9887, step);
@@ -694,6 +732,7 @@ if (w.weaponType === 'spear' && Math.abs(w.angVel) > 0.1) {
           dmg = Math.min(dmg, Math.max(1, Math.round(MAX_HP * maxDmgPct)));
           
           applyDamage(ent, dmg, w.owner, {
+            weaponDamageKey: wDefHit.key,
             isMagic: false,
             isExplosion: false,
             knockbackMult: 0.6,
@@ -896,3 +935,17 @@ function weaponTipPos(ent){
 // ──────────────── END LAYER: WEAPONS ────────────────
 
 // ════════════════════════════════════════════════════════════════════════════
+
+// Final damage balance, applied after minimum damage and caps, including loaded tables.
+function weaponDamageMultiplier(key){
+  const def=WEAPON_TYPES.find(w=>w.key===key);
+  return def && Number.isFinite(def.damageMult) ? Math.max(0,def.damageMult) : (key==='flail'?0.5:1);
+}
+// Call only once an actual dodge starts. Keep the timestamp across weapon swaps.
+function spendDodgeStamina(ent,baseCost){
+  const rested=ent._lastDodgeAt==null || GameTime-ent._lastDodgeAt>2;
+  const cost=baseCost*(weaponKeyOf(ent)==='bow' && rested?0.5:1);
+  ent._lastDodgeAt=GameTime;
+  drainStamina(ent,cost);
+  return cost;
+}
