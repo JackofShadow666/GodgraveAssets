@@ -599,19 +599,16 @@ function drawMagicStaffChargeFX(){
 // ─── UNIFIED DAMAGE FUNCTION ───
 // ••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
 function applyDamage(defender, damage, attacker, options){
-const dC2 = $.POS.body(defender);
-
   if(!defender || defender.hp <= 0) return;
+  const survivalMult = typeof SurvivalMode !== 'undefined' ? SurvivalMode.damageMultiplier(defender) : 1;
+  if(survivalMult <= 0) return;
+  const dC2 = $.POS.body(defender);
   if(typeof FactionRules!=='undefined'){
     if(!FactionRules.canDamage(attacker,defender)) return;
     FactionRules.contact(attacker,defender);
   }
 
   if(attacker && Number.isFinite(attacker._damageMult)) damage *= attacker._damageMult;
-  if(typeof SurvivalMode !== 'undefined' && SurvivalMode.isActive() &&
-     typeof FactionRules !== 'undefined' && FactionRules.isPlayer(defender)){
-    damage /= defender.hp < (defender.maxHp || 100) * 0.5 ? 3 : 2;
-  }
   if(damage <= 0) return;
   if(defender._hitCD !== undefined && defender._hitCD >= GameTime) return;
 // ─── OPTIONS ───
@@ -637,7 +634,7 @@ const dC2 = $.POS.body(defender);
     ? Math.round(damage * 0.5)
     : damage;
   const balanceKey=opts.weaponDamageKey || (!isMagic && !isExplosion && !isProjectile && attacker ? weaponKeyOf(attacker) : null);
-  const finalDmg = Math.round(Math.min(guardedDamage, Math.max(1, Math.round(MAX_HP * 0.70))) * weaponDamageMultiplier(balanceKey)); // 70% max per hit
+  const finalDmg = Math.round(Math.min(guardedDamage, Math.max(1, Math.round(MAX_HP * 0.70))) * weaponDamageMultiplier(balanceKey) * survivalMult); // Apply survival protection after the normal damage cap.
   defender.hp = Math.max(0, defender.hp - finalDmg);
   if(typeof tryCinematicSlowmo === 'function' && finalDmg > 40) tryCinematicSlowmo('damage', 0.10);
   defender._hitCD = Math.max(defender._hitCD || -1, GameTime + 0.4);
@@ -1843,6 +1840,41 @@ function drawProjectiles(){
     }
   }
 }
+
+function drawOffscreenRangedThreatMarkers(){
+  if(typeof ctx === 'undefined' || typeof ALL_BOTS === 'undefined' || typeof P === 'undefined') return;
+  const margin = 22;
+  const cx = W / 2, cy = H / 2;
+  const pC = $.POS.body(P);
+  ctx.save();
+  ctx.setTransform(1,0,0,1,0,0);
+  for(const bot of ALL_BOTS){
+    if(!bot || bot.hp <= 0 || bot._awaitingReveal || bot._defeated || bot.hasWeapon === false) continue;
+    if(!isRangedWeapon(bot)) continue;
+    const bC = $.POS.body(bot);
+    const sx = (bC.x - CAM_X) * CAM_SCALE;
+    const sy = (bC.y - CAM_Y) * CAM_SCALE;
+    if(sx >= 0 && sx <= W && sy >= 0 && sy <= H) continue;
+    const toPlayer = Math.atan2(pC.y - bC.y, pC.x - bC.x);
+    const aimDiff = Math.abs($.M.angDiff(toPlayer, bot.angle || 0));
+    const aiming = aimDiff < 0.45 || bot._bowCharging || bot._wandCharging || bot._magicCharging || weaponKeyOf(bot)==='crossbow';
+    if(!aiming) continue;
+    const dx = sx - cx, dy = sy - cy;
+    const scale = Math.min(
+      dx === 0 ? Infinity : (dx > 0 ? (W - margin - cx) / dx : (margin - cx) / dx),
+      dy === 0 ? Infinity : (dy > 0 ? (H - margin - cy) / dy : (margin - cy) / dy)
+    );
+    const mx = cx + dx * scale, my = cy + dy * scale;
+    const angle = Math.atan2(dy, dx);
+    const pulse = 0.65 + 0.35 * Math.abs(Math.sin(GameTime * 8));
+    ctx.save(); ctx.translate(mx, my); ctx.rotate(angle); ctx.globalAlpha = pulse;
+    ctx.fillStyle = '#ff3030'; ctx.strokeStyle = 'rgba(255,255,255,.75)'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(14,0); ctx.lineTo(-9,-8); ctx.lineTo(-5,0); ctx.lineTo(-9,8); ctx.closePath();
+    ctx.fill(); ctx.stroke();
+    ctx.restore();
+  }
+  ctx.restore();
+}
 function updateCrossbowBotAI(dt, bot){
   const target = typeof FactionRules!=='undefined' ? FactionRules.getBotTarget(bot) : P;
   if(!target) return;
@@ -2257,8 +2289,20 @@ function canResolveProjectileContact(projectile,ent){
   if(typeof NET_SYNC!=='undefined' && NET_SYNC.active && projectile.owner===D) return false;
   return typeof FactionRules==='undefined' || FactionRules.canDamage(projectile.owner,ent);
 }
+function thrownWeaponDisbalanceDuration(projectile){
+  const cellSize = typeof CELL_PX === 'number' ? CELL_PX : 55;
+  let travel = Number(projectile && projectile.throwTravel);
+  if(!Number.isFinite(travel)){
+    const ox = Number(projectile && projectile.throwOriginX);
+    const oy = Number(projectile && projectile.throwOriginY);
+    travel = Number.isFinite(ox) && Number.isFinite(oy)
+      ? Math.hypot((projectile.x || 0) - ox, (projectile.y || 0) - oy)
+      : 0;
+  }
+  return travel >= 5 * cellSize ? 1.3 : 0.3;
+}
 // A consumed projectile resolves once; thrown weapons call this once per continuous block contact.
-function applyProjectileContactEffects(projectile,ent,blocked,damage){
+function applyProjectileContactEffects(projectile,ent,blocked,damage,options){
   if(!ent || !canResolveProjectileContact(projectile,ent)) return;
   const remote=typeof NET_SYNC!=='undefined' && NET_SYNC.active && ent===D;
   const speed=Math.hypot(projectile.vx||0,projectile.vy||0)||1;
@@ -2266,12 +2310,14 @@ function applyProjectileContactEffects(projectile,ent,blocked,damage){
   const wand=projectile.kind==='wand';
   const arrow=projectile.kind==='arrow';
   const thrown=!wand && !arrow;
+
   const impactImpulse=(wand || arrow) ? 7 : (thrown ? Math.max(3, Math.min(8, speed * 0.9)) : 0);
   const disarm=wand && ent.hp>0 && ent.hasWeapon!==false && Math.random()<0.3;
   // Same drag as normal disarm, half its initial velocity => approximately half travel.
   const kick=disarm ? (6+Math.random()*4)*0.5 : 0;
   const effect={type:'projectileContact',id:++projectileContactSerial,damage:Math.max(0,damage||0),
-    stamina:blocked?30:0,dx:dx*impactImpulse,dy:dy*impactImpulse,disarm,kx:dx*kick,ky:dy*kick};
+    stamina:blocked?30:0,dx:dx*impactImpulse,dy:dy*impactImpulse,disarm,kx:dx*kick,ky:dy*kick,
+    disbalance:thrown?thrownWeaponDisbalanceDuration(projectile):0};
   if(remote){
     $.NET.send(effect);
     return;
@@ -2284,5 +2330,6 @@ function applyProjectileEffectToEntity(ent,effect){
     if(ent.stamina<=0 && !isExhausted(ent)) applyExhaust(ent);
   }
   ent.vx=(ent.vx||0)+effect.dx;ent.vy=(ent.vy||0)+effect.dy;
+  if(effect.disbalance>0 && typeof applyDisbalance==='function') applyDisbalance(ent,null,effect.disbalance);
   if(effect.disarm && ent.hp>0 && ent.hasWeapon!==false) disarmEntity(ent,effect.kx,effect.ky);
 }

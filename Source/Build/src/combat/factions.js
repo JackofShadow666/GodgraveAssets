@@ -7,6 +7,7 @@
   const wins = [0, 0, 0, 0];
   let botWins = 0;
   let roundEnding = false;
+  let roundResetTimer = 0;
 
   function factionText(key, fallback, vars){
     return window.I18N ? window.I18N.t(key, vars) : fallback;
@@ -31,7 +32,7 @@
   }
 
   function isPlayer(ent){ return players().includes(ent); }
-  function bots(){ return typeof ALL_BOTS === 'undefined' ? [] : ALL_BOTS.filter(ent => !isPlayer(ent)); }
+  function bots(){ return typeof ALL_BOTS === 'undefined' ? [] : ALL_BOTS.filter(ent => !ent._survivalReserved && !isPlayer(ent)); }
   function alivePlayers(){ return players().filter(ent => ent.hp > 0 && !ent._defeated); }
   function aliveBots(){ return bots().filter(ent => ent.hp > 0 && !ent._defeated); }
 
@@ -221,6 +222,7 @@ function contact(a, b){
   }
 
   function resetRound(){
+    roundResetTimer = 0;
     clearAllRespawns();
     const all = [...players(), ...bots()];
     all.forEach((ent, index) => {
@@ -236,7 +238,6 @@ function contact(a, b){
     DEATH.fadeAlpha = 0;
     DEATH.text = '';
     roundEnding = false;
-    if(mode === 'survival' && typeof SurvivalMode !== 'undefined') SurvivalMode.onRoundReset();
   }
 
   function finishRound(text, winner){
@@ -255,11 +256,13 @@ function contact(a, b){
     DEATH.fadeIn = true;
     DEATH.text = text;
     DEATH.textCol = '#ffdd44';
-    setTimeout(resetRound, 2000);
+    roundResetTimer = setTimeout(resetRound, 2000);
     return true;
   }
 
   function handleDeath(ent){
+    if(typeof SurvivalMode !== 'undefined' && SurvivalMode.isActive()) return SurvivalMode.handleDeath(ent);
+    if(mode === 'survival') return false;
     if(mode !== 'survival' && !(typeof LocalPlayerControls !== 'undefined' && LocalPlayerControls.isLocalPvP())) return false;
     if(ent._defeated) return true;
     ent._defeated = true;
@@ -270,9 +273,6 @@ function contact(a, b){
 
     const alivePlayersNow = alivePlayers();
     const aliveBotsNow = aliveBots();
-    if(mode === 'survival' && typeof SurvivalMode !== 'undefined'){
-      return SurvivalMode.handleDeath(ent, isPlayer(ent), alivePlayersNow, aliveBotsNow);
-    }
     if(mode === 'coop'){
       if(!aliveBotsNow.length) return finishRound(factionText('factions.coop.playersWin', 'PLAYERS WON'), alivePlayersNow[0] || P);
       if(!alivePlayersNow.length) return finishRound(factionText('factions.coop.botsWin', 'BOTS WON'), aliveBotsNow[0]);
@@ -285,7 +285,14 @@ function contact(a, b){
   }
 
   function setMode(value){
-    mode = value === 'coop' || value === 'survival' ? value : 'ffa';
+    const nextMode = value === 'coop' || value === 'survival' ? value : 'ffa';
+    if(nextMode !== mode){
+      if(roundResetTimer) clearTimeout(roundResetTimer);
+      roundResetTimer = 0;
+      clearAllRespawns();
+      roundEnding = false;
+    }
+    mode = nextMode;
     localStorage.setItem(KEY, mode);
     const select = document.getElementById('local-faction-mode');
     if(select) select.value = mode;

@@ -142,6 +142,7 @@
   const botShieldBtn = document.getElementById('mob-bot-shield-btn');
   botShieldBtn?.addEventListener('touchstart', e => {
     e.preventDefault();
+    if(typeof SurvivalMode!=='undefined' && SurvivalMode.isActive()) return;
     if(typeof D==='undefined' || typeof setShield!=='function') return;
     D.shield = (D.shield+1)%SHIELD_TYPES.length; setShield(D, D.shield);
     window._manualBotShieldType = D.shield;
@@ -427,7 +428,11 @@ window.doRestart=function(){
   // fireDodge — works on all devices (PC + mobile)
   window.fireDodge=function(dx, dy, bypassCooldown, chargedPower){
     if(typeof P==='undefined' || P.hp<=0 || isExhausted(P) || isUnbalanced(P) || Math.hypot(dx,dy)<0.001) return;
-    if(!bypassCooldown&&window._dodgeCooldownMob>0) return;
+    if(!bypassCooldown){
+      if(typeof tryStartDodge==='function'){
+        if(!tryStartDodge(P,window._dodgeCooldownMob>0)) return;
+      } else if(window._dodgeCooldownMob>0) return;
+    }
     const len=Math.hypot(dx,dy)||1;
     const charge = Math.max(0, Math.min(1, chargedPower || 0));
     const force=8 + charge * 7;

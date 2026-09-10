@@ -6,6 +6,7 @@
 
 
 function update(dt){
+  if(typeof SurvivalMode !== 'undefined' && SurvivalMode.isActive() && (P.hp <= 0 || P._defeated)) return;
   if(DEATH.pDead) return; // dead — no update
   const step = $.M.step(dt);
   updateBuffs(P, dt);
@@ -784,7 +785,6 @@ function loop(ts){
     GameTime += dt;
     update(dt);
     duelUpdate(dt);
-    if(typeof SurvivalMode !== 'undefined') SurvivalMode.update(dt);
     updateDroppedWeapons(dt);
     updateProjectiles(dt);
     if(perfOn) perfStep('core+ranged');
@@ -810,7 +810,10 @@ updateChargeShake(P, dt);
       for(const bot of ALL_BOTS){
         if(!revealBotIfReady(bot)) continue;
         if(bot.hp <= 0) continue;
-        if(!bot._manualControl) updateAIDispatch(dt, bot);
+        if(!bot._manualControl){
+          updateAIDispatch(dt, bot);
+          if(typeof SurvivalMode!=='undefined') SurvivalMode.adjustAI(bot);
+        }
         updateDummy(dt, bot);
         if(typeof LocalPlayerControls!=='undefined') LocalPlayerControls.afterEntityUpdate(bot,dt);
       }
@@ -847,6 +850,7 @@ if(dummyOn) {
     updateBalls(dt);
     updateBlood(dt);
     updateFX(dt);
+    if(typeof SurvivalMode !== 'undefined') SurvivalMode.update(dt);
     if(typeof window._dodgeTick==='function') window._dodgeTick(dt);
     if(perfOn){
       perfStep('tail');
@@ -946,6 +950,7 @@ if(dummyOn&&isUnbalanced(D)) drawUnbalancedStars(D);
     drawFX();
     
     ctx.setTransform(1, 0, 0, 1, 0, 0);
+    if(typeof drawOffscreenRangedThreatMarkers === 'function') drawOffscreenRangedThreatMarkers();
     drawCursor();
     if(typeof window._restoreScreenShake==='function') window._restoreScreenShake(window._shakeApplied);
   }
@@ -1147,10 +1152,15 @@ window.addEventListener('keydown', e=>{
   if(k==='r'||k==='к'){ window.toggleSwordStyle(); }
   if(k==='y'||k==='н'){ toggleAI(); } // Y/н (same physical key as Y) = SPAWN BOT
   if(k==='z'||k==='я'){
-    P.shield=(P.shield+1)%SHIELD_TYPES.length; setShield(P,P.shield);
-    const n=SHIELD_TYPES[P.shield]; $.FX.hit({x:P.x,y:P.y-40,t:(window.I18N?window.I18N.t('main.shieldPlayer',{name:n?n.name:window.I18N.t('main.shieldNone')}):('SHIELD P: '+(n?n.name:'none'))),life:60,big:false,col:'#88ccff'});
+    if(typeof SurvivalMode!=='undefined' && SurvivalMode.isActive()){
+      if(typeof dropShield==='function') dropShield(P);
+    } else {
+      P.shield=(P.shield+1)%SHIELD_TYPES.length; setShield(P,P.shield);
+      const n=SHIELD_TYPES[P.shield]; $.FX.hit({x:P.x,y:P.y-40,t:(window.I18N?window.I18N.t('main.shieldPlayer',{name:n?n.name:window.I18N.t('main.shieldNone')}):('SHIELD P: '+(n?n.name:'none'))),life:60,big:false,col:'#88ccff'});
+    }
   }
   if(k==='x'||k==='ч'){
+    if(typeof SurvivalMode!=='undefined' && SurvivalMode.isActive()) return;
     D.shield=(D.shield+1)%SHIELD_TYPES.length; setShield(D,D.shield);
     window._manualBotShieldType = D.shield;
     const n=SHIELD_TYPES[D.shield]; $.FX.hit({x:D.x,y:D.y-40,t:(window.I18N?window.I18N.t('main.shieldBot',{name:n?n.name:window.I18N.t('main.shieldNone')}):('SHIELD D: '+(n?n.name:'none'))),life:60,big:false,col:'#ffaa44'});

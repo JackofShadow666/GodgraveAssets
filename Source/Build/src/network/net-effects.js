@@ -32,6 +32,7 @@
       scale: Number.isFinite(scale) ? clamp(scale, 0.05, 1) : slowmoScale()
     };
     cooldownUntil = t + COOLDOWN_MIN + Math.random() * (COOLDOWN_MAX - COOLDOWN_MIN);
+    if(typeof window.resetDodgeCooldowns === 'function') window.resetDodgeCooldowns();
     if(typeof triggerHitstop === 'function') triggerHitstop(2, 3);
     return true;
   }
@@ -110,7 +111,7 @@
 
   window.beginDodgePress = function(source){
     if(typeof gamePaused !== 'undefined' && gamePaused) return;
-    if(_pcDodgeCooldown > 0) return;
+    if(_pcDodgeCooldown > 0 && (typeof canUseRageDodge !== 'function' || !canUseRageDodge(P))) return;
     if(canChargeShieldDash()){
       P._shieldDashCharging = true;
       P._shieldDashChargeStart = GameTime;
@@ -122,6 +123,7 @@
       }
       return;
     }
+    if(typeof tryStartDodge === 'function' && !tryStartDodge(P, _pcDodgeCooldown > 0)) return;
     _pcDodgeCooldown = 0.8;
     if(typeof window.doDodge === 'function') window.doDodge(true);
   };
@@ -136,6 +138,7 @@
     P._shieldDashChargeSource = null;
     if(typeof fadeOutSound === 'function') fadeOutSound(P._shieldDashChargeSound, 0.18);
     P._shieldDashChargeSound = null;
+    if(typeof tryStartDodge === 'function' && !tryStartDodge(P, _pcDodgeCooldown > 0)) return;
     _pcDodgeCooldown = 0.8;
     const dir = dodgeVector();
     if(typeof window.fireDodge === 'function') window.fireDodge(dir.x, dir.y, true, charge);
@@ -190,6 +193,19 @@
           r: 7
         });
       }
+    }
+  };
+
+  window.resetDodgeCooldowns = function(){
+    _pcDodgeCooldown = 0;
+    window._dodgeCooldownMob = 0;
+    const entities = [];
+    if(typeof P !== 'undefined') entities.push(P);
+    if(typeof ALL_BOTS !== 'undefined') entities.push(...ALL_BOTS);
+    for(const ent of entities){
+      if(!ent) continue;
+      ent._dodgeCD = 0;
+      ent._rageDodgeUsedForCooldown = false;
     }
   };
 })();

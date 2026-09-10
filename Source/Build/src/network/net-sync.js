@@ -427,13 +427,16 @@ function onPvpReset(msg){
 
   let _lastProjectileContact=0;
   function onProjectileContact(msg){
+    const disbalance=msg && msg.disbalance==null ? 0 : msg.disbalance;
     if(!_active || !Number.isSafeInteger(msg.id) || msg.id<=_lastProjectileContact ||
-       ![msg.damage,msg.stamina,msg.dx,msg.dy,msg.kx,msg.ky].every(Number.isFinite) ||
+       ![msg.damage,msg.stamina,msg.dx,msg.dy,msg.kx,msg.ky,disbalance].every(Number.isFinite) ||
        msg.damage<0 || msg.damage>MAX_HP || (msg.stamina!==0 && msg.stamina!==30) ||
-       Math.hypot(msg.dx,msg.dy)>7.01 || Math.hypot(msg.kx,msg.ky)>5.01) return;
+       disbalance<0 || disbalance>1.3 ||
+       Math.hypot(msg.dx,msg.dy)>8.01 || Math.hypot(msg.kx,msg.ky)>5.01) return;
     _lastProjectileContact=msg.id;
     if(P.hp<=0) return;
     if(msg.damage>0) onHit({newHp:Math.max(0,P.hp-msg.damage),dmg:msg.damage});
+    msg.disbalance=disbalance;
     applyProjectileEffectToEntity(P,msg);
   }
   let _lastFlailHit=0;

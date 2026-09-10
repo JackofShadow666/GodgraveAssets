@@ -492,7 +492,7 @@ function flailLungeContact(ent,a,nx,ny,entities){
                 p.x+dx*span.front*sc,p.y+dy*span.front*sc,radius+BLADE_W/2);
             if(t!==null) hits.push({t,kind:'weapon',other});
         }
-        const t=flailCircleHit(a.x,a.y,nx,ny,c.x,c.y,14*sv('cscl')+radius);
+        const t=flailCircleHit(a.x,a.y,nx,ny,c.x,c.y,14*sv('cscl')*(other._bodyScaleMult||1)+radius);
         if(t!==null) hits.push({t,kind:'body',other});
     }
     hits.sort((a,b)=>a.t-b.t);

@@ -116,7 +116,7 @@ function initBoxes(){
 // Push entities out of boxes and reflect velocity (partial).
 function resolveBoxCollision(ent){
   if(!boxesOn) return;
-  const BODY_R = 14 * sv('cscl');
+  const BODY_R = 14 * sv('cscl') * (ent._bodyScaleMult || 1);
   const bCX = ent.x + 5 + ent.bx;
   const bCY = ent.y - 8 + ent.by;
   for(const b of BOXES){
@@ -610,7 +610,7 @@ function checkBladeVsBody(attacker, defender, pivX, pivY, tipX2, tipY2) {
     // Distance to body center (for damage)
     const distToBody = Math.hypot(bC.x - tipX_adj, bC.y - tipY_adj);
     const BODY_HIT_R = 14;
-    const hitR = BODY_HIT_R * sv('cscl');
+    const hitR = BODY_HIT_R * sv('cscl') * (defender._bodyScaleMult || 1);
     
 
     
@@ -718,7 +718,7 @@ function checkBladeVsBody(attacker, defender, pivX, pivY, tipX2, tipY2) {
     if (attacker.rageBuffEnd > GameTime) dmg *= 2;
     if (shieldDef(attacker) && shieldSameSideAsSword(attacker)) dmg = Math.round(dmg * 0.85);
     if (isBot(attacker) && key === 'spear') dmg = Math.round(dmg * 1.5);
-    const _defScale = (isBot(defender) ? sv('cscl') * sv('botscale') * (defender._bodyScaleMult || 1) : sv('cscl')) || 1;
+    const _defScale = (isBot(defender) ? sv('cscl') * sv('botscale') : sv('cscl')) || 1;
     dmg = Math.round(dmg / _defScale);
     dmg = applyCutSwingPenalty(attacker, dmg);
     
@@ -872,7 +872,7 @@ function checkBladeVsBody(attacker, defender, pivX, pivY, tipX2, tipY2) {
   if(Math.hypot(nearX - hand.x, nearY - hand.y) < HANDRANGE) return;
   
   const BODY_HIT_R = 14;
-  const hitR = BODY_HIT_R * sv('cscl');
+  const hitR = BODY_HIT_R * sv('cscl') * (defender._bodyScaleMult || 1);
   if (dist >= hitR) return;
   
   // ─── BOT DODGE ──────────────────────────────────────────────────
@@ -1000,7 +1000,7 @@ if (defender === D && attacker === P && typeof AI !== 'undefined' && AI.enabled 
       if (attacker.rageBuffEnd > GameTime) dmg *= 2;
       if (shieldDef(attacker) && shieldSameSideAsSword(attacker)) dmg = Math.round(dmg * 0.85);
       if (isBot(attacker) && (key === 'spear' || key === 'staff')) dmg = Math.round(dmg * 1.5);
-      const _defScale = (isBot(defender) ? sv('cscl') * sv('botscale') * (defender._bodyScaleMult || 1) : sv('cscl')) || 1;
+      const _defScale = (isBot(defender) ? sv('cscl') * sv('botscale') : sv('cscl')) || 1;
       dmg = Math.round(dmg / _defScale);
       dmg = applyCutSwingPenalty(attacker, dmg);
       
@@ -1534,6 +1534,7 @@ function setBotAiEnabled(enabled) {
 }
 
 window.restartCombatRound = function(options = {}) {
+    if(typeof SurvivalMode !== 'undefined' && SurvivalMode.isActive()) return SurvivalMode.restart();
     const {
         resetScore = false,
         keepPlayerSide = false,
@@ -2042,7 +2043,7 @@ function applyFlailLungeDamage(attacker,defender,speed){
   if(defender===D && typeof AI!=='undefined' && AI._fakeMDown) dmg=Math.round(dmg*1.5);
   if(attacker.rageBuffEnd>GameTime) dmg*=2;
   if(shieldDef(attacker) && shieldSameSideAsSword(attacker)) dmg=Math.round(dmg*0.85);
-  dmg=Math.round(dmg/((isBot(defender)?sv('cscl')*sv('botscale')*(defender._bodyScaleMult||1):sv('cscl'))||1));
+  dmg=Math.round(dmg/((isBot(defender)?sv('cscl')*sv('botscale'):sv('cscl'))||1));
   dmg=applyCutSwingPenalty(attacker,dmg);
   if(defender===P && P._multiHitProtection) dmg=Math.round(dmg*P._multiHitProtectionMult);
   const hp=defender.hp,vx=defender.vx,vy=defender.vy;

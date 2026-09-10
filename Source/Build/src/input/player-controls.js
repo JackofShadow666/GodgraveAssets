@@ -108,15 +108,23 @@
   function justReleased(pad, index){ return !pressed(pad,index) && !!padState.previousButtons[index]; }
 
   function cycleWeapon(entity){
+    if(typeof SurvivalMode !== 'undefined' && SurvivalMode.isActive()) return;
     if(!entity || typeof setWeapon !== 'function' || typeof WEAPON_TYPES === 'undefined') return;
     setWeapon(entity, ((entity.weaponType || 0) + 1) % WEAPON_TYPES.length);
   }
   function cycleShield(entity){
+    if(typeof SurvivalMode !== 'undefined' && SurvivalMode.isActive()){
+      if(typeof dropShield === 'function') dropShield(entity);
+      return;
+    }
     if(!entity || typeof setShield !== 'function' || typeof SHIELD_TYPES === 'undefined') return;
     setShield(entity, ((entity.shield || 0) + 1) % SHIELD_TYPES.length);
   }
   function dodge(entity, moveX, moveY, charge){
-    if(!entity || entity.hp<=0 || isExhausted(entity) || isUnbalanced(entity) || (entity._dodgeCD || 0) > GameTime) return;
+    if(!entity || entity.hp<=0 || isExhausted(entity) || isUnbalanced(entity)) return;
+    const cooldownActive=(entity._dodgeCD || 0) > GameTime;
+    if(cooldownActive && typeof tryStartDodge!=='function') return;
+    if(typeof tryStartDodge==='function' && !tryStartDodge(entity,cooldownActive)) return;
     charge=Math.max(0, Math.min(1, Number(charge)||0));
     let dx=moveX, dy=moveY;
     if(Math.hypot(dx,dy) < 0.1){ dx=Math.cos(entity.angle); dy=Math.sin(entity.angle); }
@@ -145,7 +153,8 @@
   }
 
   function beginManualDodgePress(entity, moveX, moveY){
-    if(!entity || isExhausted(entity) || isUnbalanced(entity) || (entity._dodgeCD || 0) > GameTime) return;
+    if(!entity || isExhausted(entity) || isUnbalanced(entity)) return;
+    if((entity._dodgeCD || 0) > GameTime && (typeof canUseRageDodge!=='function' || !canUseRageDodge(entity))) return;
     if(canManualShieldDash(entity)){
       entity._shieldDashCharging=true;
       entity._shieldDashChargeStart=GameTime;
@@ -393,6 +402,11 @@
   function updateManualEntity(entity, pad, dt){
     if(!entity || !entity._aiState) return;
     const ai=entity._aiState;
+    if(typeof SurvivalMode !== 'undefined' && SurvivalMode.isActive() && (entity.hp<=0 || entity._defeated || DEATH.pDead)){
+      ai._fakeMDown=false; entity._manualAttackInput=false; entity._shieldHeld=false;
+      for(const key of ['w','a','s','d']) ai._fakeKeys[key]=false;
+      return;
+    }
     const moveX=axis(pad.axes[0],DEADZONE_MOVE);
     const moveY=axis(pad.axes[1],DEADZONE_MOVE);
     const aimX=axis(pad.axes[2],DEADZONE_AIM);

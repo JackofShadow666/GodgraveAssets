@@ -28,7 +28,7 @@ function world(){
  vm.createContext(c);
  const begin=weapons.indexOf('const WEAPON_TYPES = [');vm.runInContext(weapons.slice(begin,weapons.indexOf('];',begin)+2),c);
  for(const name of ['weaponDamageMultiplier','spendDodgeStamina','cancelRangedCharge','disarmEntity'])vm.runInContext(fn(weapons,name),c);
- for(const name of ['applyDamage','canResolveProjectileContact','applyProjectileContactEffects','applyProjectileEffectToEntity','projectileDodgeChanceFor','updateProjectiles','updateWandBotAI'])vm.runInContext(fn(ranged,name),c);
+ for(const name of ['applyDamage','canResolveProjectileContact','thrownWeaponDisbalanceDuration','applyProjectileContactEffects','applyProjectileEffectToEntity','projectileDodgeChanceFor','updateProjectiles','updateWandBotAI'])vm.runInContext(fn(ranged,name),c);
  vm.runInContext('let projectileContactSerial=1;',c);c.sent=sent;c.sounds=sounds;return c;
 }
 let count=0;async function test(name,f){await f();count++;console.log('PASS '+name);}
@@ -85,7 +85,16 @@ await test('arrow body hit has one directional impulse, not extra body knockback
  const c=world();c.D.hasWeapon=false;c.PROJECTILES.push({kind:'arrow',owner:c.P,ownerImmuneUntil:10,x:c.D.x,y:100,vx:7,vy:0,rot:0,dmg:20,bornAt:0});
  c.updateProjectiles(0);assert.equal(c.D.vx,7);assert.equal(c.D.vy,0);assert.equal(c.D.x,200);assert.equal(c.D.hp,80);
 });
-await test('long-drawn arrows halve both bot dodge chances',()=>{
+await test('thrown weapon always pushes and uses short disbalance before five cells',()=>{
+  const c=world();c.applyDisbalance=(e,_source,duration)=>e.disbalanceDuration=duration;
+  c.applyProjectileContactEffects({owner:c.P,vx:4,vy:0,throwTravel:274},c.D,false,0);
+  assert.equal(c.D.vx,3.6);assert.equal(c.D.disbalanceDuration,.3);
+});
+await test('thrown weapon uses full disbalance from five travelled cells',()=>{
+  const c=world();c.applyDisbalance=(e,_source,duration)=>e.disbalanceDuration=duration;
+  c.applyProjectileContactEffects({owner:c.P,vx:4,vy:0,throwTravel:275},c.D,false,0);
+  assert.equal(c.D.vx,3.6);assert.equal(c.D.disbalanceDuration,1.3);
+});await test('long-drawn arrows halve both bot dodge chances',()=>{
  const c=world();
  assert.equal(c.projectileDodgeChanceFor({kind:'arrow',chargeTime:2},.25),.25);
  assert.equal(c.projectileDodgeChanceFor({kind:'arrow',chargeTime:2.001},.25),.125);

@@ -26,11 +26,11 @@ First read for most `src/` tasks. Use it to avoid broad project searches.
 
 ## Combat
 
-- `src/combat/weapons.js`: weapon definitions, equip/drop/throw/swap, weapon traits, shield/weapon metadata.
+- `src/combat/weapons.js`: weapon definitions, equip/drop/throw/swap, weapon traits, shield/weapon metadata, dropped shield pickup/draw, and player-ranged movement slowdown.
 - `src/combat/flail.js`: flail spin/extension, dedicated out/back/out flick detector, forced inertial fold until fully closed, per-revolution hammer swing sound and 15 stamina cost at any extension, rage-gated lunge (1.5x full spin reach), swept head collisions, pulling, fixed-size visual chain simulation and rendering, bot swing direction lock helper and reduced bot-only buildup. `updateFlailCombat` runs after entity movement and before ordinary melee collisions.
 - `src/combat/balance.test.cjs`: actual-handler tests for damage/table loading, projectile blocks, wand effects, bow dodge and network contacts; run `node src/combat/balance.test.cjs`. Not a browser runtime script.
 - `src/combat/flail.test.cjs`: isolated Node tests for flail mechanics, local slots, network receive handlers and physics cost; run `node src/combat/flail.test.cjs`. Not a browser runtime script.
-- `src/combat/ranged.js`: projectiles, wand/crossbow fire, ranged bot behavior; unified projectile block cost (30 on defender), wand impact impulse/disarm, final damage multiplier after caps, arrow charge-time metadata for bot dodge chance.
+- `src/combat/ranged.js`: projectiles, wand/crossbow fire, ranged bot behavior; unified projectile block cost (30 on defender), wand impact impulse/disarm, final damage multiplier after caps, arrow charge-time metadata for bot dodge chance, offscreen ranged-threat screen-edge markers.
 - `src/combat/factions.js`: local PvP targeting, teams, victory rules, friendly/enemy damage routing.
 - `src/combat/debug-balls.js`: isolated debug ball/collision sandbox.
 
@@ -64,7 +64,8 @@ First read for most `src/` tasks. Use it to avoid broad project searches.
 
 ## Modes
 
-- `src/modes/survival.js`: six-minute local survival mode, escalating waves, boss cadence, healing pickups, intermission state and central timer HUD.
+- `src/modes/survival.js`: six-minute local Arena mode (internal mode value remains `survival`), escalating waves, boss cadence, healing pickups, co-op respawn, compact timer HUD, mode-local melee-only enemy weapon pool, enemy shield/loot rules, and wave-rerolled spikes plus dodge-pushed crates/barrels with red-barrel fuses/explosions. Owns trap-safe spawn checks, prop physics, exact hazard damage, and the Arena AI hazard hook.
+- `src/modes/survival.test.cjs`: isolated VM tests for survival roster ownership, wave gaps, boss cadence, heal pickup rules, respawn/defeat/restart, damage assist, and mode exit restore; run `node src/modes/survival.test.cjs`.
 
 ## Network
 
@@ -79,10 +80,10 @@ First read for most `src/` tasks. Use it to avoid broad project searches.
 
 - Melee hit/block/damage/death: `src/combat/combat.js`, then `src/combat/weapons.js`, then `src/main.js`.
 - Flail lunge: `src/combat/flail.js`; damage and ordinary-melee exclusion -> `src/combat/combat.js`; LMB -> `src/main.js`, local slots -> `src/input/player-controls.js`; reliable hit/cancel routing -> `src/network/net-core.js` and `net-sync.js`. Ring nodes stay local; hit/block is decided once by the attacker, victim movement by its owner. Pull starts a 1.5-second `DISBALANCE` through `src/systems/buff.js`; LMB requires rage >= 50 and spends 50 once.
-- Weapon stats/swap/drop/throw/shield: `src/combat/weapons.js`; flail-only -> `src/combat/flail.js`; ranged -> `src/combat/ranged.js`.
-- Bow dodge discount: `spendDodgeStamina` in `src/combat/weapons.js`, called only on successful dodges in `src/ui/mobile.js` and `src/input/player-controls.js`; timestamp persists across weapon swaps and resets per round.
+- Weapon stats/swap/drop/throw/shield: `src/combat/weapons.js`; flail-only -> `src/combat/flail.js`; ranged attacks/markers -> `src/combat/ranged.js`; survival-specific shield/drop rules -> `src/modes/survival.js`.
+- Dodge rules: `canUseRageDodge`/`tryStartDodge` and `spendDodgeStamina` in `src/combat/weapons.js`; entry points are `src/network/net-effects.js`, `src/ui/mobile.js`, and `src/input/player-controls.js`. One extra dodge during cooldown requires rage above 50 and spends 30 rage; cinematic slowmo start resets dodge cooldowns.
 - Damage balance: optional table column 19 `damageMult` defaults to 0.5 for flail and 1 for other weapons; applied in `src/combat/ranged.js` `applyDamage` after minimum/cap calculations. Thrown weapons pass their original type explicitly.
-- Projectile block/wand/arrow impact: `src/combat/ranged.js`, plus thrown-weapon block contacts in `src/combat/weapons.js`; reliable `projectileContact` events route through `src/network/net-core.js` and `net-sync.js`, applied once on the defender owner.
+- Projectile block/wand/arrow impact: `src/combat/ranged.js`, plus thrown-weapon block and body-hit contacts in `src/combat/weapons.js`; thrown weapons always apply impact impulse; `DISBALANCE` lasts 0.3 seconds before 5 travelled cells and 1.3 seconds from 5 cells on either contact. Reliable `projectileContact` events route through `src/network/net-core.js` and `net-sync.js`, applied once on the defender owner.
 - Bot behavior/balance: `src/ai/ai.js`, then weapon/combat file for the affected mechanic. Flail bot hook/direction timing is split between `src/arena/arena.js` and `src/combat/flail.js`.
 - HUD/wins/health/stamina labels: `src/ui/hud.js`, then `src/core/i18n.js` for text.
 - Settings slider/checkbox/default: `Build.html` data controls, `src/core/i18n.js` label text, `src/core/settings.js` cache/bindings, then the consuming gameplay file.
@@ -90,7 +91,7 @@ First read for most `src/` tasks. Use it to avoid broad project searches.
 - Keyboard input/layout bug: `src/main.js` for handlers, `src/input/keyboard-layout.js` for aliases.
 - Gamepad gameplay input: `src/input/gamepad-controls.js`, then `src/input/gamepad-adapter.js` if local slots are involved.
 - Local PvP/control slots/factions: `src/input/player-controls.js` and `src/combat/factions.js` together.
-- Survival waves/timer/healing/bosses: `src/modes/survival.js`, then `src/combat/factions.js`; boss body scale touches arena and collision radii, boss damage is applied centrally in `src/combat/ranged.js`.
+- Arena waves/timer/healing/respawn/bosses/shield loot/traps/pushable props: `src/modes/survival.js`, then `src/ai/ai.js` for bot movement intent; boss body scale touches arena and collision radii, boss damage and player damage assist are applied centrally in `src/combat/ranged.js`; trap damage intentionally bypasses that assist. Use `src/modes/survival.test.cjs` for the mode-owned state machine.
 - Mobile-only bug: `src/ui/mobile.js`, then the gameplay file it triggers.
 - Online-only bug: relevant `src/network/net-*.js`, then the gameplay owner file.
 - Arena/camera/character drawing: `src/core/engine.js` for world/camera coordinates, then `src/arena/arena.js`, then `src/main.js`.

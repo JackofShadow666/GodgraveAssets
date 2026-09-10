@@ -171,6 +171,7 @@ function placeBotPendingReveal(nb, targetX, targetY){
 // Вызывается раз в кадр до апдейта AI/боя — переносит бота на реальную точку
 // спавна, как только его картинка догрузилась (или сразу, если картинки нет).
 function revealBotIfReady(bot){
+  if(bot._survivalEnemy && GameTime < bot._survivalRevealAt) return false;
   if(!bot._awaitingReveal) return true;
   const img = bot._skinImg;
   if(!img || img.complete){
@@ -258,6 +259,10 @@ function updateMainBotRotation(){
 
 
 function applyBotCount(){
+  if(typeof SurvivalMode !== 'undefined' && SurvivalMode.isActive()){
+    SurvivalMode.onRosterChange();
+    return;
+  }
   const localPvpSlot = typeof LocalPlayerControls!=='undefined' && LocalPlayerControls.isLocalPvP()
     ? LocalPlayerControls.getGamepadSlot() : 0;
   // Local player slots reserve the first entities; the slider counts only

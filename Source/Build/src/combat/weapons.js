@@ -213,7 +213,7 @@ function weaponMoveSpeedMult(ent){
   if($.IS(ent, 'magicstaff', 'wand')){
     return 1.0;
   }else if(isRangedWeapon(ent)){
-    return 0.4;  // 40% скорости (сильное замедление) — только лук/арбалет
+    return (ent === P || ent._manualControl) ? 0.7 : 0.4;
   }
   
   const w = weaponWeight(ent);
@@ -247,6 +247,7 @@ function weaponReach(ent){
 
 // Брошенное/выбитое оружие, лежащее на карте: {x,y,vx,vy,weaponType,url,img}
 let DROPPED_WEAPONS = [];
+let DROPPED_SHIELDS = [];
 
 // Экипирует entity оружием типа typeIdx (случайный вариант из папки этого вида)
 function setWeapon(ent, typeIdx, options) {
@@ -437,6 +438,40 @@ function cancelRangedCharge(ent){
   }
 }
 
+function dropShield(ent, kickVx, kickVy){
+  if(!ent || !ent.shield || typeof SHIELD_TYPES === 'undefined') return false;
+  const type = ent.shield;
+  const def = SHIELD_TYPES[type];
+  if(!def) return false;
+  const c = $.POS.body(ent);
+  const baseSpeed = 0.72 + Math.random() * 0.16;
+  let aimAngle;
+  if(Number.isFinite(kickVx) || Number.isFinite(kickVy)){
+    aimAngle = Math.atan2(kickVy || 0, kickVx || 0);
+  } else if(ent === P){
+    const rc = $.POS.root();
+    aimAngle = Math.atan2(mY - rc.y, mX - rc.x);
+  } else if(ent._manualControl){
+    aimAngle = ent.angle;
+  } else {
+    const pC = $.POS.body(P), bC = $.POS.body(ent);
+    aimAngle = Math.atan2(pC.y - bC.y, pC.x - bC.x);
+  }
+  DROPPED_SHIELDS.push({
+    x:c.x, y:c.y, vx:Number.isFinite(kickVx) ? kickVx : Math.cos(aimAngle) * baseSpeed,
+    vy:Number.isFinite(kickVy) ? kickVy : Math.sin(aimAngle) * baseSpeed,
+    shieldType:type, url:ent._shieldUrl, img:ent._shieldImg, rot:Math.random() * Math.PI * 2,
+    angVel:(Math.random() < 0.5 ? -1 : 1) * (0.08 + Math.random() * 0.12), owner:ent,
+    ownerPickupBlockUntil:GameTime + 1.4, _noPickupUntil:GameTime + 0.4
+  });
+  setShield(ent, 0);
+  ent._shieldHeld = false;
+  if(ent._aiState) ent._aiState._shieldHeld = false;
+  $.FX.hit({x:c.x,y:c.y-38,t:'🛡',life:35,big:false,col:'#88ccff'});
+  $.S.play('clash');
+  return true;
+}
+
 // Разоружает entity: оружие падает на карту как подбираемый предмет
 function disarmEntity(ent, kickVx, kickVy){
   if(ent.hasWeapon === false) return;
@@ -504,6 +539,10 @@ function throwWeapon(ent){
   
   DROPPED_WEAPONS.push({
     x: c.x, y: c.y,
+    throwOriginX: c.x,
+    throwOriginY: c.y,
+    throwTravel: 0,
+    isThrow: true,
     vx: Math.cos(aimAngle) * spd,
     vy: Math.sin(aimAngle) * spd,
     weaponType: ent.weaponType,
@@ -540,6 +579,17 @@ function tryManualPickup(ent){
   if(!ent || ent.hp <= 0) return;
   const c = $.POS.body(ent);
   const PICKUP_R = 100;
+  if(!ent.shield && typeof DROPPED_SHIELDS !== 'undefined'){
+    let shieldIdx = -1, shieldD = Infinity;
+    for(let i = 0; i < DROPPED_SHIELDS.length; i++){
+      const s = DROPPED_SHIELDS[i];
+      if(GameTime < (s._noPickupUntil || 0)) continue;
+      if(s.owner === ent && GameTime < (s.ownerPickupBlockUntil || 0)) continue;
+      const d = Math.hypot(s.x - c.x, s.y - c.y);
+      if(d < PICKUP_R && d < shieldD){ shieldD = d; shieldIdx = i; }
+    }
+    if(shieldIdx >= 0){ pickupDroppedShield(ent, shieldIdx, c); return; }
+  }
   let nearest = null, nearestD = Infinity, nearestIdx = -1;
   for(let i = 0; i < DROPPED_WEAPONS.length; i++){
     const w = DROPPED_WEAPONS[i];
@@ -555,6 +605,18 @@ function tryManualPickup(ent){
   if(ent._aiState) ent._aiState._weaponSeekTimer = undefined;
   $.FX.hit({x:c.x, y:c.y-40, t:'🗡 ПОДОБРАНО', life:45, big:false, col:'#88ffaa'});
   $.S.play('pickupSound');
+}
+
+function pickupDroppedShield(ent, index, c){
+  const item = DROPPED_SHIELDS[index];
+  if(!item || !ent || ent.hp <= 0 || ent.shield) return false;
+  setShield(ent, item.shieldType);
+  if(item.url){ ent._shieldUrl = item.url; ent._shieldImg = item.img || loadSpriteImage(item.url); }
+  DROPPED_SHIELDS.splice(index, 1);
+  const p = c || $.POS.body(ent);
+  $.FX.hit({x:p.x,y:p.y-40,t:'🛡 ПОДОБРАНО',life:45,big:false,col:'#88ccff'});
+  $.S.play('pickupSound');
+  return true;
 }
 
 // Случайная угловая скорость вращения, взятая из параметров вида оружия
@@ -600,7 +662,9 @@ function updateDroppedWeapons(dt){
       w._slowmoMidRolled = true;
       if(Math.hypot(w.vx || 0, w.vy || 0) > 2.5 && typeof tryCinematicSlowmo === 'function') tryCinematicSlowmo('throwMid', 0.20);
     }
-    w.x += w.vx*step; w.y += w.vy*step;
+    const moveX = w.vx*step, moveY = w.vy*step;
+    w.x += moveX; w.y += moveY;
+    if(w.isThrow) w.throwTravel = (w.throwTravel || 0) + Math.hypot(moveX, moveY);
 
     // ── Отскок от границ арены ────────────────────────────────────────────
     const preSpd = Math.hypot(w.vx, w.vy);
@@ -734,15 +798,15 @@ if (w.weaponType === 'spear' && Math.abs(w.angVel) > 0.1) {
           let dmg = Math.round(flySpd * dmgPerSpeed + dmgBase);
           
           if (isBot(w.owner) && (wDefHit.key==='spear' || wDefHit.key==='staff')) dmg = Math.round(dmg * 1.5);
-          const _defScale = (isBot(ent) ? sv('cscl') * sv('botscale') * (ent._bodyScaleMult || 1) : sv('cscl')) || 1;
+          const _defScale = (isBot(ent) ? sv('cscl') * sv('botscale') : sv('cscl')) || 1;
           dmg = Math.round(dmg / _defScale);
           dmg = Math.min(dmg, Math.max(1, Math.round(MAX_HP * maxDmgPct)));
           
           applyDamage(ent, dmg, w.owner, {
-            weaponDamageKey: wDefHit.key,
-            isMagic: false,
-            isExplosion: false,
-            knockbackMult: 0.6,
+              weaponDamageKey: wDefHit.key,
+              isMagic: false,
+              isExplosion: false,
+              knockbackMult: 1.2,
             hitstopFrames: 3,
             shakePower: dmg > 15 ? 5 : 3,
             textColor: '#ff8844',
@@ -750,9 +814,10 @@ if (w.weaponType === 'spear' && Math.abs(w.angVel) > 0.1) {
             bloodCount: 6,
             playSound: false
           });
+          applyProjectileContactEffects(w,ent,false,0);
           
           const nx = d > 0.1 ? (c.x - w.x)/d : 0, ny = d > 0.1 ? (c.y - w.y)/d : -1;
-          ent.vx += nx * 6; ent.vy += ny * 6;
+
           
           $.S.play((WEAPON_TYPES[w.weaponType]?.key === 'spear') ? 'damage' : (isHeavySwingWeaponType(w.weaponType) ? 'damageHammer' : 'damage')); 
           
@@ -787,6 +852,31 @@ if (w.weaponType === 'spear' && Math.abs(w.angVel) > 0.1) {
       }
     }
     if(picked) continue;
+  }
+
+  for(let i = DROPPED_SHIELDS.length - 1; i >= 0; i--){
+    const s = DROPPED_SHIELDS[i];
+    if(s.rot === undefined) s.rot = 0;
+    if(s.angVel === undefined) s.angVel = 0;
+    s.x += s.vx * step; s.y += s.vy * step;
+    if(s.x < BOUND_L){ s.x = BOUND_L; s.vx = Math.abs(s.vx) * 0.45; }
+    else if(s.x > BOUND_R){ s.x = BOUND_R; s.vx = -Math.abs(s.vx) * 0.45; }
+    if(s.y < BOUND_T){ s.y = BOUND_T; s.vy = Math.abs(s.vy) * 0.45; }
+    else if(s.y > BOUND_B){ s.y = BOUND_B; s.vy = -Math.abs(s.vy) * 0.45; }
+    const velocityDecay = Math.pow(0.9887, step);
+    s.vx *= velocityDecay; s.vy *= velocityDecay;
+    if(Math.hypot(s.vx, s.vy) < 0.05){ s.vx = 0; s.vy = 0; }
+    s.rot += s.angVel * decayingTickStep(dt, 0.985);
+    s.angVel *= Math.pow(0.985, step);
+    if(Math.abs(s.angVel) < 0.004) s.angVel = 0;
+    if((s._noPickupUntil || 0) > GameTime) continue;
+    const candidates = [P, ...ALL_BOTS];
+    for(const ent of candidates){
+      if(!ent || ent.hp <= 0 || ent.shield || ent._awaitingReveal) continue;
+      if(ent === s.owner && GameTime < (s.ownerPickupBlockUntil || 0)) continue;
+      const c = $.POS.body(ent);
+      if(Math.hypot(c.x - s.x, c.y - s.y) < PICKUP_R){ pickupDroppedShield(ent, i, c); break; }
+    }
   }
 }
 // Брошенный/выбитый цеп — как и в руке, состоит из навершия + колец, но
@@ -888,6 +978,20 @@ function drawDroppedWeapons(){
     
     ctx.restore();
   }
+  for(const s of DROPPED_SHIELDS){
+    const def = SHIELD_TYPES[s.shieldType];
+    const img = s.img || (s.url ? loadSpriteImage(s.url) : null);
+    if(!def) continue;
+    ctx.save(); ctx.translate(s.x, s.y); ctx.rotate(s.rot || 0);
+    if(img && img.complete && img.naturalWidth > 0){
+      const h = 50 * (def.scale || 1), w = h * spriteAspectFor(img);
+      ctx.drawImage(img, -w/2, -h/2, w, h);
+    } else {
+      ctx.fillStyle='rgba(80,150,210,.45)'; ctx.strokeStyle='#a9ddff'; ctx.lineWidth=2/CAM_SCALE;
+      ctx.beginPath(); ctx.rect(-16,-22,32,44); ctx.fill(); ctx.stroke();
+    }
+    ctx.restore();
+  }
 }
 
 // ════════════════ END MODULE: SPRITES (loader part below in loadAudioDB) ════
@@ -952,9 +1056,23 @@ function markFreeDodgeAfterAction(ent){
   if(!ent) return;
   ent._freeDodgeUntil = Math.max(ent._freeDodgeUntil || 0, GameTime + 0.5);
 }
+function canUseRageDodge(ent){
+  return !!ent && !ent._rageDodgeUsedForCooldown && (ent.rage || 0) > 50;
+}
+function tryStartDodge(ent, cooldownActive){
+  if(!ent) return false;
+  if(!cooldownActive){
+    ent._rageDodgeUsedForCooldown = false;
+    return true;
+  }
+  if(!canUseRageDodge(ent)) return false;
+  ent.rage = Math.max(0, (ent.rage || 0) - 30);
+  ent._rageDodgeUsedForCooldown = true;
+  return true;
+}
 // Call only once an actual dodge starts. Keep the timestamp across weapon swaps.
 function spendDodgeStamina(ent,baseCost){
-  if((ent._freeDodgeUntil || 0) >= GameTime){
+  if((ent._freeDodgeUntil || 0) > GameTime){
     ent._lastDodgeAt=GameTime;
     return 0;
   }
