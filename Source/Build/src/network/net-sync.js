@@ -458,6 +458,10 @@ function onPvpReset(msg){
       if(D._flailAttack?.id===msg.id) D._flailAttack=null;
     }
   }
+  function onSlowmo(msg){
+    if(!_active || typeof window.applyCinematicSlowmoNet !== 'function') return;
+    window.applyCinematicSlowmoNet(msg);
+  }
   function onDisconnected(){ _pendingStart=false; setNetPVP(false); NET_CHAT.log('👋 ПВП завершён'); }
 
   // ── Tick — буфер интерполяции → D ──
@@ -508,7 +512,7 @@ function onPvpReset(msg){
     D.pvY += (_cur.pvY - D.pvY) * st;
   }
 
-  return { onConnected,onDisconnected,onState,onHit,onFlailHit,onFlailCancel,onProjectileContact,onReadyGame,onPingUpdate,startGame,disconnect,tick,
+  return { onConnected,onDisconnected,onState,onHit,onFlailHit,onFlailCancel,onProjectileContact,onSlowmo,onReadyGame,onPingUpdate,startGame,disconnect,tick,
     setPeerName(n){_peerName=n;}, get active(){return _active;}, get peerName(){return _peerName;},
     forceResync, sendReset, onPvpReset };
 })();

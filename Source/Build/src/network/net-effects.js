@@ -1,3 +1,85 @@
+(function(){
+  const DEFAULT_MIN_SCALE = 0.1;
+  const DEFAULT_DURATION = 2;
+  const COOLDOWN_MIN = 10;
+  const COOLDOWN_MAX = 20;
+  const EVENTS = { kill: 0.30, damage: 0.10, throw: 0.20, throwMid: 0.20, shotMid: 0.05 };
+  let active = null;
+  let cooldownUntil = 0;
+  let serial = 0;
+  let lastNetId = 0;
+
+  function now(){ return typeof RealTime !== 'undefined' ? RealTime : Date.now() / 1000; }
+  function enabled(){ return typeof cb !== 'function' || cb('cinematicslowmo'); }
+  function clamp(v, lo, hi){ return Math.max(lo, Math.min(hi, v)); }
+  function slowmoDuration(){
+    const v = typeof sv === 'function' ? sv('slowmoduration') : DEFAULT_DURATION;
+    return Number.isFinite(v) ? clamp(v, 0.1, 3) : DEFAULT_DURATION;
+  }
+  function slowmoScale(){
+    const v = typeof sv === 'function' ? sv('slowmoscale') : DEFAULT_MIN_SCALE;
+    return Number.isFinite(v) ? clamp(v, 0.05, 1) : DEFAULT_MIN_SCALE;
+  }
+
+  function start(reason, id, duration, scale){
+    if(!enabled()) return false;
+    const t = now();
+    active = {
+      id: id || ++serial,
+      reason: reason || 'event',
+      start: t,
+      duration: Number.isFinite(duration) ? clamp(duration, 0.1, 3) : slowmoDuration(),
+      scale: Number.isFinite(scale) ? clamp(scale, 0.05, 1) : slowmoScale()
+    };
+    cooldownUntil = t + COOLDOWN_MIN + Math.random() * (COOLDOWN_MAX - COOLDOWN_MIN);
+    if(typeof triggerHitstop === 'function') triggerHitstop(2, 3);
+    return true;
+  }
+
+  function canTrigger(){
+    return enabled() && now() >= cooldownUntil && (!active || now() >= active.start + active.duration);
+  }
+
+  window.tryCinematicSlowmo = function(reason, chance){
+    if(!canTrigger()) return false;
+    const p = Number.isFinite(chance) ? chance : EVENTS[reason];
+    if(!(p > 0) || Math.random() >= p) return false;
+    const id = ++serial;
+    if(!start(reason, id)) return false;
+    if(typeof NET_SYNC !== 'undefined' && NET_SYNC.active && typeof $ !== 'undefined' && $.NET && $.NET.active()){
+      $.NET.send({type:'slowmo', id, reason, duration:active.duration, scale:active.scale});
+    }
+    return true;
+  };
+
+  window.forceCinematicSlowmo = function(reason){
+    const id = ++serial;
+    if(!start(reason || 'manual', id)) return false;
+    if(typeof NET_SYNC !== 'undefined' && NET_SYNC.active && typeof $ !== 'undefined' && $.NET && $.NET.active()){
+      $.NET.send({type:'slowmo', id, reason:reason || 'manual', duration:active.duration, scale:active.scale});
+    }
+    return true;
+  };
+
+  window.applyCinematicSlowmoNet = function(msg){
+    if(!enabled() || !msg || !Number.isSafeInteger(msg.id) || msg.id <= lastNetId) return;
+    if(!Number.isFinite(msg.duration) || msg.duration <= 0 || msg.duration > 3) return;
+    if(!Number.isFinite(msg.scale) || msg.scale < 0.05 || msg.scale > 1) return;
+    lastNetId = msg.id;
+    start(msg.reason || 'net', msg.id, msg.duration, msg.scale);
+  };
+
+  window.getCinematicSlowmoScale = function(){
+    if(!enabled() || !active) return 1;
+    const t = (now() - active.start) / active.duration;
+    if(t >= 1){ active = null; return 1; }
+    if(t <= 0) return 1;
+    const minScale = active.scale;
+    if(t < 0.13) return 1 + (minScale - 1) * (t / 0.13);
+    if(t < 0.50) return minScale;
+    return minScale + (1 - minScale) * ((t - 0.50) / 0.50);
+  };
+})();
 // === src/network/net-effects.js ===
 
 (function(){
@@ -94,15 +176,20 @@
       window._dodgeCooldownMob -= rawDt;
     }
     if(typeof window._dodgeTrailFrames !== 'undefined' && window._dodgeTrailFrames > 0 && typeof P !== 'undefined'){
-      window._dodgeTrailFrames--;
+      const trailStep = rawDt * 60;
+      window._dodgeTrailFrames -= trailStep;
+      window._dodgeTrailEmit = (window._dodgeTrailEmit || 0) + trailStep;
       if(typeof DODGE_TRAIL === 'undefined') window.DODGE_TRAIL = [];
-      DODGE_TRAIL.push({
-        x: P.x + Math.random() * 10 - 5,
-        y: P.y + Math.random() * 10 - 5,
-        life: 14,
-        maxLife: 14,
-        r: 7
-      });
+      while(window._dodgeTrailEmit >= 1){
+        window._dodgeTrailEmit -= 1;
+        DODGE_TRAIL.push({
+          x: P.x + Math.random() * 10 - 5,
+          y: P.y + Math.random() * 10 - 5,
+          life: 14,
+          maxLife: 14,
+          r: 7
+        });
+      }
     }
   };
 })();

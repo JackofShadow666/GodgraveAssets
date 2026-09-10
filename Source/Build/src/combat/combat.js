@@ -143,7 +143,9 @@ function resolveEntityCollision(a, b){
   const ca=$.POS.body(a), cb=$.POS.body(b);
   let dx=cb.x-ca.x, dy=cb.y-ca.y;
   let dist=Math.hypot(dx,dy);
-  const minDist=28*sv('cscl');
+  const scaleA=isBot(a) ? (a._bodyScaleMult||1) : 1;
+  const scaleB=isBot(b) ? (b._bodyScaleMult||1) : 1;
+  const minDist=14*sv('cscl')*(scaleA+scaleB);
   if(dist>=minDist) return;
   if(dist<0.001){ dx=1; dy=0; dist=1; }
   const nx=dx/dist, ny=dy/dist;
@@ -716,7 +718,7 @@ function checkBladeVsBody(attacker, defender, pivX, pivY, tipX2, tipY2) {
     if (attacker.rageBuffEnd > GameTime) dmg *= 2;
     if (shieldDef(attacker) && shieldSameSideAsSword(attacker)) dmg = Math.round(dmg * 0.85);
     if (isBot(attacker) && key === 'spear') dmg = Math.round(dmg * 1.5);
-    const _defScale = (isBot(defender) ? sv('cscl') * sv('botscale') : sv('cscl')) || 1;
+    const _defScale = (isBot(defender) ? sv('cscl') * sv('botscale') * (defender._bodyScaleMult || 1) : sv('cscl')) || 1;
     dmg = Math.round(dmg / _defScale);
     dmg = applyCutSwingPenalty(attacker, dmg);
     
@@ -998,7 +1000,7 @@ if (defender === D && attacker === P && typeof AI !== 'undefined' && AI.enabled 
       if (attacker.rageBuffEnd > GameTime) dmg *= 2;
       if (shieldDef(attacker) && shieldSameSideAsSword(attacker)) dmg = Math.round(dmg * 0.85);
       if (isBot(attacker) && (key === 'spear' || key === 'staff')) dmg = Math.round(dmg * 1.5);
-      const _defScale = (isBot(defender) ? sv('cscl') * sv('botscale') : sv('cscl')) || 1;
+      const _defScale = (isBot(defender) ? sv('cscl') * sv('botscale') * (defender._bodyScaleMult || 1) : sv('cscl')) || 1;
       dmg = Math.round(dmg / _defScale);
       dmg = applyCutSwingPenalty(attacker, dmg);
       
@@ -1613,6 +1615,7 @@ function triggerDeath(ent, isBot){
   resetFlailCombat(ent);
   if(isBot && DEATH.dDead) return;
   if(!isBot && DEATH.pDead) return;
+  if(typeof tryCinematicSlowmo === 'function') tryCinematicSlowmo('kill', 0.30);
   const bc = $.POS.body(ent);
   for(let i=0;i<8;i++) spawnBlood(bc.x, bc.y, Math.cos(i*Math.PI/4), Math.sin(i*Math.PI/4));
   DEATH.deathCross.push({x:bc.x, y:bc.y, timer:2.0, isBot});
@@ -2039,7 +2042,7 @@ function applyFlailLungeDamage(attacker,defender,speed){
   if(defender===D && typeof AI!=='undefined' && AI._fakeMDown) dmg=Math.round(dmg*1.5);
   if(attacker.rageBuffEnd>GameTime) dmg*=2;
   if(shieldDef(attacker) && shieldSameSideAsSword(attacker)) dmg=Math.round(dmg*0.85);
-  dmg=Math.round(dmg/((isBot(defender)?sv('cscl')*sv('botscale'):sv('cscl'))||1));
+  dmg=Math.round(dmg/((isBot(defender)?sv('cscl')*sv('botscale')*(defender._bodyScaleMult||1):sv('cscl'))||1));
   dmg=applyCutSwingPenalty(attacker,dmg);
   if(defender===P && P._multiHitProtection) dmg=Math.round(dmg*P._multiHitProtectionMult);
   const hp=defender.hp,vx=defender.vx,vy=defender.vy;

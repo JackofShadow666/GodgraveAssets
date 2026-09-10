@@ -131,6 +131,8 @@
 'slider.flickMaxAmplitude': 'Флик: максимальная амплитуда (× мин.)',
 'slider.flickStaminaCost': 'Флик: расход выносливости',
 'slider.debugToggle': 'Переключатель отладки',
+'slider.slowmoDuration': 'Slowmo: длительность (сек.)',
+'slider.slowmoScale': 'Slowmo: скорость времени (×)',
     
 // ─── CHECKBOX LABELS ─────────────────────────────────────────────
 'checkbox.gamepadFlickDetectLegacy': 'Геймпад: отдельное обнаружение флика (устаревший режим)',
@@ -152,6 +154,8 @@
 'checkbox.debugClash': 'Отладка: выводить данные столкновений (консоль)',
 'checkbox.perfProfiler': 'Отладка: профилировать просадки FPS (консоль)',
 'checkbox.followCamera': 'Камера закреплена на игроке',
+'checkbox.cinematicSlowmo': 'Кинематографичное замедление времени',
+'checkbox.slowmoMmb': 'Slowmo по средней кнопке мыши',
 
 // ─── SELECT LABELS ──────────────────────────────────────────────
 'select.gamepadSlot': 'Управление геймпадом 1',
@@ -162,6 +166,7 @@
 'select.factionMode': 'Фракции и условия победы',
 'select.factionFFA': 'Каждый сам за себя',
 'select.factionCoop': 'Кооператив против ботов',
+'select.factionSurvival': 'Выживание',
 
 // ─── BUTTONS ──────────────────────────────────────────────────────
 'btn.export': '📤 Экспортировать настройки в файл',
@@ -365,6 +370,13 @@
     'factions.respawn': 'ВОЗРОЖДЕНИЕ',
     'factions.coop.playersWin': '🏆 ПОБЕДА ИГРОКОВ',
     'factions.coop.botsWin': '🤖 ПОБЕДА БОТОВ',
+    'survival.victory': '🏆 ВЫЖИВАНИЕ ПРОЙДЕНО',
+    'survival.defeat': '💀 ОТРЯД ПОГИБ',
+    'survival.wave': 'ВОЛНА {wave}',
+    'survival.boss': 'БОСС',
+    'survival.intermission': 'СЛЕДУЮЩАЯ ВОЛНА ЧЕРЕЗ {seconds}',
+    'survival.cleanup': 'ЗАЧИСТИТЕ ПОСЛЕДНЮЮ ВОЛНУ',
+    'survival.heal': '+50 HP',
     'factions.ffa.playerWin': '🏆 ПОБЕДА ИГРОКА',
     'factions.ffa.botsWin': '🤖 ПОБЕДА БОТОВ',
     'weapon.sword': 'Меч',
@@ -715,6 +727,7 @@
         '#gamepad-player-slot option[value="3"]': 'Игрок 4',
         '#local-faction-mode option[value="ffa"]': 'Игрок против игрока',
         '#local-faction-mode option[value="coop"]': 'Игроки против ботов',
+        '#local-faction-mode option[value="survival"]': 'Выживание',
         '#profile-overlay h2': 'ПРОФИЛЬ И СМЕЩЕНИЕ ТЕЛА',
         '#profile-overlay p': 'Профиль, сеть и смещение тела находятся здесь.',
         '#name-overlay .ov-title': 'ИМЯ И ЩИТ',

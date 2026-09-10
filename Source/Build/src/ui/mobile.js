@@ -151,6 +151,7 @@
   const botWeaponBtn = document.getElementById('mob-bot-weapon-btn');
   botWeaponBtn?.addEventListener('touchstart', e => {
     e.preventDefault();
+    if(typeof SurvivalMode!=='undefined' && SurvivalMode.isActive()) return;
     if(typeof D==='undefined' || typeof setWeapon!=='function') return;
     if(D.hasWeapon === false) return;
     D.weaponType = (D.weaponType+1)%WEAPON_TYPES.length; setWeapon(D, D.weaponType);
@@ -452,6 +453,7 @@ window.doRestart=function(){
     $.S.play('dodgeSound');
     if(typeof DODGE_TRAIL==='undefined') window.DODGE_TRAIL=[];
     window._dodgeTrailFrames=12 + Math.round(charge * 12);
+    window._dodgeTrailEmit=0;
     if(typeof hitFX!=='undefined') $.FX.hit({x:P.x,y:P.y-30,t:charge>=0.5?(window.I18N ? window.I18N.t('runtime.fxShieldBash') : 'SHIELD BASH'):(window.I18N ? window.I18N.t('common.dodge') : 'DODGE'),life:35,big:charge>=0.5,col:charge>=0.5?'#60ccff':'rgba(200,200,200,0.6)'});
     if(charge > 0 && typeof FX_EFFECTS!=='undefined'){
       FX_EFFECTS.push({type:'shieldwave', x:P.x, y:P.y, t:0, duration:24, angle:Math.atan2(dy, dx), followEntity:P, followShield:true, cursorX:mX});

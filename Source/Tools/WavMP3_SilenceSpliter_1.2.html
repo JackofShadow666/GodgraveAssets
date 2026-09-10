@@ -183,6 +183,38 @@
             border-radius: 30px;
         }
         .delete-seg-btn:hover { background: #b91c1c; }
+
+        .changelog {
+            margin: 14px auto 0;
+            max-width: 760px;
+            background: rgba(0,0,0,0.28);
+            border: 1px solid #26354f;
+            border-radius: 18px;
+            overflow: hidden;
+            color: #cbd5e1;
+        }
+        .changelog summary {
+            cursor: pointer;
+            padding: 8px 14px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: #7dd3fc;
+            list-style: none;
+        }
+        .changelog summary::-webkit-details-marker { display:none; }
+        .changelog summary::before { content: '▸ '; color:#38bdf8; }
+        .changelog[open] summary::before { content: '▾ '; }
+        .changelog-body {
+            border-top: 1px solid #26354f;
+            padding: 9px 14px 11px;
+            font-size: 0.68rem;
+            line-height: 1.55;
+        }
+        .changelog-version { margin-bottom: 9px; }
+        .changelog-version:last-child { margin-bottom: 0; }
+        .changelog-title { color:#facc15; font-weight:700; margin-bottom:2px; }
+        .changelog ul { margin: 3px 0 0 18px; padding: 0; }
+
         .author-line { text-align: center; margin-top: 20px; font-size: 0.75rem; color: #38bdf8; letter-spacing: 0.5px; }
         @media (max-width: 700px) { .container { padding: 16px; } .segment-card { width: 100%; } }
     </style>
@@ -193,7 +225,7 @@
         <h1>Wav/MP3_SilenceSplitter</h1>
         <div class="badge"></div>
     </div>
-    <div class="sub"><span>✂️ Авторазделение + ручная настройка границ</span><span>📂 Перетащите MP3</span></div>
+    <div class="sub"><span>📂 Перетащите MP3</span></div>
 
     <div class="drop-zone" id="dropZone">
         <label class="file-label">🎵 ВЫБРАТЬ MP3<input type="file" id="fileInput" accept="audio/mpeg,audio/mp3"></label>
@@ -234,7 +266,6 @@
                      <button id="autoAllFadesBtn" class="success" style="padding:4px 12px;">✨ автофейды всем</button>
                 </div>
             </div>
-            <div style="font-size:0.7rem; color:#94a3b8; margin-top:12px;">💡 клик на сегмент — выделить. Тяни за белые края — менять границы, за середину — двигать сегмент целиком. ✂ на карточке делит сегмент пополам. Фейды по умолчанию выключены.</div>
         </div>
     </div>
 
@@ -249,6 +280,32 @@
             <div id="segmentItemsList" style="display:flex; flex-wrap:wrap; gap:8px;"></div>
         </div>
     </div>
+
+    <details class="changelog">
+        <summary>📝 Лог обновлений</summary>
+        <div class="changelog-body">
+            <div class="changelog-version">
+                <div class="changelog-title">10.09.2026</div>
+                <ul>
+                    <li>Ручное выделение теперь сразу создаёт сегмент после отпускания мыши.</li>
+                    <li>Добавлено скачивание всех сегментов поочерёдно отдельными файлами.</li>
+                </ul>
+            </div>
+            <div class="changelog-version">
+                <div class="changelog-title">09.09.2026</div>
+                <ul>
+                    <li>Добавлено ручное разделение выделением области прямо на таймлайне.</li>
+                    <li>Исправлено мгновенное выделение сегмента по клику.</li>
+                    <li>Добавлены ножницы для деления сегмента на две части.</li>
+                    <li>Добавлено перетаскивание сегмента целиком за середину.</li>
+                    <li>Добавлено воспроизведение всего трека.</li>
+                    <li>Добавлены массовые автофейды и сброс фейдов; по умолчанию фейды выключены.</li>
+                    <li>Панель выбора MP3 сделана компактнее и сворачивается после загрузки файла.</li>
+                </ul>
+            </div>
+        </div>
+    </details>
+
     <div class="author-line">by jackofshadow</div>
 </div>
 

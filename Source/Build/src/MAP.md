@@ -62,6 +62,10 @@ First read for most `src/` tasks. Use it to avoid broad project searches.
 - `src/systems/audio.js`: music and sfx.
 - `src/systems/sprites.js`: sprite cache, asset loading, drawing helpers.
 
+## Modes
+
+- `src/modes/survival.js`: six-minute local survival mode, escalating waves, boss cadence, healing pickups, intermission state and central timer HUD.
+
 ## Network
 
 - `src/network/net-core.js`: PeerJS setup, reliable/fast channels, chat transport.
@@ -69,6 +73,7 @@ First read for most `src/` tasks. Use it to avoid broad project searches.
 - `src/network/net-ui.js`: profile persistence, overlays, network menu, friend list UI.
 - `src/network/net-lobby.js`: quick lobby discovery and auto-connect flow.
 - `src/network/net-effects.js`: online dodge/hitstop/wins/blood compatibility hooks.
+- `src/network/net-effects.js`: cinematic slowmo controller and network receive adapter; gameplay triggers call `tryCinematicSlowmo`.
 
 ## Fast Routes
 
@@ -85,11 +90,13 @@ First read for most `src/` tasks. Use it to avoid broad project searches.
 - Keyboard input/layout bug: `src/main.js` for handlers, `src/input/keyboard-layout.js` for aliases.
 - Gamepad gameplay input: `src/input/gamepad-controls.js`, then `src/input/gamepad-adapter.js` if local slots are involved.
 - Local PvP/control slots/factions: `src/input/player-controls.js` and `src/combat/factions.js` together.
+- Survival waves/timer/healing/bosses: `src/modes/survival.js`, then `src/combat/factions.js`; boss body scale touches arena and collision radii, boss damage is applied centrally in `src/combat/ranged.js`.
 - Mobile-only bug: `src/ui/mobile.js`, then the gameplay file it triggers.
 - Online-only bug: relevant `src/network/net-*.js`, then the gameplay owner file.
 - Arena/camera/character drawing: `src/core/engine.js` for world/camera coordinates, then `src/arena/arena.js`, then `src/main.js`.
 - Visual effects/blood/hit text: `src/systems/fx.js`; rendered `hitFX` branches and spark image FX live in `src/arena/arena.js`; then `src/network/net-effects.js` if online differs.
 - Audio/music/sfx: `src/systems/audio.js`.
+- Cinematic global slowmo: checkboxes and sliders (`cinematicslowmo`, `slowmommb`, `slowmoduration`, `slowmoscale`) in `Build.html`, labels in `src/core/i18n.js`, `dt` multiplier in `src/main.js`, controller/network receive in `src/network/net-effects.js` and `net-sync.js`, triggers in `src/combat/ranged.js`, `weapons.js`, `combat.js`.
 - Sprites/assets/missing image: `src/systems/sprites.js`, then `src/core/i18n.js` for missing-file text.
 - Startup crash/input locked by overlay: `src/core/debug-config.js`, then `src/main.js` or `Build.html` if load order matters.
 - Debug balls/collision sandbox: `src/combat/debug-balls.js` only unless it leaks into main combat.

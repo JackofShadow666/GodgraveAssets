@@ -86,6 +86,7 @@ function spawnProjectile(owner, kind, angle, dmg, speedOverride, maxDmgPct, meta
     shooterPos: {x: c.x, y: c.y},
     chargeTime: meta && Number.isFinite(meta.chargeTime) ? meta.chargeTime : 0,
   });
+  if(typeof tryCinematicSlowmo === 'function') tryCinematicSlowmo('shotMid', 0.05);
   $.FX.hit({x:c.x, y:c.y-30, t: kind==='wand' ? '✨' : '➹', life:20, big:false, col: kind==='wand'?'#c090ff':'#d9c08a'});
 }
 
@@ -606,6 +607,11 @@ const dC2 = $.POS.body(defender);
     FactionRules.contact(attacker,defender);
   }
 
+  if(attacker && Number.isFinite(attacker._damageMult)) damage *= attacker._damageMult;
+  if(typeof SurvivalMode !== 'undefined' && SurvivalMode.isActive() &&
+     typeof FactionRules !== 'undefined' && FactionRules.isPlayer(defender)){
+    damage /= defender.hp < (defender.maxHp || 100) * 0.5 ? 3 : 2;
+  }
   if(damage <= 0) return;
   if(defender._hitCD !== undefined && defender._hitCD >= GameTime) return;
 // ─── OPTIONS ───
@@ -633,6 +639,7 @@ const dC2 = $.POS.body(defender);
   const balanceKey=opts.weaponDamageKey || (!isMagic && !isExplosion && !isProjectile && attacker ? weaponKeyOf(attacker) : null);
   const finalDmg = Math.round(Math.min(guardedDamage, Math.max(1, Math.round(MAX_HP * 0.70))) * weaponDamageMultiplier(balanceKey)); // 70% max per hit
   defender.hp = Math.max(0, defender.hp - finalDmg);
+  if(typeof tryCinematicSlowmo === 'function' && finalDmg > 40) tryCinematicSlowmo('damage', 0.10);
   defender._hitCD = Math.max(defender._hitCD || -1, GameTime + 0.4);
   defender.hitFlash = GameTime + 0.3;
   defender._healthBarUntil = GameTime + 3;
@@ -1653,7 +1660,7 @@ function updateProjectiles(dt){
       if(ent === w.owner && GameTime < w.ownerImmuneUntil) continue;
       if(!canResolveProjectileContact(w,ent)) continue;
       const c = $.POS.body(ent);
-      const hitR = 22 * (isBot(ent) ? sv('cscl')*sv('botscale') : sv('cscl'));
+      const hitR = 22 * (isBot(ent) ? sv('cscl')*sv('botscale')*(ent._bodyScaleMult||1) : sv('cscl'));
       const d = Math.hypot(c.x-w.x, c.y-w.y);
       if(d < hitR){
         // ─── BOT DODGE ─────────────────────────────────────────────────
@@ -2258,7 +2265,8 @@ function applyProjectileContactEffects(projectile,ent,blocked,damage){
   const dx=(projectile.vx||0)/speed,dy=(projectile.vy||0)/speed;
   const wand=projectile.kind==='wand';
   const arrow=projectile.kind==='arrow';
-  const impactImpulse=(wand || arrow) ? 7 : 0;
+  const thrown=!wand && !arrow;
+  const impactImpulse=(wand || arrow) ? 7 : (thrown ? Math.max(3, Math.min(8, speed * 0.9)) : 0);
   const disarm=wand && ent.hp>0 && ent.hasWeapon!==false && Math.random()<0.3;
   // Same drag as normal disarm, half its initial velocity => approximately half travel.
   const kick=disarm ? (6+Math.random()*4)*0.5 : 0;

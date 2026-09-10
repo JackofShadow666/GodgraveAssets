@@ -341,8 +341,9 @@ const exhMult = getMod(P, 'moveSlow', 1);
   if(!P._eMX){ P._eMX = effectiveMX; P._eMY = effectiveMY; }
 
   const smoothSpd = rawMouseDist < dzone ? 0.18 : 0.45;
-  P._eMX += (effectiveMX - P._eMX) * smoothSpd;
-  P._eMY += (effectiveMY - P._eMY) * smoothSpd;
+  const slowmoAimScale = typeof getCinematicSlowmoScale === 'function' ? getCinematicSlowmoScale() : 1;
+  P._eMX += (effectiveMX - P._eMX) * smoothSpd * slowmoAimScale;
+  P._eMY += (effectiveMY - P._eMY) * smoothSpd * slowmoAimScale;
   effectiveMX = P._eMX;
   effectiveMY = P._eMY;
 
@@ -769,7 +770,8 @@ function loop(ts){
   let steps = 0;
   while(accumulator >= FIXED_DT && steps < maxSteps){
     accumulator -= FIXED_DT;
-    const dt = FIXED_DT * sv('gamespeed');
+    const slowmoScale = typeof getCinematicSlowmoScale === 'function' ? getCinematicSlowmoScale() : 1;
+    const dt = FIXED_DT * sv('gamespeed') * slowmoScale;
     const perfOn = perfProfilerEnabled();
     const perfStart = perfOn ? performance.now() : 0;
     const perfSpans = perfOn ? [] : null;
@@ -782,6 +784,7 @@ function loop(ts){
     GameTime += dt;
     update(dt);
     duelUpdate(dt);
+    if(typeof SurvivalMode !== 'undefined') SurvivalMode.update(dt);
     updateDroppedWeapons(dt);
     updateProjectiles(dt);
     if(perfOn) perfStep('core+ranged');
@@ -879,7 +882,7 @@ if(dummyOn&&isUnbalanced(D)) drawUnbalancedStars(D);
       ctx.save();
       for(let i=DODGE_TRAIL.length-1;i>=0;i--){
         const tr=DODGE_TRAIL[i];
-        tr.life-=1;
+        tr.life-=rawDt * (typeof getCinematicSlowmoScale === 'function' ? getCinematicSlowmoScale() : 1) * 60;
         if(tr.life<=0){DODGE_TRAIL.splice(i,1);continue;}
         const a=(tr.life/tr.maxLife)*0.55;
         ctx.globalAlpha=a;
@@ -895,6 +898,7 @@ if(dummyOn&&isUnbalanced(D)) drawUnbalancedStars(D);
     drawBoxes();
     drawBalls();
     drawDroppedWeapons();
+    if(typeof SurvivalMode !== 'undefined') SurvivalMode.drawPickups();
     drawProjectiles();
     drawWandParticles();
     drawWandExplosions();
@@ -961,6 +965,11 @@ canvas.addEventListener('mousemove', e=>{
 });
 canvas.addEventListener('mousedown', e=>{
   if(e.button===0){ mDown=true; P._shieldHeld=false; return; }
+  if(e.button===1 && typeof cb === 'function' && cb('slowmommb')){
+    e.preventDefault();
+    if(typeof window.forceCinematicSlowmo === 'function') window.forceCinematicSlowmo('manual');
+    return;
+  }
   if(e.button===2 && !window.IS_MOBILE){
     e.preventDefault();
     if(P.shield>0 && !isExhausted(P) && P.stamina>0) P._shieldHeld=true;
@@ -1097,6 +1106,11 @@ window.addEventListener('keydown', e=>{
     e.preventDefault();
     return;
   }
+  if(e.code==='Home' && !e.repeat){
+    if(typeof window.forceCinematicSlowmo === 'function') window.forceCinematicSlowmo('manual');
+    e.preventDefault();
+    return;
+  }
   if((e.code==='Equal' || e.code==='NumpadAdd') && !e.repeat){
     window._keyboardCrosshairVisible = window._keyboardCrosshairVisible === false;
     e.preventDefault();
@@ -1141,7 +1155,7 @@ window.addEventListener('keydown', e=>{
     window._manualBotShieldType = D.shield;
     const n=SHIELD_TYPES[D.shield]; $.FX.hit({x:D.x,y:D.y-40,t:(window.I18N?window.I18N.t('main.shieldBot',{name:n?n.name:window.I18N.t('main.shieldNone')}):('SHIELD D: '+(n?n.name:'none'))),life:60,big:false,col:'#ffaa44'});
   }
-if(k==='c'||k==='с'){ // player weapon switch
+if((k==='c'||k==='с') && !(typeof SurvivalMode!=='undefined' && SurvivalMode.isActive())){ // player weapon switch
   if(P.hasWeapon !== false){
     const next=(P.weaponType+1)%WEAPON_TYPES.length; 
     setWeapon(P,next);
@@ -1152,7 +1166,7 @@ if(k==='c'||k==='с'){ // player weapon switch
   }
 }
 
-if(k==='v'||k==='м'){ // bot weapon switch
+if((k==='v'||k==='м') && !(typeof SurvivalMode!=='undefined' && SurvivalMode.isActive())){ // bot weapon switch
   if(D.hasWeapon !== false){
     const next=(D.weaponType+1)%WEAPON_TYPES.length; 
     setWeapon(D,next);

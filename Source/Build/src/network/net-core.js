@@ -215,6 +215,7 @@ var NET_CORE = (function(){
         if(msg.type==='flailHit') NET_SYNC.onFlailHit(msg);
         if(msg.type==='projectileContact') NET_SYNC.onProjectileContact(msg);
         if(msg.type==='flailCancel') NET_SYNC.onFlailCancel(msg);
+        if(msg.type==='slowmo') NET_SYNC.onSlowmo(msg);
         if(msg.type==='pvp_reset') NET_SYNC.onPvpReset(msg);
         if(msg.type==='freeze'){ if(typeof DEATH!=='undefined'){DEATH.fadeIn=true;} }
         if(msg.type==='champion'){ if(typeof window._onChampionMsg==='function') window._onChampionMsg(msg.name); }

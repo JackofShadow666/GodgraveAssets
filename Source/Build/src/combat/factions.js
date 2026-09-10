@@ -2,7 +2,8 @@
   'use strict';
 
   const KEY = 'godgrave.localFactionMode';
-  let mode = localStorage.getItem(KEY) === 'coop' ? 'coop' : 'ffa';
+  const storedMode = localStorage.getItem(KEY);
+  let mode = storedMode === 'coop' || storedMode === 'survival' ? storedMode : 'ffa';
   const wins = [0, 0, 0, 0];
   let botWins = 0;
   let roundEnding = false;
@@ -144,7 +145,7 @@ function contact(a, b){
     const bc = $.POS.body(ent);
     for(let i = 0; i < 8; i++) spawnBlood(bc.x, bc.y, Math.cos(i * Math.PI / 4), Math.sin(i * Math.PI / 4));
     if(typeof DEATH !== 'undefined' && DEATH && Array.isArray(DEATH.deathCross)){
-      const crossTimer = !isBot && mode === 'coop' ? Math.max(2.0, playerRespawnSeconds()) : 2.0;
+      const crossTimer = !isBot && (mode === 'coop' || mode === 'survival') ? Math.max(2.0, playerRespawnSeconds()) : 2.0;
       DEATH.deathCross.push({ x: bc.x, y: bc.y, timer: crossTimer, isBot: !!isBot });
     }
     if(typeof playSound === 'function') $.S.play('death');
@@ -196,7 +197,7 @@ function contact(a, b){
   }
 
   function respawnPlayer(ent){
-    if(!ent || roundEnding || mode !== 'coop' || !isPlayer(ent) || !ent._defeated) return;
+    if(!ent || roundEnding || (mode !== 'coop' && mode !== 'survival') || !isPlayer(ent) || !ent._defeated) return;
     clearRespawn(ent);
     clearEntityState(ent);
     const point = playerRespawnPoint(ent);
@@ -209,7 +210,7 @@ function contact(a, b){
   }
 
   function schedulePlayerRespawn(ent){
-    if(mode !== 'coop' || !isPlayer(ent) || roundEnding) return;
+    if((mode !== 'coop' && mode !== 'survival') || !isPlayer(ent) || roundEnding) return;
     const seconds = playerRespawnSeconds();
     if(seconds <= 0) return;
     clearRespawn(ent);
@@ -235,6 +236,7 @@ function contact(a, b){
     DEATH.fadeAlpha = 0;
     DEATH.text = '';
     roundEnding = false;
+    if(mode === 'survival' && typeof SurvivalMode !== 'undefined') SurvivalMode.onRoundReset();
   }
 
   function finishRound(text, winner){
@@ -258,7 +260,7 @@ function contact(a, b){
   }
 
   function handleDeath(ent){
-    if(!(typeof LocalPlayerControls !== 'undefined' && LocalPlayerControls.isLocalPvP())) return false;
+    if(mode !== 'survival' && !(typeof LocalPlayerControls !== 'undefined' && LocalPlayerControls.isLocalPvP())) return false;
     if(ent._defeated) return true;
     ent._defeated = true;
     ent.hp = 0;
@@ -268,6 +270,9 @@ function contact(a, b){
 
     const alivePlayersNow = alivePlayers();
     const aliveBotsNow = aliveBots();
+    if(mode === 'survival' && typeof SurvivalMode !== 'undefined'){
+      return SurvivalMode.handleDeath(ent, isPlayer(ent), alivePlayersNow, aliveBotsNow);
+    }
     if(mode === 'coop'){
       if(!aliveBotsNow.length) return finishRound(factionText('factions.coop.playersWin', 'PLAYERS WON'), alivePlayersNow[0] || P);
       if(!alivePlayersNow.length) return finishRound(factionText('factions.coop.botsWin', 'BOTS WON'), aliveBotsNow[0]);
@@ -280,10 +285,11 @@ function contact(a, b){
   }
 
   function setMode(value){
-    mode = value === 'coop' ? 'coop' : 'ffa';
+    mode = value === 'coop' || value === 'survival' ? value : 'ffa';
     localStorage.setItem(KEY, mode);
     const select = document.getElementById('local-faction-mode');
     if(select) select.value = mode;
+    if(typeof SurvivalMode !== 'undefined') SurvivalMode.setActive(mode === 'survival');
   }
 
   document.addEventListener('DOMContentLoaded', () => {
@@ -303,6 +309,7 @@ function contact(a, b){
     contact,
     getBotTarget,
     handleDeath,
+    finishRound,
     setMode,
     getMode: () => mode
   };

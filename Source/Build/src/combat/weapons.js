@@ -519,6 +519,7 @@ function throwWeapon(ent){
     rot: rotAngle,
     angVel: randSpin(def, 1),
   });
+  if(typeof tryCinematicSlowmo === 'function') tryCinematicSlowmo('throw', 0.20);
   
   markFreeDodgeAfterAction(ent);
   cancelRangedCharge(ent);
@@ -595,6 +596,10 @@ function updateDroppedWeapons(dt){
     const w = DROPPED_WEAPONS[i];
     if(w.rot === undefined) w.rot = Math.atan2(w.vy, w.vx);
     if(w.angVel === undefined) w.angVel = 0;
+    if(!w._slowmoMidRolled && GameTime >= (w.ownerImmuneUntil || 0)){
+      w._slowmoMidRolled = true;
+      if(Math.hypot(w.vx || 0, w.vy || 0) > 2.5 && typeof tryCinematicSlowmo === 'function') tryCinematicSlowmo('throwMid', 0.20);
+    }
     w.x += w.vx*step; w.y += w.vy*step;
 
     // ── Отскок от границ арены ────────────────────────────────────────────
@@ -719,7 +724,7 @@ if (w.weaponType === 'spear' && Math.abs(w.angVel) > 0.1) {
         if(!ent || ent.hp <= 0 || ent._awaitingReveal) continue;
         if(ent === w.owner && GameTime < (w.ownerImmuneUntil||0)) continue;
         const c = $.POS.body(ent);
-        const hitR = 22 * (isBot(ent) ? sv('cscl')*sv('botscale') : sv('cscl'));
+        const hitR = 22 * (isBot(ent) ? sv('cscl')*sv('botscale')*(ent._bodyScaleMult||1) : sv('cscl'));
         const d = Math.hypot(c.x - w.x, c.y - w.y);
         if(d < hitR){
           const wDefHit = WEAPON_TYPES[w.weaponType] || WEAPON_TYPES[0];
@@ -729,7 +734,7 @@ if (w.weaponType === 'spear' && Math.abs(w.angVel) > 0.1) {
           let dmg = Math.round(flySpd * dmgPerSpeed + dmgBase);
           
           if (isBot(w.owner) && (wDefHit.key==='spear' || wDefHit.key==='staff')) dmg = Math.round(dmg * 1.5);
-          const _defScale = (isBot(ent) ? sv('cscl') * sv('botscale') : sv('cscl')) || 1;
+          const _defScale = (isBot(ent) ? sv('cscl') * sv('botscale') * (ent._bodyScaleMult || 1) : sv('cscl')) || 1;
           dmg = Math.round(dmg / _defScale);
           dmg = Math.min(dmg, Math.max(1, Math.round(MAX_HP * maxDmgPct)));
           

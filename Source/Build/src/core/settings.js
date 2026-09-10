@@ -190,6 +190,14 @@ bindSlider('unbdur');
 bindSlider('unbcombo');
 bindSlider('stamreg');
 bindSlider('gamespeed');
+document.getElementById('cb-cinematicslowmo')?.addEventListener('change', e => {
+  _cbCache.cinematicslowmo = e.target.checked;
+});
+document.getElementById('cb-slowmommb')?.addEventListener('change', e => {
+  _cbCache.slowmommb = e.target.checked;
+});
+bindSlider('slowmoduration');
+bindSlider('slowmoscale');
 bindSlider('camrows');
 bindSlider('camedge');
 bindSlider('camdelay');

@@ -1198,7 +1198,7 @@ function drawOverheadHealthBar(ent, cscl){
   ctx.fillStyle='rgba(0,0,0,.72)';
   ctx.fillRect(x-1,y-1,width+2,height+2);
   ctx.fillStyle=ent.hp>50?'#2acc50':ent.hp>25?'#ccaa20':'#cc2020';
-  ctx.fillRect(x,y,width*Math.max(0,Math.min(100,ent.hp))/100,height);
+  ctx.fillRect(x,y,width*Math.max(0,Math.min(1,ent.hp/(ent.maxHp||100))),height);
   ctx.restore();
 }
 function drawDummy(bot = D){
@@ -1254,7 +1254,7 @@ function _drawDummySword(){
   // Если щит в той же руке что меч — рисуем меч ЗА телом
   const _dSwordBehind = shieldDef(bot) && shieldSameSideAsSword(bot);
   if(_dSwordBehind) _drawDummySword();
-  drawChar(bot, sv('cscl') * sv('botscale'), '#4a1a10', '#6a2a18');
+  drawChar(bot, sv('cscl') * sv('botscale') * (bot._bodyScaleMult || 1), '#4a1a10', '#6a2a18');
   if(!_dSwordBehind) _drawDummySword();
 
   // 🔥 РИСУЕМ СТРЕЛУ НА ЛУКЕ БОТА (поверх всего)

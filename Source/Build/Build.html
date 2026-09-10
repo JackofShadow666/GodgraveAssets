@@ -208,6 +208,10 @@ body.is-mobile #mob-throw-btn{display:flex;}
 #mob-settings-scroll:focus-visible{outline:2px solid #6ab0d0;}
 #pvp-hud{display:none;position:fixed;bottom:14px;left:50%;transform:translateX(-50%);background:rgba(8,14,22,0.9);border:1px solid #1a3a54;border-radius:20px;padding:5px 12px;z-index:200;align-items:center;gap:10px;font-family:'Share Tech Mono',monospace;font-size:11px;}
 #pvp-hud.visible{display:flex;}
+#survival-hud{display:none;position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:210;pointer-events:none;text-align:center;font-family:'Share Tech Mono',monospace;color:#e8fbff;text-shadow:0 0 12px #30b8ff;}
+#survival-hud.visible{display:block;}
+#survival-timer{font-size:30px;font-weight:900;letter-spacing:4px;}
+#survival-wave{font-size:11px;letter-spacing:2px;color:#78cdec;margin-top:2px;}
 </style>
 </head>
 <body>
@@ -253,6 +257,11 @@ body.is-mobile #mob-throw-btn{display:flex;}
 </div>
 
 <div id="adisplay"></div>
+
+<div id="survival-hud">
+  <div id="survival-timer">06:00</div>
+  <div id="survival-wave"></div>
+</div>
 
 <!-- ===== PVP HUD ===== -->
 <div id="pvp-hud">
@@ -364,7 +373,7 @@ body.is-mobile #mob-throw-btn{display:flex;}
     <div class="sec" id="sec-local-players"><div class="sec-title" style="color:#6ab0d0;" data-i18n="sec.localPlayers"></div>
       <div data-select="gamepad-player-slot,select.gamepadSlot,0:select.gamepadSlot0;1:select.gamepadSlot1;2:select.gamepadSlot2;3:select.gamepadSlot3,0"></div>
       <div id="gamepad-player-status" style="font-size:8px;line-height:1.45;color:#4f8198;margin-top:6px;"></div>
-      <div data-select="local-faction-mode,select.factionMode,ffa:select.factionFFA;coop:select.factionCoop,ffa"></div>
+      <div data-select="local-faction-mode,select.factionMode,ffa:select.factionFFA;coop:select.factionCoop;survival:select.factionSurvival,ffa"></div>
       <div data-checkbox="coopdefeatall,checkbox.coopDefeatAll,true"></div>
       <div data-slider="playerrespawn,slider.playerRespawn,15,0,30,1"></div>
       <div data-checkbox="gamepadflickdet,checkbox.gamepadFlickDetect,true,true"></div>
@@ -379,7 +388,7 @@ body.is-mobile #mob-throw-btn{display:flex;}
     <!-- 📱 MOBILE & CAMERA -->
     <div class="sec" id="sec-mobile-cam"><div class="sec-title" data-i18n="sec.mobileCam"></div>
       <div data-slider="gamespeed,slider.gameSpeed,1,.1,2,.05"></div>
-      <div data-slider="camrows,slider.cameraZoom,10,6,24,1"></div>
+     <div data-slider="camrows,slider.cameraZoom,10,6,24,1"></div>
       <div data-checkbox="followcam,checkbox.followCamera,true"></div>
       <div data-slider="camedge,slider.cameraEdgeMargin,6,.5,6,.5"></div>
       <div data-slider="camdelay,slider.cameraEdgeDelay,1,0,2,.05"></div>
@@ -463,6 +472,10 @@ body.is-mobile #mob-throw-btn{display:flex;}
       <div data-slider="dbg,slider.debugToggle,0,0,1,1"></div>
       <div data-checkbox="clashdbg,checkbox.debugClash,false,true"></div>
       <div data-checkbox="perfprof,checkbox.perfProfiler,false,true"></div>
+      <div data-checkbox="cinematicslowmo,checkbox.cinematicSlowmo,true"></div>
+      <div data-checkbox="slowmommb,checkbox.slowmoMmb,true"></div>
+      <div data-slider="slowmoduration,slider.slowmoDuration,2,.1,3,.05"></div>
+      <div data-slider="slowmoscale,slider.slowmoScale,.1,.05,1,.025"></div>
     </div>
 
     <!-- 🎮 CONTROLS -->
@@ -795,6 +808,7 @@ body.is-mobile #mob-throw-btn{display:flex;}
 <script src="src/combat/combat.js"></script>
 <script src="src/combat/factions.js"></script>
 <script src="src/ai/ai.js"></script>
+<script src="src/modes/survival.js"></script>
 <script src="src/input/keyboard-layout.js"></script>
 <script src="src/input/player-controls.js"></script>
 <script src="src/arena/arena.js"></script>

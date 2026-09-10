@@ -332,6 +332,7 @@ const SHIELD_INFO_TEXT = [
   if(weaponBtn){
     weaponBtn.addEventListener('touchstart', e=>{
       e.preventDefault(); e.stopPropagation();
+      if(typeof SurvivalMode!=='undefined' && SurvivalMode.isActive()) return;
       if(typeof P!=='undefined' && typeof setWeapon==='function' && P.hasWeapon!==false){
         P.weaponType=(P.weaponType+1)%WEAPON_TYPES.length; setWeapon(P, P.weaponType);
       }

@@ -134,6 +134,7 @@
     if(typeof $!=='undefined' && $.S) $.S.play('dodgeSound');
     if(typeof DODGE_TRAIL==='undefined') window.DODGE_TRAIL=[];
     entity._manualDodgeTrailFrames=12;
+    entity._manualDodgeTrailEmit=0;
     if(typeof $!=='undefined' && $.FX){
       $.FX.hit({x:entity.x,y:entity.y-30,t:(window.I18N ? window.I18N.t('common.dodge') : 'DODGE'),life:35,big:false,col:'rgba(200,200,200,0.6)'});
     }
@@ -449,15 +450,20 @@
   function afterEntityUpdate(entity,dt){
     if(!entity || !entity._manualControl) return;
     if(entity._manualDodgeTrailFrames > 0){
-      entity._manualDodgeTrailFrames--;
+      const trailStep = dt * 60;
+      entity._manualDodgeTrailFrames -= trailStep;
+      entity._manualDodgeTrailEmit = (entity._manualDodgeTrailEmit || 0) + trailStep;
       if(typeof DODGE_TRAIL==='undefined') window.DODGE_TRAIL=[];
-      DODGE_TRAIL.push({
-        x:entity.x+Math.random()*10-5,
-        y:entity.y+Math.random()*10-5,
-        life:14,
-        maxLife:14,
-        r:7
-      });
+      while(entity._manualDodgeTrailEmit >= 1){
+        entity._manualDodgeTrailEmit -= 1;
+        DODGE_TRAIL.push({
+          x:entity.x+Math.random()*10-5,
+          y:entity.y+Math.random()*10-5,
+          life:14,
+          maxLife:14,
+          r:7
+        });
+      }
     }
     if(entity._shieldDashCharging){
       if(!canManualShieldDash(entity)){
