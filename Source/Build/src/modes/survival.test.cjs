@@ -25,7 +25,7 @@ function world({slot = 0, respawn = 2} = {}){
   const ctx = {console,Math:Object.create(Math),window:{addEventListener(){},doResume(){}},
     document:{readyState:'complete',body:{classList:{toggle(){},remove(){}}},head:{appendChild(){}},
       addEventListener(){},createElement:()=>el('made-'+elements.size),getElementById:id=>el(id)},
-    P:p,D:originalBot,AI:originalBot._aiState,ALL_BOTS:[originalBot],PLAYER_SLOTS:[],WORLD_W:2000,WORLD_H:1400,W:1000,H:700,CAM_SCALE:1,
+    P:p,D:originalBot,AI:originalBot._aiState,ALL_BOTS:[originalBot],PLAYER_SLOTS:[],WORLD_W:2000,WORLD_H:1400,W:1000,H:700,CAM_SCALE:1,mX:900,mY:400,
     GameTime:0,RealTime:0,DEATH:{deathCross:[],pDead:false,dDead:false,fadeIn:false,fadeAlpha:0,text:'',textCol:''},
     PROJECTILES:[],DROPPED_WEAPONS:[],DROPPED_SHIELDS:[],BALLS:[],BOXES:[],boxesOn:false,dummyOn:false,DEFAULT_WEAPON_KEY:0,
     WEAPON_TYPES:[{key:'sword'},{key:'greatsword'},{key:'bow'},{key:'crossbow'},{key:'wand'},{key:'magicstaff'},
@@ -42,7 +42,7 @@ function world({slot = 0, respawn = 2} = {}){
     spawnBlood(){},snapCameraToTarget(){},applyBotCount(){ctx.applyBotCountCalls++;},addWin:loss=>ctx.wins.push(loss),hitFX:[],
     I18N:{t:(key,vars)=>key+(vars?JSON.stringify(vars):'')},FactionRules:{getMode:()=>ctx.mode},
     LocalPlayerControls:{getGamepadSlot:()=>slot,slots:Array.from({length:5},()=>({entity:null,source:null}))},
-    $:{POS:{body:e=>({x:e.x+(e.bx||0),y:e.y+(e.by||0)})},FX:{hit:v=>ctx.hitFX.push(v)},S:{play:n=>ctx.sounds.push(n)}},
+    $:{POS:{body:e=>({x:e.x+(e.bx||0),y:e.y+(e.by||0)}),root:()=>({x:ctx.P.x,y:ctx.P.y})},FX:{hit:v=>ctx.hitFX.push(v)},S:{play:n=>ctx.sounds.push(n)}},
     sounds:[],wins:[],mode:'survival',applyBotCountCalls:0};
   vm.createContext(ctx);
   vm.runInContext(source, ctx);
@@ -170,13 +170,51 @@ test('only a dodge launches a solid prop and a red barrel receives a three-secon
   c.P.x=prop.x-30;c.P.y=prop.y+8;c.P.hp=100;c.P._dvx=8;c.tick(0.01);
   assert.equal(c.P.hp, 100);
   same=c.SurvivalMode.getState().arenaObjects.find(o=>o.type===prop.type&&o.moving);assert(same);assert.equal(same.moving,true);
+  const firstMove={x:same.x,y:same.y};c.tick(0.01);
+  same=c.SurvivalMode.getState().arenaObjects.find(o=>o.type===prop.type&&o.moving);assert(same);assert(Math.hypot(same.x-firstMove.x,same.y-firstMove.y)>0.1);
   for(let attempt=0;attempt<80&&!c.SurvivalMode.getState().arenaObjects.some(o=>o.type==='redBarrel');attempt++)c.SurvivalMode.onRoundReset();
   const red=c.SurvivalMode.getState().arenaObjects.find(o=>o.type==='redBarrel');assert(red);
+  c.tick(0.3);
   c.P.x=red.x-30;c.P.y=red.y+8;c.P._dvx=8;c.P._dvy=0;c.tick(0.01);
-  let active=c.SurvivalMode.getState().arenaObjects.find(o=>o.type==='redBarrel'&&o.moving);assert(active);assert.equal(active.fuse, null);
+  let active=c.SurvivalMode.getState().arenaObjects.find(o=>o.type==='redBarrel'&&o.moving);assert(active);assert(active.fuse>2.5&&active.fuse<=3);
   const enemy=c.ALL_BOTS.find(e=>e._survivalEnemy);enemy._awaitingReveal=false;enemy.x=active.x+40;enemy.y=active.y;
   c.tick(0.1);
   active=c.SurvivalMode.getState().arenaObjects.find(o=>o.type==='redBarrel'&&o.fuse!=null);assert(active);assert(active.fuse>2.8&&active.fuse<=3);
+});
+
+test('arena preserves bot pause and throws a front prop instead of weapon', () => {
+  const c = world();c.SurvivalMode.update(0.016);
+  c.AI.enabled=false;c.tick(0.016);
+  assert.equal(c.ALL_BOTS.filter(e=>e._survivalEnemy).every(e=>e._aiState.enabled===false), true);
+  c.AI.enabled=true;c.tick(0.016);
+  assert.equal(c.ALL_BOTS.filter(e=>e._survivalEnemy).every(e=>e._aiState.enabled===true), true);
+  const prop=c.SurvivalMode.getState().arenaObjects.find(o=>o.type!=='spikes');assert(prop);
+  c.P.x=prop.x-50;c.P.y=prop.y;c.mX=c.P.x+200;c.mY=c.P.y;
+  assert.equal(c.SurvivalMode.tryThrowObject(c.P), true);
+  assert.equal(c.P.hasWeapon, true);
+  const thrown=c.SurvivalMode.getState().arenaObjects.find(o=>o.type===prop.type&&o.moving);assert(thrown);
+  assert.equal(thrown.x, prop.x);
+  assert.equal(thrown.y, prop.y);
+});
+
+test('flying arena props collide with other props instead of passing through', () => {
+  const c = world();let pair=null;
+  for(let attempt=0;attempt<120&&!pair;attempt++){
+    c.SurvivalMode.update(0.016);
+    const props=c.SurvivalMode.getState().arenaObjects.filter(o=>o.type!=='spikes');
+    for(const a of props)for(const b of props){
+      if(a===b) continue;
+      const dx=b.x-a.x,dy=b.y-a.y,dist=Math.hypot(dx,dy);
+      if(dist>70&&dist<260&&Math.abs(dy)<20&&dx>0) pair={a,b};
+    }
+    if(!pair) c.SurvivalMode.onRoundReset();
+  }
+  assert(pair);
+  c.P.x=pair.a.x-50;c.P.y=pair.a.y;c.mX=pair.b.x;c.mY=pair.b.y;
+  assert.equal(c.SurvivalMode.tryThrowObject(c.P), true);
+  for(let i=0;i<45;i++) c.tick(0.016);
+  const hit=c.SurvivalMode.getState().arenaObjects.find(o=>o.x===pair.b.x&&o.y===pair.b.y);
+  assert(!hit || hit.moving || Math.hypot(hit.vx||0,hit.vy||0)>0.1);
 });
 
 test('exiting survival restores original roster and unlocks controls', () => {

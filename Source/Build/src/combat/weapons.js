@@ -517,6 +517,7 @@ function disarmEntity(ent, kickVx, kickVy){
 
 
 function throwWeapon(ent){
+  if(typeof SurvivalMode!=='undefined' && SurvivalMode.tryThrowObject && SurvivalMode.tryThrowObject(ent)) return;
   if(ent.hasWeapon === false) return;
   const c = $.POS.body(ent);
   const def = WEAPON_TYPES[ent.weaponType] || WEAPON_TYPES[0];

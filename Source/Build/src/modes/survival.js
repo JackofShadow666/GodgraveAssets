@@ -4,9 +4,9 @@
   const DURATION = 360, GAP = 6, RESULT_DELAY = 2, HEAL = 50, HEAL_LIFE = 15;
   const MAX_HEALS = 32, MAX_DROPS = 48, DROP_LIFE = 15, REVEAL_DELAY = 1;
   const CELL = 55, OBJECT_RADIUS = 24, BODY_RADIUS = 22;
-  const PROP_PUSH_MIN = 4.5, PROP_PUSH_MAX = 7.5, PROP_DECAY = 0.90;
+  const PROP_PUSH_MIN = 9, PROP_PUSH_MAX = 15, PROP_DECAY = 0.96;
   const SPIKE_ENTRY_DAMAGE = 20, SPIKE_DPS = 3, SPIKE_REENTRY = 1;
-  const PROP_DAMAGE = 20, EXPLOSION_DAMAGE = 30, RED_FUSE = 3, EXPLOSION_RADIUS = CELL * 2.5;
+  const PROP_DAMAGE = 30, EXPLOSION_DAMAGE = 30, RED_FUSE = 3, EXPLOSION_RADIUS = CELL * 3.75;
   const ENEMY_WEAPON_KEYS = ['sword','rapier','dagger','spear','halberd','axe','longsword','staff','flail'];
   let active = false, ready = document.readyState !== 'loading';
   let phase = 'inactive', elapsed = 0, phaseLeft = 0, wave = 0, kills = 0;
@@ -77,14 +77,46 @@
       }
     }
   }
-  function pushObject(o,ent){
+  function pushObject(o,ent,nx,ny){
     const speed=Math.hypot(ent._dvx||0,ent._dvy||0); if(speed<1.25) return false;
     const ec=body(ent),len=Math.hypot(o.x-ec.x,o.y-ec.y)||1;
     const impulse=clamp(speed*0.85,PROP_PUSH_MIN,PROP_PUSH_MAX);
-    o.vx=(o.x-ec.x)/len*impulse;o.vy=(o.y-ec.y)/len*impulse;
+    nx=Number.isFinite(nx)?nx:(o.x-ec.x)/len;ny=Number.isFinite(ny)?ny:(o.y-ec.y)/len;
+    o.vx=nx*impulse;o.vy=ny*impulse;
     o.moving=true;o.pusher=ent;o.armed=o.type!=='redBarrel';o.hitTargets=new WeakSet();o.hitTargets.add(ent);
-    if(o.type==='redBarrel')o.fuse=null;
+    o._pushLockUntil=GameTime+0.25;ent._arenaPropPushLockUntil=GameTime+0.25;
+    armRedBarrel(o);
     if(typeof spawnDust==='function')for(let i=0;i<5;i++)spawnDust(o.x,o.y,-o.vx*.25+(Math.random()-.5)*2,-o.vy*.25+(Math.random()-.5)*2);
+    return true;
+  }
+  function propThrowAngle(ent){
+    if(ent===P){
+      const rc=$.POS.root();
+      return Math.atan2(mY-rc.y,mX-rc.x);
+    }
+    return ent._manualControl&&Number.isFinite(ent.angle)?ent.angle:ent.angle||0;
+  }
+  function tryThrowObject(ent){
+    if(!isActive()||!alive(ent)) return false;
+    const c=body(ent),ang=propThrowAngle(ent),fx=Math.cos(ang),fy=Math.sin(ang);
+    let best=null,bestScore=Infinity;
+    for(const o of arenaObjects){
+      if(o.type==='spikes'||o.moving) continue;
+      const dx=o.x-c.x,dy=o.y-c.y,dist=Math.hypot(dx,dy)||1;
+      if(dist>BODY_RADIUS+OBJECT_RADIUS+CELL) continue;
+      const dot=(dx/dist)*fx+(dy/dist)*fy;
+      if(dot<0.45) continue;
+      const side=Math.abs(dx*fy-dy*fx);
+      const score=dist+side*0.8;
+      if(score<bestScore){best=o;bestScore=score;}
+    }
+    if(!best) return false;
+    const spd=PROP_PUSH_MAX*1.15;
+    best.vx=fx*spd;best.vy=fy*spd;best.moving=true;best.pusher=ent;best.armed=best.type!=='redBarrel';best.hitTargets=new WeakSet();best.hitTargets.add(ent);
+    best._pushLockUntil=GameTime+0.25;ent._arenaPropPushLockUntil=GameTime+0.25;
+    armRedBarrel(best);
+    if(typeof tryCinematicSlowmo==='function') tryCinematicSlowmo('throw',0.20);
+    if($.S&&$.S.play) $.S.play('throwSound');
     return true;
   }
   function armRedBarrel(o){
@@ -104,9 +136,30 @@
   }
   function resolveSolid(ent,o){
     const c=body(ent),dx=c.x-o.x,dy=c.y-o.y,dist=Math.hypot(dx,dy)||.001,min=BODY_RADIUS+OBJECT_RADIUS;if(dist>=min)return false;
-    if((ent._dvx||ent._dvy)&&pushObject(o,ent))return true;
-    const push=min-dist,nx=dx/dist,ny=dy/dist;ent.x+=nx*push;ent.y+=ny*push;
+    const push=min-dist,nx=dx/dist,ny=dy/dist,canPush=!o.moving&&GameTime>=(o._pushLockUntil||0)&&GameTime>=(ent._arenaPropPushLockUntil||0);
+    if(canPush&&(ent._dvx||ent._dvy)&&pushObject(o,ent,-nx,-ny)){
+      const sep=push+2;o.x-=nx*sep*.65;o.y-=ny*sep*.65;ent.x+=nx*sep*.35;ent.y+=ny*sep*.35;
+      return true;
+    }
+    ent.x+=nx*push;ent.y+=ny*push;
     const inward=ent.vx*nx+ent.vy*ny;if(inward<0){ent.vx-=nx*inward;ent.vy-=ny*inward;}return true;
+  }
+  function resolveObjectCollision(a,b){
+    if(!a||!b||a===b||a.type==='spikes'||b.type==='spikes') return false;
+    const dx=b.x-a.x,dy=b.y-a.y,dist=Math.hypot(dx,dy)||.001,min=OBJECT_RADIUS*2;
+    if(dist>=min) return false;
+    const nx=dx/dist,ny=dy/dist,overlap=min-dist;
+    a.x=clamp(a.x-nx*overlap*.5,OBJECT_RADIUS,WORLD_W-OBJECT_RADIUS);a.y=clamp(a.y-ny*overlap*.5,OBJECT_RADIUS,WORLD_H-OBJECT_RADIUS);
+    b.x=clamp(b.x+nx*overlap*.5,OBJECT_RADIUS,WORLD_W-OBJECT_RADIUS);b.y=clamp(b.y+ny*overlap*.5,OBJECT_RADIUS,WORLD_H-OBJECT_RADIUS);
+    const av=(a.vx||0)*nx+(a.vy||0)*ny,bv=(b.vx||0)*nx+(b.vy||0)*ny,closing=av-bv;
+    if(closing>0){
+      const impulse=closing*.75;
+      a.vx-=nx*impulse;a.vy-=ny*impulse;b.vx+=nx*impulse;b.vy+=ny*impulse;
+      if(Math.hypot(a.vx,a.vy)>.12) a.moving=true;
+      if(Math.hypot(b.vx,b.vy)>.12) b.moving=true;
+    }
+    armRedBarrel(a);armRedBarrel(b);
+    return true;
   }
   function updateArenaObjects(dt){
     for(const burst of arenaBursts)burst.age+=dt;arenaBursts=arenaBursts.filter(b=>b.age<b.life);
@@ -133,7 +186,7 @@
           if(!o.hitTargets.has(ent)){hazardDamage(ent,PROP_DAMAGE,o,'impact');o.hitTargets.add(ent);armRedBarrel(o);if(o.type!=='redBarrel'&&Math.random()<.5){arenaObjects.splice(i,1);o._gone=true;break;}}
           const vl=Math.hypot(o.vx||dx,o.vy||dy)||1,nx=(o.vx||dx)/vl,ny=(o.vy||dy)/vl;ent.x+=nx*Math.max(0,BODY_RADIUS+OBJECT_RADIUS-d);ent.y+=ny*Math.max(0,BODY_RADIUS+OBJECT_RADIUS-d);ent.vx+=o.vx*.35;ent.vy+=o.vy*.35;o.vx*=.72;o.vy*=.72;
         }
-        for(const other of arenaObjects){if(other===o||other.type==='spikes')continue;if(Math.hypot(other.x-o.x,other.y-o.y)<OBJECT_RADIUS*2){armRedBarrel(o);armRedBarrel(other);}}
+        for(const other of arenaObjects)resolveObjectCollision(o,other);
         if(o._gone)continue;if(Math.hypot(o.vx,o.vy)<.12){o.vx=o.vy=0;o.moving=false;o.pusher=null;}
       }
       for(const ent of ents)resolveSolid(ent,o);
@@ -261,12 +314,13 @@
 
   function selectMain(){
     // D also drives the right-hand HUD; keep the co-op partner there.
+    const aiEnabled = !AI || AI.enabled !== false;
     const main = roster[1] || liveEnemies()[0] || enemies[0] || D;
     if(main){ D = main; AI = main._aiState || AI; }
     const first = liveEnemies()[0];
     for(const bot of enemies){
       const ai = bot._aiState;
-      ai._isMain = bot === first; ai.enabled = alive(bot) && phase !== 'result';
+      ai._isMain = bot === first; ai.enabled = aiEnabled && alive(bot) && phase !== 'result';
     }
   }
 
@@ -648,7 +702,7 @@
 
   function getState(){
     return {phase,elapsed,wave,remaining:Math.max(0,DURATION-elapsed),boss,enemyCount:liveEnemies().length,
-      ordinarySinceBoss,kills,result,pickups:pickups.map(p=>({...p})),arenaObjects:arenaObjects.map(o=>({type:o.type,x:o.x,y:o.y,fuse:o.fuse,moving:o.moving})),
+      ordinarySinceBoss,kills,result,pickups:pickups.map(p=>({...p})),arenaObjects:arenaObjects.map(o=>({type:o.type,x:o.x,y:o.y,vx:o.vx,vy:o.vy,fuse:o.fuse,moving:o.moving})),
       respawns:[...respawns].map(([ent,remaining])=>({slot:ent===P?0:slotIndex,remaining})),
       droppedWeapons:typeof DROPPED_WEAPONS!=='undefined'?DROPPED_WEAPONS.length:0,
       droppedShields:typeof DROPPED_SHIELDS!=='undefined'?DROPPED_SHIELDS.length:0};
@@ -667,5 +721,5 @@
   },true);
   document.addEventListener('DOMContentLoaded',()=>{ ready=true; initHud(); });
   window.SurvivalMode={update,drawPickups,handleDeath,setActive,restart,onRoundReset(){ if(active) newMatch(); },
-    onRosterChange,isActive,damageMultiplier,getState,adjustAI,isSafeSpawn:safePoint};
+    onRosterChange,isActive,damageMultiplier,getState,adjustAI,isSafeSpawn:safePoint,tryThrowObject};
 })();
