@@ -666,6 +666,10 @@ function updateDroppedWeapons(dt){
     const moveX = w.vx*step, moveY = w.vy*step;
     w.x += moveX; w.y += moveY;
     if(w.isThrow) w.throwTravel = (w.throwTravel || 0) + Math.hypot(moveX, moveY);
+    if(w.isThrow && typeof SurvivalMode!=='undefined' && SurvivalMode.projectileHitObject && SurvivalMode.projectileHitObject(w,12,0.75)){
+      DROPPED_WEAPONS.splice(i,1);
+      continue;
+    }
 
     // ── Отскок от границ арены ────────────────────────────────────────────
     const preSpd = Math.hypot(w.vx, w.vy);

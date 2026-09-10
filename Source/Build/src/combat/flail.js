@@ -472,6 +472,10 @@ function flailLungeContact(ent,a,nx,ny,entities){
     const radius=5*flailWorldScale(ent), hits=[];
     const wall=flailWallHit(a.x,a.y,nx,ny,radius);
     if(wall!==null) hits.push({t:wall,kind:'wall'});
+    if(typeof SurvivalMode!=='undefined' && SurvivalMode.segmentHitObject){
+        const propHit=SurvivalMode.segmentHitObject(a.x,a.y,nx,ny,radius,0.8,false);
+        if(propHit) hits.push({t:propHit.t,kind:'arenaProp',object:propHit.object});
+    }
     for(const other of entities){
         if(other===ent || other.hp<=0 || other._defeated || other._awaitingReveal ||
             (typeof FactionRules!=='undefined' && !FactionRules.canDamage(ent,other))) continue;
@@ -573,6 +577,9 @@ function updateFlailLunge(ent,dt,entities){
                 a.target=hit.other;
                 if(!flailRemote(hit.other)) startFlailPull(hit.other,ent,a.id,{halfPath:true});
                 else $.NET.send({type:'flailHit',id:a.id,newHp:hit.other.hp,dmg:0,pullHalf:true});
+            } else if(hit.kind==='arenaProp'){
+                if(SurvivalMode.segmentHitObject) SurvivalMode.segmentHitObject(a.x,a.y,nx,ny,5*flailWorldScale(ent),0.8,true);
+                $.S.play('clash');
             }
         }
         a.x=nx; a.y=ny;

@@ -1554,6 +1554,11 @@ function updateProjectiles(dt){
   for(let i = PROJECTILES.length-1; i >= 0; i--){
     const w = PROJECTILES[i];
     w.x += w.vx*step; w.y += w.vy*step;
+    if(typeof SurvivalMode!=='undefined' && SurvivalMode.projectileHitObject && SurvivalMode.projectileHitObject(w,w.kind==='arrow'?7:14,w.kind==='arrow'?0.55:0.8)){
+      if(w.kind === 'wand') spawnWandExplosion(w.x, w.y);
+      else if(w.kind === 'arrow') spawnArrowShatter(w.x, w.y, w.rot);
+      PROJECTILES.splice(i,1); continue;
+    }
 
     // ─── OUT OF BOUNDS OR TOO OLD ───
     if(w.x < BOUND_L-60 || w.x > BOUND_R+60 || w.y < BOUND_T-60 || w.y > BOUND_B+60 || (GameTime - w.bornAt) > 3.0){

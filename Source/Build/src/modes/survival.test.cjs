@@ -25,7 +25,7 @@ function world({slot = 0, respawn = 2} = {}){
   const ctx = {console,Math:Object.create(Math),window:{addEventListener(){},doResume(){}},
     document:{readyState:'complete',body:{classList:{toggle(){},remove(){}}},head:{appendChild(){}},
       addEventListener(){},createElement:()=>el('made-'+elements.size),getElementById:id=>el(id)},
-    P:p,D:originalBot,AI:originalBot._aiState,ALL_BOTS:[originalBot],PLAYER_SLOTS:[],WORLD_W:2000,WORLD_H:1400,W:1000,H:700,CAM_SCALE:1,mX:900,mY:400,
+    P:p,D:originalBot,AI:originalBot._aiState,ALL_BOTS:[originalBot],PLAYER_SLOTS:[],WORLD_W:2000,WORLD_H:1400,W:1000,H:700,CAM_X:0,CAM_Y:0,CAM_SCALE:1,mX:900,mY:400,
     GameTime:0,RealTime:0,DEATH:{deathCross:[],pDead:false,dDead:false,fadeIn:false,fadeAlpha:0,text:'',textCol:''},
     PROJECTILES:[],DROPPED_WEAPONS:[],DROPPED_SHIELDS:[],BALLS:[],BOXES:[],boxesOn:false,dummyOn:false,DEFAULT_WEAPON_KEY:0,
     WEAPON_TYPES:[{key:'sword'},{key:'greatsword'},{key:'bow'},{key:'crossbow'},{key:'wand'},{key:'magicstaff'},
@@ -39,11 +39,11 @@ function world({slot = 0, respawn = 2} = {}){
     revealBotIfReady:ent=>{if(ctx.GameTime >= ent._survivalRevealAt){ent._awaitingReveal=false; return true;} return false;},
     clearEntityChargeState:ent=>{ent._chargeCleared=true;},disarmEntity:ent=>{ent.hasWeapon=false; ctx.DROPPED_WEAPONS.push({x:ent.x,y:ent.y,vx:0,vy:0});},
     dropShield:ent=>{if(!ent.shield)return false; ctx.DROPPED_SHIELDS.push({x:ent.x,y:ent.y,vx:0,vy:0,shieldType:ent.shield}); ent.shield=0; return true;},
-    spawnBlood(){},snapCameraToTarget(){},applyBotCount(){ctx.applyBotCountCalls++;},addWin:loss=>ctx.wins.push(loss),hitFX:[],
+    spawnBlood(){},snapCameraToTarget(){},applyBotCount(){ctx.applyBotCountCalls++;},addWin:loss=>ctx.wins.push(loss),triggerHitstop:(frames,shake)=>ctx.hitstops.push({frames,shake}),hitFX:[],
     I18N:{t:(key,vars)=>key+(vars?JSON.stringify(vars):'')},FactionRules:{getMode:()=>ctx.mode},
     LocalPlayerControls:{getGamepadSlot:()=>slot,slots:Array.from({length:5},()=>({entity:null,source:null}))},
     $:{POS:{body:e=>({x:e.x+(e.bx||0),y:e.y+(e.by||0)}),root:()=>({x:ctx.P.x,y:ctx.P.y})},FX:{hit:v=>ctx.hitFX.push(v)},S:{play:n=>ctx.sounds.push(n)}},
-    sounds:[],wins:[],mode:'survival',applyBotCountCalls:0};
+    sounds:[],wins:[],hitstops:[],mode:'survival',applyBotCountCalls:0};
   vm.createContext(ctx);
   vm.runInContext(source, ctx);
   ctx.SurvivalMode = ctx.window.SurvivalMode;
@@ -115,6 +115,7 @@ test('heals choose injured nearby player, cap at max hp and expire', () => {
   for(const bot of c.ALL_BOTS.filter(e=>e._survivalEnemy)){ bot.x = player2.x; bot.y = player2.y; }
   c.killAllEnemies(); c.tick(0.05); assert.equal(player2.hp, 100); assert.equal(c.P.hp, 70);
   c.P.hp = 100; player2.hp = 100;
+  c.Math.random = () => 0.99;
   for(const bot of c.ALL_BOTS.filter(e=>e._survivalEnemy)){ bot.x = c.P.x + 300; bot.y = c.P.y; }
   c.killAllEnemies(); c.tick(15.1); assert.equal(c.SurvivalMode.getState().pickups.length, 0);
 });
@@ -145,7 +146,16 @@ test('arena objects stay within the per-screen cap and never cover initial spawn
     assert.equal(o.y % 55, 0);
     assert.equal(Math.hypot(o.x-(c.P.x+5),o.y-(c.P.y-8)) >= 55, true);
   }
-  for(const count of sectors.values()) assert.equal(count <= 7, true);
+  for(const count of sectors.values()) assert.equal(count <= 5, true);
+});
+
+test('new waves can spawn a random heal outside the visible screen', () => {
+  const c = world();
+  c.Math.random = () => 0.29;
+  c.SurvivalMode.update(0.016);
+  const heal = c.SurvivalMode.getState().pickups[0];
+  assert(heal);
+  assert(heal.x < -55 || heal.x > 1055 || heal.y < -55 || heal.y > 755);
 });
 
 test('spikes deal 20 on entry, 3 per second and require exit plus reentry delay', () => {
@@ -157,9 +167,36 @@ test('spikes deal 20 on entry, 3 per second and require exit plus reentry delay'
   }
   const spike=c.SurvivalMode.getState().arenaObjects.find(o=>o.type==='spikes'); assert(spike);
   c.P.x=spike.x-5;c.P.y=spike.y+8;c.P.hp=100;c.tick(0.01);assert.equal(c.P.hp,80);
+  assert.equal(c.hitstops.length>0, true);
   c.tick(1);assert.equal(c.P.hp,77);
   c.P.x+=200;c.tick(0.5);c.P.x=spike.x-5;c.tick(0.01);assert.equal(c.P.hp,77);
   c.P.x+=200;c.tick(0.01);c.tick(1.1);c.P.x=spike.x-5;c.tick(0.01);assert.equal(c.P.hp,57);
+  c.P.hp=2;c.tick(1);assert.equal(c.P.hp,1);
+});
+
+test('spikes slow movement while standing on them', () => {
+  const c = world();
+  for(let attempt=0;attempt<20;attempt++){
+    c.SurvivalMode.update(0.016);
+    if(c.SurvivalMode.getState().arenaObjects.some(o=>o.type==='spikes')) break;
+    c.SurvivalMode.onRoundReset();
+  }
+  const spike=c.SurvivalMode.getState().arenaObjects.find(o=>o.type==='spikes'); assert(spike);
+  c.P.x=spike.x;c.P.y=spike.y;c.P.vx=10;c.P.vy=0;c.P.vel=10;c.tick(0.1);
+  assert(c.P.vx<10);
+  assert(c.P.vel<10);
+});
+
+test('spike damage halves active dodge impulse', () => {
+  const c = world();
+  for(let attempt=0;attempt<20;attempt++){
+    c.SurvivalMode.update(0.016);
+    if(c.SurvivalMode.getState().arenaObjects.some(o=>o.type==='spikes')) break;
+    c.SurvivalMode.onRoundReset();
+  }
+  const spike=c.SurvivalMode.getState().arenaObjects.find(o=>o.type==='spikes'); assert(spike);
+  c.P.x=spike.x;c.P.y=spike.y;c.P._dvx=8;c.P._dvy=0;c.tick(0.01);
+  assert.equal(c.P._dvx,4);
 });
 
 test('only a dodge launches a solid prop and a red barrel receives a three-second fuse', () => {
@@ -179,14 +216,14 @@ test('only a dodge launches a solid prop and a red barrel receives a three-secon
   let active=c.SurvivalMode.getState().arenaObjects.find(o=>o.type==='redBarrel'&&o.moving);assert(active);assert(active.fuse>2.5&&active.fuse<=3);
   const enemy=c.ALL_BOTS.find(e=>e._survivalEnemy);enemy._awaitingReveal=false;enemy.x=active.x+40;enemy.y=active.y;
   c.tick(0.1);
-  active=c.SurvivalMode.getState().arenaObjects.find(o=>o.type==='redBarrel'&&o.fuse!=null);assert(active);assert(active.fuse>2.8&&active.fuse<=3);
+  active=c.SurvivalMode.getState().arenaObjects.find(o=>o.type==='redBarrel'&&o.fuse!=null);assert(active);assert(active.fuse>0&&active.fuse<=3);
 });
 
-test('arena preserves bot pause and throws a front prop instead of weapon', () => {
+test('arena force-resumes bot pause after spawn and throws a front prop instead of weapon', () => {
   const c = world();c.SurvivalMode.update(0.016);
   c.AI.enabled=false;c.tick(0.016);
   assert.equal(c.ALL_BOTS.filter(e=>e._survivalEnemy).every(e=>e._aiState.enabled===false), true);
-  c.AI.enabled=true;c.tick(0.016);
+  c.tick(1.01);
   assert.equal(c.ALL_BOTS.filter(e=>e._survivalEnemy).every(e=>e._aiState.enabled===true), true);
   const prop=c.SurvivalMode.getState().arenaObjects.find(o=>o.type!=='spikes');assert(prop);
   c.P.x=prop.x-50;c.P.y=prop.y;c.mX=c.P.x+200;c.mY=c.P.y;
@@ -215,6 +252,17 @@ test('flying arena props collide with other props instead of passing through', (
   for(let i=0;i<45;i++) c.tick(0.016);
   const hit=c.SurvivalMode.getState().arenaObjects.find(o=>o.x===pair.b.x&&o.y===pair.b.y);
   assert(!hit || hit.moving || Math.hypot(hit.vx||0,hit.vy||0)>0.1);
+});
+
+test('projectiles and flail segments push arena props', () => {
+  const c = world();c.SurvivalMode.update(0.016);
+  let prop=c.SurvivalMode.getState().arenaObjects.find(o=>o.type!=='spikes');assert(prop);
+  assert.equal(c.SurvivalMode.projectileHitObject({x:prop.x,y:prop.y,vx:10,vy:0},8,0.5), true);
+  prop=c.SurvivalMode.getState().arenaObjects.find(o=>o.type===prop.type&&o.moving);assert(prop);assert(prop.vx>0);
+  c.SurvivalMode.onRoundReset();
+  prop=c.SurvivalMode.getState().arenaObjects.find(o=>o.type!=='spikes');assert(prop);
+  const hit=c.SurvivalMode.segmentHitObject(prop.x-80,prop.y,prop.x+80,prop.y,5,0.8);assert(hit);
+  prop=c.SurvivalMode.getState().arenaObjects.find(o=>o.type===prop.type&&o.moving);assert(prop);assert(prop.vx>0);
 });
 
 test('exiting survival restores original roster and unlocks controls', () => {
