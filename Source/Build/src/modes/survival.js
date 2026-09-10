@@ -25,8 +25,26 @@
   const livePlayers = () => roster.filter(alive);
   const liveEnemies = () => enemies.filter(alive);
   const gridSnap = v => Math.round(v / CELL) * CELL;
+  const propSprites = {
+    barrel:'../Env/Props/T_Barrel.png',
+    crate:'../Env/Props/T_Box.png',
+    spikes:'../Env/Props/T_FloorSpike.png',
+    potion:'../Env/Props/T_Potion.png'
+  };
+  const propImgs = {};
 
   function combatants(){ return [...roster,...enemies].filter(ent=>alive(ent) && !ent._awaitingReveal); }
+  function propImage(key){
+    if(typeof loadSpriteImage!=='function') return null;
+    const url=propSprites[key];
+    if(!url) return null;
+    if(!propImgs[key]) propImgs[key]=loadSpriteImage(url);
+    const img=propImgs[key];
+    return img&&img.complete&&img.naturalWidth>0 ? img : null;
+  }
+  function drawSpriteCentered(img,size){
+    ctx.drawImage(img,-size*.5,-size*.5,size,size);
+  }
   function hazardDamage(ent, amount, point, kind){
     if(!alive(ent) || phase==='result') return false;
     ent.hp=Math.max(0,ent.hp-amount); ent.hitFlash=GameTime+0.3; ent._healthBarUntil=GameTime+3;
@@ -671,12 +689,22 @@
     for(const o of arenaObjects){
       ctx.save();ctx.translate(o.x,o.y);
       if(o.type==='spikes'){
-        ctx.fillStyle='#5c6268';ctx.strokeStyle='#2f3439';ctx.lineWidth=2/CAM_SCALE;ctx.fillRect(-CELL*.46,-CELL*.46,CELL*.92,CELL*.92);ctx.strokeRect(-CELL*.46,-CELL*.46,CELL*.92,CELL*.92);
-        for(let y=-1;y<=1;y++)for(let x=-1;x<=1;x++){ctx.beginPath();ctx.moveTo(x*15-5,y*15+7);ctx.lineTo(x*15,y*15-9);ctx.lineTo(x*15+5,y*15+7);ctx.closePath();ctx.fillStyle='#b7c0c7';ctx.strokeStyle='#e1e6ea';ctx.fill();ctx.stroke();}
+        const img=propImage('spikes');
+        if(img) drawSpriteCentered(img,CELL);
+        else{
+          ctx.fillStyle='#5c6268';ctx.strokeStyle='#2f3439';ctx.lineWidth=2/CAM_SCALE;ctx.fillRect(-CELL*.46,-CELL*.46,CELL*.92,CELL*.92);ctx.strokeRect(-CELL*.46,-CELL*.46,CELL*.92,CELL*.92);
+          for(let y=-1;y<=1;y++)for(let x=-1;x<=1;x++){ctx.beginPath();ctx.moveTo(x*15-5,y*15+7);ctx.lineTo(x*15,y*15-9);ctx.lineTo(x*15+5,y*15+7);ctx.closePath();ctx.fillStyle='#b7c0c7';ctx.strokeStyle='#e1e6ea';ctx.fill();ctx.stroke();}
+        }
       }else{
-        const red=o.type==='redBarrel';ctx.fillStyle=o.type==='crate'?'#89572f':red?'#a8201d':'#765038';ctx.strokeStyle=red?'#ff9b49':'#d2a56c';ctx.lineWidth=3/CAM_SCALE;
-        if(o.type==='crate'){ctx.fillRect(-22,-22,44,44);ctx.strokeRect(-22,-22,44,44);ctx.beginPath();ctx.moveTo(-18,-18);ctx.lineTo(18,18);ctx.moveTo(18,-18);ctx.lineTo(-18,18);ctx.stroke();}
-        else{ctx.beginPath();ctx.ellipse(0,0,22,25,0,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.fillStyle=red?'#5c1210':'#3f2d24';ctx.fillRect(-20,-13,40,5);ctx.fillRect(-20,9,40,5);ctx.strokeStyle=red?'#ffb15f':'#c7955f';ctx.beginPath();ctx.ellipse(-18,0,6,23,0,Math.PI*.5,Math.PI*1.5);ctx.stroke();ctx.beginPath();ctx.ellipse(18,0,6,23,0,-Math.PI*.5,Math.PI*.5);ctx.stroke();ctx.fillStyle='rgba(255,255,255,.16)';ctx.fillRect(-8,-20,5,40);}
+        const red=o.type==='redBarrel',img=propImage(o.type==='crate'?'crate':'barrel'),size=OBJECT_RADIUS*2.15;
+        if(img){
+          drawSpriteCentered(img,size);
+          if(red){ctx.globalCompositeOperation='source-atop';ctx.fillStyle='rgba(190,20,18,.45)';ctx.fillRect(-size*.5,-size*.5,size,size);ctx.globalCompositeOperation='source-over';}
+        }else{
+          ctx.fillStyle=o.type==='crate'?'#89572f':red?'#a8201d':'#765038';ctx.strokeStyle=red?'#ff9b49':'#d2a56c';ctx.lineWidth=3/CAM_SCALE;
+          if(o.type==='crate'){ctx.fillRect(-22,-22,44,44);ctx.strokeRect(-22,-22,44,44);ctx.beginPath();ctx.moveTo(-18,-18);ctx.lineTo(18,18);ctx.moveTo(18,-18);ctx.lineTo(-18,18);ctx.stroke();}
+          else{ctx.beginPath();ctx.ellipse(0,0,22,25,0,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.fillStyle=red?'#5c1210':'#3f2d24';ctx.fillRect(-20,-13,40,5);ctx.fillRect(-20,9,40,5);ctx.strokeStyle=red?'#ffb15f':'#c7955f';ctx.beginPath();ctx.ellipse(-18,0,6,23,0,Math.PI*.5,Math.PI*1.5);ctx.stroke();ctx.beginPath();ctx.ellipse(18,0,6,23,0,-Math.PI*.5,Math.PI*.5);ctx.stroke();ctx.fillStyle='rgba(255,255,255,.16)';ctx.fillRect(-8,-20,5,40);}
+        }
         if(red&&o.fuse!=null){const p=clamp(o.fuse/RED_FUSE,0,1),pulse=.45+.55*Math.abs(Math.sin(GameTime*(8+(1-p)*15)));ctx.strokeStyle=`rgba(255,225,90,${pulse})`;ctx.lineWidth=4/CAM_SCALE;ctx.beginPath();ctx.arc(0,0,29,-Math.PI/2,-Math.PI/2+Math.PI*2*p);ctx.stroke();}
       }
       ctx.restore();
@@ -686,10 +714,14 @@
     for(const item of pickups){
       ctx.save(); ctx.translate(item.x,item.y);
       ctx.globalAlpha=item.remaining<3 ? 0.45+0.55*Math.abs(Math.sin(item.remaining*7)) : 1;
-      ctx.fillStyle='rgba(26,90,47,.65)'; ctx.strokeStyle='#b4ffcf'; ctx.lineWidth=2/CAM_SCALE;
-      ctx.beginPath(); ctx.arc(0,0,19,0,Math.PI*2); ctx.fill();
-      ctx.beginPath(); ctx.arc(0,0,19,-Math.PI/2,-Math.PI/2+Math.PI*2*item.remaining/HEAL_LIFE); ctx.stroke();
-      ctx.fillStyle='#62ff99'; ctx.fillRect(-11,-4,22,8); ctx.fillRect(-4,-11,8,22);
+      const img=propImage('potion');
+      if(img) drawSpriteCentered(img,38);
+      else{
+        ctx.fillStyle='rgba(26,90,47,.65)'; ctx.strokeStyle='#b4ffcf'; ctx.lineWidth=2/CAM_SCALE;
+        ctx.beginPath(); ctx.arc(0,0,19,0,Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(0,0,19,-Math.PI/2,-Math.PI/2+Math.PI*2*item.remaining/HEAL_LIFE); ctx.stroke();
+        ctx.fillStyle='#62ff99'; ctx.fillRect(-11,-4,22,8); ctx.fillRect(-4,-11,8,22);
+      }
       ctx.restore();
     }
     for(const bot of liveEnemies()){
