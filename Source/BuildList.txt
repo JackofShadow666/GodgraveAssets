@@ -1,5 +1,5 @@
 ; Список файлов из папок Music и Sound
-; Создано: 11.09.2026 2:04:35
+; Создано: 11.09.2026 2:09:16
 ; Корневая папка: F:\Jack\Project\Godgrave\Public\Godgrave\Source
 
 === Папка: Music ===
@@ -430,4 +430,7 @@ Source\Env\Terrain\Ref\TerrainAtlas_6x6(1).png
 Source\Env\Terrain\Ref\TerrainAtlas_6x6.png
 Source\Env\Terrain\Ref\TerrainAtlas��.png
 Source\Env\Terrain\Ref\T_Tile.png
+
+=== Папка: VFX ===
+Source\VFX\VFX_Explosion.png
 

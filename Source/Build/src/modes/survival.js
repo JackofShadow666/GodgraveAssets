@@ -27,6 +27,7 @@
   const gridSnap = v => Math.round(v / CELL) * CELL;
   const propSprites = {
     barrel:'../Env/Props/T_Barrel.png',
+    redBarrel:'../Env/Props/T_BarrelTNT.png',
     crate:'../Env/Props/T_Box.png',
     spikes:'../Env/Props/T_FloorSpike.png',
     potion:'../Env/Props/T_Potion.png'
@@ -696,10 +697,9 @@
           for(let y=-1;y<=1;y++)for(let x=-1;x<=1;x++){ctx.beginPath();ctx.moveTo(x*15-5,y*15+7);ctx.lineTo(x*15,y*15-9);ctx.lineTo(x*15+5,y*15+7);ctx.closePath();ctx.fillStyle='#b7c0c7';ctx.strokeStyle='#e1e6ea';ctx.fill();ctx.stroke();}
         }
       }else{
-        const red=o.type==='redBarrel',img=propImage(o.type==='crate'?'crate':'barrel'),size=OBJECT_RADIUS*2.15;
+        const red=o.type==='redBarrel',img=propImage(o.type==='crate'?'crate':red?'redBarrel':'barrel'),size=OBJECT_RADIUS*2.15;
         if(img){
           drawSpriteCentered(img,size);
-          if(red){ctx.globalCompositeOperation='source-atop';ctx.fillStyle='rgba(190,20,18,.45)';ctx.fillRect(-size*.5,-size*.5,size,size);ctx.globalCompositeOperation='source-over';}
         }else{
           ctx.fillStyle=o.type==='crate'?'#89572f':red?'#a8201d':'#765038';ctx.strokeStyle=red?'#ff9b49':'#d2a56c';ctx.lineWidth=3/CAM_SCALE;
           if(o.type==='crate'){ctx.fillRect(-22,-22,44,44);ctx.strokeRect(-22,-22,44,44);ctx.beginPath();ctx.moveTo(-18,-18);ctx.lineTo(18,18);ctx.moveTo(18,-18);ctx.lineTo(-18,18);ctx.stroke();}
