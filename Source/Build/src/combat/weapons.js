@@ -520,6 +520,7 @@ function throwWeapon(ent){
     angVel: randSpin(def, 1),
   });
   
+  markFreeDodgeAfterAction(ent);
   cancelRangedCharge(ent);
   ent.hasWeapon = false;
   ent._weaponImg = null;
@@ -668,6 +669,7 @@ if(bounced){
         }
 
         if(deflected){
+          markFreeDodgeAfterAction(ent);
           if(w._projectileBlockContact!==ent){
             applyProjectileContactEffects(w,ent,true,0);
             w._projectileBlockContact=ent;
@@ -941,8 +943,16 @@ function weaponDamageMultiplier(key){
   const def=WEAPON_TYPES.find(w=>w.key===key);
   return def && Number.isFinite(def.damageMult) ? Math.max(0,def.damageMult) : (key==='flail'?0.5:1);
 }
+function markFreeDodgeAfterAction(ent){
+  if(!ent) return;
+  ent._freeDodgeUntil = Math.max(ent._freeDodgeUntil || 0, GameTime + 0.5);
+}
 // Call only once an actual dodge starts. Keep the timestamp across weapon swaps.
 function spendDodgeStamina(ent,baseCost){
+  if((ent._freeDodgeUntil || 0) >= GameTime){
+    ent._lastDodgeAt=GameTime;
+    return 0;
+  }
   const rested=ent._lastDodgeAt==null || GameTime-ent._lastDodgeAt>2;
   const cost=baseCost*(weaponKeyOf(ent)==='bow' && rested?0.5:1);
   ent._lastDodgeAt=GameTime;

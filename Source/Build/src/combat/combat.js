@@ -225,22 +225,11 @@ function disbalanceComboDebug(ent, text, col = '#ffcc44'){
 
 function updateDisbalanceCombo(attacker, defender){
   const windowDuration = Math.max(0.1, sv('unbcombo') || 2);
-  // swordHit() is called only for a confirmed weapon clash. Its `defender`
-  // is already the fighter who blocked the current attacking weapon, so an
-  // extra LMB/AI-input check here incorrectly discarded most real blocks.
   const defenderCanBlock = defender && defender.hasWeapon !== false &&
     !isRangedWeapon(defender) && weaponKeyOf(defender) !== 'flail';
-
-  // Final step: the same fighter who made the block now lands a strong
-  // weapon-on-weapon swing or an active LMB lunge against the same opponent.
   const combo = attacker && attacker._disbalanceCombo;
-  const isLmbLunge =
-    (attacker === P && mDown && P.lmbWasDown &&
-      (GameTime - (P.lmbHoldStart || -99)) <= 0.18) ||
-    (attacker === D && typeof AI !== 'undefined' &&
-      ((AI._pokeDodgeActive && (GameTime - (D._pokeStartTime || -99)) <= 0.3) ||
-       (AI._lungeActive && AI._lungePhase === 'lunge')));
   const isSpecialLmbClash = attacker && attacker._lmbRefundClashFrame === GameTime;
+
   if(combo && combo.target === defender){
     const expired = GameTime - combo.startedAt > windowDuration;
     delete attacker._disbalanceCombo;
@@ -259,25 +248,33 @@ function updateDisbalanceCombo(attacker, defender){
         applyDisbalance(defender, attacker);
       }
       disbalanceComboDebug(attacker,
-        disarmCombo ? 'SPECIAL LMB — SHORT DISBALANCE + DISARM!' : 'SPECIAL LMB — DISBALANCE!',
+        disarmCombo ? 'CRITICAL LMB — SHORT DISBALANCE + DISARM!' : 'CRITICAL LMB — DISBALANCE!',
         disarmCombo ? '#ffaa44' : '#ff8830');
       return true;
     }
-    disbalanceComboDebug(attacker, expired ? 'SPECIAL BLOCK EXPIRED' : 'SPECIAL BLOCK MISSED', '#ff4040');
+    disbalanceComboDebug(attacker, expired ? 'CRITICAL BLOCK EXPIRED' : 'CRITICAL BLOCK MISSED', '#ff4040');
   }
+
   if(!defenderCanBlock) return false;
 
-  if(Math.random() >= 0.30) return false;
+  const pending = defender._pendingCriticalBlock;
+  const pendingActive = pending && pending.target === attacker && GameTime - pending.startedAt <= windowDuration;
+  if(pendingActive){
+    defender._pendingCriticalBlock = null;
+    defender._disbalanceCombo = { target: attacker, blocks: 1, startedAt: GameTime };
+    defender._criticalDisbalanceBlockFrame = GameTime;
+    defender._criticalDisbalanceBlockLabelFrame = GameTime;
+    disbalanceComboDebug(defender, 'Critical block', '#9ed8ff');
+    return false;
+  }
+  if(pending) defender._pendingCriticalBlock = null;
 
-  const state = defender._disbalanceCombo;
-  const expired = state && GameTime - state.startedAt > windowDuration;
-  const blocks = state && state.target === attacker && !expired ? state.blocks + 1 : 1;
-  defender._disbalanceCombo = { target: attacker, blocks, startedAt: GameTime };
-  defender._specialDisbalanceBlockFrame = GameTime;
-  defender._specialDisbalanceBlockLabelFrame = GameTime;
-  disbalanceComboDebug(defender,
-    `Special block: ${blocks}x`,
-    '#409cff');
+  if(Math.random() < 0.30){
+    defender._pendingCriticalBlock = { target: attacker, startedAt: GameTime };
+    defender._specialDisbalanceBlockFrame = GameTime;
+    defender._specialDisbalanceBlockLabelFrame = GameTime;
+    disbalanceComboDebug(defender, 'Signal block', '#409cff');
+  }
   return false;
 }
 function blockClashSoundFor(defender){
@@ -297,7 +294,8 @@ function lmbRefundWindowActive(ent, target){
     if(!combo || combo.target !== target || GameTime - combo.startedAt > comboWindow) return false;
   }
   return (ent._lmbRefundCost || 0) > 0;
-}function tryFinishLmbRefund(ent){
+}
+function tryFinishLmbRefund(ent){
   if(!lmbRefundWindowActive(ent) || !ent._lmbRefundReleased || !ent._lmbRefundClashed) return false;
   ent.stamina = Math.min(ent.stamMax || ent.stamina || 0, (ent.stamina || 0) + ent._lmbRefundCost);
   ent._lmbRefundUsed = true;
@@ -316,6 +314,7 @@ function swordHit(entA, entB){
   const defender = entA.isAttacker ? entB : entA;
   if(entA === P || entB === P) P._cameraCombatUntil = GameTime + 8;
   openSafeCounterWindow(defender);
+  if(typeof markFreeDodgeAfterAction==='function') markFreeDodgeAfterAction(defender);
   const disbalanceTriggered = updateDisbalanceCombo(attacker, defender);
   if(disbalanceTriggered) return;
   const cost = blockStaminaCost(attacker);
@@ -502,11 +501,11 @@ const bodySwB = weaponReach(entB) * sv('swlen') * (isBot(entB)?sv('botswordscale
       entA._bladeCD = GameTime + 0.1;
       const strongSwing = Math.abs(entA.vel) > sv('swthresh')*2.5 || Math.abs(entB.vel) > sv('swthresh')*2.5;
       const lmbRefundClash = markLmbRefundClash(entA, entB) || markLmbRefundClash(entB, entA);
-	  doClash(entA, entB, res, strongSwing, lmbRefundClash);
       swordHit(entA, entB);
+      doClash(entA, entB, res, strongSwing, lmbRefundClash);
       if(strongSwing) $.S.play('clashHard'); else {
         const blockSoundDefender = entA.isAttacker ? entB : entA;
-        const specialBlockSound = blockSoundDefender && blockSoundDefender._specialDisbalanceBlockFrame === GameTime;
+        const specialBlockSound = blockSoundDefender && ((blockSoundDefender._specialDisbalanceBlockFrame === GameTime) || (blockSoundDefender._criticalDisbalanceBlockFrame === GameTime));
         $.S.play(blockClashSoundFor(blockSoundDefender), specialBlockSound ? 0.75 : undefined);
       }
       if(typeof triggerHitstop==='function') triggerHitstop(strongSwing?3:2, strongSwing?3:1.5);
@@ -809,6 +808,7 @@ function checkBladeVsBody(attacker, defender, pivX, pivY, tipX2, tipY2) {
       col: '#ff8844'
     });
     
+    if(typeof markFreeDodgeAfterAction==='function') markFreeDodgeAfterAction(attacker);
     applyDamage(defender, dmg, attacker, {
       isMagic: false,
       isExplosion: false,
@@ -1097,6 +1097,7 @@ if (defender === D && attacker === P && typeof AI !== 'undefined' && AI.enabled 
       // ─── APPLY DAMAGE ────────────────────────────────────────────
       const hpBeforeDamage = defender.hp;
       const isPoke = _isPoke;
+      if(typeof markFreeDodgeAfterAction==='function') markFreeDodgeAfterAction(attacker);
       applyDamage(defender, dmg, attacker, {
         isMagic: false,
         isExplosion: false,
@@ -1104,14 +1105,11 @@ if (defender === D && attacker === P && typeof AI !== 'undefined' && AI.enabled 
         hitstopFrames: 4,
         shakePower: dmg > 15 ? 6 : 3,
         textColor: isPoke ? '#ffdd44' : '#ff4040',
-        textSuffix: isPoke ? '💫' : '',
+        textSuffix: isPoke ? window.I18N.t('combat.poke') : '',
         bloodCount: isPoke ? 4 : 8,
         playSound: false
       });
       
-      if (_isPoke) {
-        $.FX.hit({ x: bC.x, y: bC.y - 36, t: (window.I18N ? window.I18N.t('combat.poke') : 'POKE!'), life: 40, big: true, col: '#ffdd44' });
-      }
       
       $.S.play(damageSoundForWeapon(attacker));
       
@@ -1153,6 +1151,7 @@ function applyShieldBlockFX(x, y, attacker, defender, opts){
   $.S.play('shieldblock');
   if(typeof triggerHitstop === 'function') triggerHitstop(hitstopMag, hitstopMag);
   openSafeCounterWindow(defender);
+  if(typeof markFreeDodgeAfterAction==='function') markFreeDodgeAfterAction(defender);
   if(typeof FactionRules!=='undefined') FactionRules.contact(attacker,defender);
   if(attacker) attacker._healthBarUntil = GameTime + 3;
   if(defender) defender._healthBarUntil = GameTime + 3;
@@ -1812,14 +1811,15 @@ function doClash(entA, entB, res, strongSwing, lmbRefundClash){
   $.FX.hit({
     type:'bolt', x:hitX, y:hitY-4, life:12, maxLife:12,
     count:1,
-    col:lmbRefundClash ? '#9ed8ff' : '#ffffff',
-    tint:lmbRefundClash ? '#66bfff' : null,
-    tintAlpha:lmbRefundClash ? 0.24 : 0,
-    size:15
+    col:'#ffffff',
+    size:20
   });
   const clashLabelDefender = entA.isAttacker ? entB : entA;
-  const specialClashLabel = clashLabelDefender && clashLabelDefender._specialDisbalanceBlockLabelFrame === GameTime;
-  $.FX.hit({x:hitX, y:hitY+14, t:(window.I18N ? window.I18N.t('combat.clash') : 'CLASH!'), life:35, big:false, col:specialClashLabel ? '#b8cad8' : '#ccccaa'});
+  const signalClashLabel = clashLabelDefender && clashLabelDefender._specialDisbalanceBlockLabelFrame === GameTime;
+  if(signalClashLabel){
+    $.FX.hit({type:'blockDrop', ent:clashLabelDefender, life:30, maxLife:30, t:'💧', col:'#88ccff'});
+  }
+  $.FX.hit({x:hitX, y:hitY+14, t:(window.I18N ? window.I18N.t('combat.clash') : 'CLASH!'), life:35, big:false, col:'#ccccaa'});
   // strongSwing creates a flash and cross effect
   if(strongSwing && Math.random() < 0.04) spawnFX('flash', hitX, hitY);
   // Cross FX at the clash point
@@ -2048,6 +2048,7 @@ function applyFlailLungeDamage(attacker,defender,speed){
   defender.vx=vx;defender.vy=vy;
   attacker._flailLastDamage=hp-defender.hp;
   if(defender.hp===hp) return false;
+  if(typeof markFreeDodgeAfterAction==='function') markFreeDodgeAfterAction(attacker);
   $.S.play(damageSoundForWeapon(attacker));
   aiNotifyContact();
   return true;

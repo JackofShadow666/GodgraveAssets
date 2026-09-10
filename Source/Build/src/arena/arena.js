@@ -1299,7 +1299,20 @@ function drawFX(){
     // through the same visual preset so its size cannot vary by call site.
     const maxLife = f.maxLife || f.life || FLOATING_TEXT_LIFE;
     ctx.globalAlpha=Math.max(0,f.life/maxLife);
-    if(f.type==='bolt'){
+    if(f.type==='blockDrop'){
+      const ent = f.ent;
+      if(ent){
+        const p = 1 - f.life / maxLife;
+        const cscl = typeof sv === 'function' ? sv('cscl') : 1;
+        const bc = $.POS.body(ent);
+        ctx.font = FLOATING_TEXT_FONT;
+        ctx.fillStyle = f.col || '#88ccff';
+        ctx.shadowColor = f.col || '#88ccff';
+        ctx.shadowBlur = 8;
+        ctx.textAlign = 'center';
+        ctx.fillText(f.t || '💧', bc.x, bc.y - 28 * cscl - p * 8);
+      }
+    } else if(f.type==='bolt'){
       const p = 1 - f.life / maxLife;
       ctx.save();
       ctx.translate(f.x, f.y - p*5);
@@ -1335,20 +1348,11 @@ function drawSparkImageFX(ctx, f, maxLife){
   const p = 1 - f.life / maxLife;
   const count = f.count || 1;
   const size = f.size || 16;
-  const tint = f.tint || null;
   for(let b=0;b<count;b++){
     const ox=(b-(count-1)/2)*(size*0.55);
     const x = ox-size/2;
     const y = -size/2-p*4;
     ctx.drawImage(img, x, y, size, size);
-    if(tint){
-      ctx.save();
-      ctx.globalAlpha = f.tintAlpha || 0.28;
-      ctx.globalCompositeOperation = 'source-atop';
-      ctx.fillStyle = tint;
-      ctx.fillRect(x, y, size, size);
-      ctx.restore();
-    }
   }
 }
 // ════════════════════════════════════════════════════════════════════════════

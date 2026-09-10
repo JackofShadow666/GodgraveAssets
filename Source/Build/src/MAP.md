@@ -88,7 +88,7 @@ First read for most `src/` tasks. Use it to avoid broad project searches.
 - Mobile-only bug: `src/ui/mobile.js`, then the gameplay file it triggers.
 - Online-only bug: relevant `src/network/net-*.js`, then the gameplay owner file.
 - Arena/camera/character drawing: `src/core/engine.js` for world/camera coordinates, then `src/arena/arena.js`, then `src/main.js`.
-- Visual effects/blood/hit text: `src/systems/fx.js`, then `src/network/net-effects.js` if online differs.
+- Visual effects/blood/hit text: `src/systems/fx.js`; rendered `hitFX` branches and spark image FX live in `src/arena/arena.js`; then `src/network/net-effects.js` if online differs.
 - Audio/music/sfx: `src/systems/audio.js`.
 - Sprites/assets/missing image: `src/systems/sprites.js`, then `src/core/i18n.js` for missing-file text.
 - Startup crash/input locked by overlay: `src/core/debug-config.js`, then `src/main.js` or `Build.html` if load order matters.
