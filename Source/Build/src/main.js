@@ -136,7 +136,7 @@ if(shieldDrainActive){
       }
       // Normal LMB hold without active rage constantly drains stamina.
       if(P.rageBuffEnd <= GameTime){
-        drainStamina(P, (P._lmbHoldDrainRate || 0) * dt);
+        drainStamina(P, (P._lmbHoldDrainRate || 0) * dt * (window.IS_MOBILE ? 0.5 : 1));
       }
     } else {
       if(P.lmbWasDown && P._lmbRefundPressAt >= 0 && GameTime - P._lmbRefundPressAt <= 0.6){
@@ -880,6 +880,7 @@ if(dummyOn&&isUnbalanced(D)) drawUnbalancedStars(D);
     window._shakeApplied = typeof window._applyScreenShake==='function' ? window._applyScreenShake() : false;
     ctx.setTransform(CAM_SCALE, 0, 0, CAM_SCALE, -CAM_X * CAM_SCALE, -CAM_Y * CAM_SCALE);
     drawArena();
+    if(typeof SurvivalMode !== 'undefined') SurvivalMode.drawGroundHazards();
     if(typeof drawScreenVignette === 'function') drawScreenVignette();
     
     if(typeof drawBloodPools==='function') drawBloodPools();

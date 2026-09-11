@@ -1083,7 +1083,7 @@ function updateRangedWeaponFire(ent, fireHeld, aimAngleOverride){
       }
       
       // Drain stamina continuously while holding
-      const staminaDrain = 3 * rawDt;
+      const staminaDrain = 3 * rawDt * (window.IS_MOBILE && ent===P ? 0.5 : 1);
       drainStamina(ent, staminaDrain);
       
       // If stamina runs out - release immediately

@@ -120,12 +120,22 @@ document.getElementById('cb-botrandomweapon')?.addEventListener('change', functi
   for(const bot of ALL_BOTS) maybeSetRandomBotWeapon(bot, true);
 });
 
-document.getElementById('sl-musicvol')?.addEventListener('input', function(){
-  const v=parseFloat(this.value);
-  document.getElementById('vl-musicvol').textContent=v.toFixed(2);
-  if(typeof currentMusicObj!=='undefined'&&currentMusicObj) currentMusicObj.volume=v;
-  window._musicVol=v;
-});
+const settingsMusicVolumeKey='godgrave_music_volume_v1';
+const settingsSavedMusicVolume=parseFloat(localStorage.getItem(settingsMusicVolumeKey));
+window._musicVol=Number.isFinite(settingsSavedMusicVolume)?Math.max(0,Math.min(1,settingsSavedMusicVolume)):0.1;
+const musicVolumeSlider=document.getElementById('sl-musicvol');
+if(musicVolumeSlider){
+  musicVolumeSlider.value=String(window._musicVol);
+  document.getElementById('vl-musicvol').textContent=window._musicVol.toFixed(2);
+  _slCache.musicvol=window._musicVol;
+  musicVolumeSlider.addEventListener('input',function(){
+    const v=parseFloat(this.value);
+    document.getElementById('vl-musicvol').textContent=v.toFixed(2);
+    if(typeof currentMusicObj!=='undefined'&&currentMusicObj)currentMusicObj.volume=v;
+    window._musicVol=v;
+    localStorage.setItem(settingsMusicVolumeKey,String(v));
+  });
+}
 // bindSlider('airad'/'aispd'/'aicd'/'aipvd'/'aipvp') удалены — автоблок-с-радиусом вырезан
 // aikb removed - use bodyKB
 bindSlider('aiang');

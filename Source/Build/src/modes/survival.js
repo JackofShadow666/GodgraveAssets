@@ -12,7 +12,7 @@
   let phase = 'inactive', elapsed = 0, phaseLeft = 0, wave = 0, kills = 0, forceBotResumeAt = 0;
   let ordinarySinceBoss = 0, boss = false, result = null;
   let original = null, slotIndex = 0, roster = [], reserved = [], enemies = [];
-  let pickups = [], arenaObjects = [], arenaBursts = [], woodParts = [], respawns = new Map(), dropAges = new WeakMap(), lastDeathPoint = null;
+  let pickups = [], arenaObjects = [], arenaBursts = [], woodParts = [], dustBursts = [], healParticles = [], respawns = new Map(), dropAges = new WeakMap(), lastDeathPoint = null;
   let playerHurtFade = 0;
   const controls = new Map(), hud = {};
   const controlIds = ['sl-botcount','cb-botrandomweapon','dtoggle','mob-spawn-btn','mob-weapon-btn','mob-bot-weapon-btn','mob-bot-shield-btn'];
@@ -23,15 +23,10 @@
   const online = () => typeof NET_SYNC !== 'undefined' && NET_SYNC.active;
   const getSlot = () => typeof LocalPlayerControls !== 'undefined' ? LocalPlayerControls.getGamepadSlot() : 0;
   const text = (key, vars) => window.I18N ? window.I18N.t(key, vars) : key;
-  const livePlayers = () => {
-    const result=[];
-    const add=ent=>{ if(alive(ent)&&!result.includes(ent)) result.push(ent); };
-    roster.forEach(add);
-    if(Array.isArray(window.PLAYER_SLOTS)) for(const slot of window.PLAYER_SLOTS) if(slot&&slot.source) add(slot.entity);
-    return result;
-  };
+  const livePlayers = () => roster.filter(alive);
   const liveEnemies = () => enemies.filter(alive);
   const gridSnap = v => Math.floor(v / CELL) * CELL + CELL * 0.5;
+  const SURVIVAL_ASSET_ROOT='https://raw.githubusercontent.com/JackofShadow666/GodgraveAssets/main/';
   const propSprites = {
     barrel:'../Env/Props/T_Barrel.png',
     redBarrel:'../Env/Props/T_BarrelTNT.png',
@@ -39,12 +34,15 @@
     spikes:'../Env/Props/T_FloorSpike.png',
     potion:'../Env/Props/T_Potion.png',
     explosion:'../VFX/VFX_Explosion.png',
-    woodParts:'../VFX/VFX/_WoodPart.png',
+    woodParts:SURVIVAL_ASSET_ROOT+'Source/VFX/VFX_WoodPart.png',
+    dustLarge:SURVIVAL_ASSET_ROOT+'Source/VFX/T_Dust_Large.png',
     spawnRune:'../VFX/VFX_SpawnPointRune.png'
   };
   const propImgs = {};
-  const WOOD_PART_SCALE=.12;
-  const WOOD_PART_FRAMES=[[2,256,115,239],[2,2,124,252],[225,2,107,253],[225,257,68,234],[128,2,95,276],[419,2,65,276],[334,2,83,272],[119,280,85,197]];
+  const atlasDefs={
+    woodParts:{imageUrl:propSprites.woodParts,frames:[],scale:1},
+    dustLarge:{imageUrl:propSprites.dustLarge,frames:[],scale:1}
+  };
 
   function combatants(){ return [...roster,...enemies].filter(ent=>alive(ent) && !ent._awaitingReveal); }
   function propImage(key){
@@ -58,8 +56,40 @@
   function drawSpriteCentered(img,size){
     ctx.drawImage(img,-size*.5,-size*.5,size,size);
   }
+  function companionJsonUrl(imageUrl){
+    const hashIndex=imageUrl.indexOf('#'),hash=hashIndex>=0?imageUrl.slice(hashIndex):'',withoutHash=hashIndex>=0?imageUrl.slice(0,hashIndex):imageUrl;
+    const queryIndex=withoutHash.indexOf('?'),query=queryIndex>=0?withoutHash.slice(queryIndex):'',path=queryIndex>=0?withoutHash.slice(0,queryIndex):withoutHash;
+    return path.replace(/\.[^./]+$/,'.json')+query+hash;
+  }
+  function loadTexture(imageUrl){
+    const image=loadSpriteImage(imageUrl);
+    if(image.complete&&image.naturalWidth>0)return Promise.resolve(image);
+    return new Promise((resolve,reject)=>{image.addEventListener('load',()=>resolve(image),{once:true});image.addEventListener('error',()=>reject(new Error('Не загружен PNG атласа '+imageUrl)),{once:true});});
+  }
+  function createSubTexture(image,x,y,width,height){return {image,x,y,width,height};}
+  async function loadAutoFrameAtlas(imageUrl){
+    const image=await loadTexture(imageUrl),jsonUrl=companionJsonUrl(imageUrl),response=await fetch(jsonUrl,{cache:'no-cache'});
+    if(!response.ok)throw new Error(`Не загружен JSON атласа ${jsonUrl}: ${response.status}`);
+    const data=await response.json();
+    if(!data||!Array.isArray(data.s)||data.s.length<2||!Array.isArray(data.f))throw new Error(`Неверный JSON атласа: ${jsonUrl}`);
+    const atlasWidth=Number(data.s[0]),atlasHeight=Number(data.s[1]);
+    const frames=data.f.map((frame,index)=>{
+      if(!Array.isArray(frame)||frame.length<4)throw new Error(`Неверный кадр ${index}`);
+      const [x,y,width,height]=frame.map(Number);
+      if(x<0||y<0||width<=0||height<=0||x+width>atlasWidth||y+height>atlasHeight)throw new Error(`Кадр ${index} выходит за границы атласа`);
+      return createSubTexture(image,x,y,width,height);
+    });
+    return {image,jsonUrl,frames,scale:Number(data.scale??1)};
+  }
+  async function loadAtlas(key){
+    if(typeof fetch!=='function')return;
+    try{Object.assign(atlasDefs[key],await loadAutoFrameAtlas(atlasDefs[key].imageUrl));}
+    catch(error){console.warn('[survival] atlas unavailable:',error.message);}
+  }
+  loadAtlas('woodParts');loadAtlas('dustLarge');
   function spawnWoodParts(x,y,power=1){
-    const frames=WOOD_PART_FRAMES.map((_,i)=>i);
+    const atlas=atlasDefs.woodParts;if(!atlas.frames.length)return;
+    const frames=atlas.frames.map((_,i)=>i);
     for(let i=frames.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1)),t=frames[i];frames[i]=frames[j];frames[j]=t;}
     const count=4+Math.floor(Math.random()*3);
     for(let i=0;i<count;i++){
@@ -67,16 +97,25 @@
       woodParts.push({x,y,frame,vx:Math.cos(a)*speed,vy:Math.sin(a)*speed-(35+Math.random()*65)*power,angle:Math.random()*Math.PI*2,spin:(Math.random()-.5)*12,age:0,life:.65+Math.random()*.45});
     }
   }
+  function spawnLargeDust(x,y){
+    if(atlasDefs.dustLarge.frames.length)dustBursts.push({x,y,frame:Math.floor(Math.random()*atlasDefs.dustLarge.frames.length),age:0,life:.7,angle:(Math.random()-.5)*.35});
+  }
+  function destroyWoodProp(o,power=1,withSound=true){
+    spawnWoodParts(o.x,o.y,power);
+    if(o.type==='crate')spawnLargeDust(o.x,o.y);
+    if(withSound&&$.S&&$.S.play)$.S.play('destructWood');
+  }
   function heroHurtFeedback(amount, kind){
     playerHurtFade = Math.max(playerHurtFade, kind==='spikes' ? 0.18 : 0.28);
     if(typeof triggerHitstop==='function') triggerHitstop(kind==='spikes'?2:3, Math.min(7, 2 + amount / 10));
   }
   function hazardDamage(ent, amount, point, kind){
     if(!alive(ent) || phase==='result') return false;
-    if(ent===P && kind==='spikes') amount=Math.min(amount,Math.max(0,ent.hp-1));
+    if(roster.includes(ent)&&kind==='spikes')amount=Math.min(amount,Math.max(0,ent.hp-1));
     if(amount<=0) return false;
     ent.hp=Math.max(0,ent.hp-amount); ent.hitFlash=GameTime+0.3; ent._healthBarUntil=GameTime+3;
     if(ent===P) heroHurtFeedback(amount,kind);
+    if(kind==='spikes'&&$.S&&$.S.play)$.S.play('damageHammer');
     $.FX.hit({x:body(ent).x,y:body(ent).y-35,t:'-'+Math.round(amount),life:42,big:amount>=20,col:kind==='explosion'?'#ff742e':'#ff4a38'});
     if(typeof spawnBlood==='function'){
       const a=Math.atan2(body(ent).y-point.y,body(ent).x-point.x);
@@ -102,7 +141,7 @@
     return {type,x,y,vx:0,vy:0,moving:false,fuse:null,pusher:null,armed:false,hitTargets:new WeakSet(),inside:new WeakSet(),lastEntry:new WeakMap(),spikeTime:new WeakMap()};
   }
   function rerollArenaObjects(){
-    arenaObjects=[]; arenaBursts=[]; woodParts=[];
+    arenaObjects=[]; arenaBursts=[]; woodParts=[]; dustBursts=[]; healParticles=[];
     const viewW=Math.max(CELL*8,W/CAM_SCALE),viewH=Math.max(CELL*7,H/CAM_SCALE);
     const cols=Math.max(1,Math.ceil(WORLD_W/viewW)),rows=Math.max(1,Math.ceil(WORLD_H/viewH));
     for(let sy=0;sy<rows;sy++) for(let sx=0;sx<cols;sx++){
@@ -210,16 +249,15 @@
     if(o.type==='redBarrel' && o.fuse==null){ o.fuse=RED_FUSE; o.armed=true; }
   }
   function explode(o){
-    const index=arenaObjects.indexOf(o);if(index<0)return;arenaObjects.splice(index,1);spawnWoodParts(o.x,o.y,1.25);arenaBursts.push({x:o.x,y:o.y,age:0,life:.55});
+    const index=arenaObjects.indexOf(o);if(index<0)return;arenaObjects.splice(index,1);spawnWoodParts(o.x,o.y,1.25);if($.S&&$.S.play)$.S.play('destructTnt');arenaBursts.push({x:o.x,y:o.y,age:0,life:.55});
     for(const ent of combatants())if(Math.hypot(body(ent).x-o.x,body(ent).y-o.y)<=EXPLOSION_RADIUS){
       hazardDamage(ent,EXPLOSION_DAMAGE,o,'explosion');const dx=body(ent).x-o.x,dy=body(ent).y-o.y,l=Math.hypot(dx,dy)||1;ent.vx+=(dx/l)*7;ent.vy+=(dy/l)*7;
     }
     for(let i=arenaObjects.length-1;i>=0;i--){
       const other=arenaObjects[i];if(Math.hypot(other.x-o.x,other.y-o.y)>EXPLOSION_RADIUS)continue;
-      if(other.type==='redBarrel'){if(other.fuse==null)other.fuse=RED_FUSE;}else if(other.type!=='spikes'){arenaObjects.splice(i,1);spawnWoodParts(other.x,other.y,1.1);}
+      if(other.type==='redBarrel'){if(other.fuse==null)other.fuse=RED_FUSE;}else if(other.type!=='spikes'){arenaObjects.splice(i,1);destroyWoodProp(other,1.1,false);}
     }
     if(typeof spawnBlood==='function')for(let i=0;i<18;i++)spawnBlood(o.x,o.y,Math.cos(i*Math.PI/9)*(3+Math.random()*7),Math.sin(i*Math.PI/9)*(3+Math.random()*7));
-    if($.S&&$.S.play)$.S.play('damageHammer');
   }
   function resolveSolid(ent,o){
     const c=body(ent),dx=c.x-o.x,dy=c.y-o.y,dist=Math.hypot(dx,dy)||.001,min=BODY_RADIUS+OBJECT_RADIUS;if(dist>=min)return false;
@@ -252,6 +290,9 @@
     for(const burst of arenaBursts)burst.age+=dt;arenaBursts=arenaBursts.filter(b=>b.age<b.life);
     for(const part of woodParts){part.age+=dt;part.x+=part.vx*dt;part.y+=part.vy*dt;part.vy+=180*dt;part.angle+=part.spin*dt;const drag=Math.pow(.985,dt*60);part.vx*=drag;part.vy*=drag;}
     woodParts=woodParts.filter(part=>part.age<part.life);
+    for(const dust of dustBursts)dust.age+=dt;dustBursts=dustBursts.filter(dust=>dust.age<dust.life);
+    for(const particle of healParticles){particle.age+=dt;if(particle.age<0)continue;particle.ox+=particle.vx*dt;particle.vx*=Math.pow(.98,dt*60);}
+    healParticles=healParticles.filter(particle=>particle.age<particle.life);
     const ents=combatants();
     for(let i=arenaObjects.length-1;i>=0;i--){
       const o=arenaObjects[i];
@@ -273,7 +314,7 @@
         const decay=Math.pow(PROP_DECAY,step);o.vx*=decay;o.vy*=decay;
         for(const ent of ents){
           const c=body(ent),dx=c.x-o.x,dy=c.y-o.y,d=Math.hypot(dx,dy)||1;if(d>BODY_RADIUS+OBJECT_RADIUS)continue;
-          if(!o.hitTargets.has(ent)){hazardDamage(ent,PROP_DAMAGE,o,'impact');o.hitTargets.add(ent);armRedBarrel(o);if(o.type!=='redBarrel'&&Math.random()<.5){arenaObjects.splice(i,1);spawnWoodParts(o.x,o.y);o._gone=true;break;}}
+          if(!o.hitTargets.has(ent)){hazardDamage(ent,PROP_DAMAGE,o,'impact');if(o.type==='crate'&&$.S&&$.S.play)$.S.play('woodClink');o.hitTargets.add(ent);armRedBarrel(o);if(o.type!=='redBarrel'&&Math.random()<.5){arenaObjects.splice(i,1);destroyWoodProp(o);o._gone=true;break;}}
           const vl=Math.hypot(o.vx||dx,o.vy||dy)||1,nx=(o.vx||dx)/vl,ny=(o.vy||dy)/vl;ent.x+=nx*Math.max(0,BODY_RADIUS+OBJECT_RADIUS-d);ent.y+=ny*Math.max(0,BODY_RADIUS+OBJECT_RADIUS-d);ent.vx+=o.vx*.35;ent.vy+=o.vy*.35;o.vx*=.72;o.vy*=.72;
         }
         for(const other of arenaObjects)resolveObjectCollision(o,other);
@@ -294,14 +335,14 @@
     }
   }
 
-  function notify(key, point, vars, col = '#78d8ff'){
-    if(typeof hitFX !== 'undefined') $.FX.hit({x:point.x,y:point.y-40,t:text(key,vars),life:55,big:true,col});
+  function notify(key, point, vars, col = '#78d8ff', yOffset = -40){
+    if(typeof hitFX !== 'undefined') $.FX.hit({x:point.x,y:point.y+yOffset,t:text(key,vars),life:55,big:true,col});
   }
 
   function bindRoster(){
     if(typeof LocalPlayerControls === 'undefined') return;
     LocalPlayerControls.slots.forEach((slot, i) => {
-      slot.entity = i === 0 ? P : ALL_BOTS[i-1] || null;
+      slot.entity = i === 0 ? P : i === slotIndex ? roster[1] || null : ALL_BOTS[i-1] || null;
       slot.source = i === 0 ? 'keyboard-mouse' : i === slotIndex ? 'gamepad-0' : null;
     });
     window.PLAYER_SLOTS = LocalPlayerControls.slots;
@@ -394,7 +435,7 @@
     if(typeof DROPPED_SHIELDS !== 'undefined') DROPPED_SHIELDS.length = 0;
     if(typeof BALLS !== 'undefined') BALLS.length = 0;
     if(typeof clearDeathAnimations === 'function') clearDeathAnimations();
-    pickups = []; arenaObjects=[]; arenaBursts=[]; woodParts=[]; dropAges = new WeakMap();
+    pickups = []; arenaObjects=[]; arenaBursts=[]; woodParts=[]; dustBursts=[]; healParticles=[]; dropAges = new WeakMap();
     DEATH.deathCross.length = 0;
   }
 
@@ -470,6 +511,17 @@
     return best || {x:margin,y:margin};
   }
 
+  function repairRosterFlails(){
+    if(typeof resetFlailCombat!=='function') return;
+    for(const ent of roster){
+      if(ent.hasWeapon===false){resetFlailCombat(ent);continue;}
+      if(typeof weaponKeyOf!=='function'||weaponKeyOf(ent)!=='flail')continue;
+      if(!ent._weaponImg&&ent._weaponUrl)ent._weaponImg=loadSpriteImage(ent._weaponUrl);
+      if(!ent._flailRing1Img&&ent._flailRing1Url)ent._flailRing1Img=loadSpriteImage(ent._flailRing1Url);
+      if(!ent._flailRing2Img&&ent._flailRing2Url)ent._flailRing2Img=loadSpriteImage(ent._flailRing2Url);
+      if(!ent._weaponImg||!ent._weaponUrl)setWeapon(ent,ent.weaponType,{keepDefault:true});
+    }
+  }
   function spawnWave(){
     if(!active || phase === 'result') return;
     if(elapsed >= DURATION){ finish('victory'); return; }
@@ -494,7 +546,7 @@
       placeBotPendingReveal(bot,point.x,point.y);
       enemies.push(bot); ALL_BOTS.push(bot);
     }
-    bindRoster(); selectMain();
+    bindRoster(); repairRosterFlails(); selectMain();
     rerollArenaObjects();
     maybeSpawnRoundHeal();
     forceBotResumeAt=GameTime+1;
@@ -586,6 +638,13 @@
     }
   }
 
+  function spawnHealParticles(target){
+    for(let i=0;i<24;i++){
+      const angle=Math.random()*Math.PI*2,radius=Math.random()*13;
+      healParticles.push({target,ox:Math.cos(angle)*radius,oy:-12+Math.sin(angle)*radius*.55,
+        vx:(Math.random()-.5)*8,vy:-(16+Math.random()*24),age:-Math.random()*.45,life:1.5,size:1+Math.random()*2});
+    }
+  }
   function updatePickups(dt){
     const injured=livePlayers().filter(ent=>ent.hp<(ent.maxHp||100));
     const radius=(22+19)*setting('cscl',1);
@@ -602,9 +661,10 @@
       if(!target) continue;
       const amount=Math.min(HEAL,(target.maxHp||100)-target.hp);
       target.hp+=amount;
+      spawnHealParticles(target);
       pickups.splice(i,1);
-      notify('survival.healed',body(target),{amount},'#55ff88');
-      $.S.play('pickupSound');
+      notify('survival.healed',body(target),{amount},'#55ff88',0);
+      $.S.play('heal');
     }
   }
 
@@ -713,7 +773,7 @@
       if(!networkTransition || (ent!==P && ent!==D)) cancelEntity(ent);
     }
     respawns.clear();
-    active=false; phase='inactive'; result=null; pickups=[]; arenaObjects=[]; arenaBursts=[]; woodParts=[];
+    active=false; phase='inactive'; result=null; pickups=[]; arenaObjects=[]; arenaBursts=[]; woodParts=[]; dustBursts=[]; healParticles=[];
     lockControls(false);
     if(!networkTransition){
       clearTransient(); clearOverlay();
@@ -793,10 +853,27 @@
     put(hud.status,info.join(' · '));
   }
 
+  function drawGroundHazards(){
+    if(!isActive() || phase==='result' || typeof ctx==='undefined') return;
+    ctx.save();
+    for(const o of arenaObjects){
+      if(o.type!=='spikes') continue;
+      ctx.save();ctx.translate(o.x,o.y);
+      const img=propImage('spikes');
+      if(img) drawSpriteCentered(img,CELL);
+      else{
+        ctx.fillStyle='#5c6268';ctx.strokeStyle='#2f3439';ctx.lineWidth=2/CAM_SCALE;ctx.fillRect(-CELL*.46,-CELL*.46,CELL*.92,CELL*.92);ctx.strokeRect(-CELL*.46,-CELL*.46,CELL*.92,CELL*.92);
+        for(let y=-1;y<=1;y++)for(let x=-1;x<=1;x++){ctx.beginPath();ctx.moveTo(x*15-5,y*15+7);ctx.lineTo(x*15,y*15-9);ctx.lineTo(x*15+5,y*15+7);ctx.closePath();ctx.fillStyle='#b7c0c7';ctx.strokeStyle='#e1e6ea';ctx.fill();ctx.stroke();}
+      }
+      ctx.restore();
+    }
+    ctx.restore();
+  }
   function drawPickups(){
     if(!isActive() || phase==='result' || typeof ctx==='undefined') return;
     ctx.save();
     for(const o of arenaObjects){
+      if(o.type==='spikes') continue;
       ctx.save();ctx.translate(o.x,o.y);
       if(o.type==='spikes'){
         const img=propImage('spikes');
@@ -818,10 +895,15 @@
       }
       ctx.restore();
     }
-    const woodImg=propImage('woodParts');
-    if(woodImg) for(const part of woodParts){
-      const f=WOOD_PART_FRAMES[part.frame],fade=clamp((part.life-part.age)/.25,0,1),w=f[2]*WOOD_PART_SCALE,h=f[3]*WOOD_PART_SCALE;
-      ctx.save();ctx.translate(part.x,part.y);ctx.rotate(part.angle);ctx.globalAlpha=fade;ctx.drawImage(woodImg,f[0],f[1],f[2],f[3],-w*.5,-h*.5,w,h);ctx.restore();
+    const dustImg=propImage('dustLarge'),dustAtlas=atlasDefs.dustLarge;
+    if(dustImg&&dustAtlas.frames.length)for(const dust of dustBursts){
+      const p=dust.age/dust.life,f=dustAtlas.frames[dust.frame],w=f.width*dustAtlas.scale,h=f.height*dustAtlas.scale;
+      ctx.save();ctx.translate(dust.x,dust.y);ctx.rotate(dust.angle);ctx.globalAlpha=clamp((1-p)*1.5,0,1);ctx.drawImage(f.image,f.x,f.y,f.width,f.height,-w*.5,-h*.5,w,h);ctx.restore();
+    }
+    const woodImg=propImage('woodParts'),woodAtlas=atlasDefs.woodParts;
+    if(woodImg&&woodAtlas.frames.length) for(const part of woodParts){
+      const f=woodAtlas.frames[part.frame],fade=clamp((part.life-part.age)/.25,0,1),w=f.width*woodAtlas.scale,h=f.height*woodAtlas.scale;
+      ctx.save();ctx.translate(part.x,part.y);ctx.rotate(part.angle);ctx.globalAlpha=fade;ctx.drawImage(f.image,f.x,f.y,f.width,f.height,-w*.5,-h*.5,w,h);ctx.restore();
     }
     ctx.globalAlpha=1;
     for(const b of arenaBursts){
@@ -830,6 +912,14 @@
       if(img) drawSpriteCentered(img,size);
       else{ctx.fillStyle='rgba(255,104,31,.28)';ctx.strokeStyle='#ffd15a';ctx.lineWidth=(8*(1-p)+2)/CAM_SCALE;ctx.beginPath();ctx.arc(0,0,EXPLOSION_RADIUS*Math.min(1,p*2.5),0,Math.PI*2);ctx.fill();ctx.stroke();}
       ctx.restore();
+    }
+    ctx.globalAlpha=1;
+    for(const particle of healParticles){
+      if(particle.age<0)continue;
+      const p=particle.age/particle.life;
+      ctx.save();ctx.globalAlpha=Math.sin(Math.PI*p)*.9;ctx.fillStyle='#ff3038';ctx.shadowColor='#ff1828';ctx.shadowBlur=12/CAM_SCALE;
+      const center=body(particle.target);
+      ctx.beginPath();ctx.arc(center.x+particle.ox,center.y+particle.oy+particle.vy*particle.age,particle.size*(1-p*.45),0,Math.PI*2);ctx.fill();ctx.restore();
     }
     ctx.globalAlpha=1;
     for(const item of pickups){
@@ -883,6 +973,6 @@
     }
   },true);
   document.addEventListener('DOMContentLoaded',()=>{ ready=true; initHud(); });
-  window.SurvivalMode={update,drawPickups,handleDeath,setActive,restart,onRoundReset(){ if(active) newMatch(); },
+  window.SurvivalMode={update,drawGroundHazards,drawPickups,handleDeath,setActive,restart,onRoundReset(){ if(active) newMatch(); },
     onRosterChange,isActive,damageMultiplier,getState,adjustAI,isSafeSpawn:safePoint,tryThrowObject,projectileHitObject,segmentHitObject};
 })();

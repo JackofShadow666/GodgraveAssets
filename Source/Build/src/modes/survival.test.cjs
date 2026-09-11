@@ -136,6 +136,17 @@ test('second local player can collect a heal when closest', () => {
   assert.equal(player2.hp,100);assert.equal(c.P.hp,60);
 });
 
+test('stale gamepad slot entity cannot consume player two heal', () => {
+  const c=world({slot:2});c.Math.random=()=>0;c.SurvivalMode.update(0.016);
+  const player2=c.ALL_BOTS[1];c.P.hp=60;player2.hp=40;
+  for(const bot of c.ALL_BOTS.filter(e=>e._survivalEnemy)){bot.x=player2.x;bot.y=player2.y;}
+  c.killAllEnemies();
+  const heal=c.SurvivalMode.getState().pickups[0];assert(heal);
+  const stale={hp:10,maxHp:100,x:heal.x,y:heal.y,_defeated:false};
+  c.window.PLAYER_SLOTS[2].entity=stale;c.window.PLAYER_SLOTS[2].source='gamepad-0';
+  c.P.x=heal.x+200;c.P.y=heal.y;player2.x=heal.x;player2.y=heal.y;c.tick(.016);
+  assert.equal(player2.hp,100);assert.equal(stale.hp,10);
+});
 test('coop death waits for ally respawn, solo death defeats, then restarts after result delay', () => {
   const coop = world({slot:1, respawn:1}); coop.SurvivalMode.update(0.016); coop.SurvivalMode.handleDeath(coop.P);
   assert.equal(coop.SurvivalMode.getState().respawns[0].slot, 0); coop.tick(1.1); assert.equal(coop.P.hp, 100); assert.equal(coop.P._defeated, false);
@@ -190,6 +201,16 @@ test('spikes deal 20 on entry, 3 per second and require exit plus reentry delay'
   c.P.hp=2;c.tick(1);assert.equal(c.P.hp,1);
 });
 
+test('spikes cannot kill the second local player', () => {
+  const c=world({slot:2});
+  for(let attempt=0;attempt<20;attempt++){
+    c.SurvivalMode.update(0.016);
+    if(c.SurvivalMode.getState().arenaObjects.some(o=>o.type==='spikes'))break;
+    c.SurvivalMode.onRoundReset();
+  }
+  const spike=c.SurvivalMode.getState().arenaObjects.find(o=>o.type==='spikes'),player2=c.ALL_BOTS[1];assert(spike&&player2);
+  player2.x=spike.x;player2.y=spike.y;player2.hp=10;c.tick(.01);assert.equal(player2.hp,1);
+});
 test('spikes slow movement while standing on them', () => {
   const c = world();
   for(let attempt=0;attempt<20;attempt++){

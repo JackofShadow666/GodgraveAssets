@@ -563,8 +563,13 @@ if(_spiked2 && typeof GameTime!=='undefined'){
   let swordId = null, swordOrigin = {x:0,y:0};
   let lastSwordTap = 0;
   let swordFlickAttack = false;
+  let swordMotionSample = null;
   let _crossbowTapPending = false; // crossbow tap — shot happens on touchend
 
+  function nearScreenEdge(x,y){
+    const margin=12;
+    return x<=margin||y<=margin||x>=window.innerWidth-margin||y>=window.innerHeight-margin;
+  }
   function pointInElement(x, y, el){
     if(!el) return false;
     const r = el.getBoundingClientRect();
@@ -588,6 +593,7 @@ if(_spiked2 && typeof GameTime!=='undefined'){
 
   function endSwordTouch(){
     swordId = null;
+    swordMotionSample = null;
     if(controlMode==='fixed'){
       fixedStickKnob.style.left='65px'; fixedStickKnob.style.top='65px';
     } else {
@@ -753,11 +759,12 @@ if(_spiked2 && typeof GameTime!=='undefined'){
     updateMouseWorld();
   }
 
-  function updateSwordFixed(cx, cy){
+  function updateSwordFixed(cx,cy,edgeTrigger=false){
     const dx = cx - fixedStickOrigin.x;
     const dy = cy - fixedStickOrigin.y;
     const dist = Math.hypot(dx,dy);
     const angle = Math.atan2(dy,dx);
+    const flickMotion=sampleSwordMotion(cx,cy,dist);
 
     // Knob moves slightly in the finger direction (visual feedback), but limited to small radius
     const knobR = Math.min(dist, 30);
@@ -774,11 +781,21 @@ if(_spiked2 && typeof GameTime!=='undefined'){
     if(dist > 8){ // dead zone to prevent micro-touch jitter
       setMobileAim(angle, 1);
     }
-    maybeStartSwordFlick(dist, 65);
+    maybeStartSwordFlick(dist,65,flickMotion,edgeTrigger);
   }
 
-  function maybeStartSwordFlick(distance, maxRadius){
-    if(swordFlickAttack || distance<=maxRadius) return;
+  function sampleSwordMotion(x,y,distance){
+    const now=performance.now(),previous=swordMotionSample;
+    swordMotionSample={x,y,distance,time:now};
+    if(!previous)return {speed:0,previousDistance:distance};
+    const seconds=(now-previous.time)/1000;
+    return {speed:seconds>0?Math.hypot(x-previous.x,y-previous.y)/seconds:0,previousDistance:previous.distance};
+  }
+
+  function maybeStartSwordFlick(distance,maxRadius,motion,edgeTrigger=false){
+    if(swordFlickAttack)return;
+    const fastOutward=distance>maxRadius&&motion.previousDistance<=maxRadius&&distance>motion.previousDistance&&motion.speed>=maxRadius*18;
+    if(!fastOutward&&!edgeTrigger)return;
     const key=typeof weaponKeyOf==='function'&&typeof P!=='undefined'?weaponKeyOf(P):null;
     if(key==='bow'||key==='crossbow') return;
     if(key==='flail'){
@@ -840,8 +857,8 @@ if(_spiked2 && typeof GameTime!=='undefined'){
     for(const t of e.changedTouches){
       if(t.identifier !== swordId) continue;
       const gp = clientToGamePoint(t.clientX, t.clientY);
-      if(controlMode==='fixed') updateSwordFixed(gp.x, gp.y);
-      else updateSword(gp.x, gp.y);
+      if(controlMode==='fixed') updateSwordFixed(gp.x,gp.y,nearScreenEdge(t.clientX,t.clientY));
+      else updateSword(gp.x,gp.y,nearScreenEdge(t.clientX,t.clientY));
     }
   }, {passive:false});
 
@@ -853,11 +870,12 @@ if(_spiked2 && typeof GameTime!=='undefined'){
     }
   }, {passive:false});
 
-  function updateSword(cx, cy){
+  function updateSword(cx,cy,edgeTrigger=false){
     const dx = cx - swordOrigin.x;
     const dy = cy - swordOrigin.y;
     const dist = Math.hypot(dx,dy);
-    maybeStartSwordFlick(dist, SWORD_R);
+    const flickMotion=sampleSwordMotion(cx,cy,dist);
+    maybeStartSwordFlick(dist,SWORD_R,flickMotion,edgeTrigger);
     const nx = dist>SWORD_R ? dx/dist*SWORD_R : dx;
     const ny = dist>SWORD_R ? dy/dist*SWORD_R : dy;
     updateSwordKnob(nx,ny);

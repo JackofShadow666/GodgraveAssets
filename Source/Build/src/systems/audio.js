@@ -37,6 +37,9 @@ const SFX_FOLDERS = {
   whooshRage:     'Source/Sound/Sword/SwordSwing/',  // фильтр: Agressive
   damage:         'Source/Sound/Damage/Sword/',
   woodClink:      'Source/Sound/WoodClink/',
+  destructWood:   'Source/Sound/Destructable/',
+  destructTnt:    'Source/Sound/Destructable/',
+  heal:           'Source/Sound/Buff/',
   rage:           'Source/Sound/Rage/',
   bladeblind:     'Source/Sound/Shield/',
   shieldblock:    'Source/Sound/Shield/',
@@ -84,7 +87,7 @@ let audioDBReady = false;
 // ?? КЛЮЧ ДЛЯ localStorage
 // ====================================================================
 const ASSETS_CACHE_KEY = 'godgrave_assets_list_v1';
-const ASSETS_VERSION = '1.2';
+const ASSETS_VERSION = '1.5';
 
 const SFX_MAX_BY_TYPE = {
   damage: 15,
@@ -217,6 +220,9 @@ async function loadAudioDB() {
     if (type === 'uiNote')         matches = matches.filter(u => u.toLowerCase().includes('note'));
     if (type === 'uiTap')          matches = matches.filter(u => !u.toLowerCase().includes('hover') && !u.toLowerCase().includes('note') && !u.toLowerCase().includes('death') && !u.toLowerCase().includes('win') && !u.toLowerCase().includes('pickup'));
     if (type === 'death')          matches = matches.filter(u => u.toLowerCase().includes('death'));
+    if (type === 'destructWood')   matches = matches.filter(u => u.toLowerCase().includes('wooddeath'));
+    if (type === 'destructTnt')    matches = matches.filter(u => u.toLowerCase().includes('_tnt_'));
+    if (type === 'heal')           matches = matches.filter(u => u.toLowerCase().includes('_heal_'));
     if (type === 'victory')        matches = matches.filter(u => u.toLowerCase().includes('win'));
     if (type === 'pickupSound')    matches = matches.filter(u => u.toLowerCase().includes('pickup'));
     if (type === 'magicEnergy')    matches = matches.filter(u => u.toLowerCase().includes('energy'));
@@ -282,7 +288,9 @@ function clearAssetsCache() {
 }
 // Можно вызвать из консоли: clearAssetsCache()
 
-window._musicVol=window._musicVol||0.5;
+const MUSIC_VOLUME_KEY='godgrave_music_volume_v1';
+const savedMusicVolume=parseFloat(localStorage.getItem(MUSIC_VOLUME_KEY));
+window._musicVol=Number.isFinite(savedMusicVolume)?Math.max(0,Math.min(1,savedMusicVolume)):0.1;
 function playRandomMusicTrack() {
   if (!audioEnabledFlag || !musicEnabled || MUSIC_LIST_FULL.length === 0) return;
   if (currentMusicObj) { currentMusicObj.pause(); currentMusicObj = null; }
@@ -374,9 +382,13 @@ document.addEventListener('click', e=>{
   if(e.target.closest('button, .menu-btn, .ov-btn')) $.S.play('uiTap');
 });
 
+const SFX_FIXED_URLS={
+  heal:[PROJECT_PATH_AUDIO+'Source/Sound/Buff/SFX_Heal_01.mp3']
+};
+
 function playSound(sfxType, volume) {
   if (!audioEnabledFlag) return;
-  let arr = SFX_DB[sfxType];
+  let arr = SFX_FIXED_URLS[sfxType] || SFX_DB[sfxType];
   if (sfxType === 'clashHard' && Math.random() < 0.05 && SFX_DB['clashHard_rare']?.length)
     arr = SFX_DB['clashHard_rare'];
   if (!arr || arr.length === 0) {
