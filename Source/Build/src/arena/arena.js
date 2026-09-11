@@ -1194,22 +1194,21 @@ function drawUnarmedGloves(ent, spriteW, bodyTilt){
   const imgReady = img && img.complete && img.naturalWidth > 0 && img.naturalHeight > 0;
   const gloveH = CHAR_SPRITE_H * 0.20;
   const gloveW = imgReady ? gloveH * (img.naturalWidth / img.naturalHeight) : gloveH;
-  const baseY = CHAR_SPRITE_OFFSET_Y + CHAR_SPRITE_H * 0.58;
+  const baseY = CHAR_SPRITE_OFFSET_Y + CHAR_SPRITE_H * 0.64;
   const baseX = spriteW * 0.44 + gloveW * 0.10;
   const baseGloveRot = 165 * Math.PI / 180;
   const aim = ent.angle || 0;
-  const shieldSide = shieldDef(ent) ? Math.sign(ent._shieldSide || 0) : 0;
-
-  for(const side of [-1, 1]){
-    if(shieldSide && side === shieldSide) continue;
+  const cursorTilt = $.M.clamp(Math.sin(aim) * 16 * Math.PI / 180, -16 * Math.PI / 180, 16 * Math.PI / 180);
+  const drawGlove = (sidePos, alpha, invertY) => {
+    const side = sidePos >= 0 ? 1 : -1;
     const cursorX = Math.cos(aim) * side * gloveW * 0.18;
-    const cursorY = Math.sin(aim) * gloveH * 0.35;
-    const cursorTilt = $.M.clamp(Math.sin(aim) * 16 * Math.PI / 180, -16 * Math.PI / 180, 16 * Math.PI / 180);
+    const cursorY = Math.sin(aim) * gloveH * (invertY ? -0.35 : 0.35);
     const sideTilt = $.M.clamp(Math.cos(aim) * side * 5 * Math.PI / 180, -5 * Math.PI / 180, 5 * Math.PI / 180);
     const gloveTilt = -bodyTilt * 3.2 + cursorTilt + sideTilt;
 
     ctx.save();
-    ctx.translate(side * (baseX + cursorX), baseY + cursorY);
+    ctx.globalAlpha *= alpha;
+    ctx.translate(sidePos * (baseX + cursorX), baseY + cursorY);
     if(side > 0) ctx.scale(-1, 1);
     ctx.rotate(baseGloveRot + gloveTilt);
     if(imgReady){
@@ -1222,7 +1221,26 @@ function drawUnarmedGloves(ent, spriteW, bodyTilt){
       ctx.strokeRect(-gloveW/2, -gloveH/2, gloveW, gloveH);
     }
     ctx.restore();
+  };
+
+  const autoSide = Math.cos(aim) < 0 ? 1 : -1;
+  const dt = (typeof rawDt === 'number') ? rawDt : 1 / 60;
+  const spd = typeof sv === 'function' ? (sv('shieldSideSpd') || 3.3) : 3.3;
+  const hasShield = !!shieldDef(ent);
+  if(hasShield){
+    const held = typeof shieldHeld === 'function' && shieldHeld(ent);
+    const targetShieldSide = held ? -autoSide : autoSide;
+    if(ent._gloveShieldSide === undefined) ent._gloveShieldSide = targetShieldSide;
+    ent._gloveShieldSide += (targetShieldSide - ent._gloveShieldSide) * Math.min(1, dt * spd);
+    drawGlove(-$.M.clamp(ent._gloveShieldSide, -1, 1), 1);
+    return;
   }
+
+  if(ent._gloveMainSide === undefined) ent._gloveMainSide = autoSide;
+  ent._gloveMainSide += (autoSide - ent._gloveMainSide) * Math.min(1, dt * spd);
+  const mainSide = $.M.clamp(ent._gloveMainSide, -1, 1);
+  drawGlove(mainSide, 1);
+  drawGlove(-mainSide, 0.25, true);
 }
 const DEATH_ANIM_DURATION = 1.5;
 const DEATH_ANIM_DISSOLVE_AT = 0.4;
