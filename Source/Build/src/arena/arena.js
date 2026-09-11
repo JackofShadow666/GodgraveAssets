@@ -360,7 +360,7 @@ if(ai._botDodgeCooldown>0) ai._botDodgeCooldown-=dt;
   const drc = $.POS.body(bot);
   const angToFM = Math.atan2(fmY - drc.y, fmX - drc.x);
   const opp = angToFM + Math.PI;
-  const unarmedStyle = { dist:19, ex:7, ey:7, blk:0.2, adaY:true, adaD:false, adaXb:40, adaXp:73, ada12:false };
+  const unarmedStyle = { dist:19, ex:7, ey:6, blk:0.2, adaY:true, adaD:true, adaX:false, adaXb:40, adaXp:73, ada12:false };
   const distV = bot.hasWeapon === false ? unarmedStyle.dist : dstyle('dist');
   const fdist = Math.hypot(fmX-drc.x, fmY-drc.y);
   const scaledDist = distV * $.M.clamp(fdist/120,0,1);
@@ -393,7 +393,7 @@ if(ai._botDodgeCooldown>0) ai._botDodgeCooldown-=dt;
       // Адаптивные смещения отключаем
     } else {
       // Обычное оружие — настройки из слайдеров
-      const adaXon = bot.hasWeapon === false ? true : dstyleCb('adaX');
+      const adaXon = bot.hasWeapon === false ? unarmedStyle.adaX : dstyleCb('adaX');
       if(adaXon){
         const t = Math.sin(ang)*Math.sin(ang);
         const xBase = bot.hasWeapon === false ? unarmedStyle.adaXb : dstyle('adaXb');

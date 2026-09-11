@@ -306,7 +306,7 @@ const exhMult = getMod(P, 'moveSlow', 1);
 
   // ?? GET STYLE
   const isRanged = isRangedWeapon(P);
-  const unarmedStyle = { dist:19, ex:7, ey:7, blk:0.2, adaY:true, adaD:false, adaXb:40, adaXp:73, ada12:false };
+  const unarmedStyle = { dist:19, ex:7, ey:6, blk:0.2, adaY:true, adaD:true, adaX:false, adaXb:40, adaXp:73, ada12:false };
   const style = P.hasWeapon === false ? unarmedStyle : (isRanged ? getRangedStyle() : {
     dist: csv('dist'),
     ex: csv('ex'),
@@ -389,7 +389,7 @@ const exhBodyMult = isExhausted(P) ? 0.3 : 1.0;
     const inv = ang + Math.PI;
 
     let ex = style.ex;
-    if(!isRanged && cb('adaX')){
+    if(!isRanged && style.adaX !== false && cb('adaX')){
       const xBase = csv('adaXb');
       const xPeak = csv('adaXp');
       const t = Math.sin(ang) * Math.sin(ang);

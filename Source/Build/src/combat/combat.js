@@ -599,13 +599,16 @@ function tryApplyUnarmedPush(attacker, defender, bodyCenter){
   const dx = bodyCenter.x - aC.x;
   const dy = bodyCenter.y - aC.y;
   const len = Math.hypot(dx, dy) || 1;
-  const push = Math.max(2.2, sv('bodyKB') * 0.22);
+  const push = Math.max(4.4, sv('bodyKB') * 0.44);
   defender.vx += dx / len * push;
   defender.vy += dy / len * push;
   defender._hitCD = GameTime + 0.22;
   defender._hitTiltAmp = (dx < 0 ? -1 : 1) * 6 * Math.PI / 180;
   defender._hitTiltT0 = GameTime;
-  if($.S && typeof $.S.play === 'function') $.S.play('woodClink', 0.22);
+  if(typeof spawnDust === 'function'){
+    for(let i=0;i<7;i++) spawnDust(bodyCenter.x + (Math.random()-.5)*12, bodyCenter.y + 8 + Math.random()*8, dx / len * 6 + (Math.random()-.5)*2, dy / len * 6 + (Math.random()-.5)*2);
+  }
+  if($.S && typeof $.S.play === 'function') $.S.play('gloveHit', 0.35);
   aiNotifyContact();
   return true;
 }

@@ -366,6 +366,7 @@ $.S = $.S || {
   damage(){ return window['playSound']('damage'); },
   damageHammer(){ return window['playSound']('damageHammer'); },
   woodClink(){ return window['playSound']('woodClink'); },
+  gloveHit(){ return window['playSound']('gloveHit'); },
   clash(){ return window['playSound']('clash'); },
   clashHard(){ return window['playSound']('clashHard'); },
   rage(){ return window['playSound']('rage'); },
@@ -392,7 +393,8 @@ document.addEventListener('click', e=>{
 });
 
 const SFX_FIXED_URLS={
-  heal:[PROJECT_PATH_AUDIO+'Source/Sound/Buff/SFX_Heal_01.mp3']
+  heal:[PROJECT_PATH_AUDIO+'Source/Sound/Buff/SFX_Heal_01.mp3'],
+  gloveHit:[PROJECT_PATH_AUDIO+'Source/Sound/Glove/SFX/_Glove_01.mp3']
 };
 
 function playSound(sfxType, volume) {
