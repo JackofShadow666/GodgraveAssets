@@ -38,6 +38,7 @@ const SFX_FOLDERS = {
   damage:         'Source/Sound/Damage/Sword/',
   woodClink:      'Source/Sound/WoodClink/',
   destructWood:   'Source/Sound/Destructable/',
+  crateDodgeHit:  'Source/Sound/Destructable/',
   destructTnt:    'Source/Sound/Destructable/',
   heal:           'Source/Sound/Buff/',
   rage:           'Source/Sound/Rage/',
@@ -87,7 +88,7 @@ let audioDBReady = false;
 // ?? КЛЮЧ ДЛЯ localStorage
 // ====================================================================
 const ASSETS_CACHE_KEY = 'godgrave_assets_list_v1';
-const ASSETS_VERSION = '1.5';
+const ASSETS_VERSION = '1.6';
 
 const SFX_MAX_BY_TYPE = {
   damage: 15,
@@ -134,6 +135,7 @@ async function loadAudioDB() {
         
         spritesDBReady = true;
         audioDBReady = true;
+        if (audioEnabledFlag) prewarmSoundType('hammerSwing');
         
         // Назначаем скины
         assignRandomSkin(P);
@@ -221,6 +223,7 @@ async function loadAudioDB() {
     if (type === 'uiTap')          matches = matches.filter(u => !u.toLowerCase().includes('hover') && !u.toLowerCase().includes('note') && !u.toLowerCase().includes('death') && !u.toLowerCase().includes('win') && !u.toLowerCase().includes('pickup'));
     if (type === 'death')          matches = matches.filter(u => u.toLowerCase().includes('death'));
     if (type === 'destructWood')   matches = matches.filter(u => u.toLowerCase().includes('wooddeath'));
+    if (type === 'crateDodgeHit')  matches = matches.filter(u => u.toLowerCase().includes('woodhit'));
     if (type === 'destructTnt')    matches = matches.filter(u => u.toLowerCase().includes('_tnt_'));
     if (type === 'heal')           matches = matches.filter(u => u.toLowerCase().includes('_heal_'));
     if (type === 'victory')        matches = matches.filter(u => u.toLowerCase().includes('win'));
@@ -256,6 +259,7 @@ async function loadAudioDB() {
     }
   }
   audioDBReady = true;
+  if (audioEnabledFlag) prewarmSoundType('hammerSwing');
 
   // ====================================================================
   // ?? СОХРАНЯЕМ В localStorage ДЛЯ СЛЕДУЮЩЕЙ ЗАГРУЗКИ
@@ -327,6 +331,7 @@ function enableAudioSystem() {
   document.removeEventListener('keydown',   enableAudioSystem);
   // Музыка запустится сразу если DB готова, иначе loadAudioDB() запустит её сама
   if (audioDBReady && musicEnabled && MUSIC_LIST_FULL.length) playRandomMusicTrack();
+  if (audioDBReady) prewarmSoundType('hammerSwing');
 }
 
 // -- SOUND_BLOCK: воспроизведение -----------------------------------------
@@ -347,6 +352,12 @@ function getPoolAudio(url){
   }
   // Все заняты — берём самый старый (перезапускаем)
   return pool[0];
+}
+
+function prewarmSoundType(type){
+  const urls = SFX_DB[type];
+  if(!Array.isArray(urls)) return;
+  for(const url of urls) getPoolAudio(url);
 }
 
 // -- Звуки UI: hover и tap на кнопках ----------------------------------------

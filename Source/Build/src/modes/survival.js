@@ -8,6 +8,7 @@
   const SPIKE_ENTRY_DAMAGE = 20, SPIKE_DPS = 3, SPIKE_REENTRY = 1;
   const PROP_DAMAGE = 30, EXPLOSION_DAMAGE = 30, RED_FUSE = 3, EXPLOSION_RADIUS = CELL * 3.75;
   const ENEMY_WEAPON_KEYS = ['sword','rapier','dagger','spear','halberd','axe','longsword','staff','flail'];
+  const PLAYER_START_WEAPON_KEYS = ['sword','spear','halberd','wand','axe'];
   let active = false, ready = document.readyState !== 'loading';
   let phase = 'inactive', elapsed = 0, phaseLeft = 0, wave = 0, kills = 0, forceBotResumeAt = 0;
   let ordinarySinceBoss = 0, boss = false, result = null;
@@ -172,6 +173,7 @@
     o.moving=true;o.pusher=ent;o.armed=o.type!=='redBarrel';o.hitTargets=new WeakSet();o.hitTargets.add(ent);
     o._pushLockUntil=GameTime+0.25;ent._arenaPropPushLockUntil=GameTime+0.25;
     armRedBarrel(o);
+    if(o.type==='crate'&&$.S&&$.S.play)$.S.play('crateDodgeHit');
     if(typeof spawnDust==='function')for(let i=0;i<5;i++)spawnDust(o.x,o.y,-o.vx*.25+(Math.random()-.5)*2,-o.vy*.25+(Math.random()-.5)*2);
     return true;
   }
@@ -399,6 +401,18 @@
     setWeapon(bot, picked, {keepDefault:true});
   }
 
+  function setRandomPlayerWeapon(ent){
+    if(!ent || typeof setWeapon !== 'function') return;
+    if(typeof WEAPON_TYPES === 'undefined'){
+      setWeapon(ent,DEFAULT_WEAPON_KEY,{keepDefault:true});
+      return;
+    }
+    const available = PLAYER_START_WEAPON_KEYS
+      .map(key => WEAPON_TYPES.findIndex(w => w && w.key === key))
+      .filter(index => index >= 0);
+    setWeapon(ent, available.length ? available[Math.floor(Math.random() * available.length)] : DEFAULT_WEAPON_KEY, {keepDefault:true});
+  }
+
   function setRandomEnemyShield(bot){
     if(!bot || typeof setShield !== 'function' || typeof SHIELD_TYPES === 'undefined') return;
     const chance = clamp(0.10 + (wave - 1) * 0.05, 0.10, 0.75);
@@ -478,7 +492,10 @@
     buildRoster(); clearTransient(); clearOverlay();
     elapsed = 0; phaseLeft = 0; wave = 0; kills = 0; forceBotResumeAt = 0; ordinarySinceBoss = 0;
     boss = false; result = null; lastDeathPoint = null;
-    roster.forEach((ent,i) => resetPlayer(ent,playerPoint(i),true));
+    roster.forEach((ent,i) => {
+      resetPlayer(ent,playerPoint(i),false);
+      setRandomPlayerWeapon(ent);
+    });
     dummyOn = true;
     if(typeof snapCameraToTarget === 'function') snapCameraToTarget();
     phase = 'wave';
@@ -540,7 +557,14 @@
         _damageMult:boss?1+Math.random():1,maxHp:boss?200:100,hp:boss?200:100,
         _isExtra:i>0,_survivalRevealAt:GameTime+REVEAL_DELAY});
       bot._aiState.enabled=true;
-      setRandomEnemyWeapon(bot);
+      if(!boss && Math.random() < 0.15){
+        const bowIndex=WEAPON_TYPES.findIndex(w=>w&&w.key==='bow');
+        setWeapon(bot,bowIndex>=0?bowIndex:DEFAULT_WEAPON_KEY,{keepDefault:true});
+        bot._survivalArcher=true;
+      } else {
+        setRandomEnemyWeapon(bot);
+        bot._survivalArcher=false;
+      }
       setRandomEnemyShield(bot);
       if(typeof spritesDBReady!=='undefined' && spritesDBReady && typeof assignRandomSkin==='function') assignRandomSkin(bot);
       placeBotPendingReveal(bot,point.x,point.y);
@@ -961,6 +985,10 @@
       droppedShields:typeof DROPPED_SHIELDS!=='undefined'?DROPPED_SHIELDS.length:0};
   }
 
+  function getPlayer(index){
+    return Number.isInteger(index) ? (roster[index] || null) : null;
+  }
+
   // Capture before gameplay handlers, but preserve typing in menus.
   window.addEventListener('keydown',event=>{
     if(!isActive()) return;
@@ -974,5 +1002,5 @@
   },true);
   document.addEventListener('DOMContentLoaded',()=>{ ready=true; initHud(); });
   window.SurvivalMode={update,drawGroundHazards,drawPickups,handleDeath,setActive,restart,onRoundReset(){ if(active) newMatch(); },
-    onRosterChange,isActive,damageMultiplier,getState,adjustAI,isSafeSpawn:safePoint,tryThrowObject,projectileHitObject,segmentHitObject};
+    onRosterChange,isActive,damageMultiplier,getState,getPlayer,adjustAI,isSafeSpawn:safePoint,tryThrowObject,projectileHitObject,segmentHitObject};
 })();

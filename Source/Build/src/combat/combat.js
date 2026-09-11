@@ -314,6 +314,10 @@ function markLmbRefundClash(ent, target){
 function swordHit(entA, entB){
   const attacker = entA.isAttacker ? entA : entB;
   const defender = entA.isAttacker ? entB : entA;
+  if(typeof applyBlockBodyTilt === 'function'){
+    const a=$.POS.body(attacker), d=$.POS.body(defender);
+    applyBlockBodyTilt(defender, Math.atan2(d.y-a.y,d.x-a.x));
+  }
   if(entA === P || entB === P) P._cameraCombatUntil = GameTime + 8;
   openSafeCounterWindow(defender);
   if(typeof markFreeDodgeAfterAction==='function') markFreeDodgeAfterAction(defender);
@@ -325,6 +329,14 @@ function swordHit(entA, entB){
     applyExhaust(attacker);
     return;
   }
+}
+
+const BLOCK_BODY_TILT = 9 * Math.PI / 180;
+function applyBlockBodyTilt(ent, awayAngle){
+  if(!ent) return;
+  const side = Math.cos(Number.isFinite(awayAngle) ? awayAngle : ent.angle) < 0 ? -1 : 1;
+  ent._blockBodyTiltAmp = side * BLOCK_BODY_TILT;
+  ent._blockBodyTiltT0 = GameTime;
 }
 
 // ─── SEGMENT DISTANCE ──────────────────────────────────────────────────
@@ -1161,6 +1173,12 @@ function applyShieldBlockFX(x, y, attacker, defender, opts){
   const ang = opts.waveAngle != null ? opts.waveAngle
     : (attacker && defender) ? Math.atan2(attacker.y - defender.y, attacker.x - defender.x)
     : 0;
+  if(defender && typeof applyBlockBodyTilt==='function'){
+    const awayAngle=opts.impactAngle!=null ? opts.impactAngle
+      : attacker ? Math.atan2(defender.y-attacker.y,defender.x-attacker.x)
+      : ang;
+    applyBlockBodyTilt(defender,awayAngle);
+  }
   FX_EFFECTS.push({type:'shieldwave', x, y, t:0, duration:waveDuration, angle:ang, followEntity:null});
   
   // ─── EXTRA EFFECTS ──────────────────────────────────────────────

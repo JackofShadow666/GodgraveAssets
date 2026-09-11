@@ -202,6 +202,9 @@
     const entities = [];
     if(typeof P !== 'undefined') entities.push(P);
     if(typeof ALL_BOTS !== 'undefined') entities.push(...ALL_BOTS);
+    if(Array.isArray(window.PLAYER_SLOTS)){
+      for(const slot of window.PLAYER_SLOTS) if(slot && slot.entity) entities.push(slot.entity);
+    }
     for(const ent of entities){
       if(!ent) continue;
       ent._dodgeCD = 0;

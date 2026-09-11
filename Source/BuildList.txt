@@ -1,5 +1,5 @@
 ; Список файлов из папок Music и Sound
-; Создано: 11.09.2026 12:18:54
+; Создано: 11.09.2026 17:55:02
 ; Корневая папка: F:\Jack\Project\Godgrave\Public\Godgrave\Source
 
 === Папка: Music ===
@@ -89,6 +89,7 @@ Source\Sound\Destructable\SFX_WoodDeath_02.mp3
 Source\Sound\Destructable\SFX_WoodDeath_03.mp3
 Source\Sound\Destructable\SFX_WoodDeath_04.mp3
 Source\Sound\Destructable\SFX_WoodDeath_05.mp3
+Source\Sound\Destructable\SFX_WoodHit_01.mp3
 Source\Sound\Dodge\SFX_Dodge_01.mp3
 Source\Sound\Dodge\SFX_Dodge_02.mp3
 Source\Sound\Dodge\SFX_Dodge_03.mp3

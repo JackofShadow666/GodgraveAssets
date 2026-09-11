@@ -506,6 +506,7 @@ function disarmEntity(ent, kickVx, kickVy){
     ownerImmuneUntil: GameTime + 0.4,
     _noPickupUntil: GameTime + 0.4,
     ownerPickupBlockUntil: GameTime + 1.4,
+    flailFold: defW.key === 'flail' ? 0 : undefined,
     rot: dropAngle,
     angVel: randSpin(defW, 0.8), // чуть быстрее вращение
   });
@@ -513,6 +514,7 @@ function disarmEntity(ent, kickVx, kickVy){
   ent.hasWeapon = false;
   ent._weaponImg = null;
   ent._weaponUrl = null;
+  if(typeof resetFlailCombat === 'function') resetFlailCombat(ent);
 }
 
 
@@ -657,6 +659,7 @@ function updateDroppedWeapons(dt){
 
   for(let i = DROPPED_WEAPONS.length - 1; i >= 0; i--){
     const w = DROPPED_WEAPONS[i];
+    if(w.flailFold !== undefined) w.flailFold=Math.min(1,w.flailFold+dt/0.35);
     if(w.rot === undefined) w.rot = Math.atan2(w.vy, w.vx);
     if(w.angVel === undefined) w.angVel = 0;
     if(!w._slowmoMidRolled && GameTime >= (w.ownerImmuneUntil || 0)){
@@ -700,6 +703,7 @@ if(bounced){
 
     // ── Отскок от чужого клинка или щита ────────────────────────────────
     const flySpdPre = Math.hypot(w.vx, w.vy);
+    const flyAnglePre = Math.atan2(w.vy,w.vx);
     let deflected = false;
     if(flySpdPre > 0.5){
       const candidatesDef = [P, ...ALL_BOTS];
@@ -761,8 +765,9 @@ if(bounced){
           }
           
           if(hitShield){
-            applyShieldBlockFX(w.x, w.y, null, null, {waveAngle: Math.atan2(w.vy, w.vx)});
+            applyShieldBlockFX(w.x, w.y, null, ent, {waveAngle: flyAnglePre, impactAngle: flyAnglePre});
           } else if((w._deflectFxUntil || 0) <= GameTime) {
+            if(typeof applyBlockBodyTilt==='function') applyBlockBodyTilt(ent,flyAnglePre);
             w._deflectFxUntil = GameTime + 0.5;
             const strongHit = flySpdPre > 6;
             $.FX.hit({x:w.x, y:w.y-8, t:(window.I18N ? window.I18N.t('combat.clash') : 'CLASH!'), life:28, big:strongHit, col:'#ccccaa'});
@@ -903,7 +908,8 @@ function drawDroppedFlail(w, rot){
   const L = w.len || (SWORD_LEN * 0.7);
   const headLen = FLAIL_HEAD_LEN;
 
-  const chainLen = Math.max(0, L - headLen);
+  const fold=$.M.clamp(w.flailFold===undefined?0:w.flailFold,0,1);
+  const chainLen = Math.max(FLAIL_RING_LEN*1.2, (L-headLen)*(1-fold)+FLAIL_RING_LEN*1.2*fold);
   const ringLen = Math.max(FLAIL_RING_LEN, chainLen / DROPPED_FLAIL_RING_COUNT);
 
   // ✅ Исправлено: lagFactor вычисляется из скорости

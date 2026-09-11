@@ -997,7 +997,8 @@ function estimateThrowRange(def){
  function updateAI(dt, bot){
   if(!bot || bot.hp <= 0 || !dummyOn) return;
   if(!bot._aiState) return;
-  const targetPlayer = bot._aiTargetOverride || (typeof FactionRules!=='undefined' ? FactionRules.getBotTarget(bot) : P);
+  const combatTarget = bot._aiTargetOverride || (typeof FactionRules!=='undefined' ? FactionRules.getBotTarget(bot) : P);
+  const targetPlayer = combatTarget || (typeof P !== 'undefined' ? P : null);
   if(!targetPlayer) return;
   
   const ai = bot._aiState;
@@ -2244,6 +2245,11 @@ function updatePlayerBotAssistAI(dt){
       }
       aiMoveToward(ai._fakeKeys,pc,ai._idleRoamTarget,45*cscl,cscl);
     }
+    return;
+  }
+  if(!combatTarget){
+    ai._fakeKeys.w=ai._fakeKeys.a=ai._fakeKeys.s=ai._fakeKeys.d=false;
+    ai._fakeMDown=false;
     return;
   }
 

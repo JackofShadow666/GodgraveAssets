@@ -115,17 +115,21 @@
     }
 
     const botHud = document.getElementById('hud-bot');
-    const hasDummy = typeof dummyOn !== 'undefined' && dummyOn && typeof D !== 'undefined' && !!D;
+    const survivalPlayer2 = typeof SurvivalMode !== 'undefined' && SurvivalMode.isActive && SurvivalMode.isActive() && SurvivalMode.getPlayer
+      ? SurvivalMode.getPlayer(1)
+      : null;
+    const hudEntity2 = survivalPlayer2 || (typeof D !== 'undefined' ? D : null);
+    const hasDummy = typeof dummyOn !== 'undefined' && dummyOn && !!hudEntity2;
     if(botHud){
       botHud.style.opacity = hasDummy ? '1' : '0';
     }
     if(hasDummy){
-      updateMainHudEntity('hud-b', D, {
+      updateMainHudEntity('hud-b', hudEntity2, {
         statusSelector: '#hud-b-status'
       });
-      const manualSlot = D._manualControl && Number.isInteger(D._playerSlot) ? D._playerSlot : -1;
+      const manualSlot = hudEntity2._manualControl && Number.isInteger(hudEntity2._playerSlot) ? hudEntity2._playerSlot : -1;
       setTextIfPresent('#hud-b-label', manualSlot >= 0 ? `PLAYER ${manualSlot + 1}` : t('hud.botLabel', 'BOT'));
-      setTextIfPresent('#hud-b-phase', manualSlot >= 0 ? '' : botPhaseText(D));
+      setTextIfPresent('#hud-b-phase', manualSlot >= 0 ? '' : botPhaseText(hudEntity2));
     }
 
     const localPvp = typeof LocalPlayerControls !== 'undefined' && LocalPlayerControls.isLocalPvP();

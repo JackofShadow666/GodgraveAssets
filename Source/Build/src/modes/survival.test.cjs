@@ -68,6 +68,27 @@ test('starts local survival with timer, locked controls and stable roster slot',
   assert.equal(c.document.getElementById('sl-botcount').disabled, true);
 });
 
+test('every arena player starts with an independently selected allowed weapon', () => {
+  const c=world({slot:2});c.Math.random=()=>0;c.SurvivalMode.update(0.016);
+  const allowed=new Set(['sword','spear','halberd','wand','axe']);
+  assert.equal(allowed.has(c.WEAPON_TYPES[c.P.weaponType].key),true);
+  const player2=c.window.PLAYER_SLOTS[2].entity;assert(player2);
+  assert.equal(allowed.has(c.WEAPON_TYPES[player2.weaponType].key),true);
+});
+
+test('each ordinary enemy independently routes to bow at fifteen percent', () => {
+  const archer=world();archer.Math.random=()=>0;archer.SurvivalMode.update(0.016);
+  for(const bot of archer.ALL_BOTS.filter(e=>e._survivalEnemy)){
+    assert.equal(archer.WEAPON_TYPES[bot.weaponType].key,'bow');
+    assert.equal(bot._survivalArcher,true);
+  }
+  const melee=world();melee.Math.random=()=>0.99;melee.SurvivalMode.update(0.016);
+  for(const bot of melee.ALL_BOTS.filter(e=>e._survivalEnemy)){
+    assert.notEqual(melee.WEAPON_TYPES[bot.weaponType].key,'bow');
+    assert.equal(bot._survivalArcher,false);
+  }
+});
+
 test('ordinary waves pause for six game seconds and can drop wave heal', () => {
   const c = world(); c.Math.random = () => 0; c.SurvivalMode.update(0.016); c.killAllEnemies();
   let s = c.SurvivalMode.getState(); assert.equal(s.phase, 'intermission'); assert.equal(Math.ceil(s.pickups[0].remaining), 15);

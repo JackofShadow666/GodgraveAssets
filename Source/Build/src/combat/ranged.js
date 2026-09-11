@@ -1646,7 +1646,10 @@ function updateProjectiles(dt){
         $.FX.hit({x:w.x, y:w.y-8, t:'⚔', life:18, big:strongHit, col:'#ffdd88'});
         $.S.play(strongHit ? 'clashHard' : 'clash');
         if(typeof triggerHitstop === 'function') triggerHitstop(strongHit?3:2, strongHit?3:1.5);
-        if(blocker) addRage(blocker, clashRageGain());
+        if(blocker){
+          addRage(blocker, clashRageGain());
+          if(typeof applyBlockBodyTilt==='function') applyBlockBodyTilt(blocker,Math.atan2(w.vy,w.vx));
+        }
       } else {
         $.FX.hit({x:w.x,y:w.y-8,t:'⚔',life:16,big:false,col:'#ffdd88'});
         if(typeof triggerHitstop === 'function') triggerHitstop(2,2);
@@ -1948,6 +1951,18 @@ function updateCrossbowBotAI(dt, bot){
     bot._cbMoveX = mx; bot._cbMoveY = my;
   }
   let mx = bot._cbMoveX||0, my = bot._cbMoveY||0;
+  if(typeof CAM_X!=='undefined' && typeof CAM_Y!=='undefined' && typeof CAM_SCALE!=='undefined'){
+    const viewW=W/CAM_SCALE, viewH=H/CAM_SCALE, grace=45, inset=80;
+    const outside=bot.x<CAM_X-grace||bot.x>CAM_X+viewW+grace||bot.y<CAM_Y-grace||bot.y>CAM_Y+viewH+grace;
+    if(outside) bot._archerReturnToView=true;
+    if(bot._archerReturnToView){
+      const minX=CAM_X+inset,maxX=CAM_X+viewW-inset,minY=CAM_Y+inset,maxY=CAM_Y+viewH-inset;
+      const tx=$.M.clamp(bot.x,minX,maxX),ty=$.M.clamp(bot.y,minY,maxY);
+      const dx=tx-bot.x,dy=ty-bot.y,len=Math.hypot(dx,dy);
+      if(len<12) bot._archerReturnToView=false;
+      else { mx=dx/len; my=dy/len; }
+    }
+  }
 
   // ─── SPEED ─────────────────────────────────────────────────────────────
   const exhMult = getMod(bot, 'moveSlow', 1);

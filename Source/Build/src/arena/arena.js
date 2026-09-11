@@ -357,7 +357,7 @@ if(ai._botDodgeCooldown>0) ai._botDodgeCooldown-=dt;
   botUpdateDodge(bot, dt);
 
   // Рут бота (без компенсации — у бота её нет)
-  const drc = { x: bot.x + 5, y: bot.y - 8 };
+  const drc = $.POS.body(bot);
   const angToFM = Math.atan2(fmY - drc.y, fmX - drc.x);
   const opp = angToFM + Math.PI;
   const distV = dstyle('dist');
@@ -1124,7 +1124,10 @@ function drawChar(ent, cscl, torsoCol, headCol){
   ctx.scale(cscl, cscl);
   const _hitTiltElapsed = GameTime - (ent._hitTiltT0!==undefined ? ent._hitTiltT0 : -99);
   const _hitTilt = (ent._hitTiltAmp||0) * Math.exp(-Math.max(0,_hitTiltElapsed) * 10);
-  ctx.rotate((ent.vx||0)*0.02 + _hitTilt);
+  const _blockTiltElapsed = GameTime - (ent._blockBodyTiltT0!==undefined ? ent._blockBodyTiltT0 : -99);
+  const _blockTiltDecayTime = Math.max(0,_blockTiltElapsed-0.14);
+  const _blockTilt = (ent._blockBodyTiltAmp||0) * Math.exp(-_blockTiltDecayTime * 7);
+  ctx.rotate((ent.vx||0)*0.02 + _hitTilt + _blockTilt);
 
   // тень
   ctx.fillStyle='rgba(0,0,0,0.28)';
@@ -1275,7 +1278,7 @@ function drawOverheadHealthBar(ent, cscl){
 function drawDummy(bot = D){
   if(!dummyOn) return;
   if(!bot || bot._defeated || bot.hp <= 0 || bot._awaitingReveal) return;
-  const drc = {x: bot.x+5, y: bot.y-8};
+  const drc = $.POS.body(bot);
   const dpivX = drc.x + bot.pvX, dpivY = drc.y + bot.pvY;
  
 
