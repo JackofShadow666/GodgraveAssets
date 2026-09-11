@@ -69,6 +69,7 @@ function weaponColliderSpan(ent){
 // Ширина вычисляется из реальных пропорций PNG — без искажения аспекта.
 const CHAR_SPRITE_H = 38;
 const CHAR_SPRITE_OFFSET_Y = -23; // верх спрайта относительно bx,by
+const GLOVE_SPRITE_URL = ((typeof PROJECT_PATH_AUDIO!=='undefined') ? PROJECT_PATH_AUDIO : '') + 'Source/Weapon/Glove/T_Glove_01.png';
 
 // ════════════════════════════════════════════════════════════════════════════
 // MODULE: SPRITES  (PNG персонажа и оружия, тот же BuildMusicList.txt)
@@ -236,6 +237,7 @@ const SPRITE_FOLDERS = {
     rapier:     'Source/Weapon/Rapier/',     
     shield:     'Source/Weapon/Shield/',      
     shieldspike: 'Source/Weapon/ShieldSpike/', 
+    glove:      'Source/Weapon/Glove/',
     background: 'Source/Background/',
   
   
@@ -290,6 +292,8 @@ function loadSpriteImage(url){
 }
 
 // Возвращает случайный URL из категории (или null если список пуст)
+const GLOVE_SPRITE_IMG = loadSpriteImage(GLOVE_SPRITE_URL);
+
 function pickRandomSprite(category){
   const arr = SPRITE_LISTS[category];
   if(!arr || arr.length === 0) return null;

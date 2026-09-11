@@ -1127,7 +1127,8 @@ function drawChar(ent, cscl, torsoCol, headCol){
   const _blockTiltElapsed = GameTime - (ent._blockBodyTiltT0!==undefined ? ent._blockBodyTiltT0 : -99);
   const _blockTiltDecayTime = Math.max(0,_blockTiltElapsed-0.14);
   const _blockTilt = (ent._blockBodyTiltAmp||0) * Math.exp(-_blockTiltDecayTime * 7);
-  ctx.rotate((ent.vx||0)*0.02 + _hitTilt + _blockTilt);
+  const bodyTilt = (ent.vx||0)*0.02 + _hitTilt + _blockTilt;
+  ctx.rotate(bodyTilt);
 
   // тень
   ctx.fillStyle='rgba(0,0,0,0.28)';
@@ -1180,11 +1181,49 @@ function drawChar(ent, cscl, torsoCol, headCol){
     ctx.fillStyle = ent===P ? 'rgba(90,160,255,0.25)' : 'rgba(255,80,70,0.25)';
     ctx.fillRect(-spriteW/2, CHAR_SPRITE_OFFSET_Y, spriteW, CHAR_SPRITE_H);
   }
+  if(ent.hasWeapon === false){
+    drawUnarmedGloves(ent, spriteW, bodyTilt);
+  }
   ctx.restore();
   drawOverheadHealthBar(ent, cscl);
   drawStatusEffects(ent, cscl);
 }
 
+function drawUnarmedGloves(ent, spriteW, bodyTilt){
+  const img = (typeof GLOVE_SPRITE_IMG !== 'undefined') ? GLOVE_SPRITE_IMG : null;
+  const imgReady = img && img.complete && img.naturalWidth > 0 && img.naturalHeight > 0;
+  const gloveH = CHAR_SPRITE_H * 0.20;
+  const gloveW = imgReady ? gloveH * (img.naturalWidth / img.naturalHeight) : gloveH;
+  const baseY = CHAR_SPRITE_OFFSET_Y + CHAR_SPRITE_H * 0.58;
+  const baseX = spriteW * 0.44 + gloveW * 0.10;
+  const baseGloveRot = 165 * Math.PI / 180;
+  const aim = ent.angle || 0;
+  const shieldSide = shieldDef(ent) ? Math.sign(ent._shieldSide || 0) : 0;
+
+  for(const side of [-1, 1]){
+    if(shieldSide && side === shieldSide) continue;
+    const cursorX = Math.cos(aim) * side * gloveW * 0.18;
+    const cursorY = Math.sin(aim) * gloveH * 0.35;
+    const cursorTilt = $.M.clamp(Math.sin(aim) * 16 * Math.PI / 180, -16 * Math.PI / 180, 16 * Math.PI / 180);
+    const sideTilt = $.M.clamp(Math.cos(aim) * side * 5 * Math.PI / 180, -5 * Math.PI / 180, 5 * Math.PI / 180);
+    const gloveTilt = -bodyTilt * 3.2 + cursorTilt + sideTilt;
+
+    ctx.save();
+    ctx.translate(side * (baseX + cursorX), baseY + cursorY);
+    if(side > 0) ctx.scale(-1, 1);
+    ctx.rotate(baseGloveRot + gloveTilt);
+    if(imgReady){
+      ctx.drawImage(img, -gloveW/2, -gloveH/2, gloveW, gloveH);
+    } else {
+      ctx.fillStyle = 'rgba(18,18,18,0.92)';
+      ctx.strokeStyle = 'rgba(210,210,210,0.35)';
+      ctx.lineWidth = 0.8;
+      ctx.fillRect(-gloveW/2, -gloveH/2, gloveW, gloveH);
+      ctx.strokeRect(-gloveW/2, -gloveH/2, gloveW, gloveH);
+    }
+    ctx.restore();
+  }
+}
 const DEATH_ANIM_DURATION = 1.5;
 const DEATH_ANIM_DISSOLVE_AT = 0.4;
 const DEATH_ANIMS = [];
