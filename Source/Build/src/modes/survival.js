@@ -12,7 +12,7 @@
   let phase = 'inactive', elapsed = 0, phaseLeft = 0, wave = 0, kills = 0, forceBotResumeAt = 0;
   let ordinarySinceBoss = 0, boss = false, result = null;
   let original = null, slotIndex = 0, roster = [], reserved = [], enemies = [];
-  let pickups = [], arenaObjects = [], arenaBursts = [], respawns = new Map(), dropAges = new WeakMap(), lastDeathPoint = null;
+  let pickups = [], arenaObjects = [], arenaBursts = [], woodParts = [], respawns = new Map(), dropAges = new WeakMap(), lastDeathPoint = null;
   let playerHurtFade = 0;
   const controls = new Map(), hud = {};
   const controlIds = ['sl-botcount','cb-botrandomweapon','dtoggle','mob-spawn-btn','mob-weapon-btn','mob-bot-weapon-btn','mob-bot-shield-btn'];
@@ -39,9 +39,12 @@
     spikes:'../Env/Props/T_FloorSpike.png',
     potion:'../Env/Props/T_Potion.png',
     explosion:'../VFX/VFX_Explosion.png',
+    woodParts:'../VFX/VFX/_WoodPart.png',
     spawnRune:'../VFX/VFX_SpawnPointRune.png'
   };
   const propImgs = {};
+  const WOOD_PART_SCALE=.12;
+  const WOOD_PART_FRAMES=[[2,256,115,239],[2,2,124,252],[225,2,107,253],[225,257,68,234],[128,2,95,276],[419,2,65,276],[334,2,83,272],[119,280,85,197]];
 
   function combatants(){ return [...roster,...enemies].filter(ent=>alive(ent) && !ent._awaitingReveal); }
   function propImage(key){
@@ -54,6 +57,15 @@
   }
   function drawSpriteCentered(img,size){
     ctx.drawImage(img,-size*.5,-size*.5,size,size);
+  }
+  function spawnWoodParts(x,y,power=1){
+    const frames=WOOD_PART_FRAMES.map((_,i)=>i);
+    for(let i=frames.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1)),t=frames[i];frames[i]=frames[j];frames[j]=t;}
+    const count=4+Math.floor(Math.random()*3);
+    for(let i=0;i<count;i++){
+      const frame=frames[i],a=Math.random()*Math.PI*2,speed=(55+Math.random()*85)*power;
+      woodParts.push({x,y,frame,vx:Math.cos(a)*speed,vy:Math.sin(a)*speed-(35+Math.random()*65)*power,angle:Math.random()*Math.PI*2,spin:(Math.random()-.5)*12,age:0,life:.65+Math.random()*.45});
+    }
   }
   function heroHurtFeedback(amount, kind){
     playerHurtFade = Math.max(playerHurtFade, kind==='spikes' ? 0.18 : 0.28);
@@ -90,7 +102,7 @@
     return {type,x,y,vx:0,vy:0,moving:false,fuse:null,pusher:null,armed:false,hitTargets:new WeakSet(),inside:new WeakSet(),lastEntry:new WeakMap(),spikeTime:new WeakMap()};
   }
   function rerollArenaObjects(){
-    arenaObjects=[]; arenaBursts=[];
+    arenaObjects=[]; arenaBursts=[]; woodParts=[];
     const viewW=Math.max(CELL*8,W/CAM_SCALE),viewH=Math.max(CELL*7,H/CAM_SCALE);
     const cols=Math.max(1,Math.ceil(WORLD_W/viewW)),rows=Math.max(1,Math.ceil(WORLD_H/viewH));
     for(let sy=0;sy<rows;sy++) for(let sx=0;sx<cols;sx++){
@@ -198,13 +210,13 @@
     if(o.type==='redBarrel' && o.fuse==null){ o.fuse=RED_FUSE; o.armed=true; }
   }
   function explode(o){
-    const index=arenaObjects.indexOf(o);if(index<0)return;arenaObjects.splice(index,1);arenaBursts.push({x:o.x,y:o.y,age:0,life:.55});
+    const index=arenaObjects.indexOf(o);if(index<0)return;arenaObjects.splice(index,1);spawnWoodParts(o.x,o.y,1.25);arenaBursts.push({x:o.x,y:o.y,age:0,life:.55});
     for(const ent of combatants())if(Math.hypot(body(ent).x-o.x,body(ent).y-o.y)<=EXPLOSION_RADIUS){
       hazardDamage(ent,EXPLOSION_DAMAGE,o,'explosion');const dx=body(ent).x-o.x,dy=body(ent).y-o.y,l=Math.hypot(dx,dy)||1;ent.vx+=(dx/l)*7;ent.vy+=(dy/l)*7;
     }
     for(let i=arenaObjects.length-1;i>=0;i--){
       const other=arenaObjects[i];if(Math.hypot(other.x-o.x,other.y-o.y)>EXPLOSION_RADIUS)continue;
-      if(other.type==='redBarrel'){if(other.fuse==null)other.fuse=RED_FUSE;}else if(other.type!=='spikes')arenaObjects.splice(i,1);
+      if(other.type==='redBarrel'){if(other.fuse==null)other.fuse=RED_FUSE;}else if(other.type!=='spikes'){arenaObjects.splice(i,1);spawnWoodParts(other.x,other.y,1.1);}
     }
     if(typeof spawnBlood==='function')for(let i=0;i<18;i++)spawnBlood(o.x,o.y,Math.cos(i*Math.PI/9)*(3+Math.random()*7),Math.sin(i*Math.PI/9)*(3+Math.random()*7));
     if($.S&&$.S.play)$.S.play('damageHammer');
@@ -238,6 +250,8 @@
   }
   function updateArenaObjects(dt){
     for(const burst of arenaBursts)burst.age+=dt;arenaBursts=arenaBursts.filter(b=>b.age<b.life);
+    for(const part of woodParts){part.age+=dt;part.x+=part.vx*dt;part.y+=part.vy*dt;part.vy+=180*dt;part.angle+=part.spin*dt;const drag=Math.pow(.985,dt*60);part.vx*=drag;part.vy*=drag;}
+    woodParts=woodParts.filter(part=>part.age<part.life);
     const ents=combatants();
     for(let i=arenaObjects.length-1;i>=0;i--){
       const o=arenaObjects[i];
@@ -259,7 +273,7 @@
         const decay=Math.pow(PROP_DECAY,step);o.vx*=decay;o.vy*=decay;
         for(const ent of ents){
           const c=body(ent),dx=c.x-o.x,dy=c.y-o.y,d=Math.hypot(dx,dy)||1;if(d>BODY_RADIUS+OBJECT_RADIUS)continue;
-          if(!o.hitTargets.has(ent)){hazardDamage(ent,PROP_DAMAGE,o,'impact');o.hitTargets.add(ent);armRedBarrel(o);if(o.type!=='redBarrel'&&Math.random()<.5){arenaObjects.splice(i,1);o._gone=true;break;}}
+          if(!o.hitTargets.has(ent)){hazardDamage(ent,PROP_DAMAGE,o,'impact');o.hitTargets.add(ent);armRedBarrel(o);if(o.type!=='redBarrel'&&Math.random()<.5){arenaObjects.splice(i,1);spawnWoodParts(o.x,o.y);o._gone=true;break;}}
           const vl=Math.hypot(o.vx||dx,o.vy||dy)||1,nx=(o.vx||dx)/vl,ny=(o.vy||dy)/vl;ent.x+=nx*Math.max(0,BODY_RADIUS+OBJECT_RADIUS-d);ent.y+=ny*Math.max(0,BODY_RADIUS+OBJECT_RADIUS-d);ent.vx+=o.vx*.35;ent.vy+=o.vy*.35;o.vx*=.72;o.vy*=.72;
         }
         for(const other of arenaObjects)resolveObjectCollision(o,other);
@@ -380,7 +394,7 @@
     if(typeof DROPPED_SHIELDS !== 'undefined') DROPPED_SHIELDS.length = 0;
     if(typeof BALLS !== 'undefined') BALLS.length = 0;
     if(typeof clearDeathAnimations === 'function') clearDeathAnimations();
-    pickups = []; arenaObjects=[]; arenaBursts=[]; dropAges = new WeakMap();
+    pickups = []; arenaObjects=[]; arenaBursts=[]; woodParts=[]; dropAges = new WeakMap();
     DEATH.deathCross.length = 0;
   }
 
@@ -699,7 +713,7 @@
       if(!networkTransition || (ent!==P && ent!==D)) cancelEntity(ent);
     }
     respawns.clear();
-    active=false; phase='inactive'; result=null; pickups=[]; arenaObjects=[]; arenaBursts=[];
+    active=false; phase='inactive'; result=null; pickups=[]; arenaObjects=[]; arenaBursts=[]; woodParts=[];
     lockControls(false);
     if(!networkTransition){
       clearTransient(); clearOverlay();
@@ -804,6 +818,12 @@
       }
       ctx.restore();
     }
+    const woodImg=propImage('woodParts');
+    if(woodImg) for(const part of woodParts){
+      const f=WOOD_PART_FRAMES[part.frame],fade=clamp((part.life-part.age)/.25,0,1),w=f[2]*WOOD_PART_SCALE,h=f[3]*WOOD_PART_SCALE;
+      ctx.save();ctx.translate(part.x,part.y);ctx.rotate(part.angle);ctx.globalAlpha=fade;ctx.drawImage(woodImg,f[0],f[1],f[2],f[3],-w*.5,-h*.5,w,h);ctx.restore();
+    }
+    ctx.globalAlpha=1;
     for(const b of arenaBursts){
       const p=b.age/b.life,img=propImage('explosion'),size=EXPLOSION_RADIUS*2*Math.min(1,.35+p*1.65);
       ctx.save();ctx.translate(b.x,b.y);ctx.globalAlpha=1-p;
