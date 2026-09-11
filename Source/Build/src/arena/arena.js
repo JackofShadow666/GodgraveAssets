@@ -83,6 +83,16 @@ function buildArena(){
 
 function drawArena(){
   if(arenaDirty || !arenaCanvas) buildArena();
+  const border = typeof ARENA_BORDER_SIZE === 'number' ? ARENA_BORDER_SIZE : 550;
+  const cell = typeof CELL_PX === 'number' ? CELL_PX : 55;
+  ctx.save();
+  ctx.fillStyle = '#5c6268';
+  ctx.fillRect(-border, -border, WORLD_W + border * 2, WORLD_H + border * 2);
+  ctx.strokeStyle = 'rgba(47,52,57,0.8)';
+  ctx.lineWidth = 1;
+  for(let x=-border;x<=WORLD_W+border;x+=cell){ ctx.beginPath(); ctx.moveTo(x,-border); ctx.lineTo(x,WORLD_H+border); ctx.stroke(); }
+  for(let y=-border;y<=WORLD_H+border;y+=cell){ ctx.beginPath(); ctx.moveTo(-border,y); ctx.lineTo(WORLD_W+border,y); ctx.stroke(); }
+  ctx.restore();
   ctx.drawImage(arenaCanvas, 0, 0);
 }
 
@@ -1171,6 +1181,67 @@ function drawChar(ent, cscl, torsoCol, headCol){
   drawOverheadHealthBar(ent, cscl);
   drawStatusEffects(ent, cscl);
 }
+
+const DEATH_ANIM_DURATION = 1.5;
+const DEATH_ANIM_DISSOLVE_AT = 0.4;
+const DEATH_ANIMS = [];
+
+function startDeathAnimation(ent){
+  if(!ent || ent._deathAnimStartedAt===GameTime) return;
+  ent._deathAnimStartedAt=GameTime;
+  const center=$.POS.body(ent);
+  const img=ent._skinImg;
+  const baseScale=sv('cscl')*(ent===P?1:sv('botscale'))*(ent._bodyScaleMult||1);
+  DEATH_ANIMS.push({x:center.x,y:center.y,img,scale:baseScale,start:GameTime,
+    angle:Number.isFinite(ent._lastDamageAngle)?ent._lastDamageAngle:Math.atan2(ent.vy||0,ent.vx||1),
+    isPlayer:ent===P||Number.isInteger(ent._playerSlot)});
+}
+
+function updateDeathAnimations(){
+  for(let i=DEATH_ANIMS.length-1;i>=0;i--) if(GameTime-DEATH_ANIMS[i].start>=DEATH_ANIM_DURATION) DEATH_ANIMS.splice(i,1);
+}
+
+function clearDeathAnimations(){ DEATH_ANIMS.length=0; }
+
+function drawDeathAnimations(){
+  for(const death of DEATH_ANIMS){
+    const age=Math.max(0,GameTime-death.start),progress=$.M.clamp(age/DEATH_ANIM_DURATION,0,1);
+    const fall=$.M.clamp(age/0.9,0,1),ease=1-Math.pow(1-fall,3);
+    const dissolve=$.M.clamp((age-DEATH_ANIM_DISSOLVE_AT)/(DEATH_ANIM_DURATION-DEATH_ANIM_DISSOLVE_AT),0,1);
+    const side=Math.abs(Math.cos(death.angle))>.15?Math.sign(Math.cos(death.angle)):Math.sign(Math.sin(death.angle)||1);
+    const img=death.img,spriteW=img&&img.naturalWidth>0&&img.naturalHeight>0?CHAR_SPRITE_H*(img.naturalWidth/img.naturalHeight):16;
+    ctx.save();ctx.translate(death.x+Math.cos(death.angle)*18*ease,death.y+Math.sin(death.angle)*8*ease);ctx.scale(death.scale,death.scale);
+    const footY=CHAR_SPRITE_OFFSET_Y+CHAR_SPRITE_H;
+    ctx.translate(0,footY);ctx.rotate(side*Math.PI*.48*ease);ctx.translate(0,-footY);
+    ctx.globalAlpha=1-dissolve*.88;ctx.shadowColor=`rgba(255,35,20,${.25+dissolve*.75})`;ctx.shadowBlur=6+dissolve*24;
+    if(img&&img.complete&&img.naturalWidth>0){
+      const strips=12,stripH=CHAR_SPRITE_H/strips;
+      for(let i=0;i<strips;i++){
+        const threshold=((i*7)%strips)/strips;
+        if(dissolve>threshold+.2) continue;
+        const sy=i/strips*img.naturalHeight;
+        ctx.drawImage(img,0,sy,img.naturalWidth,img.naturalHeight/strips,-spriteW/2+(dissolve>threshold?side*dissolve*8:0),CHAR_SPRITE_OFFSET_Y+i*stripH,spriteW,stripH+.5);
+      }
+    } else {
+      ctx.fillStyle=`rgba(${death.isPlayer?'90,160,255':'255,80,70'},${1-dissolve})`;
+      ctx.fillRect(-spriteW/2,CHAR_SPRITE_OFFSET_Y,spriteW,CHAR_SPRITE_H*(1-dissolve));
+    }
+    if(dissolve>0){
+      ctx.fillStyle=`rgba(255,45,25,${1-dissolve})`;
+      for(let i=0;i<7;i++){
+        const seed=(i*37+Math.floor(death.start*100))%101/101;
+        const px=(seed-.5)*spriteW,py=CHAR_SPRITE_OFFSET_Y+((i*29)%100)/100*CHAR_SPRITE_H-dissolve*16;
+        ctx.fillRect(px,py,1.5+dissolve*2,1.5+dissolve*2);
+      }
+    }
+    ctx.restore();
+  }
+}
+
+window.startDeathAnimation=startDeathAnimation;
+window.updateDeathAnimations=updateDeathAnimations;
+window.drawDeathAnimations=drawDeathAnimations;
+window.clearDeathAnimations=clearDeathAnimations;
 
 function drawCameraDriverDebug(ent, cscl){
   if(!ent || window.DEBUG_CAMERA_DRIVER !== ent) return;

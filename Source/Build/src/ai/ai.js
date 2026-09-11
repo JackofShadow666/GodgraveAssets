@@ -2229,7 +2229,21 @@ function updatePlayerBotAssistAI(dt){
   ai.enabled = true;
   const target = getPlayerBotEnemyTarget();
   if(!target){
-    clearAIIntent(ai);
+    ai._fakeMDown=false;
+    const anchor=getPlayerBotFollowAnchor();
+    const pc=$.POS.body(P),cscl=sv('cscl');
+    if(anchor){
+      const ac=$.POS.body(anchor),dist=Math.hypot(ac.x-pc.x,ac.y-pc.y);
+      if(dist>120*cscl) aiMoveToward(ai._fakeKeys,pc,ac,85*cscl,cscl);
+      else ai._fakeKeys.w=ai._fakeKeys.a=ai._fakeKeys.s=ai._fakeKeys.d=false;
+    } else {
+      const goal=ai._idleRoamTarget;
+      if(!goal || GameTime>=(ai._idleRoamUntil||0) || Math.hypot(goal.x-pc.x,goal.y-pc.y)<70*cscl){
+        ai._idleRoamTarget={x:60+Math.random()*Math.max(1,WORLD_W-160),y:60+Math.random()*Math.max(1,WORLD_H-120)};
+        ai._idleRoamUntil=GameTime+2.5+Math.random()*2.5;
+      }
+      aiMoveToward(ai._fakeKeys,pc,ai._idleRoamTarget,45*cscl,cscl);
+    }
     return;
   }
 

@@ -66,6 +66,7 @@
       throwWeapon: { index: 4,  action: 'throwWeapon' },
       playerBot:   { index: 8,  action: 'playerBot' },
       pause:       { index: 9,  action: 'pause' },
+      slowmo:      { index: 11, action: 'slowmo' },
       dpadUp:      { index: 12, action: 'swordStyle' },
       dpadLeft:    { index: 14, action: 'swapWeapon' },
       dpadRight:   { index: 15, action: 'shieldType' }
@@ -917,7 +918,7 @@
 
       const KNOWN_ACTIONS = new Set([
         'attack','dodge','swapWeapon','shield','shieldFlip','shieldType','swordStyle',
-        'throwWeapon','spawnBot','musicToggle','playerBot','pause'
+        'throwWeapon','spawnBot','musicToggle','playerBot','pause','slowmo'
       ]);
 
       for (const line of lines) {
@@ -944,6 +945,7 @@
         parsed.buttons.shield = { index: 6, type: parsed.buttons.shieldFlip.type || 'trigger', action: 'shield' };
         delete parsed.buttons.shieldFlip;
       }
+      parsed.buttons.slowmo = { index: 11, action: 'slowmo' };
 
       if (Object.keys(parsed.buttons).length) {
         CFG = parsed;
@@ -968,6 +970,7 @@
     spawnBot()    { if (!isAnyMenuOpen()) PUBLIC_API_ACTIONS.spawnBot(); },
     musicToggle() { if (!isAnyMenuOpen()) PUBLIC_API_ACTIONS.musicToggle(); },
     playerBot()   { if (!isAnyMenuOpen() && window.togglePlayerBotMode) window.togglePlayerBotMode(); },
+    slowmo()      { if (!isAnyMenuOpen() && window.forceCinematicSlowmo) window.forceCinematicSlowmo('manual'); },
     pause() {
       if (isAnyMenuOpen()) {
         const settingsOv = document.getElementById('mob-settings-overlay');

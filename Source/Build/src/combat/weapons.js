@@ -667,8 +667,14 @@ function updateDroppedWeapons(dt){
     w.x += moveX; w.y += moveY;
     if(w.isThrow) w.throwTravel = (w.throwTravel || 0) + Math.hypot(moveX, moveY);
     if(w.isThrow && typeof SurvivalMode!=='undefined' && SurvivalMode.projectileHitObject && SurvivalMode.projectileHitObject(w,12,0.75)){
-      DROPPED_WEAPONS.splice(i,1);
-      continue;
+      const hit=w._arenaObjectHit;
+      if(hit){
+        w.x=hit.x+hit.nx*(hit.radius+1);w.y=hit.y+hit.ny*(hit.radius+1);
+        bounceWeapon(w,hit.nx,hit.ny,0.6);
+        delete w._arenaObjectHit;
+      } else {
+        w.vx*=-0.6;w.vy*=-0.6;
+      }
     }
 
     // ── Отскок от границ арены ────────────────────────────────────────────

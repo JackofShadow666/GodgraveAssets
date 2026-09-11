@@ -410,19 +410,26 @@ function flailTryHook(ent, angle){
     flailInput(ent, false, angle);
 }
 
-function flailInput(ent, down, angle){
-    const pressed = down && !ent._flailPress;
-    ent._flailPress = !!down;
-    if(!pressed || flailRemote(ent) || weaponKeyOf(ent) !== 'flail' || flailBusy(ent) || ent._flailFoldLocked || isUnbalanced(ent) ||
-       ent.hp <= 0 || ent.hasWeapon === false || isExhausted(ent) || !(ent.rage >= 50)) return;
+function startFlailLunge(ent, angle, spendRage){
+    if(flailRemote(ent) || weaponKeyOf(ent) !== 'flail' || flailBusy(ent) || ent._flailFoldLocked || isUnbalanced(ent) ||
+       ent.hp <= 0 || ent.hasWeapon === false || isExhausted(ent) || !(ent.rage >= 50)) return false;
     const pivot = $.POS.pivot(ent), scale = flailWorldScale(ent);
-    ent.rage -= 50;
+    if(spendRage) ent.rage -= 50;
     ent._flailAttack = { id: ++flailAttackSerial, phase: 'out', angle, time: 0,
         reach: SWORD_LEN * FLAIL_MAX_SCALE * scale * 1.5, x: pivot.x, y: pivot.y,
         speed: Math.max(Math.abs(ent.vel || 0), sv('swthresh')),
         tested: new Set(), target: null };
     ent._flailIsLerping = false;
     $.S.play('hammerSwing');
+    return true;
+}
+
+globalThis.tryMobileFlailLunge = function(ent, angle){ return startFlailLunge(ent, angle, false); };
+
+function flailInput(ent, down, angle){
+    const pressed = down && !ent._flailPress;
+    ent._flailPress = !!down;
+    if(pressed) startFlailLunge(ent, angle, true);
 }
 // Earliest intersection of a swept point with an expanded rectangle.
 function flailRectHit(ax, ay, bx, by, x, y, w, h, radius){

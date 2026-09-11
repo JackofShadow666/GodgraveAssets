@@ -81,6 +81,11 @@ test('boss is gated until three ordinary clears and gets double size/hp with ran
   for(let i=0;i<3;i++){ assert.equal(c.SurvivalMode.getState().boss, false); c.killAllEnemies(); c.tick(6.1); }
   const boss = c.ALL_BOTS.find(e=>e._survivalBoss); assert(boss); assert.equal(boss.maxHp, 200); assert.equal(boss.hp, 200);
   assert.equal(boss._bodyScaleMult, 2); assert(boss._damageMult >= 1 && boss._damageMult <= 2);
+  const dropsBefore=c.DROPPED_WEAPONS.length;
+  const healsBefore=c.SurvivalMode.getState().pickups.length;
+  c.Math.random=()=>0.99;c.SurvivalMode.handleDeath(boss);
+  const state=c.SurvivalMode.getState();
+  assert.equal(c.DROPPED_WEAPONS.length,dropsBefore+1);assert.equal(state.pickups.length,healsBefore+1);
 });
 
 test('survival enemy random weapons exclude huge and ranged weapons without changing AI phase', () => {
@@ -120,6 +125,17 @@ test('heals choose injured nearby player, cap at max hp and expire', () => {
   c.killAllEnemies(); c.tick(15.1); assert.equal(c.SurvivalMode.getState().pickups.length, 0);
 });
 
+test('second local player can collect a heal when closest', () => {
+  const c=world({slot:2});c.Math.random=()=>0;c.SurvivalMode.update(0.016);
+  const player2=c.ALL_BOTS[1];assert(player2&&player2._manualControl);
+  c.P.hp=60;player2.hp=40;
+  for(const bot of c.ALL_BOTS.filter(e=>e._survivalEnemy)){bot.x=player2.x;bot.y=player2.y;}
+  c.killAllEnemies();
+  const heal=c.SurvivalMode.getState().pickups[0];assert(heal);
+  c.P.x=heal.x+200;c.P.y=heal.y;player2.x=heal.x;player2.y=heal.y;c.tick(.016);
+  assert.equal(player2.hp,100);assert.equal(c.P.hp,60);
+});
+
 test('coop death waits for ally respawn, solo death defeats, then restarts after result delay', () => {
   const coop = world({slot:1, respawn:1}); coop.SurvivalMode.update(0.016); coop.SurvivalMode.handleDeath(coop.P);
   assert.equal(coop.SurvivalMode.getState().respawns[0].slot, 0); coop.tick(1.1); assert.equal(coop.P.hp, 100); assert.equal(coop.P._defeated, false);
@@ -142,8 +158,8 @@ test('arena objects stay within the per-screen cap and never cover initial spawn
   for(const o of objects){
     const key=Math.floor(o.x/1000)+':'+Math.floor(o.y/700);
     sectors.set(key,(sectors.get(key)||0)+1);
-    assert.equal(o.x % 55, 0);
-    assert.equal(o.y % 55, 0);
+    assert.equal(o.x % 55, 27.5);
+    assert.equal(o.y % 55, 27.5);
     assert.equal(Math.hypot(o.x-(c.P.x+5),o.y-(c.P.y-8)) >= 55, true);
   }
   for(const count of sectors.values()) assert.equal(count <= 5, true);
@@ -263,6 +279,14 @@ test('projectiles and flail segments push arena props', () => {
   prop=c.SurvivalMode.getState().arenaObjects.find(o=>o.type!=='spikes');assert(prop);
   const hit=c.SurvivalMode.segmentHitObject(prop.x-80,prop.y,prop.x+80,prop.y,5,0.8);assert(hit);
   prop=c.SurvivalMode.getState().arenaObjects.find(o=>o.type===prop.type&&o.moving);assert(prop);assert(prop.vx>0);
+});
+
+test('arena object collision exposes a bounce normal without consuming thrown weapon', () => {
+  const c=world();c.SurvivalMode.update(0.016);
+  const prop=c.SurvivalMode.getState().arenaObjects.find(o=>o.type!=='spikes');assert(prop);
+  const weapon={x:prop.x-20,y:prop.y,vx:10,vy:0,isThrow:true};
+  assert.equal(c.SurvivalMode.projectileHitObject(weapon,12,0.75),true);
+  assert(weapon._arenaObjectHit);assert(weapon._arenaObjectHit.nx<0);
 });
 
 test('exiting survival restores original roster and unlocks controls', () => {

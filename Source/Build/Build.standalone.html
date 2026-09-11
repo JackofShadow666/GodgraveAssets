@@ -208,6 +208,10 @@ body.is-mobile #mob-throw-btn{display:flex;}
 #mob-settings-scroll:focus-visible{outline:2px solid #6ab0d0;}
 #pvp-hud{display:none;position:fixed;bottom:14px;left:50%;transform:translateX(-50%);background:rgba(8,14,22,0.9);border:1px solid #1a3a54;border-radius:20px;padding:5px 12px;z-index:200;align-items:center;gap:10px;font-family:'Share Tech Mono',monospace;font-size:11px;}
 #pvp-hud.visible{display:flex;}
+#survival-hud{display:none;position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:210;pointer-events:none;text-align:center;font-family:'Share Tech Mono',monospace;color:#e8fbff;text-shadow:0 0 12px #30b8ff;}
+#survival-hud.visible{display:block;}
+#survival-timer{font-size:30px;font-weight:900;letter-spacing:4px;}
+#survival-wave{font-size:11px;letter-spacing:2px;color:#78cdec;margin-top:2px;}
 </style>
 </head>
 <body>
@@ -253,6 +257,11 @@ body.is-mobile #mob-throw-btn{display:flex;}
 </div>
 
 <div id="adisplay"></div>
+
+<div id="survival-hud">
+  <div id="survival-timer">06:00</div>
+  <div id="survival-wave"></div>
+</div>
 
 <!-- ===== PVP HUD ===== -->
 <div id="pvp-hud">
@@ -364,7 +373,7 @@ body.is-mobile #mob-throw-btn{display:flex;}
     <div class="sec" id="sec-local-players"><div class="sec-title" style="color:#6ab0d0;" data-i18n="sec.localPlayers"></div>
       <div data-select="gamepad-player-slot,select.gamepadSlot,0:select.gamepadSlot0;1:select.gamepadSlot1;2:select.gamepadSlot2;3:select.gamepadSlot3,0"></div>
       <div id="gamepad-player-status" style="font-size:8px;line-height:1.45;color:#4f8198;margin-top:6px;"></div>
-      <div data-select="local-faction-mode,select.factionMode,ffa:select.factionFFA;coop:select.factionCoop,ffa"></div>
+      <div data-select="local-faction-mode,select.factionMode,ffa:select.factionFFA;coop:select.factionCoop;survival:select.factionSurvival,ffa"></div>
       <div data-checkbox="coopdefeatall,checkbox.coopDefeatAll,true"></div>
       <div data-slider="playerrespawn,slider.playerRespawn,15,0,30,1"></div>
       <div data-checkbox="gamepadflickdet,checkbox.gamepadFlickDetect,true,true"></div>
@@ -379,7 +388,7 @@ body.is-mobile #mob-throw-btn{display:flex;}
     <!-- 📱 MOBILE & CAMERA -->
     <div class="sec" id="sec-mobile-cam"><div class="sec-title" data-i18n="sec.mobileCam"></div>
       <div data-slider="gamespeed,slider.gameSpeed,1,.1,2,.05"></div>
-      <div data-slider="camrows,slider.cameraZoom,10,6,24,1"></div>
+     <div data-slider="camrows,slider.cameraZoom,10,6,24,1"></div>
       <div data-checkbox="followcam,checkbox.followCamera,true"></div>
       <div data-slider="camedge,slider.cameraEdgeMargin,6,.5,6,.5"></div>
       <div data-slider="camdelay,slider.cameraEdgeDelay,1,0,2,.05"></div>
@@ -463,6 +472,10 @@ body.is-mobile #mob-throw-btn{display:flex;}
       <div data-slider="dbg,slider.debugToggle,0,0,1,1"></div>
       <div data-checkbox="clashdbg,checkbox.debugClash,false,true"></div>
       <div data-checkbox="perfprof,checkbox.perfProfiler,false,true"></div>
+      <div data-checkbox="cinematicslowmo,checkbox.cinematicSlowmo,true"></div>
+      <div data-checkbox="slowmommb,checkbox.slowmoMmb,true"></div>
+      <div data-slider="slowmoduration,slider.slowmoDuration,2,.1,3,.05"></div>
+      <div data-slider="slowmoscale,slider.slowmoScale,.1,.05,1,.025"></div>
     </div>
 
     <!-- 🎮 CONTROLS -->
@@ -910,6 +923,8 @@ body.is-mobile #mob-throw-btn{display:flex;}
 'slider.flickMaxAmplitude': 'Флик: максимальная амплитуда (× мин.)',
 'slider.flickStaminaCost': 'Флик: расход выносливости',
 'slider.debugToggle': 'Переключатель отладки',
+'slider.slowmoDuration': 'Slowmo: длительность (сек.)',
+'slider.slowmoScale': 'Slowmo: скорость времени (×)',
     
 // ─── CHECKBOX LABELS ─────────────────────────────────────────────
 'checkbox.gamepadFlickDetectLegacy': 'Геймпад: отдельное обнаружение флика (устаревший режим)',
@@ -931,6 +946,8 @@ body.is-mobile #mob-throw-btn{display:flex;}
 'checkbox.debugClash': 'Отладка: выводить данные столкновений (консоль)',
 'checkbox.perfProfiler': 'Отладка: профилировать просадки FPS (консоль)',
 'checkbox.followCamera': 'Камера закреплена на игроке',
+'checkbox.cinematicSlowmo': 'Кинематографичное замедление времени',
+'checkbox.slowmoMmb': 'Slowmo по средней кнопке мыши',
 
 // ─── SELECT LABELS ──────────────────────────────────────────────
 'select.gamepadSlot': 'Управление геймпадом 1',
@@ -941,6 +958,7 @@ body.is-mobile #mob-throw-btn{display:flex;}
 'select.factionMode': 'Фракции и условия победы',
 'select.factionFFA': 'Каждый сам за себя',
 'select.factionCoop': 'Кооператив против ботов',
+'select.factionSurvival': 'Арена',
 
 // ─── BUTTONS ──────────────────────────────────────────────────────
 'btn.export': '📤 Экспортировать настройки в файл',
@@ -1044,7 +1062,7 @@ body.is-mobile #mob-throw-btn{display:flex;}
     'buff.disbalance': '⚠ ДИСБАЛАНС',
     'buff.rage': 'ЯРОСТЬ!',
     'hud.debuff': 'ОСЛАБЛЕНИЕ',
-    'hud.unbalanced': '💫 НЕУСТОЙЧИВ',
+    'hud.unbalanced': '🌀 НЕУСТОЙЧИВ',
     'hud.rageCharge': '🔥 {rage}/50 ярости',
     'hud.botLabel': 'БОТ',
     'hud.player2Label': 'ИГРОК 2',
@@ -1144,6 +1162,18 @@ body.is-mobile #mob-throw-btn{display:flex;}
     'factions.respawn': 'ВОЗРОЖДЕНИЕ',
     'factions.coop.playersWin': '🏆 ПОБЕДА ИГРОКОВ',
     'factions.coop.botsWin': '🤖 ПОБЕДА БОТОВ',
+    'survival.victory': '🏆 АРЕНА ПРОЙДЕНА',
+    'survival.defeat': '💀 ОТРЯД ПОГИБ',
+    'survival.wave': 'ВОЛНА {wave}',
+    'survival.boss': 'БОСС',
+    'survival.intermission': 'СЛЕДУЮЩАЯ ВОЛНА ЧЕРЕЗ {seconds}',
+    'survival.cleanup': 'ЗАЧИСТИТЕ ПОСЛЕДНЮЮ ВОЛНУ',
+    'survival.heal': '+50 HP',
+    'survival.healed': '+{amount} HP',
+    'survival.enemies': 'ВРАГОВ: {count}',
+    'survival.kills': 'УБИЙСТВ: {count}',
+    'survival.respawnIn': 'ИГРОК {slot}: ВОЗРОЖДЕНИЕ {seconds} С',
+    'survival.locked': 'В арене состав волн и оружие задаёт режим',
     'factions.ffa.playerWin': '🏆 ПОБЕДА ИГРОКА',
     'factions.ffa.botsWin': '🤖 ПОБЕДА БОТОВ',
     'weapon.sword': 'Меч',
@@ -1172,7 +1202,7 @@ body.is-mobile #mob-throw-btn{display:flex;}
     'ranged.magicStaffCharge': '🔮 ЗАРЯД!',
     'ranged.magicStaffExplosion': '💥 ВЗРЫВ!',
     'ranged.magicStaffNeedRage': '⚠ НУЖНО >2 СЕК',
-    'ranged.botDodge': '💫 УВОРОТ!',
+    'ranged.botDodge': 'УВОРОТ!',
     'ranged.dodgeTrail': '💨 УВОРОТ',
     'ranged.arrowHit': '🏹 ПОПАДАНИЕ',
     'ranged.wandHit': '✨ МАГИЯ',
@@ -1210,7 +1240,7 @@ body.is-mobile #mob-throw-btn{display:flex;}
     'ai.breather': '😮‍💨 ОТДЫХ',
     'ai.harass': '⚔ ИЗМОТ',
     'ai.orbit': '🌀 ОРБИТА',
-    'ai.feint': '💫 ФИНТ',
+    'ai.feint': '🌀 ФИНТ',
     'ai.spin': '🌀 КРУГ',
     'ai.pokeDodge': '💨 УВОРОТ',
     'net.shield.none': 'Нет щита',
@@ -1494,6 +1524,7 @@ body.is-mobile #mob-throw-btn{display:flex;}
         '#gamepad-player-slot option[value="3"]': 'Игрок 4',
         '#local-faction-mode option[value="ffa"]': 'Игрок против игрока',
         '#local-faction-mode option[value="coop"]': 'Игроки против ботов',
+        '#local-faction-mode option[value="survival"]': 'Арена',
         '#profile-overlay h2': 'ПРОФИЛЬ И СМЕЩЕНИЕ ТЕЛА',
         '#profile-overlay p': 'Профиль, сеть и смещение тела находятся здесь.',
         '#name-overlay .ov-title': 'ИМЯ И ЩИТ',
@@ -1716,6 +1747,8 @@ if(window.IS_MOBILE) document.body.classList.add('is-mobile');
 let W = canvas.width  = window.innerWidth;
 let H = canvas.height = window.innerHeight;
 let WORLD_W = W, WORLD_H = H;
+const ARENA_BORDER_CELLS = 10;
+const ARENA_BORDER_SIZE = 55 * ARENA_BORDER_CELLS;
 let CAM_X = 0, CAM_Y = 0;
 let CAM_SCALE = 1;
 let mouseScreenX = W / 2, mouseScreenY = H / 2;
@@ -1737,8 +1770,11 @@ function updateCameraScale(){
 function clampCamera(){
   const viewW = W / CAM_SCALE;
   const viewH = H / CAM_SCALE;
-  CAM_X = $.M ? $.M.clamp(CAM_X, 0, Math.max(0, WORLD_W - viewW)) : Math.max(0, Math.min(CAM_X, Math.max(0, WORLD_W - viewW)));
-  CAM_Y = $.M ? $.M.clamp(CAM_Y, 0, Math.max(0, WORLD_H - viewH)) : Math.max(0, Math.min(CAM_Y, Math.max(0, WORLD_H - viewH)));
+  const minCam = -ARENA_BORDER_SIZE;
+  const maxCamX = WORLD_W + ARENA_BORDER_SIZE - viewW;
+  const maxCamY = WORLD_H + ARENA_BORDER_SIZE - viewH;
+  CAM_X = $.M ? $.M.clamp(CAM_X, minCam, maxCamX) : Math.max(minCam, Math.min(CAM_X, maxCamX));
+  CAM_Y = $.M ? $.M.clamp(CAM_Y, minCam, maxCamY) : Math.max(minCam, Math.min(CAM_Y, maxCamY));
 }
 
 function screenToWorld(x, y){
@@ -1809,8 +1845,9 @@ function enforceCameraCage(){
   if(!subjects.length) return;
   const viewW = W / CAM_SCALE;
   const viewH = H / CAM_SCALE;
-  const maxCamX = Math.max(0, WORLD_W - viewW);
-  const maxCamY = Math.max(0, WORLD_H - viewH);
+  const minCam = -ARENA_BORDER_SIZE;
+  const maxCamX = WORLD_W + ARENA_BORDER_SIZE - viewW;
+  const maxCamY = WORLD_H + ARENA_BORDER_SIZE - viewH;
   const cageMargin = Math.min(CELL_PX * 0.5, Math.max(0, Math.min(viewW, viewH) * 0.5 - 1));
   let minAllowedX = -Infinity, maxAllowedX = Infinity;
   let minAllowedY = -Infinity, maxAllowedY = Infinity;
@@ -1820,8 +1857,8 @@ function enforceCameraCage(){
     minAllowedY = Math.max(minAllowedY, ent.y + cageMargin - viewH);
     maxAllowedY = Math.min(maxAllowedY, ent.y - cageMargin);
   }
-  if(minAllowedX <= maxAllowedX) CAM_X = $.M.clamp(CAM_X, Math.max(0, minAllowedX), Math.min(maxCamX, maxAllowedX));
-  if(minAllowedY <= maxAllowedY) CAM_Y = $.M.clamp(CAM_Y, Math.max(0, minAllowedY), Math.min(maxCamY, maxAllowedY));
+  if(minAllowedX <= maxAllowedX) CAM_X = $.M.clamp(CAM_X, Math.max(minCam, minAllowedX), Math.min(maxCamX, maxAllowedX));
+  if(minAllowedY <= maxAllowedY) CAM_Y = $.M.clamp(CAM_Y, Math.max(minCam, minAllowedY), Math.min(maxCamY, maxAllowedY));
   clampCamera();
   for(const ent of subjects) clampEntityToCameraView(ent, cageMargin);
   updateMouseWorld();
@@ -1913,8 +1950,8 @@ function updateCamera(dt){
       } else {
         c.edgeTime += step;
         c.centerRamp = $.M.clamp((c.edgeTime - centerDelay) / 0.75, 0, 1);
-        const targetX = $.M.clamp(ent.x - viewW / 2, 0, Math.max(0, WORLD_W - viewW));
-        const targetY = $.M.clamp(ent.y - viewH / 2, 0, Math.max(0, WORLD_H - viewH));
+        const targetX = $.M.clamp(ent.x - viewW / 2, -ARENA_BORDER_SIZE, WORLD_W + ARENA_BORDER_SIZE - viewW);
+        const targetY = $.M.clamp(ent.y - viewH / 2, -ARENA_BORDER_SIZE, WORLD_H + ARENA_BORDER_SIZE - viewH);
         const moveAng = Math.atan2(dy, dx);
         const aimAligned = Number.isFinite(ent.angle) && Math.abs($.M.angDiff(ent.angle, moveAng)) <= Math.PI * 70 / 180;
         const intentBoost = aimAligned ? 2 : 1;
@@ -2661,6 +2698,14 @@ bindSlider('unbdur');
 bindSlider('unbcombo');
 bindSlider('stamreg');
 bindSlider('gamespeed');
+document.getElementById('cb-cinematicslowmo')?.addEventListener('change', e => {
+  _cbCache.cinematicslowmo = e.target.checked;
+});
+document.getElementById('cb-slowmommb')?.addEventListener('change', e => {
+  _cbCache.slowmommb = e.target.checked;
+});
+bindSlider('slowmoduration');
+bindSlider('slowmoscale');
 bindSlider('camrows');
 bindSlider('camedge');
 bindSlider('camdelay');
@@ -4786,7 +4831,7 @@ function weaponMoveSpeedMult(ent){
   if($.IS(ent, 'magicstaff', 'wand')){
     return 1.0;
   }else if(isRangedWeapon(ent)){
-    return 0.4;  // 40% скорости (сильное замедление) — только лук/арбалет
+    return (ent === P || ent._manualControl) ? 0.7 : 0.4;
   }
   
   const w = weaponWeight(ent);
@@ -4820,6 +4865,7 @@ function weaponReach(ent){
 
 // Брошенное/выбитое оружие, лежащее на карте: {x,y,vx,vy,weaponType,url,img}
 let DROPPED_WEAPONS = [];
+let DROPPED_SHIELDS = [];
 
 // Экипирует entity оружием типа typeIdx (случайный вариант из папки этого вида)
 function setWeapon(ent, typeIdx, options) {
@@ -5010,6 +5056,40 @@ function cancelRangedCharge(ent){
   }
 }
 
+function dropShield(ent, kickVx, kickVy){
+  if(!ent || !ent.shield || typeof SHIELD_TYPES === 'undefined') return false;
+  const type = ent.shield;
+  const def = SHIELD_TYPES[type];
+  if(!def) return false;
+  const c = $.POS.body(ent);
+  const baseSpeed = 0.72 + Math.random() * 0.16;
+  let aimAngle;
+  if(Number.isFinite(kickVx) || Number.isFinite(kickVy)){
+    aimAngle = Math.atan2(kickVy || 0, kickVx || 0);
+  } else if(ent === P){
+    const rc = $.POS.root();
+    aimAngle = Math.atan2(mY - rc.y, mX - rc.x);
+  } else if(ent._manualControl){
+    aimAngle = ent.angle;
+  } else {
+    const pC = $.POS.body(P), bC = $.POS.body(ent);
+    aimAngle = Math.atan2(pC.y - bC.y, pC.x - bC.x);
+  }
+  DROPPED_SHIELDS.push({
+    x:c.x, y:c.y, vx:Number.isFinite(kickVx) ? kickVx : Math.cos(aimAngle) * baseSpeed,
+    vy:Number.isFinite(kickVy) ? kickVy : Math.sin(aimAngle) * baseSpeed,
+    shieldType:type, url:ent._shieldUrl, img:ent._shieldImg, rot:Math.random() * Math.PI * 2,
+    angVel:(Math.random() < 0.5 ? -1 : 1) * (0.08 + Math.random() * 0.12), owner:ent,
+    ownerPickupBlockUntil:GameTime + 1.4, _noPickupUntil:GameTime + 0.4
+  });
+  setShield(ent, 0);
+  ent._shieldHeld = false;
+  if(ent._aiState) ent._aiState._shieldHeld = false;
+  $.FX.hit({x:c.x,y:c.y-38,t:'🛡',life:35,big:false,col:'#88ccff'});
+  $.S.play('clash');
+  return true;
+}
+
 // Разоружает entity: оружие падает на карту как подбираемый предмет
 function disarmEntity(ent, kickVx, kickVy){
   if(ent.hasWeapon === false) return;
@@ -5055,6 +5135,7 @@ function disarmEntity(ent, kickVx, kickVy){
 
 
 function throwWeapon(ent){
+  if(typeof SurvivalMode!=='undefined' && SurvivalMode.tryThrowObject && SurvivalMode.tryThrowObject(ent)) return;
   if(ent.hasWeapon === false) return;
   const c = $.POS.body(ent);
   const def = WEAPON_TYPES[ent.weaponType] || WEAPON_TYPES[0];
@@ -5077,6 +5158,10 @@ function throwWeapon(ent){
   
   DROPPED_WEAPONS.push({
     x: c.x, y: c.y,
+    throwOriginX: c.x,
+    throwOriginY: c.y,
+    throwTravel: 0,
+    isThrow: true,
     vx: Math.cos(aimAngle) * spd,
     vy: Math.sin(aimAngle) * spd,
     weaponType: ent.weaponType,
@@ -5092,7 +5177,9 @@ function throwWeapon(ent){
     rot: rotAngle,
     angVel: randSpin(def, 1),
   });
+  if(typeof tryCinematicSlowmo === 'function') tryCinematicSlowmo('throw', 0.20);
   
+  markFreeDodgeAfterAction(ent);
   cancelRangedCharge(ent);
   ent.hasWeapon = false;
   ent._weaponImg = null;
@@ -5111,6 +5198,17 @@ function tryManualPickup(ent){
   if(!ent || ent.hp <= 0) return;
   const c = $.POS.body(ent);
   const PICKUP_R = 100;
+  if(!ent.shield && typeof DROPPED_SHIELDS !== 'undefined'){
+    let shieldIdx = -1, shieldD = Infinity;
+    for(let i = 0; i < DROPPED_SHIELDS.length; i++){
+      const s = DROPPED_SHIELDS[i];
+      if(GameTime < (s._noPickupUntil || 0)) continue;
+      if(s.owner === ent && GameTime < (s.ownerPickupBlockUntil || 0)) continue;
+      const d = Math.hypot(s.x - c.x, s.y - c.y);
+      if(d < PICKUP_R && d < shieldD){ shieldD = d; shieldIdx = i; }
+    }
+    if(shieldIdx >= 0){ pickupDroppedShield(ent, shieldIdx, c); return; }
+  }
   let nearest = null, nearestD = Infinity, nearestIdx = -1;
   for(let i = 0; i < DROPPED_WEAPONS.length; i++){
     const w = DROPPED_WEAPONS[i];
@@ -5126,6 +5224,18 @@ function tryManualPickup(ent){
   if(ent._aiState) ent._aiState._weaponSeekTimer = undefined;
   $.FX.hit({x:c.x, y:c.y-40, t:'🗡 ПОДОБРАНО', life:45, big:false, col:'#88ffaa'});
   $.S.play('pickupSound');
+}
+
+function pickupDroppedShield(ent, index, c){
+  const item = DROPPED_SHIELDS[index];
+  if(!item || !ent || ent.hp <= 0 || ent.shield) return false;
+  setShield(ent, item.shieldType);
+  if(item.url){ ent._shieldUrl = item.url; ent._shieldImg = item.img || loadSpriteImage(item.url); }
+  DROPPED_SHIELDS.splice(index, 1);
+  const p = c || $.POS.body(ent);
+  $.FX.hit({x:p.x,y:p.y-40,t:'🛡 ПОДОБРАНО',life:45,big:false,col:'#88ccff'});
+  $.S.play('pickupSound');
+  return true;
 }
 
 // Случайная угловая скорость вращения, взятая из параметров вида оружия
@@ -5167,7 +5277,23 @@ function updateDroppedWeapons(dt){
     const w = DROPPED_WEAPONS[i];
     if(w.rot === undefined) w.rot = Math.atan2(w.vy, w.vx);
     if(w.angVel === undefined) w.angVel = 0;
-    w.x += w.vx*step; w.y += w.vy*step;
+    if(!w._slowmoMidRolled && GameTime >= (w.ownerImmuneUntil || 0)){
+      w._slowmoMidRolled = true;
+      if(Math.hypot(w.vx || 0, w.vy || 0) > 2.5 && typeof tryCinematicSlowmo === 'function') tryCinematicSlowmo('throwMid', 0.20);
+    }
+    const moveX = w.vx*step, moveY = w.vy*step;
+    w.x += moveX; w.y += moveY;
+    if(w.isThrow) w.throwTravel = (w.throwTravel || 0) + Math.hypot(moveX, moveY);
+    if(w.isThrow && typeof SurvivalMode!=='undefined' && SurvivalMode.projectileHitObject && SurvivalMode.projectileHitObject(w,12,0.75)){
+      const hit=w._arenaObjectHit;
+      if(hit){
+        w.x=hit.x+hit.nx*(hit.radius+1);w.y=hit.y+hit.ny*(hit.radius+1);
+        bounceWeapon(w,hit.nx,hit.ny,0.6);
+        delete w._arenaObjectHit;
+      } else {
+        w.vx*=-0.6;w.vy*=-0.6;
+      }
+    }
 
     // ── Отскок от границ арены ────────────────────────────────────────────
     const preSpd = Math.hypot(w.vx, w.vy);
@@ -5241,6 +5367,7 @@ if(bounced){
         }
 
         if(deflected){
+          markFreeDodgeAfterAction(ent);
           if(w._projectileBlockContact!==ent){
             applyProjectileContactEffects(w,ent,true,0);
             w._projectileBlockContact=ent;
@@ -5290,7 +5417,7 @@ if (w.weaponType === 'spear' && Math.abs(w.angVel) > 0.1) {
         if(!ent || ent.hp <= 0 || ent._awaitingReveal) continue;
         if(ent === w.owner && GameTime < (w.ownerImmuneUntil||0)) continue;
         const c = $.POS.body(ent);
-        const hitR = 22 * (isBot(ent) ? sv('cscl')*sv('botscale') : sv('cscl'));
+        const hitR = 22 * (isBot(ent) ? sv('cscl')*sv('botscale')*(ent._bodyScaleMult||1) : sv('cscl'));
         const d = Math.hypot(c.x - w.x, c.y - w.y);
         if(d < hitR){
           const wDefHit = WEAPON_TYPES[w.weaponType] || WEAPON_TYPES[0];
@@ -5305,10 +5432,10 @@ if (w.weaponType === 'spear' && Math.abs(w.angVel) > 0.1) {
           dmg = Math.min(dmg, Math.max(1, Math.round(MAX_HP * maxDmgPct)));
           
           applyDamage(ent, dmg, w.owner, {
-            weaponDamageKey: wDefHit.key,
-            isMagic: false,
-            isExplosion: false,
-            knockbackMult: 0.6,
+              weaponDamageKey: wDefHit.key,
+              isMagic: false,
+              isExplosion: false,
+              knockbackMult: 1.2,
             hitstopFrames: 3,
             shakePower: dmg > 15 ? 5 : 3,
             textColor: '#ff8844',
@@ -5316,9 +5443,10 @@ if (w.weaponType === 'spear' && Math.abs(w.angVel) > 0.1) {
             bloodCount: 6,
             playSound: false
           });
+          applyProjectileContactEffects(w,ent,false,0);
           
           const nx = d > 0.1 ? (c.x - w.x)/d : 0, ny = d > 0.1 ? (c.y - w.y)/d : -1;
-          ent.vx += nx * 6; ent.vy += ny * 6;
+
           
           $.S.play((WEAPON_TYPES[w.weaponType]?.key === 'spear') ? 'damage' : (isHeavySwingWeaponType(w.weaponType) ? 'damageHammer' : 'damage')); 
           
@@ -5353,6 +5481,31 @@ if (w.weaponType === 'spear' && Math.abs(w.angVel) > 0.1) {
       }
     }
     if(picked) continue;
+  }
+
+  for(let i = DROPPED_SHIELDS.length - 1; i >= 0; i--){
+    const s = DROPPED_SHIELDS[i];
+    if(s.rot === undefined) s.rot = 0;
+    if(s.angVel === undefined) s.angVel = 0;
+    s.x += s.vx * step; s.y += s.vy * step;
+    if(s.x < BOUND_L){ s.x = BOUND_L; s.vx = Math.abs(s.vx) * 0.45; }
+    else if(s.x > BOUND_R){ s.x = BOUND_R; s.vx = -Math.abs(s.vx) * 0.45; }
+    if(s.y < BOUND_T){ s.y = BOUND_T; s.vy = Math.abs(s.vy) * 0.45; }
+    else if(s.y > BOUND_B){ s.y = BOUND_B; s.vy = -Math.abs(s.vy) * 0.45; }
+    const velocityDecay = Math.pow(0.9887, step);
+    s.vx *= velocityDecay; s.vy *= velocityDecay;
+    if(Math.hypot(s.vx, s.vy) < 0.05){ s.vx = 0; s.vy = 0; }
+    s.rot += s.angVel * decayingTickStep(dt, 0.985);
+    s.angVel *= Math.pow(0.985, step);
+    if(Math.abs(s.angVel) < 0.004) s.angVel = 0;
+    if((s._noPickupUntil || 0) > GameTime) continue;
+    const candidates = [P, ...ALL_BOTS];
+    for(const ent of candidates){
+      if(!ent || ent.hp <= 0 || ent.shield || ent._awaitingReveal) continue;
+      if(ent === s.owner && GameTime < (s.ownerPickupBlockUntil || 0)) continue;
+      const c = $.POS.body(ent);
+      if(Math.hypot(c.x - s.x, c.y - s.y) < PICKUP_R){ pickupDroppedShield(ent, i, c); break; }
+    }
   }
 }
 // Брошенный/выбитый цеп — как и в руке, состоит из навершия + колец, но
@@ -5454,6 +5607,20 @@ function drawDroppedWeapons(){
     
     ctx.restore();
   }
+  for(const s of DROPPED_SHIELDS){
+    const def = SHIELD_TYPES[s.shieldType];
+    const img = s.img || (s.url ? loadSpriteImage(s.url) : null);
+    if(!def) continue;
+    ctx.save(); ctx.translate(s.x, s.y); ctx.rotate(s.rot || 0);
+    if(img && img.complete && img.naturalWidth > 0){
+      const h = 50 * (def.scale || 1), w = h * spriteAspectFor(img);
+      ctx.drawImage(img, -w/2, -h/2, w, h);
+    } else {
+      ctx.fillStyle='rgba(80,150,210,.45)'; ctx.strokeStyle='#a9ddff'; ctx.lineWidth=2/CAM_SCALE;
+      ctx.beginPath(); ctx.rect(-16,-22,32,44); ctx.fill(); ctx.stroke();
+    }
+    ctx.restore();
+  }
 }
 
 // ════════════════ END MODULE: SPRITES (loader part below in loadAudioDB) ════
@@ -5514,8 +5681,30 @@ function weaponDamageMultiplier(key){
   const def=WEAPON_TYPES.find(w=>w.key===key);
   return def && Number.isFinite(def.damageMult) ? Math.max(0,def.damageMult) : (key==='flail'?0.5:1);
 }
+function markFreeDodgeAfterAction(ent){
+  if(!ent) return;
+  ent._freeDodgeUntil = Math.max(ent._freeDodgeUntil || 0, GameTime + 0.5);
+}
+function canUseRageDodge(ent){
+  return !!ent && !ent._rageDodgeUsedForCooldown && (ent.rage || 0) > 50;
+}
+function tryStartDodge(ent, cooldownActive){
+  if(!ent) return false;
+  if(!cooldownActive){
+    ent._rageDodgeUsedForCooldown = false;
+    return true;
+  }
+  if(!canUseRageDodge(ent)) return false;
+  ent.rage = Math.max(0, (ent.rage || 0) - 30);
+  ent._rageDodgeUsedForCooldown = true;
+  return true;
+}
 // Call only once an actual dodge starts. Keep the timestamp across weapon swaps.
 function spendDodgeStamina(ent,baseCost){
+  if((ent._freeDodgeUntil || 0) > GameTime){
+    ent._lastDodgeAt=GameTime;
+    return 0;
+  }
   const rested=ent._lastDodgeAt==null || GameTime-ent._lastDodgeAt>2;
   const cost=baseCost*(weaponKeyOf(ent)==='bow' && rested?0.5:1);
   ent._lastDodgeAt=GameTime;
@@ -5938,19 +6127,26 @@ function flailTryHook(ent, angle){
     flailInput(ent, false, angle);
 }
 
-function flailInput(ent, down, angle){
-    const pressed = down && !ent._flailPress;
-    ent._flailPress = !!down;
-    if(!pressed || flailRemote(ent) || weaponKeyOf(ent) !== 'flail' || flailBusy(ent) || ent._flailFoldLocked || isUnbalanced(ent) ||
-       ent.hp <= 0 || ent.hasWeapon === false || isExhausted(ent) || !(ent.rage >= 50)) return;
+function startFlailLunge(ent, angle, spendRage){
+    if(flailRemote(ent) || weaponKeyOf(ent) !== 'flail' || flailBusy(ent) || ent._flailFoldLocked || isUnbalanced(ent) ||
+       ent.hp <= 0 || ent.hasWeapon === false || isExhausted(ent) || !(ent.rage >= 50)) return false;
     const pivot = $.POS.pivot(ent), scale = flailWorldScale(ent);
-    ent.rage -= 50;
+    if(spendRage) ent.rage -= 50;
     ent._flailAttack = { id: ++flailAttackSerial, phase: 'out', angle, time: 0,
         reach: SWORD_LEN * FLAIL_MAX_SCALE * scale * 1.5, x: pivot.x, y: pivot.y,
         speed: Math.max(Math.abs(ent.vel || 0), sv('swthresh')),
         tested: new Set(), target: null };
     ent._flailIsLerping = false;
     $.S.play('hammerSwing');
+    return true;
+}
+
+globalThis.tryMobileFlailLunge = function(ent, angle){ return startFlailLunge(ent, angle, false); };
+
+function flailInput(ent, down, angle){
+    const pressed = down && !ent._flailPress;
+    ent._flailPress = !!down;
+    if(pressed) startFlailLunge(ent, angle, true);
 }
 // Earliest intersection of a swept point with an expanded rectangle.
 function flailRectHit(ax, ay, bx, by, x, y, w, h, radius){
@@ -6000,6 +6196,10 @@ function flailLungeContact(ent,a,nx,ny,entities){
     const radius=5*flailWorldScale(ent), hits=[];
     const wall=flailWallHit(a.x,a.y,nx,ny,radius);
     if(wall!==null) hits.push({t:wall,kind:'wall'});
+    if(typeof SurvivalMode!=='undefined' && SurvivalMode.segmentHitObject){
+        const propHit=SurvivalMode.segmentHitObject(a.x,a.y,nx,ny,radius,0.8,false);
+        if(propHit) hits.push({t:propHit.t,kind:'arenaProp',object:propHit.object});
+    }
     for(const other of entities){
         if(other===ent || other.hp<=0 || other._defeated || other._awaitingReveal ||
             (typeof FactionRules!=='undefined' && !FactionRules.canDamage(ent,other))) continue;
@@ -6020,7 +6220,7 @@ function flailLungeContact(ent,a,nx,ny,entities){
                 p.x+dx*span.front*sc,p.y+dy*span.front*sc,radius+BLADE_W/2);
             if(t!==null) hits.push({t,kind:'weapon',other});
         }
-        const t=flailCircleHit(a.x,a.y,nx,ny,c.x,c.y,14*sv('cscl')+radius);
+        const t=flailCircleHit(a.x,a.y,nx,ny,c.x,c.y,14*sv('cscl')*(other._bodyScaleMult||1)+radius);
         if(t!==null) hits.push({t,kind:'body',other});
     }
     hits.sort((a,b)=>a.t-b.t);
@@ -6101,6 +6301,9 @@ function updateFlailLunge(ent,dt,entities){
                 a.target=hit.other;
                 if(!flailRemote(hit.other)) startFlailPull(hit.other,ent,a.id,{halfPath:true});
                 else $.NET.send({type:'flailHit',id:a.id,newHp:hit.other.hp,dmg:0,pullHalf:true});
+            } else if(hit.kind==='arenaProp'){
+                if(SurvivalMode.segmentHitObject) SurvivalMode.segmentHitObject(a.x,a.y,nx,ny,5*flailWorldScale(ent),0.8,true);
+                $.S.play('clash');
             }
         }
         a.x=nx; a.y=ny;
@@ -6409,6 +6612,7 @@ function spawnProjectile(owner, kind, angle, dmg, speedOverride, maxDmgPct, meta
     shooterPos: {x: c.x, y: c.y},
     chargeTime: meta && Number.isFinite(meta.chargeTime) ? meta.chargeTime : 0,
   });
+  if(typeof tryCinematicSlowmo === 'function') tryCinematicSlowmo('shotMid', 0.05);
   $.FX.hit({x:c.x, y:c.y-30, t: kind==='wand' ? '✨' : '➹', life:20, big:false, col: kind==='wand'?'#c090ff':'#d9c08a'});
 }
 
@@ -6921,14 +7125,16 @@ function drawMagicStaffChargeFX(){
 // ─── UNIFIED DAMAGE FUNCTION ───
 // ••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
 function applyDamage(defender, damage, attacker, options){
-const dC2 = $.POS.body(defender);
-
   if(!defender || defender.hp <= 0) return;
+  const survivalMult = typeof SurvivalMode !== 'undefined' ? SurvivalMode.damageMultiplier(defender) : 1;
+  if(survivalMult <= 0) return;
+  const dC2 = $.POS.body(defender);
   if(typeof FactionRules!=='undefined'){
     if(!FactionRules.canDamage(attacker,defender)) return;
     FactionRules.contact(attacker,defender);
   }
 
+  if(attacker && Number.isFinite(attacker._damageMult)) damage *= attacker._damageMult;
   if(damage <= 0) return;
   if(defender._hitCD !== undefined && defender._hitCD >= GameTime) return;
 // ─── OPTIONS ───
@@ -6954,8 +7160,13 @@ const dC2 = $.POS.body(defender);
     ? Math.round(damage * 0.5)
     : damage;
   const balanceKey=opts.weaponDamageKey || (!isMagic && !isExplosion && !isProjectile && attacker ? weaponKeyOf(attacker) : null);
-  const finalDmg = Math.round(Math.min(guardedDamage, Math.max(1, Math.round(MAX_HP * 0.70))) * weaponDamageMultiplier(balanceKey)); // 70% max per hit
+  const finalDmg = Math.round(Math.min(guardedDamage, Math.max(1, Math.round(MAX_HP * 0.70))) * weaponDamageMultiplier(balanceKey) * survivalMult); // Apply survival protection after the normal damage cap.
+  if(attacker){
+    const aC=$.POS.body(attacker);
+    defender._lastDamageAngle=Math.atan2(dC2.y-aC.y,dC2.x-aC.x);
+  }
   defender.hp = Math.max(0, defender.hp - finalDmg);
+  if(typeof tryCinematicSlowmo === 'function' && finalDmg > 40) tryCinematicSlowmo('damage', 0.10);
   defender._hitCD = Math.max(defender._hitCD || -1, GameTime + 0.4);
   defender.hitFlash = GameTime + 0.3;
   defender._healthBarUntil = GameTime + 3;
@@ -7873,6 +8084,11 @@ function updateProjectiles(dt){
   for(let i = PROJECTILES.length-1; i >= 0; i--){
     const w = PROJECTILES[i];
     w.x += w.vx*step; w.y += w.vy*step;
+    if(typeof SurvivalMode!=='undefined' && SurvivalMode.projectileHitObject && SurvivalMode.projectileHitObject(w,w.kind==='arrow'?7:14,w.kind==='arrow'?0.55:0.8)){
+      if(w.kind === 'wand') spawnWandExplosion(w.x, w.y);
+      else if(w.kind === 'arrow') spawnArrowShatter(w.x, w.y, w.rot);
+      PROJECTILES.splice(i,1); continue;
+    }
 
     // ─── OUT OF BOUNDS OR TOO OLD ───
     if(w.x < BOUND_L-60 || w.x > BOUND_R+60 || w.y < BOUND_T-60 || w.y > BOUND_B+60 || (GameTime - w.bornAt) > 3.0){
@@ -7976,7 +8192,7 @@ function updateProjectiles(dt){
       if(ent === w.owner && GameTime < w.ownerImmuneUntil) continue;
       if(!canResolveProjectileContact(w,ent)) continue;
       const c = $.POS.body(ent);
-      const hitR = 22 * (isBot(ent) ? sv('cscl')*sv('botscale') : sv('cscl'));
+      const hitR = 22 * (isBot(ent) ? sv('cscl')*sv('botscale')*(ent._bodyScaleMult||1) : sv('cscl'));
       const d = Math.hypot(c.x-w.x, c.y-w.y);
       if(d < hitR){
         // ─── BOT DODGE ─────────────────────────────────────────────────
@@ -8158,6 +8374,41 @@ function drawProjectiles(){
       ctx.restore();
     }
   }
+}
+
+function drawOffscreenRangedThreatMarkers(){
+  if(typeof ctx === 'undefined' || typeof ALL_BOTS === 'undefined' || typeof P === 'undefined') return;
+  const margin = 22;
+  const cx = W / 2, cy = H / 2;
+  const pC = $.POS.body(P);
+  ctx.save();
+  ctx.setTransform(1,0,0,1,0,0);
+  for(const bot of ALL_BOTS){
+    if(!bot || bot.hp <= 0 || bot._awaitingReveal || bot._defeated || bot.hasWeapon === false) continue;
+    if(!isRangedWeapon(bot)) continue;
+    const bC = $.POS.body(bot);
+    const sx = (bC.x - CAM_X) * CAM_SCALE;
+    const sy = (bC.y - CAM_Y) * CAM_SCALE;
+    if(sx >= 0 && sx <= W && sy >= 0 && sy <= H) continue;
+    const toPlayer = Math.atan2(pC.y - bC.y, pC.x - bC.x);
+    const aimDiff = Math.abs($.M.angDiff(toPlayer, bot.angle || 0));
+    const aiming = aimDiff < 0.45 || bot._bowCharging || bot._wandCharging || bot._magicCharging || weaponKeyOf(bot)==='crossbow';
+    if(!aiming) continue;
+    const dx = sx - cx, dy = sy - cy;
+    const scale = Math.min(
+      dx === 0 ? Infinity : (dx > 0 ? (W - margin - cx) / dx : (margin - cx) / dx),
+      dy === 0 ? Infinity : (dy > 0 ? (H - margin - cy) / dy : (margin - cy) / dy)
+    );
+    const mx = cx + dx * scale, my = cy + dy * scale;
+    const angle = Math.atan2(dy, dx);
+    const pulse = 0.65 + 0.35 * Math.abs(Math.sin(GameTime * 8));
+    ctx.save(); ctx.translate(mx, my); ctx.rotate(angle); ctx.globalAlpha = pulse;
+    ctx.fillStyle = '#ff3030'; ctx.strokeStyle = 'rgba(255,255,255,.75)'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(14,0); ctx.lineTo(-9,-8); ctx.lineTo(-5,0); ctx.lineTo(-9,8); ctx.closePath();
+    ctx.fill(); ctx.stroke();
+    ctx.restore();
+  }
+  ctx.restore();
 }
 function updateCrossbowBotAI(dt, bot){
   const target = typeof FactionRules!=='undefined' ? FactionRules.getBotTarget(bot) : P;
@@ -8573,20 +8824,35 @@ function canResolveProjectileContact(projectile,ent){
   if(typeof NET_SYNC!=='undefined' && NET_SYNC.active && projectile.owner===D) return false;
   return typeof FactionRules==='undefined' || FactionRules.canDamage(projectile.owner,ent);
 }
+function thrownWeaponDisbalanceDuration(projectile){
+  const cellSize = typeof CELL_PX === 'number' ? CELL_PX : 55;
+  let travel = Number(projectile && projectile.throwTravel);
+  if(!Number.isFinite(travel)){
+    const ox = Number(projectile && projectile.throwOriginX);
+    const oy = Number(projectile && projectile.throwOriginY);
+    travel = Number.isFinite(ox) && Number.isFinite(oy)
+      ? Math.hypot((projectile.x || 0) - ox, (projectile.y || 0) - oy)
+      : 0;
+  }
+  return travel >= 5 * cellSize ? 1.3 : 0.3;
+}
 // A consumed projectile resolves once; thrown weapons call this once per continuous block contact.
-function applyProjectileContactEffects(projectile,ent,blocked,damage){
+function applyProjectileContactEffects(projectile,ent,blocked,damage,options){
   if(!ent || !canResolveProjectileContact(projectile,ent)) return;
   const remote=typeof NET_SYNC!=='undefined' && NET_SYNC.active && ent===D;
   const speed=Math.hypot(projectile.vx||0,projectile.vy||0)||1;
   const dx=(projectile.vx||0)/speed,dy=(projectile.vy||0)/speed;
   const wand=projectile.kind==='wand';
   const arrow=projectile.kind==='arrow';
-  const impactImpulse=(wand || arrow) ? 7 : 0;
+  const thrown=!wand && !arrow;
+
+  const impactImpulse=(wand || arrow) ? 7 : (thrown ? Math.max(3, Math.min(8, speed * 0.9)) : 0);
   const disarm=wand && ent.hp>0 && ent.hasWeapon!==false && Math.random()<0.3;
   // Same drag as normal disarm, half its initial velocity => approximately half travel.
   const kick=disarm ? (6+Math.random()*4)*0.5 : 0;
   const effect={type:'projectileContact',id:++projectileContactSerial,damage:Math.max(0,damage||0),
-    stamina:blocked?30:0,dx:dx*impactImpulse,dy:dy*impactImpulse,disarm,kx:dx*kick,ky:dy*kick};
+    stamina:blocked?30:0,dx:dx*impactImpulse,dy:dy*impactImpulse,disarm,kx:dx*kick,ky:dy*kick,
+    disbalance:thrown?thrownWeaponDisbalanceDuration(projectile):0};
   if(remote){
     $.NET.send(effect);
     return;
@@ -8599,6 +8865,7 @@ function applyProjectileEffectToEntity(ent,effect){
     if(ent.stamina<=0 && !isExhausted(ent)) applyExhaust(ent);
   }
   ent.vx=(ent.vx||0)+effect.dx;ent.vy=(ent.vy||0)+effect.dy;
+  if(effect.disbalance>0 && typeof applyDisbalance==='function') applyDisbalance(ent,null,effect.disbalance);
   if(effect.disarm && ent.hp>0 && ent.hasWeapon!==false) disarmEntity(ent,effect.kx,effect.ky);
 }
 
@@ -8921,7 +9188,7 @@ function initBoxes(){
 // Push entities out of boxes and reflect velocity (partial).
 function resolveBoxCollision(ent){
   if(!boxesOn) return;
-  const BODY_R = 14 * sv('cscl');
+  const BODY_R = 14 * sv('cscl') * (ent._bodyScaleMult || 1);
   const bCX = ent.x + 5 + ent.bx;
   const bCY = ent.y - 8 + ent.by;
   for(const b of BOXES){
@@ -8948,7 +9215,9 @@ function resolveEntityCollision(a, b){
   const ca=$.POS.body(a), cb=$.POS.body(b);
   let dx=cb.x-ca.x, dy=cb.y-ca.y;
   let dist=Math.hypot(dx,dy);
-  const minDist=28*sv('cscl');
+  const scaleA=isBot(a) ? (a._bodyScaleMult||1) : 1;
+  const scaleB=isBot(b) ? (b._bodyScaleMult||1) : 1;
+  const minDist=14*sv('cscl')*(scaleA+scaleB);
   if(dist>=minDist) return;
   if(dist<0.001){ dx=1; dy=0; dist=1; }
   const nx=dx/dist, ny=dy/dist;
@@ -9030,22 +9299,11 @@ function disbalanceComboDebug(ent, text, col = '#ffcc44'){
 
 function updateDisbalanceCombo(attacker, defender){
   const windowDuration = Math.max(0.1, sv('unbcombo') || 2);
-  // swordHit() is called only for a confirmed weapon clash. Its `defender`
-  // is already the fighter who blocked the current attacking weapon, so an
-  // extra LMB/AI-input check here incorrectly discarded most real blocks.
   const defenderCanBlock = defender && defender.hasWeapon !== false &&
     !isRangedWeapon(defender) && weaponKeyOf(defender) !== 'flail';
-
-  // Final step: the same fighter who made the block now lands a strong
-  // weapon-on-weapon swing or an active LMB lunge against the same opponent.
   const combo = attacker && attacker._disbalanceCombo;
-  const isLmbLunge =
-    (attacker === P && mDown && P.lmbWasDown &&
-      (GameTime - (P.lmbHoldStart || -99)) <= 0.18) ||
-    (attacker === D && typeof AI !== 'undefined' &&
-      ((AI._pokeDodgeActive && (GameTime - (D._pokeStartTime || -99)) <= 0.3) ||
-       (AI._lungeActive && AI._lungePhase === 'lunge')));
   const isSpecialLmbClash = attacker && attacker._lmbRefundClashFrame === GameTime;
+
   if(combo && combo.target === defender){
     const expired = GameTime - combo.startedAt > windowDuration;
     delete attacker._disbalanceCombo;
@@ -9064,26 +9322,33 @@ function updateDisbalanceCombo(attacker, defender){
         applyDisbalance(defender, attacker);
       }
       disbalanceComboDebug(attacker,
-        disarmCombo ? 'SPECIAL LMB — SHORT DISBALANCE + DISARM!' : 'SPECIAL LMB — DISBALANCE!',
+        disarmCombo ? 'CRITICAL LMB — SHORT DISBALANCE + DISARM!' : 'CRITICAL LMB — DISBALANCE!',
         disarmCombo ? '#ffaa44' : '#ff8830');
       return true;
     }
-    disbalanceComboDebug(attacker, expired ? 'SPECIAL BLOCK EXPIRED' : 'SPECIAL BLOCK MISSED', '#ff4040');
+    disbalanceComboDebug(attacker, expired ? 'CRITICAL BLOCK EXPIRED' : 'CRITICAL BLOCK MISSED', '#ff4040');
   }
+
   if(!defenderCanBlock) return false;
 
-  if(Math.random() >= 0.30) return false;
+  const pending = defender._pendingCriticalBlock;
+  const pendingActive = pending && pending.target === attacker && GameTime - pending.startedAt <= windowDuration;
+  if(pendingActive){
+    defender._pendingCriticalBlock = null;
+    defender._disbalanceCombo = { target: attacker, blocks: 1, startedAt: GameTime };
+    defender._criticalDisbalanceBlockFrame = GameTime;
+    defender._criticalDisbalanceBlockLabelFrame = GameTime;
+    disbalanceComboDebug(defender, 'Critical block', '#9ed8ff');
+    return false;
+  }
+  if(pending) defender._pendingCriticalBlock = null;
 
-  const state = defender._disbalanceCombo;
-  const expired = state && GameTime - state.startedAt > windowDuration;
-  const blocks = state && state.target === attacker && !expired ? state.blocks + 1 : 1;
-  defender._disbalanceCombo = { target: attacker, blocks, startedAt: GameTime };
-  defender._specialDisbalanceBlockFrame = GameTime;
-  const sc = $.POS.body(defender);
-  $.FX.hit({x:sc.x, y:sc.y-58, t:'КЛАЦ!', life:26, big:false, col:'#b8cad8'});
-  disbalanceComboDebug(defender,
-    `Special block: ${blocks}x`,
-    '#409cff');
+  if(Math.random() < 0.30){
+    defender._pendingCriticalBlock = { target: attacker, startedAt: GameTime };
+    defender._specialDisbalanceBlockFrame = GameTime;
+    defender._specialDisbalanceBlockLabelFrame = GameTime;
+    disbalanceComboDebug(defender, 'Signal block', '#409cff');
+  }
   return false;
 }
 function blockClashSoundFor(defender){
@@ -9103,7 +9368,8 @@ function lmbRefundWindowActive(ent, target){
     if(!combo || combo.target !== target || GameTime - combo.startedAt > comboWindow) return false;
   }
   return (ent._lmbRefundCost || 0) > 0;
-}function tryFinishLmbRefund(ent){
+}
+function tryFinishLmbRefund(ent){
   if(!lmbRefundWindowActive(ent) || !ent._lmbRefundReleased || !ent._lmbRefundClashed) return false;
   ent.stamina = Math.min(ent.stamMax || ent.stamina || 0, (ent.stamina || 0) + ent._lmbRefundCost);
   ent._lmbRefundUsed = true;
@@ -9122,6 +9388,7 @@ function swordHit(entA, entB){
   const defender = entA.isAttacker ? entB : entA;
   if(entA === P || entB === P) P._cameraCombatUntil = GameTime + 8;
   openSafeCounterWindow(defender);
+  if(typeof markFreeDodgeAfterAction==='function') markFreeDodgeAfterAction(defender);
   const disbalanceTriggered = updateDisbalanceCombo(attacker, defender);
   if(disbalanceTriggered) return;
   const cost = blockStaminaCost(attacker);
@@ -9308,11 +9575,11 @@ const bodySwB = weaponReach(entB) * sv('swlen') * (isBot(entB)?sv('botswordscale
       entA._bladeCD = GameTime + 0.1;
       const strongSwing = Math.abs(entA.vel) > sv('swthresh')*2.5 || Math.abs(entB.vel) > sv('swthresh')*2.5;
       const lmbRefundClash = markLmbRefundClash(entA, entB) || markLmbRefundClash(entB, entA);
-	  doClash(entA, entB, res, strongSwing, lmbRefundClash);
       swordHit(entA, entB);
+      doClash(entA, entB, res, strongSwing, lmbRefundClash);
       if(strongSwing) $.S.play('clashHard'); else {
         const blockSoundDefender = entA.isAttacker ? entB : entA;
-        const specialBlockSound = blockSoundDefender && blockSoundDefender._specialDisbalanceBlockFrame === GameTime;
+        const specialBlockSound = blockSoundDefender && ((blockSoundDefender._specialDisbalanceBlockFrame === GameTime) || (blockSoundDefender._criticalDisbalanceBlockFrame === GameTime));
         $.S.play(blockClashSoundFor(blockSoundDefender), specialBlockSound ? 0.75 : undefined);
       }
       if(typeof triggerHitstop==='function') triggerHitstop(strongSwing?3:2, strongSwing?3:1.5);
@@ -9415,7 +9682,7 @@ function checkBladeVsBody(attacker, defender, pivX, pivY, tipX2, tipY2) {
     // Distance to body center (for damage)
     const distToBody = Math.hypot(bC.x - tipX_adj, bC.y - tipY_adj);
     const BODY_HIT_R = 14;
-    const hitR = BODY_HIT_R * sv('cscl');
+    const hitR = BODY_HIT_R * sv('cscl') * (defender._bodyScaleMult || 1);
     
 
     
@@ -9615,6 +9882,7 @@ function checkBladeVsBody(attacker, defender, pivX, pivY, tipX2, tipY2) {
       col: '#ff8844'
     });
     
+    if(typeof markFreeDodgeAfterAction==='function') markFreeDodgeAfterAction(attacker);
     applyDamage(defender, dmg, attacker, {
       isMagic: false,
       isExplosion: false,
@@ -9676,7 +9944,7 @@ function checkBladeVsBody(attacker, defender, pivX, pivY, tipX2, tipY2) {
   if(Math.hypot(nearX - hand.x, nearY - hand.y) < HANDRANGE) return;
   
   const BODY_HIT_R = 14;
-  const hitR = BODY_HIT_R * sv('cscl');
+  const hitR = BODY_HIT_R * sv('cscl') * (defender._bodyScaleMult || 1);
   if (dist >= hitR) return;
   
   // ─── BOT DODGE ──────────────────────────────────────────────────
@@ -9903,6 +10171,7 @@ if (defender === D && attacker === P && typeof AI !== 'undefined' && AI.enabled 
       // ─── APPLY DAMAGE ────────────────────────────────────────────
       const hpBeforeDamage = defender.hp;
       const isPoke = _isPoke;
+      if(typeof markFreeDodgeAfterAction==='function') markFreeDodgeAfterAction(attacker);
       applyDamage(defender, dmg, attacker, {
         isMagic: false,
         isExplosion: false,
@@ -9910,14 +10179,11 @@ if (defender === D && attacker === P && typeof AI !== 'undefined' && AI.enabled 
         hitstopFrames: 4,
         shakePower: dmg > 15 ? 6 : 3,
         textColor: isPoke ? '#ffdd44' : '#ff4040',
-        textSuffix: isPoke ? '💫' : '',
+        textSuffix: isPoke ? window.I18N.t('combat.poke') : '',
         bloodCount: isPoke ? 4 : 8,
         playSound: false
       });
       
-      if (_isPoke) {
-        $.FX.hit({ x: bC.x, y: bC.y - 36, t: (window.I18N ? window.I18N.t('combat.poke') : 'POKE!'), life: 40, big: true, col: '#ffdd44' });
-      }
       
       $.S.play(damageSoundForWeapon(attacker));
       
@@ -9959,6 +10225,7 @@ function applyShieldBlockFX(x, y, attacker, defender, opts){
   $.S.play('shieldblock');
   if(typeof triggerHitstop === 'function') triggerHitstop(hitstopMag, hitstopMag);
   openSafeCounterWindow(defender);
+  if(typeof markFreeDodgeAfterAction==='function') markFreeDodgeAfterAction(defender);
   if(typeof FactionRules!=='undefined') FactionRules.contact(attacker,defender);
   if(attacker) attacker._healthBarUntil = GameTime + 3;
   if(defender) defender._healthBarUntil = GameTime + 3;
@@ -10339,6 +10606,7 @@ function setBotAiEnabled(enabled) {
 }
 
 window.restartCombatRound = function(options = {}) {
+    if(typeof SurvivalMode !== 'undefined' && SurvivalMode.isActive()) return SurvivalMode.restart();
     const {
         resetScore = false,
         keepPlayerSide = false,
@@ -10391,7 +10659,9 @@ function handleCombatDeath(ent){
   if(typeof FactionRules!=='undefined' && FactionRules.handleDeath(ent)) return;
   if(ent === P){ triggerDeath(P, false); return; }
   if(!isBot(ent)) return;
+  if(typeof startDeathAnimation==='function') startDeathAnimation(ent);
   if(typeof disarmEntity === 'function' && ent.hasWeapon !== false) disarmEntity(ent);
+  if(typeof dropShield === 'function' && ent.shield) dropShield(ent);
   ent._defeated = true;
   const entIndex = ALL_BOTS.indexOf(ent);
   if(entIndex !== -1) ALL_BOTS.splice(entIndex, 1);
@@ -10420,6 +10690,10 @@ function triggerDeath(ent, isBot){
   resetFlailCombat(ent);
   if(isBot && DEATH.dDead) return;
   if(!isBot && DEATH.pDead) return;
+  if(typeof startDeathAnimation==='function') startDeathAnimation(ent);
+  if(typeof disarmEntity==='function' && ent.hasWeapon!==false) disarmEntity(ent);
+  if(typeof dropShield==='function' && ent.shield) dropShield(ent);
+  if(typeof tryCinematicSlowmo === 'function') tryCinematicSlowmo('kill', 0.30);
   const bc = $.POS.body(ent);
   for(let i=0;i<8;i++) spawnBlood(bc.x, bc.y, Math.cos(i*Math.PI/4), Math.sin(i*Math.PI/4));
   DEATH.deathCross.push({x:bc.x, y:bc.y, timer:2.0, isBot});
@@ -10617,12 +10891,15 @@ function doClash(entA, entB, res, strongSwing, lmbRefundClash){
   // ─── EFFECTS ──────────────────────────────────────────────────────
   $.FX.hit({
     type:'bolt', x:hitX, y:hitY-4, life:12, maxLife:12,
-    count:lmbRefundClash ? 3 : 1,
-    col:lmbRefundClash ? '#9ed8ff' : '#ffffff',
-    tint:lmbRefundClash ? '#66bfff' : null,
-    tintAlpha:lmbRefundClash ? 0.24 : 0,
-    size:lmbRefundClash ? 17 : 15
+    count:1,
+    col:'#ffffff',
+    size:20
   });
+  const clashLabelDefender = entA.isAttacker ? entB : entA;
+  const signalClashLabel = clashLabelDefender && clashLabelDefender._specialDisbalanceBlockLabelFrame === GameTime;
+  if(signalClashLabel){
+    $.FX.hit({type:'blockDrop', ent:clashLabelDefender, life:30, maxLife:30, t:'💧', col:'#88ccff'});
+  }
   $.FX.hit({x:hitX, y:hitY+14, t:(window.I18N ? window.I18N.t('combat.clash') : 'CLASH!'), life:35, big:false, col:'#ccccaa'});
   // strongSwing creates a flash and cross effect
   if(strongSwing && Math.random() < 0.04) spawnFX('flash', hitX, hitY);
@@ -10852,6 +11129,7 @@ function applyFlailLungeDamage(attacker,defender,speed){
   defender.vx=vx;defender.vy=vy;
   attacker._flailLastDamage=hp-defender.hp;
   if(defender.hp===hp) return false;
+  if(typeof markFreeDodgeAfterAction==='function') markFreeDodgeAfterAction(attacker);
   $.S.play(damageSoundForWeapon(attacker));
   aiNotifyContact();
   return true;
@@ -10864,10 +11142,12 @@ function applyFlailLungeDamage(attacker,defender,speed){
   'use strict';
 
   const KEY = 'godgrave.localFactionMode';
-  let mode = localStorage.getItem(KEY) === 'coop' ? 'coop' : 'ffa';
+  const storedMode = localStorage.getItem(KEY);
+  let mode = storedMode === 'coop' || storedMode === 'survival' ? storedMode : 'ffa';
   const wins = [0, 0, 0, 0];
   let botWins = 0;
   let roundEnding = false;
+  let roundResetTimer = 0;
 
   function factionText(key, fallback, vars){
     return window.I18N ? window.I18N.t(key, vars) : fallback;
@@ -10892,7 +11172,7 @@ function applyFlailLungeDamage(attacker,defender,speed){
   }
 
   function isPlayer(ent){ return players().includes(ent); }
-  function bots(){ return typeof ALL_BOTS === 'undefined' ? [] : ALL_BOTS.filter(ent => !isPlayer(ent)); }
+  function bots(){ return typeof ALL_BOTS === 'undefined' ? [] : ALL_BOTS.filter(ent => !ent._survivalReserved && !isPlayer(ent)); }
   function alivePlayers(){ return players().filter(ent => ent.hp > 0 && !ent._defeated); }
   function aliveBots(){ return bots().filter(ent => ent.hp > 0 && !ent._defeated); }
 
@@ -10999,6 +11279,7 @@ function contact(a, b){
 
   function dropWeaponOnDeath(ent){
     if(typeof disarmEntity === 'function' && ent && ent.hasWeapon !== false) disarmEntity(ent);
+    if(typeof dropShield === 'function' && ent && ent.shield) dropShield(ent);
   }
 
   function addDeathFx(ent, isBot){
@@ -11006,7 +11287,7 @@ function contact(a, b){
     const bc = $.POS.body(ent);
     for(let i = 0; i < 8; i++) spawnBlood(bc.x, bc.y, Math.cos(i * Math.PI / 4), Math.sin(i * Math.PI / 4));
     if(typeof DEATH !== 'undefined' && DEATH && Array.isArray(DEATH.deathCross)){
-      const crossTimer = !isBot && mode === 'coop' ? Math.max(2.0, playerRespawnSeconds()) : 2.0;
+      const crossTimer = !isBot && (mode === 'coop' || mode === 'survival') ? Math.max(2.0, playerRespawnSeconds()) : 2.0;
       DEATH.deathCross.push({ x: bc.x, y: bc.y, timer: crossTimer, isBot: !!isBot });
     }
     if(typeof playSound === 'function') $.S.play('death');
@@ -11058,7 +11339,7 @@ function contact(a, b){
   }
 
   function respawnPlayer(ent){
-    if(!ent || roundEnding || mode !== 'coop' || !isPlayer(ent) || !ent._defeated) return;
+    if(!ent || roundEnding || (mode !== 'coop' && mode !== 'survival') || !isPlayer(ent) || !ent._defeated) return;
     clearRespawn(ent);
     clearEntityState(ent);
     const point = playerRespawnPoint(ent);
@@ -11071,7 +11352,7 @@ function contact(a, b){
   }
 
   function schedulePlayerRespawn(ent){
-    if(mode !== 'coop' || !isPlayer(ent) || roundEnding) return;
+    if((mode !== 'coop' && mode !== 'survival') || !isPlayer(ent) || roundEnding) return;
     const seconds = playerRespawnSeconds();
     if(seconds <= 0) return;
     clearRespawn(ent);
@@ -11082,6 +11363,7 @@ function contact(a, b){
   }
 
   function resetRound(){
+    roundResetTimer = 0;
     clearAllRespawns();
     const all = [...players(), ...bots()];
     all.forEach((ent, index) => {
@@ -11115,13 +11397,16 @@ function contact(a, b){
     DEATH.fadeIn = true;
     DEATH.text = text;
     DEATH.textCol = '#ffdd44';
-    setTimeout(resetRound, 2000);
+    roundResetTimer = setTimeout(resetRound, 2000);
     return true;
   }
 
   function handleDeath(ent){
-    if(!(typeof LocalPlayerControls !== 'undefined' && LocalPlayerControls.isLocalPvP())) return false;
+    if(typeof SurvivalMode !== 'undefined' && SurvivalMode.isActive()) return SurvivalMode.handleDeath(ent);
+    if(mode === 'survival') return false;
+    if(mode !== 'survival' && !(typeof LocalPlayerControls !== 'undefined' && LocalPlayerControls.isLocalPvP())) return false;
     if(ent._defeated) return true;
+    if(typeof startDeathAnimation === 'function') startDeathAnimation(ent);
     ent._defeated = true;
     ent.hp = 0;
     dropWeaponOnDeath(ent);
@@ -11142,10 +11427,18 @@ function contact(a, b){
   }
 
   function setMode(value){
-    mode = value === 'coop' ? 'coop' : 'ffa';
+    const nextMode = value === 'coop' || value === 'survival' ? value : 'ffa';
+    if(nextMode !== mode){
+      if(roundResetTimer) clearTimeout(roundResetTimer);
+      roundResetTimer = 0;
+      clearAllRespawns();
+      roundEnding = false;
+    }
+    mode = nextMode;
     localStorage.setItem(KEY, mode);
     const select = document.getElementById('local-faction-mode');
     if(select) select.value = mode;
+    if(typeof SurvivalMode !== 'undefined') SurvivalMode.setActive(mode === 'survival');
   }
 
   document.addEventListener('DOMContentLoaded', () => {
@@ -11165,6 +11458,7 @@ function contact(a, b){
     contact,
     getBotTarget,
     handleDeath,
+    finishRound,
     setMode,
     getMode: () => mode
   };
@@ -11346,6 +11640,7 @@ function placeBotPendingReveal(nb, targetX, targetY){
 // Вызывается раз в кадр до апдейта AI/боя — переносит бота на реальную точку
 // спавна, как только его картинка догрузилась (или сразу, если картинки нет).
 function revealBotIfReady(bot){
+  if(bot._survivalEnemy && GameTime < bot._survivalRevealAt) return false;
   if(!bot._awaitingReveal) return true;
   const img = bot._skinImg;
   if(!img || img.complete){
@@ -11433,6 +11728,10 @@ function updateMainBotRotation(){
 
 
 function applyBotCount(){
+  if(typeof SurvivalMode !== 'undefined' && SurvivalMode.isActive()){
+    SurvivalMode.onRosterChange();
+    return;
+  }
   const localPvpSlot = typeof LocalPlayerControls!=='undefined' && LocalPlayerControls.isLocalPvP()
     ? LocalPlayerControls.getGamepadSlot() : 0;
   // Local player slots reserve the first entities; the slider counts only
@@ -13399,7 +13698,21 @@ function updatePlayerBotAssistAI(dt){
   ai.enabled = true;
   const target = getPlayerBotEnemyTarget();
   if(!target){
-    clearAIIntent(ai);
+    ai._fakeMDown=false;
+    const anchor=getPlayerBotFollowAnchor();
+    const pc=$.POS.body(P),cscl=sv('cscl');
+    if(anchor){
+      const ac=$.POS.body(anchor),dist=Math.hypot(ac.x-pc.x,ac.y-pc.y);
+      if(dist>120*cscl) aiMoveToward(ai._fakeKeys,pc,ac,85*cscl,cscl);
+      else ai._fakeKeys.w=ai._fakeKeys.a=ai._fakeKeys.s=ai._fakeKeys.d=false;
+    } else {
+      const goal=ai._idleRoamTarget;
+      if(!goal || GameTime>=(ai._idleRoamUntil||0) || Math.hypot(goal.x-pc.x,goal.y-pc.y)<70*cscl){
+        ai._idleRoamTarget={x:60+Math.random()*Math.max(1,WORLD_W-160),y:60+Math.random()*Math.max(1,WORLD_H-120)};
+        ai._idleRoamUntil=GameTime+2.5+Math.random()*2.5;
+      }
+      aiMoveToward(ai._fakeKeys,pc,ai._idleRoamTarget,45*cscl,cscl);
+    }
     return;
   }
 
@@ -13471,6 +13784,878 @@ function updateAIDispatch(dt, bot){
 // ──────────────── END LAYER: AI ────────────────
 
 // ════════════════════════════════════════════════════════════════════════════
+
+</script>
+<script>
+// === bundled: src/modes/survival.js ===
+// Survival owns its roster, game-clock timers and loot. Shared modules only call hooks.
+(function(){
+  'use strict';
+  const DURATION = 360, GAP = 6, RESULT_DELAY = 2, HEAL = 50, HEAL_LIFE = 15;
+  const MAX_HEALS = 32, MAX_DROPS = 48, DROP_LIFE = 15, REVEAL_DELAY = 1;
+  const CELL = 55, OBJECT_RADIUS = 24, BODY_RADIUS = 22;
+  const PROP_PUSH_MIN = 9, PROP_PUSH_MAX = 15, PROP_DECAY = 0.96;
+  const SPIKE_ENTRY_DAMAGE = 20, SPIKE_DPS = 3, SPIKE_REENTRY = 1;
+  const PROP_DAMAGE = 30, EXPLOSION_DAMAGE = 30, RED_FUSE = 3, EXPLOSION_RADIUS = CELL * 3.75;
+  const ENEMY_WEAPON_KEYS = ['sword','rapier','dagger','spear','halberd','axe','longsword','staff','flail'];
+  let active = false, ready = document.readyState !== 'loading';
+  let phase = 'inactive', elapsed = 0, phaseLeft = 0, wave = 0, kills = 0, forceBotResumeAt = 0;
+  let ordinarySinceBoss = 0, boss = false, result = null;
+  let original = null, slotIndex = 0, roster = [], reserved = [], enemies = [];
+  let pickups = [], arenaObjects = [], arenaBursts = [], respawns = new Map(), dropAges = new WeakMap(), lastDeathPoint = null;
+  let playerHurtFade = 0;
+  const controls = new Map(), hud = {};
+  const controlIds = ['sl-botcount','cb-botrandomweapon','dtoggle','mob-spawn-btn','mob-weapon-btn','mob-bot-weapon-btn','mob-bot-shield-btn'];
+  const alive = ent => !!ent && ent.hp > 0 && !ent._defeated;
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+  const setting = (id, fallback) => { const n = typeof sv === 'function' ? sv(id) : NaN; return Number.isFinite(n) ? n : fallback; };
+  const body = ent => $.POS.body(ent);
+  const online = () => typeof NET_SYNC !== 'undefined' && NET_SYNC.active;
+  const getSlot = () => typeof LocalPlayerControls !== 'undefined' ? LocalPlayerControls.getGamepadSlot() : 0;
+  const text = (key, vars) => window.I18N ? window.I18N.t(key, vars) : key;
+  const livePlayers = () => {
+    const result=[];
+    const add=ent=>{ if(alive(ent)&&!result.includes(ent)) result.push(ent); };
+    roster.forEach(add);
+    if(Array.isArray(window.PLAYER_SLOTS)) for(const slot of window.PLAYER_SLOTS) if(slot&&slot.source) add(slot.entity);
+    return result;
+  };
+  const liveEnemies = () => enemies.filter(alive);
+  const gridSnap = v => Math.floor(v / CELL) * CELL + CELL * 0.5;
+  const propSprites = {
+    barrel:'../Env/Props/T_Barrel.png',
+    redBarrel:'../Env/Props/T_BarrelTNT.png',
+    crate:'../Env/Props/T_Box.png',
+    spikes:'../Env/Props/T_FloorSpike.png',
+    potion:'../Env/Props/T_Potion.png',
+    explosion:'../VFX/VFX_Explosion.png',
+    spawnRune:'../VFX/VFX_SpawnPointRune.png'
+  };
+  const propImgs = {};
+
+  function combatants(){ return [...roster,...enemies].filter(ent=>alive(ent) && !ent._awaitingReveal); }
+  function propImage(key){
+    if(typeof loadSpriteImage!=='function') return null;
+    const url=propSprites[key];
+    if(!url) return null;
+    if(!propImgs[key]) propImgs[key]=loadSpriteImage(url);
+    const img=propImgs[key];
+    return img&&img.complete&&img.naturalWidth>0 ? img : null;
+  }
+  function drawSpriteCentered(img,size){
+    ctx.drawImage(img,-size*.5,-size*.5,size,size);
+  }
+  function heroHurtFeedback(amount, kind){
+    playerHurtFade = Math.max(playerHurtFade, kind==='spikes' ? 0.18 : 0.28);
+    if(typeof triggerHitstop==='function') triggerHitstop(kind==='spikes'?2:3, Math.min(7, 2 + amount / 10));
+  }
+  function hazardDamage(ent, amount, point, kind){
+    if(!alive(ent) || phase==='result') return false;
+    if(ent===P && kind==='spikes') amount=Math.min(amount,Math.max(0,ent.hp-1));
+    if(amount<=0) return false;
+    ent.hp=Math.max(0,ent.hp-amount); ent.hitFlash=GameTime+0.3; ent._healthBarUntil=GameTime+3;
+    if(ent===P) heroHurtFeedback(amount,kind);
+    $.FX.hit({x:body(ent).x,y:body(ent).y-35,t:'-'+Math.round(amount),life:42,big:amount>=20,col:kind==='explosion'?'#ff742e':'#ff4a38'});
+    if(typeof spawnBlood==='function'){
+      const a=Math.atan2(body(ent).y-point.y,body(ent).x-point.x);
+      for(let i=0;i<Math.min(8,Math.ceil(amount/4));i++) spawnBlood(body(ent).x,body(ent).y,Math.cos(a)+(Math.random()-.5)*3,Math.sin(a)+(Math.random()-.5)*3);
+    }
+    return true;
+  }
+  function objectExtent(o){ return o.type==='spikes'?CELL*.5:OBJECT_RADIUS; }
+  function overlapsObject(x,y,margin=0){ return arenaObjects.some(o=>Math.hypot(x-o.x,y-o.y)<objectExtent(o)+margin); }
+  function safePoint(point, margin=42){
+    if(!point) return false;
+    return !arenaObjects.some(o=>Math.hypot(point.x-o.x,point.y-o.y)<objectExtent(o)+margin+(o.type==='spikes'?0:8));
+  }
+  function nearestSafePoint(origin){
+    if(safePoint(origin)) return origin;
+    for(let ring=1;ring<=10;ring++) for(let i=0;i<16;i++){
+      const a=i*Math.PI/8,p={x:clamp(origin.x+Math.cos(a)*ring*CELL,60,WORLD_W-100),y:clamp(origin.y+Math.sin(a)*ring*CELL,60,WORLD_H-60)};
+      if(safePoint(p)&&combatants().every(ent=>Math.hypot(body(ent).x-p.x,body(ent).y-p.y)>55)) return p;
+    }
+    return {x:WORLD_W/2,y:WORLD_H/2};
+  }
+  function makeArenaObject(type,x,y){
+    return {type,x,y,vx:0,vy:0,moving:false,fuse:null,pusher:null,armed:false,hitTargets:new WeakSet(),inside:new WeakSet(),lastEntry:new WeakMap(),spikeTime:new WeakMap()};
+  }
+  function rerollArenaObjects(){
+    arenaObjects=[]; arenaBursts=[];
+    const viewW=Math.max(CELL*8,W/CAM_SCALE),viewH=Math.max(CELL*7,H/CAM_SCALE);
+    const cols=Math.max(1,Math.ceil(WORLD_W/viewW)),rows=Math.max(1,Math.ceil(WORLD_H/viewH));
+    for(let sy=0;sy<rows;sy++) for(let sx=0;sx<cols;sx++){
+      const count=3+Math.floor(Math.random()*3); let reds=0;
+      for(let n=0;n<count;n++){
+        const roll=Math.random(); let type=roll<.32?'spikes':roll<.62?'crate':roll<.94?'barrel':'redBarrel';
+        if(type==='redBarrel'&&(reds>=2||Math.random()>.45)) type=Math.random()<.5?'crate':'barrel';
+        if(type==='redBarrel') reds++;
+        let placed=false;
+        for(let attempt=0;attempt<60;attempt++){
+          const x=clamp(gridSnap((sx+.1+Math.random()*.8)*viewW),CELL,WORLD_W-CELL);
+          const y=clamp(gridSnap((sy+.12+Math.random()*.76)*viewH),CELL,WORLD_H-CELL);
+          const clearance=type==='spikes'?CELL*.75:OBJECT_RADIUS*2.2;
+          if(overlapsObject(x,y,clearance)) continue;
+          if([...roster,...enemies].some(ent=>ent&&Math.hypot(body(ent).x-x,body(ent).y-y)<CELL*1.7)) continue;
+          arenaObjects.push(makeArenaObject(type,x,y)); placed=true; break;
+        }
+        if(!placed&&type==='redBarrel') reds--;
+      }
+    }
+  }
+  function pushObject(o,ent,nx,ny){
+    const speed=Math.hypot(ent._dvx||0,ent._dvy||0); if(speed<1.25) return false;
+    const ec=body(ent),len=Math.hypot(o.x-ec.x,o.y-ec.y)||1;
+    const impulse=clamp(speed*0.85,PROP_PUSH_MIN,PROP_PUSH_MAX);
+    nx=Number.isFinite(nx)?nx:(o.x-ec.x)/len;ny=Number.isFinite(ny)?ny:(o.y-ec.y)/len;
+    o.vx=nx*impulse;o.vy=ny*impulse;
+    o.moving=true;o.pusher=ent;o.armed=o.type!=='redBarrel';o.hitTargets=new WeakSet();o.hitTargets.add(ent);
+    o._pushLockUntil=GameTime+0.25;ent._arenaPropPushLockUntil=GameTime+0.25;
+    armRedBarrel(o);
+    if(typeof spawnDust==='function')for(let i=0;i<5;i++)spawnDust(o.x,o.y,-o.vx*.25+(Math.random()-.5)*2,-o.vy*.25+(Math.random()-.5)*2);
+    return true;
+  }
+  function propThrowAngle(ent){
+    if(ent===P){
+      const rc=$.POS.root();
+      return Math.atan2(mY-rc.y,mX-rc.x);
+    }
+    return ent._manualControl&&Number.isFinite(ent.angle)?ent.angle:ent.angle||0;
+  }
+  function tryThrowObject(ent){
+    if(!isActive()||!alive(ent)) return false;
+    const c=body(ent),ang=propThrowAngle(ent),fx=Math.cos(ang),fy=Math.sin(ang);
+    let best=null,bestScore=Infinity;
+    for(const o of arenaObjects){
+      if(o.type==='spikes'||o.moving) continue;
+      const dx=o.x-c.x,dy=o.y-c.y,dist=Math.hypot(dx,dy)||1;
+      if(dist>BODY_RADIUS+OBJECT_RADIUS+CELL) continue;
+      const dot=(dx/dist)*fx+(dy/dist)*fy;
+      if(dot<0.45) continue;
+      const side=Math.abs(dx*fy-dy*fx);
+      const score=dist+side*0.8;
+      if(score<bestScore){best=o;bestScore=score;}
+    }
+    if(!best) return false;
+    const spd=PROP_PUSH_MAX*1.15;
+    best.vx=fx*spd;best.vy=fy*spd;best.moving=true;best.pusher=ent;best.armed=best.type!=='redBarrel';best.hitTargets=new WeakSet();best.hitTargets.add(ent);
+    best._pushLockUntil=GameTime+0.25;ent._arenaPropPushLockUntil=GameTime+0.25;
+    armRedBarrel(best);
+    if(typeof tryCinematicSlowmo==='function') tryCinematicSlowmo('throw',0.20);
+    if($.S&&$.S.play) $.S.play('throwSound');
+    return true;
+  }
+  function projectileHitObject(projectile,radius=8,power=1){
+    if(!isActive()||!projectile) return false;
+    for(const o of arenaObjects){
+      if(o.type==='spikes') continue;
+      const dx=o.x-projectile.x,dy=o.y-projectile.y,dist=Math.hypot(dx,dy)||1;
+      if(dist>OBJECT_RADIUS+radius) continue;
+      const spd=Math.hypot(projectile.vx||0,projectile.vy||0)||1,nx=(projectile.vx||dx)/spd,ny=(projectile.vy||dy)/spd;
+      let hitNx=(projectile.x-o.x)/dist,hitNy=(projectile.y-o.y)/dist;
+      if(!Number.isFinite(hitNx)||!Number.isFinite(hitNy)||dist<=1){ hitNx=-nx;hitNy=-ny; }
+      projectile._arenaObjectHit={x:o.x,y:o.y,nx:hitNx,ny:hitNy,radius:OBJECT_RADIUS+radius};
+      o.vx+=nx*Math.min(PROP_PUSH_MAX,spd*power);o.vy+=ny*Math.min(PROP_PUSH_MAX,spd*power);o.moving=true;
+      o.hitTargets=new WeakSet();armRedBarrel(o);
+      if(typeof spawnDust==='function')for(let i=0;i<4;i++)spawnDust(o.x,o.y,-nx*2+(Math.random()-.5)*2,-ny*2+(Math.random()-.5)*2);
+      if($.S&&$.S.play)$.S.play('clash');
+      return true;
+    }
+    return false;
+  }
+  function segmentCircleHit(ax,ay,bx,by,cx,cy,r){
+    const dx=bx-ax,dy=by-ay,len2=dx*dx+dy*dy||1,t=clamp(((cx-ax)*dx+(cy-ay)*dy)/len2,0,1);
+    const x=ax+dx*t,y=ay+dy*t;
+    return Math.hypot(cx-x,cy-y)<=r ? t : null;
+  }
+  function pushSegmentObject(o,ax,ay,bx,by,power=1){
+    const dx=bx-ax,dy=by-ay,len=Math.hypot(dx,dy)||1;
+    o.vx+=dx/len*PROP_PUSH_MAX*power;o.vy+=dy/len*PROP_PUSH_MAX*power;o.moving=true;o.hitTargets=new WeakSet();armRedBarrel(o);
+  }
+  function segmentHitObject(ax,ay,bx,by,radius=6,power=1,apply=true){
+    if(!isActive()) return null;
+    let best=null;
+    for(const o of arenaObjects){
+      if(o.type==='spikes') continue;
+      const t=segmentCircleHit(ax,ay,bx,by,o.x,o.y,OBJECT_RADIUS+radius);
+      if(t==null || (best&&t>=best.t)) continue;
+      best={t,object:o};
+    }
+    if(!best) return null;
+    if(apply) pushSegmentObject(best.object,ax,ay,bx,by,power);
+    return {t:best.t,object:best.object};
+  }
+  function armRedBarrel(o){
+    if(o.type==='redBarrel' && o.fuse==null){ o.fuse=RED_FUSE; o.armed=true; }
+  }
+  function explode(o){
+    const index=arenaObjects.indexOf(o);if(index<0)return;arenaObjects.splice(index,1);arenaBursts.push({x:o.x,y:o.y,age:0,life:.55});
+    for(const ent of combatants())if(Math.hypot(body(ent).x-o.x,body(ent).y-o.y)<=EXPLOSION_RADIUS){
+      hazardDamage(ent,EXPLOSION_DAMAGE,o,'explosion');const dx=body(ent).x-o.x,dy=body(ent).y-o.y,l=Math.hypot(dx,dy)||1;ent.vx+=(dx/l)*7;ent.vy+=(dy/l)*7;
+    }
+    for(let i=arenaObjects.length-1;i>=0;i--){
+      const other=arenaObjects[i];if(Math.hypot(other.x-o.x,other.y-o.y)>EXPLOSION_RADIUS)continue;
+      if(other.type==='redBarrel'){if(other.fuse==null)other.fuse=RED_FUSE;}else if(other.type!=='spikes')arenaObjects.splice(i,1);
+    }
+    if(typeof spawnBlood==='function')for(let i=0;i<18;i++)spawnBlood(o.x,o.y,Math.cos(i*Math.PI/9)*(3+Math.random()*7),Math.sin(i*Math.PI/9)*(3+Math.random()*7));
+    if($.S&&$.S.play)$.S.play('damageHammer');
+  }
+  function resolveSolid(ent,o){
+    const c=body(ent),dx=c.x-o.x,dy=c.y-o.y,dist=Math.hypot(dx,dy)||.001,min=BODY_RADIUS+OBJECT_RADIUS;if(dist>=min)return false;
+    const push=min-dist,nx=dx/dist,ny=dy/dist,canPush=!o.moving&&GameTime>=(o._pushLockUntil||0)&&GameTime>=(ent._arenaPropPushLockUntil||0);
+    if(canPush&&(ent._dvx||ent._dvy)&&pushObject(o,ent,-nx,-ny)){
+      const sep=push+2;o.x-=nx*sep*.65;o.y-=ny*sep*.65;ent.x+=nx*sep*.35;ent.y+=ny*sep*.35;
+      return true;
+    }
+    ent.x+=nx*push;ent.y+=ny*push;
+    const inward=ent.vx*nx+ent.vy*ny;if(inward<0){ent.vx-=nx*inward;ent.vy-=ny*inward;}return true;
+  }
+  function resolveObjectCollision(a,b){
+    if(!a||!b||a===b||a.type==='spikes'||b.type==='spikes') return false;
+    const dx=b.x-a.x,dy=b.y-a.y,dist=Math.hypot(dx,dy)||.001,min=OBJECT_RADIUS*2;
+    if(dist>=min) return false;
+    const nx=dx/dist,ny=dy/dist,overlap=min-dist;
+    a.x=clamp(a.x-nx*overlap*.5,OBJECT_RADIUS,WORLD_W-OBJECT_RADIUS);a.y=clamp(a.y-ny*overlap*.5,OBJECT_RADIUS,WORLD_H-OBJECT_RADIUS);
+    b.x=clamp(b.x+nx*overlap*.5,OBJECT_RADIUS,WORLD_W-OBJECT_RADIUS);b.y=clamp(b.y+ny*overlap*.5,OBJECT_RADIUS,WORLD_H-OBJECT_RADIUS);
+    const av=(a.vx||0)*nx+(a.vy||0)*ny,bv=(b.vx||0)*nx+(b.vy||0)*ny,closing=av-bv;
+    if(closing>0){
+      const impulse=closing*.75;
+      a.vx-=nx*impulse;a.vy-=ny*impulse;b.vx+=nx*impulse;b.vy+=ny*impulse;
+      if(Math.hypot(a.vx,a.vy)>.12) a.moving=true;
+      if(Math.hypot(b.vx,b.vy)>.12) b.moving=true;
+    }
+    armRedBarrel(a);armRedBarrel(b);
+    return true;
+  }
+  function updateArenaObjects(dt){
+    for(const burst of arenaBursts)burst.age+=dt;arenaBursts=arenaBursts.filter(b=>b.age<b.life);
+    const ents=combatants();
+    for(let i=arenaObjects.length-1;i>=0;i--){
+      const o=arenaObjects[i];
+      if(o.type==='spikes'){
+        for(const ent of ents){
+          const c=body(ent),touch=Math.abs(c.x-o.x)<=CELL*.48+BODY_RADIUS*.45&&Math.abs(c.y-o.y)<=CELL*.48+BODY_RADIUS*.45;
+          if(touch){
+            const slow=Math.pow(.86,dt*60);ent.vx*=slow;ent.vy*=slow;ent.vel*=slow;
+            if(!o.inside.has(ent)&&GameTime-(o.lastEntry.get(ent)||-99)>=SPIKE_REENTRY&&hazardDamage(ent,SPIKE_ENTRY_DAMAGE,o,'spikes')&&Math.hypot(ent._dvx||0,ent._dvy||0)>1){ent._dvx*=.5;ent._dvy*=.5;}
+            o.inside.add(ent);const spikeTime=(o.spikeTime.get(ent)||0)+dt;
+            if(spikeTime>=1){const ticks=Math.floor(spikeTime);if(hazardDamage(ent,SPIKE_DPS*ticks,o,'spikes')&&Math.hypot(ent._dvx||0,ent._dvy||0)>1){ent._dvx*=.5;ent._dvy*=.5;}o.spikeTime.set(ent,spikeTime-ticks);}else o.spikeTime.set(ent,spikeTime);
+          }else{if(o.inside.has(ent))o.lastEntry.set(ent,GameTime);o.inside.delete(ent);o.spikeTime.delete(ent);}
+        }continue;
+      }
+      if(o.fuse!=null){o.fuse-=dt;if(o.fuse<=0){explode(o);continue;}}
+      if(o.moving){
+        const step=dt*60;o.x=clamp(o.x+o.vx*step,OBJECT_RADIUS,WORLD_W-OBJECT_RADIUS);o.y=clamp(o.y+o.vy*step,OBJECT_RADIUS,WORLD_H-OBJECT_RADIUS);
+        if(o.x===OBJECT_RADIUS||o.x===WORLD_W-OBJECT_RADIUS||o.y===OBJECT_RADIUS||o.y===WORLD_H-OBJECT_RADIUS) armRedBarrel(o);
+        const decay=Math.pow(PROP_DECAY,step);o.vx*=decay;o.vy*=decay;
+        for(const ent of ents){
+          const c=body(ent),dx=c.x-o.x,dy=c.y-o.y,d=Math.hypot(dx,dy)||1;if(d>BODY_RADIUS+OBJECT_RADIUS)continue;
+          if(!o.hitTargets.has(ent)){hazardDamage(ent,PROP_DAMAGE,o,'impact');o.hitTargets.add(ent);armRedBarrel(o);if(o.type!=='redBarrel'&&Math.random()<.5){arenaObjects.splice(i,1);o._gone=true;break;}}
+          const vl=Math.hypot(o.vx||dx,o.vy||dy)||1,nx=(o.vx||dx)/vl,ny=(o.vy||dy)/vl;ent.x+=nx*Math.max(0,BODY_RADIUS+OBJECT_RADIUS-d);ent.y+=ny*Math.max(0,BODY_RADIUS+OBJECT_RADIUS-d);ent.vx+=o.vx*.35;ent.vy+=o.vy*.35;o.vx*=.72;o.vy*=.72;
+        }
+        for(const other of arenaObjects)resolveObjectCollision(o,other);
+        if(o._gone)continue;if(Math.hypot(o.vx,o.vy)<.12){o.vx=o.vy=0;o.moving=false;o.pusher=null;}
+      }
+      for(const ent of ents)resolveSolid(ent,o);
+    }
+  }
+  function adjustAI(bot){
+    if(!isActive()||!alive(bot)||!bot._aiState)return;
+    const k=bot._aiState._fakeKeys,c=body(bot);let dx=(k.d?1:0)-(k.a?1:0),dy=(k.s?1:0)-(k.w?1:0),ax=0,ay=0;
+    for(const o of arenaObjects){if(o.type!=='spikes')continue;const ox=c.x-o.x,oy=c.y-o.y,d=Math.hypot(ox,oy)||1;if(d<CELL*1.45&&(d<CELL*.85||(ox*dx+oy*dy)<0)){ax+=ox/d*(CELL*1.5-d);ay+=oy/d*(CELL*1.5-d);}}
+    if(ax||ay){dx+=ax*.08;dy+=ay*.08;k.a=dx<-.2;k.d=dx>.2;k.w=dy<-.2;k.s=dy>.2;}
+    if(GameTime>=(bot._arenaPropIdeaAt||0)){
+      bot._arenaPropIdeaAt=GameTime+1.5+Math.random()*2;const target=bot._aiTargetOverride||P;
+      const prop=arenaObjects.find(o=>o.type!=='spikes'&&!o.moving&&Math.hypot(o.x-c.x,o.y-c.y)<85&&Math.hypot(target.x-o.x,target.y-o.y)<360);
+      if(prop&&Math.random()<.28){const tx=target.x-prop.x,ty=target.y-prop.y,tl=Math.hypot(tx,ty)||1,bx=prop.x-c.x,by=prop.y-c.y,bl=Math.hypot(bx,by)||1;if((tx/tl)*(bx/bl)+(ty/tl)*(by/bl)>.45){bot._dvx=bx/bl*7.5;bot._dvy=by/bl*7.5;bot._aiState._dodgeLockUntil=GameTime+.25;}}
+    }
+  }
+
+  function notify(key, point, vars, col = '#78d8ff'){
+    if(typeof hitFX !== 'undefined') $.FX.hit({x:point.x,y:point.y-40,t:text(key,vars),life:55,big:true,col});
+  }
+
+  function bindRoster(){
+    if(typeof LocalPlayerControls === 'undefined') return;
+    LocalPlayerControls.slots.forEach((slot, i) => {
+      slot.entity = i === 0 ? P : ALL_BOTS[i-1] || null;
+      slot.source = i === 0 ? 'keyboard-mouse' : i === slotIndex ? 'gamepad-0' : null;
+    });
+    window.PLAYER_SLOTS = LocalPlayerControls.slots;
+  }
+
+  function cancelEntity(ent){
+    if(!ent) return;
+    if(ent._respawnTimerId) clearTimeout(ent._respawnTimerId);
+    ent._respawnTimerId = 0; ent._respawnPending = false; ent._respawnAt = 0;
+    if(typeof clearEntityChargeState === 'function') clearEntityChargeState(ent);
+    ent._manualAttackInput = false; ent._shieldHeld = false; ent._shieldDashCharging = false;
+    if(ent._aiState){
+      ent._aiState._fakeMDown = false;
+      for(const key of ['w','a','s','d']) ent._aiState._fakeKeys[key] = false;
+    }
+  }
+
+  function resetPlayer(ent, point, equip){
+    cancelEntity(ent);
+    ent._buffs = {}; ent._mods = {};
+    Object.assign(ent, {hp:ent.maxHp||100,stamina:ent.stamMax||100,rage:0,rageBuffEnd:-1,
+      _defeated:false,exhausted:0,unbalanced:0,vx:0,vy:0,vel:0,bx:0,by:0,
+      _dvx:0,_dvy:0,_recovering:false,_wasExhausted:false,_hadExhaustion:false,
+      _debuffActive:false,_debuffUntil:-1,_exhaustedEndTime:-1,_unbalancedEndTime:-1,
+      _dodgeActiveUntil:-1,_moveLockUntil:-1,_dodgeCD:-1,_swingBlockCD:-1,_blockSlow:-1,
+      _lastDodgeAt:null,_awaitingReveal:false,_manualGestureSuppressUntil:RealTime+0.3,
+      _shieldStunUntil:-1,_shieldBodyHitCD:-1,_shieldBlockFxUntil:-1,_inAutoBlock:false,
+      _abTilt:0,_clashFrame:-1,lmbWasDown:false,_manualCombatState:null,_manualCombatStateV2:null,
+      _bodyScaleMult:1,_damageMult:1,_survivalBoss:false,_hitCD:GameTime+1});
+    if(point){
+      ent.x = point.x; ent.y = point.y;
+      delete ent._pendingSpawnX; delete ent._pendingSpawnY;
+    }
+    if(equip && ent.hasWeapon === false) setWeapon(ent, ent.weaponType || 0);
+    if(typeof setShield === 'function') setShield(ent, 0);
+  }
+
+  function createEntity(){
+    const ent = makeEntity(WORLD_W/2, WORLD_H/2, 0.8, '#4a1a10', {stamRegen:28});
+    ent._aiState = freshAIState();
+    return ent;
+  }
+
+  function setRandomEnemyWeapon(bot){
+    if(!bot || typeof setWeapon !== 'function') return;
+    if(typeof WEAPON_TYPES === 'undefined'){
+      setWeapon(bot, DEFAULT_WEAPON_KEY, {keepDefault:true});
+      return;
+    }
+    const available = ENEMY_WEAPON_KEYS
+      .map(key => WEAPON_TYPES.findIndex(w => w && w.key === key))
+      .filter(index => index >= 0);
+    const picked = available.length ? available[Math.floor(Math.random() * available.length)] : DEFAULT_WEAPON_KEY;
+    setWeapon(bot, picked, {keepDefault:true});
+  }
+
+  function setRandomEnemyShield(bot){
+    if(!bot || typeof setShield !== 'function' || typeof SHIELD_TYPES === 'undefined') return;
+    const chance = clamp(0.10 + (wave - 1) * 0.05, 0.10, 0.75);
+    if(Math.random() >= chance){ setShield(bot, 0); return; }
+    const count = Math.max(1, SHIELD_TYPES.length - 1);
+    setShield(bot, 1 + Math.floor(Math.random() * count));
+  }
+
+  function buildRoster(){
+    slotIndex = getSlot();
+    roster = [P]; reserved = [];
+    for(let i=0;i<slotIndex;i++){
+      const isPartner = i === slotIndex-1;
+      const ent = isPartner && original.bots[i] ? original.bots[i] : createEntity();
+      ent._manualControl = isPartner;
+      if(isPartner){
+        ent._playerSlot = slotIndex;
+        ent._survivalReserved = false;
+        if(!original.bots[i]) setWeapon(ent, DEFAULT_WEAPON_KEY, {keepDefault:true});
+        roster.push(ent);
+      } else {
+        ent._survivalReserved = true; ent.hp = 0; ent._defeated = true;
+        ent.hasWeapon = false; ent._aiState.enabled = false;
+      }
+      reserved.push(ent);
+    }
+    ALL_BOTS.splice(0, ALL_BOTS.length, ...reserved);
+    bindRoster();
+  }
+
+  function clearTransient(){
+    if(typeof PROJECTILES !== 'undefined') PROJECTILES.length = 0;
+    if(typeof DROPPED_WEAPONS !== 'undefined') DROPPED_WEAPONS.length = 0;
+    if(typeof DROPPED_SHIELDS !== 'undefined') DROPPED_SHIELDS.length = 0;
+    if(typeof BALLS !== 'undefined') BALLS.length = 0;
+    if(typeof clearDeathAnimations === 'function') clearDeathAnimations();
+    pickups = []; arenaObjects=[]; arenaBursts=[]; dropAges = new WeakMap();
+    DEATH.deathCross.length = 0;
+  }
+
+  function clearOverlay(){
+    DEATH.pDead = false; DEATH.dDead = false; DEATH.fadeIn = false;
+    DEATH.fadeAlpha = 0; DEATH.text = '';
+  }
+
+  function selectMain(){
+    // D also drives the right-hand HUD; keep the co-op partner there.
+    const aiEnabled = !AI || AI.enabled !== false;
+    const main = roster[1] || liveEnemies()[0] || enemies[0] || D;
+    if(main){ D = main; AI = main._aiState || AI; }
+    const first = liveEnemies()[0];
+    for(const bot of enemies){
+      const ai = bot._aiState;
+      ai._isMain = bot === first; ai.enabled = aiEnabled && alive(bot) && phase !== 'result';
+    }
+  }
+  function forceResumeBotsAfterSpawn(){
+    if(!forceBotResumeAt || GameTime<forceBotResumeAt || phase==='result') return;
+    forceBotResumeAt=0;
+    if(AI) AI.enabled=true;
+    for(const bot of enemies) if(bot._aiState) bot._aiState.enabled=alive(bot);
+    const b=document.getElementById('dtoggle');
+    if(b){
+      b.textContent=window.I18N?window.I18N.buttonText('dtoggle','on'):'ON';
+      b.classList.toggle('on',true);
+    }
+  }
+
+  function playerPoint(index){
+    const x = WORLD_W/2 - (index ? -45 : 45);
+    return {x:clamp(x,60,WORLD_W-100),y:WORLD_H/2 + index*70};
+  }
+
+  function newMatch(){
+    for(const ent of [...roster,...enemies]) cancelEntity(ent);
+    respawns.clear(); enemies = [];
+    buildRoster(); clearTransient(); clearOverlay();
+    elapsed = 0; phaseLeft = 0; wave = 0; kills = 0; forceBotResumeAt = 0; ordinarySinceBoss = 0;
+    boss = false; result = null; lastDeathPoint = null;
+    roster.forEach((ent,i) => resetPlayer(ent,playerPoint(i),true));
+    dummyOn = true;
+    if(typeof snapCameraToTarget === 'function') snapCameraToTarget();
+    phase = 'wave';
+    spawnWave();
+    updateHud();
+  }
+
+  function spawnPoint(index, count, big){
+    const players = livePlayers();
+    const center = players.length ? {
+      x:players.reduce((v,p)=>v+p.x,0)/players.length,
+      y:players.reduce((v,p)=>v+p.y,0)/players.length
+    } : {x:WORLD_W/2,y:WORLD_H/2};
+    const scale = setting('cscl',1), margin = 40*scale*(big?2:1);
+    const radius = Math.max(220*scale, Math.min(W/CAM_SCALE,H/CAM_SCALE)*0.48);
+    let best = null, score = -Infinity;
+    // Bounded search: avoid player overlap, world edges and solid boxes.
+    for(let attempt=0;attempt<32;attempt++){
+      const angle = (index/count + attempt/32)*Math.PI*2;
+      const p = {x:clamp(center.x+Math.cos(angle)*radius,margin,WORLD_W-margin-40),
+        y:clamp(center.y+Math.sin(angle)*radius,margin,WORLD_H-margin)};
+      if(typeof boxesOn !== 'undefined' && boxesOn && typeof BOXES !== 'undefined' &&
+         BOXES.some(b=>p.x>b.x-margin && p.x<b.x+b.w+margin && p.y>b.y-margin && p.y<b.y+b.h+margin)) continue;
+      const distances = players.map(ent=>Math.hypot(ent.x-p.x,ent.y-p.y));
+      for(const ent of enemies) distances.push(Math.hypot(ent._pendingSpawnX-p.x,ent._pendingSpawnY-p.y));
+      const nearest = Math.min(...distances);
+      if(nearest>score){ best=p; score=nearest; }
+      if(nearest>=180*scale) break;
+    }
+    return best || {x:margin,y:margin};
+  }
+
+  function spawnWave(){
+    if(!active || phase === 'result') return;
+    if(elapsed >= DURATION){ finish('victory'); return; }
+    for(const bot of enemies) cancelEntity(bot);
+    enemies = [];
+    ALL_BOTS.splice(reserved.length);
+    wave++;
+    boss = ordinarySinceBoss>=3 && Math.random()<0.5;
+    if(boss) ordinarySinceBoss=0;
+    const range = elapsed<120 ? [1,3] : elapsed<240 ? [4,5] : [5,6];
+    const count = boss ? 1 : range[0]+Math.floor(Math.random()*(range[1]-range[0]+1));
+    phase='wave'; phaseLeft=0;
+    for(let i=0;i<count;i++){
+      const point=spawnPoint(i,count,boss), bot=createEntity();
+      Object.assign(bot,{_survivalEnemy:true,_survivalBoss:boss,_bodyScaleMult:boss?2:1,
+        _damageMult:boss?1+Math.random():1,maxHp:boss?200:100,hp:boss?200:100,
+        _isExtra:i>0,_survivalRevealAt:GameTime+REVEAL_DELAY});
+      bot._aiState.enabled=true;
+      setRandomEnemyWeapon(bot);
+      setRandomEnemyShield(bot);
+      if(typeof spritesDBReady!=='undefined' && spritesDBReady && typeof assignRandomSkin==='function') assignRandomSkin(bot);
+      placeBotPendingReveal(bot,point.x,point.y);
+      enemies.push(bot); ALL_BOTS.push(bot);
+    }
+    bindRoster(); selectMain();
+    rerollArenaObjects();
+    maybeSpawnRoundHeal();
+    forceBotResumeAt=GameTime+1;
+    P._cameraCombatUntil=GameTime+8;
+    if(boss) notify('survival.boss',body(roster[0]),null,'#ff754b');
+  }
+
+  function finish(outcome){
+    if(phase==='result') return;
+    result=outcome; phase='result'; phaseLeft=RESULT_DELAY;
+    for(const ent of [...roster,...enemies]) cancelEntity(ent);
+    respawns.clear();
+    clearTransient();
+    DEATH.pDead=true; DEATH.dDead=false; DEATH.fadeIn=true; DEATH.fadeAlpha=0;
+    DEATH.text=text(outcome==='victory'?'survival.victory':'survival.defeat');
+    DEATH.textCol=outcome==='victory'?'#ffdd44':'#ff6060';
+    for(const ent of enemies) ent._aiState.enabled=false;
+    if(typeof addWin==='function') addWin(outcome==='defeat');
+    updateHud();
+  }
+
+  function spawnHeal(point){
+    if(pickups.length>=MAX_HEALS) pickups.shift();
+    pickups.push({x:point.x,y:point.y,remaining:HEAL_LIFE});
+  }
+  function offscreenPoint(){
+    const left=CAM_X-CELL,right=CAM_X+W/CAM_SCALE+CELL,top=CAM_Y-CELL,bottom=CAM_Y+H/CAM_SCALE+CELL;
+    for(let attempt=0;attempt<80;attempt++){
+      const p={x:clamp(gridSnap(70+Math.random()*(WORLD_W-140)),CELL,WORLD_W-CELL),y:clamp(gridSnap(70+Math.random()*(WORLD_H-140)),CELL,WORLD_H-CELL)};
+      if(p.x>left&&p.x<right&&p.y>top&&p.y<bottom) continue;
+      if(!safePoint(p,30)) continue;
+      if(combatants().some(ent=>Math.hypot(body(ent).x-p.x,body(ent).y-p.y)<CELL*1.2)) continue;
+      return p;
+    }
+    const fallbacks=[{x:CELL,y:CELL},{x:WORLD_W-CELL,y:CELL},{x:CELL,y:WORLD_H-CELL},{x:WORLD_W-CELL,y:WORLD_H-CELL},{x:WORLD_W*.5,y:CELL},{x:WORLD_W*.5,y:WORLD_H-CELL}];
+    for(const p of fallbacks){
+      if(p.x>left&&p.x<right&&p.y>top&&p.y<bottom) continue;
+      if(safePoint(p,30)) return p;
+    }
+    return null;
+  }
+  function maybeSpawnRoundHeal(){
+    if(Math.random()>=0.3) return;
+    const point=offscreenPoint();
+    if(point) spawnHeal(point);
+  }
+
+  function handleDeath(ent){
+    if(!isActive()) return false;
+    if(!roster.includes(ent) && !enemies.includes(ent)) return true;
+    if(phase==='result' || ent._defeated) return true;
+    const point=body(ent);
+    const player=roster.includes(ent);
+    if(typeof startDeathAnimation==='function') startDeathAnimation(ent);
+    ent.hp=0; ent._defeated=true;
+    const shieldToDrop = !!ent.shield;
+    if(ent.hasWeapon!==false) disarmEntity(ent);
+    if(shieldToDrop && typeof dropShield === 'function') dropShield(ent);
+    else if(!player && ent.shield && typeof setShield === 'function') setShield(ent, 0);
+    cancelEntity(ent);
+    const delay=Math.max(0,setting('playerrespawn',15));
+    DEATH.deathCross.push({x:point.x,y:point.y,timer:player?Math.max(2,delay):2,isBot:!player});
+    if(typeof spawnBlood==='function'){
+      for(let i=0;i<8;i++) spawnBlood(point.x,point.y,Math.cos(i*Math.PI/4),Math.sin(i*Math.PI/4));
+    }
+    $.S.play('death');
+    if(player){
+      if(livePlayers().length && delay>0){
+        respawns.set(ent,delay); ent._respawnPending=true;
+      }
+    } else {
+      kills++;
+      lastDeathPoint={x:point.x,y:point.y};
+      if(ent._survivalBoss || Math.random()<(roster.length===1?0.15:0.1)) spawnHeal(lastDeathPoint);
+    }
+    // Do not splice ALL_BOTS here: projectiles/melee are iterating it.
+    return true;
+  }
+
+  function updateRespawns(dt){
+    for(const [ent,remaining] of respawns){
+      const next=remaining-dt;
+      if(next>0){ respawns.set(ent,next); continue; }
+      respawns.delete(ent);
+      const ally=livePlayers()[0];
+      if(!ally) continue;
+      resetPlayer(ent,nearestSafePoint({x:clamp(ally.x+65,60,WORLD_W-100),y:clamp(ally.y+40,60,WORLD_H-60)}),false);
+      notify('factions.respawn',body(ent),null,'#66ffaa');
+    }
+  }
+
+  function updatePickups(dt){
+    const injured=livePlayers().filter(ent=>ent.hp<(ent.maxHp||100));
+    const radius=(22+19)*setting('cscl',1);
+    for(let i=pickups.length-1;i>=0;i--){
+      const item=pickups[i];
+      item.remaining-=dt;
+      if(item.remaining<=0){ pickups.splice(i,1); continue; }
+      let target=null, distance=radius;
+      for(const ent of injured){
+        if(ent.hp>=(ent.maxHp||100)) continue;
+        const p=body(ent), d=Math.hypot(p.x-item.x,p.y-item.y);
+        if(d<=distance){ target=ent; distance=d; }
+      }
+      if(!target) continue;
+      const amount=Math.min(HEAL,(target.maxHp||100)-target.hp);
+      target.hp+=amount;
+      pickups.splice(i,1);
+      notify('survival.healed',body(target),{amount},'#55ff88');
+      $.S.play('pickupSound');
+    }
+  }
+
+  function updateDrops(dt){
+    if(typeof DROPPED_WEAPONS!=='undefined') for(let i=DROPPED_WEAPONS.length-1;i>=0;i--){
+      const item=DROPPED_WEAPONS[i], settled=Math.hypot(item.vx||0,item.vy||0)<0.5;
+      const age=settled ? (dropAges.get(item)||0)+dt : 0;
+      dropAges.set(item,age);
+      if(age>=DROP_LIFE) DROPPED_WEAPONS.splice(i,1);
+    }
+    if(typeof DROPPED_WEAPONS!=='undefined'){
+      let excess=DROPPED_WEAPONS.length-MAX_DROPS;
+      for(let i=0;excess>0 && i<DROPPED_WEAPONS.length;){
+        const item=DROPPED_WEAPONS[i];
+        if(Math.hypot(item.vx||0,item.vy||0)<0.5){ DROPPED_WEAPONS.splice(i,1); excess--; }
+        else i++;
+      }
+    }
+    if(typeof DROPPED_SHIELDS!=='undefined') for(let i=DROPPED_SHIELDS.length-1;i>=0;i--){
+      const item=DROPPED_SHIELDS[i], settled=Math.hypot(item.vx||0,item.vy||0)<0.5;
+      const age=settled ? (dropAges.get(item)||0)+dt : 0;
+      dropAges.set(item,age);
+      if(age>=DROP_LIFE) DROPPED_SHIELDS.splice(i,1);
+    }
+  }
+
+  function update(dt){
+    if(online()){
+      if(active) stop(true);
+      return;
+    }
+    if(!active){
+      if(ready && FactionRules.getMode()==='survival') start();
+      return;
+    }
+    if(getSlot()!==slotIndex){ newMatch(); return; }
+    if([...controls.keys()].some(el=>!el.disabled)) lockControls(true);
+    if(!Number.isFinite(dt) || dt<=0 || (typeof gamePaused!=='undefined' && gamePaused) ||
+       (typeof uiMenuPaused!=='undefined' && uiMenuPaused)) return;
+    if(phase==='result'){
+      phaseLeft-=dt;
+      if(phaseLeft<=0) newMatch();
+      return;
+    }
+    playerHurtFade=Math.max(0,playerHurtFade-dt*0.9);
+    elapsed=Math.min(DURATION,elapsed+dt);
+    forceResumeBotsAfterSpawn();
+    // Resolve a simultaneous last kill/player death as defeat, before respawns.
+    for(const ent of [...roster,...enemies]) if(ent.hp<=0 && !ent._defeated) handleDeath(ent);
+    if(!livePlayers().length){ finish('defeat'); return; }
+    updateRespawns(dt); updatePickups(dt); updateDrops(dt); updateArenaObjects(dt);
+    for(const bot of liveEnemies()){
+      if(bot._awaitingReveal && GameTime>=bot._survivalRevealAt+3){
+        // Failed sprite downloads must not make the final enemy immortal off-map.
+        if(bot._skinImg && !bot._skinImg.complete) bot._skinImg=null;
+        revealBotIfReady(bot);
+      }
+    }
+    if(!liveEnemies().length){
+      if(phase==='wave'){
+        if(!boss) ordinarySinceBoss++;
+        if(Math.random()<(roster.length===1?0.75:0.5)) spawnHeal(lastDeathPoint||body(roster[0]));
+        phase='intermission'; phaseLeft=GAP;
+      } else phaseLeft-=dt;
+      if(elapsed>=DURATION){ finish('victory'); return; }
+      if(phaseLeft<=0) spawnWave();
+    }
+    selectMain(); updateHud();
+  }
+
+  function damageMultiplier(defender){
+    if(!isActive()) return 1;
+    if(phase==='result') return 0;
+    if(!roster.includes(defender)) return 1;
+    return defender.hp<(defender.maxHp||100)*0.5 ? 1/3 : 0.5;
+  }
+
+  function lockControls(value){
+    for(const id of controlIds){
+      const el=document.getElementById(id);
+      if(!el) continue;
+      if(value){
+        if(!controls.has(el)) controls.set(el,{disabled:el.disabled,title:el.title});
+        el.disabled=true; el.title=text('survival.locked');
+      } else if(controls.has(el)){
+        const previous=controls.get(el);
+        el.disabled=previous.disabled; el.title=previous.title;
+      }
+    }
+    if(!value) controls.clear();
+    document.body.classList.toggle('survival-active',value);
+  }
+
+  function start(){
+    if(active || online()) return;
+    original={bots:ALL_BOTS.slice(),D,AI,dummyOn};
+    active=true;
+    for(const ent of [P,...original.bots]) cancelEntity(ent);
+    newMatch(); lockControls(true);
+  }
+
+  function stop(networkTransition=false){
+    if(!active) return;
+    const wasResult=phase==='result';
+    for(const ent of [...roster,...enemies]){
+      if(!networkTransition || (ent!==P && ent!==D)) cancelEntity(ent);
+    }
+    respawns.clear();
+    active=false; phase='inactive'; result=null; pickups=[]; arenaObjects=[]; arenaBursts=[];
+    lockControls(false);
+    if(!networkTransition){
+      clearTransient(); clearOverlay();
+      ALL_BOTS.splice(0,ALL_BOTS.length,...original.bots);
+      D=original.D; AI=original.AI; dummyOn=original.dummyOn;
+      for(const ent of roster) resetPlayer(ent,null,false);
+      if(typeof applyBotCount==='function') applyBotCount();
+      bindRoster();
+    } else {
+      // NET_SYNC reuses D as its remote player; never remove that entity.
+      for(let i=ALL_BOTS.length-1;i>=0;i--){
+        const ent=ALL_BOTS[i];
+        if(ent!==D && (ent._survivalEnemy || ent._survivalReserved)) ALL_BOTS.splice(i,1);
+      }
+    if(D){
+        Object.assign(D,{_survivalEnemy:false,_survivalReserved:false,_survivalBoss:false,
+          _bodyScaleMult:1,_damageMult:1,maxHp:100,_awaitingReveal:false,_manualControl:false});
+        delete D._survivalRevealAt;
+        if(!ALL_BOTS.includes(D)) ALL_BOTS.push(D);
+      }
+      for(const ent of roster){
+        if(ent._respawnTimerId) clearTimeout(ent._respawnTimerId);
+        ent._respawnTimerId=0; ent._respawnPending=false; ent._respawnAt=0;
+      }
+      if(wasResult) clearOverlay();
+    }
+    enemies=[]; reserved=[]; roster=[]; original=null;
+    updateHud();
+  }
+
+  function setActive(value){ if(value){ if(ready) start(); } else stop(); }
+  function restart(){
+    if(!active) return;
+    newMatch();
+    if(typeof window.doResume==='function') window.doResume();
+    else {
+      document.body.classList.remove('menu-open');
+      if(typeof window._setUiMenuPaused==='function') window._setUiMenuPaused(false);
+      if(typeof gamePaused!=='undefined') gamePaused=false;
+    }
+  }
+  function onRosterChange(){ if(active && getSlot()!==slotIndex) newMatch(); lockControls(active); }
+  function isActive(){ return active && !online(); }
+
+  function initHud(){
+    if(hud.root) return;
+    hud.root=document.getElementById('survival-hud');
+    hud.timer=document.getElementById('survival-timer');
+    hud.wave=document.getElementById('survival-wave');
+    if(!hud.root) return;
+    hud.status=document.createElement('div'); hud.status.id='survival-status';
+    hud.root.appendChild(hud.status);
+    const style=document.createElement('style');
+    style.textContent='#survival-hud{max-width:18vw;padding:2px 5px;border:1px solid rgba(53,103,131,.55);background:rgba(6,18,28,.62);border-radius:5px;font-variant-numeric:tabular-nums}#survival-timer{font-size:14px;line-height:1;font-weight:800;letter-spacing:1px}#survival-wave{font-size:7px;line-height:1.05;letter-spacing:.4px;margin-top:1px}#survival-status{font-size:7px;color:#b5d2dc;margin-top:1px;line-height:1.05}#survival-hud[data-phase="result"]{opacity:.6}body.menu-open #survival-hud{visibility:hidden}body.survival-active #mob-weapon-btn,body.survival-active #mob-bot-weapon-btn,body.survival-active #mob-bot-shield-btn{opacity:.3}@media(max-width:700px){#survival-hud{top:54px;max-width:42vw;padding:2px 5px}#survival-timer{font-size:12px}#survival-wave{font-size:7px}#survival-status{font-size:7px}}';
+    document.head.appendChild(style);
+  }
+
+  function put(el,value){ if(el && el.textContent!==value) el.textContent=value; }
+  function updateHud(){
+    initHud();
+    if(!hud.root) return;
+    hud.root.classList.toggle('visible',active);
+    if(!active) return;
+    hud.root.dataset.phase=phase;
+    const remaining=Math.ceil(Math.max(0,DURATION-elapsed));
+    put(hud.timer,String(Math.floor(remaining/60)).padStart(2,'0')+':'+String(remaining%60).padStart(2,'0'));
+    let title=text('survival.wave',{wave})+' · '+text('survival.enemies',{count:liveEnemies().length});
+    if(phase==='result') title=text(result==='victory'?'survival.victory':'survival.defeat');
+    else if(elapsed>=DURATION) title=text('survival.cleanup');
+    else if(phase==='intermission') title=text('survival.intermission',{seconds:Math.ceil(phaseLeft)});
+    else if(boss) title=text('survival.boss')+' · '+text('survival.enemies',{count:liveEnemies().length});
+    put(hud.wave,title);
+    const info=[text('survival.kills',{count:kills})];
+    for(const ent of roster){
+      if(respawns.has(ent)) info.push(text('survival.respawnIn',{slot:ent===P?1:slotIndex+1,seconds:Math.ceil(respawns.get(ent))}));
+    }
+    put(hud.status,info.join(' · '));
+  }
+
+  function drawPickups(){
+    if(!isActive() || phase==='result' || typeof ctx==='undefined') return;
+    ctx.save();
+    for(const o of arenaObjects){
+      ctx.save();ctx.translate(o.x,o.y);
+      if(o.type==='spikes'){
+        const img=propImage('spikes');
+        if(img) drawSpriteCentered(img,CELL);
+        else{
+          ctx.fillStyle='#5c6268';ctx.strokeStyle='#2f3439';ctx.lineWidth=2/CAM_SCALE;ctx.fillRect(-CELL*.46,-CELL*.46,CELL*.92,CELL*.92);ctx.strokeRect(-CELL*.46,-CELL*.46,CELL*.92,CELL*.92);
+          for(let y=-1;y<=1;y++)for(let x=-1;x<=1;x++){ctx.beginPath();ctx.moveTo(x*15-5,y*15+7);ctx.lineTo(x*15,y*15-9);ctx.lineTo(x*15+5,y*15+7);ctx.closePath();ctx.fillStyle='#b7c0c7';ctx.strokeStyle='#e1e6ea';ctx.fill();ctx.stroke();}
+        }
+      }else{
+        const red=o.type==='redBarrel',img=propImage(o.type==='crate'?'crate':red?'redBarrel':'barrel'),size=OBJECT_RADIUS*2.15;
+        if(img){
+          drawSpriteCentered(img,size);
+        }else{
+          ctx.fillStyle=o.type==='crate'?'#89572f':red?'#a8201d':'#765038';ctx.strokeStyle=red?'#ff9b49':'#d2a56c';ctx.lineWidth=3/CAM_SCALE;
+          if(o.type==='crate'){ctx.fillRect(-22,-22,44,44);ctx.strokeRect(-22,-22,44,44);ctx.beginPath();ctx.moveTo(-18,-18);ctx.lineTo(18,18);ctx.moveTo(18,-18);ctx.lineTo(-18,18);ctx.stroke();}
+          else{ctx.beginPath();ctx.ellipse(0,0,22,25,0,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.fillStyle=red?'#5c1210':'#3f2d24';ctx.fillRect(-20,-13,40,5);ctx.fillRect(-20,9,40,5);ctx.strokeStyle=red?'#ffb15f':'#c7955f';ctx.beginPath();ctx.ellipse(-18,0,6,23,0,Math.PI*.5,Math.PI*1.5);ctx.stroke();ctx.beginPath();ctx.ellipse(18,0,6,23,0,-Math.PI*.5,Math.PI*.5);ctx.stroke();ctx.fillStyle='rgba(255,255,255,.16)';ctx.fillRect(-8,-20,5,40);}
+        }
+        if(red&&o.fuse!=null){const p=clamp(o.fuse/RED_FUSE,0,1),pulse=.45+.55*Math.abs(Math.sin(GameTime*(8+(1-p)*15)));ctx.strokeStyle=`rgba(255,225,90,${pulse})`;ctx.lineWidth=4/CAM_SCALE;ctx.beginPath();ctx.arc(0,0,29,-Math.PI/2,-Math.PI/2+Math.PI*2*p);ctx.stroke();}
+      }
+      ctx.restore();
+    }
+    for(const b of arenaBursts){
+      const p=b.age/b.life,img=propImage('explosion'),size=EXPLOSION_RADIUS*2*Math.min(1,.35+p*1.65);
+      ctx.save();ctx.translate(b.x,b.y);ctx.globalAlpha=1-p;
+      if(img) drawSpriteCentered(img,size);
+      else{ctx.fillStyle='rgba(255,104,31,.28)';ctx.strokeStyle='#ffd15a';ctx.lineWidth=(8*(1-p)+2)/CAM_SCALE;ctx.beginPath();ctx.arc(0,0,EXPLOSION_RADIUS*Math.min(1,p*2.5),0,Math.PI*2);ctx.fill();ctx.stroke();}
+      ctx.restore();
+    }
+    ctx.globalAlpha=1;
+    for(const item of pickups){
+      ctx.save(); ctx.translate(item.x,item.y);
+      ctx.globalAlpha=item.remaining<3 ? 0.45+0.55*Math.abs(Math.sin(item.remaining*7)) : 1;
+      const img=propImage('potion');
+      if(img) drawSpriteCentered(img,38);
+      else{
+        ctx.fillStyle='rgba(26,90,47,.65)'; ctx.strokeStyle='#b4ffcf'; ctx.lineWidth=2/CAM_SCALE;
+        ctx.beginPath(); ctx.arc(0,0,19,0,Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(0,0,19,-Math.PI/2,-Math.PI/2+Math.PI*2*item.remaining/HEAL_LIFE); ctx.stroke();
+        ctx.fillStyle='#62ff99'; ctx.fillRect(-11,-4,22,8); ctx.fillRect(-4,-11,8,22);
+      }
+      ctx.restore();
+    }
+    for(const bot of liveEnemies()){
+      if(!bot._awaitingReveal) continue;
+      const scale=bot._bodyScaleMult||1,img=propImage('spawnRune'),size=78*scale;
+      ctx.save();ctx.translate(bot._pendingSpawnX,bot._pendingSpawnY);ctx.globalAlpha=.72+.22*Math.sin(GameTime*7);
+      if(img){
+        ctx.rotate(GameTime*.7);drawSpriteCentered(img,size);
+      }else{
+        ctx.strokeStyle=bot._survivalBoss?'#ff7744':'#ffcb66'; ctx.lineWidth=2/CAM_SCALE;
+        ctx.beginPath(); ctx.arc(0,0,26*scale,0,Math.PI*2); ctx.stroke();
+      }
+      ctx.restore();
+    }
+    if(playerHurtFade>0){
+      ctx.save();ctx.setTransform(1,0,0,1,0,0);ctx.globalAlpha=Math.min(.28,playerHurtFade);ctx.fillStyle='#d01818';ctx.fillRect(0,0,W,H);ctx.restore();
+    }
+    ctx.restore();
+  }
+
+  function getState(){
+    return {phase,elapsed,wave,remaining:Math.max(0,DURATION-elapsed),boss,enemyCount:liveEnemies().length,
+      ordinarySinceBoss,kills,result,pickups:pickups.map(p=>({...p})),arenaObjects:arenaObjects.map(o=>({type:o.type,x:o.x,y:o.y,vx:o.vx,vy:o.vy,fuse:o.fuse,moving:o.moving})),
+      respawns:[...respawns].map(([ent,remaining])=>({slot:ent===P?0:slotIndex,remaining})),
+      droppedWeapons:typeof DROPPED_WEAPONS!=='undefined'?DROPPED_WEAPONS.length:0,
+      droppedShields:typeof DROPPED_SHIELDS!=='undefined'?DROPPED_SHIELDS.length:0};
+  }
+
+  // Capture before gameplay handlers, but preserve typing in menus.
+  window.addEventListener('keydown',event=>{
+    if(!isActive()) return;
+    const el=event.target;
+    if(el && (el.isContentEditable || ['INPUT','TEXTAREA','SELECT'].includes(el.tagName))) return;
+    const codes=['KeyC','KeyV','KeyY'];
+    const keys=['c','с','v','м','y','н'];
+    if(codes.includes(event.code) || keys.includes(String(event.key).toLowerCase())){
+      event.preventDefault(); event.stopImmediatePropagation();
+    }
+  },true);
+  document.addEventListener('DOMContentLoaded',()=>{ ready=true; initHud(); });
+  window.SurvivalMode={update,drawPickups,handleDeath,setActive,restart,onRoundReset(){ if(active) newMatch(); },
+    onRosterChange,isActive,damageMultiplier,getState,adjustAI,isSafeSpawn:safePoint,tryThrowObject,projectileHitObject,segmentHitObject};
+})();
 
 </script>
 <script>
@@ -13634,15 +14819,23 @@ function updateAIDispatch(dt, bot){
   function justReleased(pad, index){ return !pressed(pad,index) && !!padState.previousButtons[index]; }
 
   function cycleWeapon(entity){
+    if(typeof SurvivalMode !== 'undefined' && SurvivalMode.isActive()) return;
     if(!entity || typeof setWeapon !== 'function' || typeof WEAPON_TYPES === 'undefined') return;
     setWeapon(entity, ((entity.weaponType || 0) + 1) % WEAPON_TYPES.length);
   }
   function cycleShield(entity){
+    if(typeof SurvivalMode !== 'undefined' && SurvivalMode.isActive()){
+      if(typeof dropShield === 'function') dropShield(entity);
+      return;
+    }
     if(!entity || typeof setShield !== 'function' || typeof SHIELD_TYPES === 'undefined') return;
     setShield(entity, ((entity.shield || 0) + 1) % SHIELD_TYPES.length);
   }
   function dodge(entity, moveX, moveY, charge){
-    if(!entity || entity.hp<=0 || isExhausted(entity) || isUnbalanced(entity) || (entity._dodgeCD || 0) > GameTime) return;
+    if(!entity || entity.hp<=0 || isExhausted(entity) || isUnbalanced(entity)) return;
+    const cooldownActive=(entity._dodgeCD || 0) > GameTime;
+    if(cooldownActive && typeof tryStartDodge!=='function') return;
+    if(typeof tryStartDodge==='function' && !tryStartDodge(entity,cooldownActive)) return;
     charge=Math.max(0, Math.min(1, Number(charge)||0));
     let dx=moveX, dy=moveY;
     if(Math.hypot(dx,dy) < 0.1){ dx=Math.cos(entity.angle); dy=Math.sin(entity.angle); }
@@ -13660,6 +14853,7 @@ function updateAIDispatch(dt, bot){
     if(typeof $!=='undefined' && $.S) $.S.play('dodgeSound');
     if(typeof DODGE_TRAIL==='undefined') window.DODGE_TRAIL=[];
     entity._manualDodgeTrailFrames=12;
+    entity._manualDodgeTrailEmit=0;
     if(typeof $!=='undefined' && $.FX){
       $.FX.hit({x:entity.x,y:entity.y-30,t:(window.I18N ? window.I18N.t('common.dodge') : 'DODGE'),life:35,big:false,col:'rgba(200,200,200,0.6)'});
     }
@@ -13670,7 +14864,8 @@ function updateAIDispatch(dt, bot){
   }
 
   function beginManualDodgePress(entity, moveX, moveY){
-    if(!entity || isExhausted(entity) || isUnbalanced(entity) || (entity._dodgeCD || 0) > GameTime) return;
+    if(!entity || isExhausted(entity) || isUnbalanced(entity)) return;
+    if((entity._dodgeCD || 0) > GameTime && (typeof canUseRageDodge!=='function' || !canUseRageDodge(entity))) return;
     if(canManualShieldDash(entity)){
       entity._shieldDashCharging=true;
       entity._shieldDashChargeStart=GameTime;
@@ -13918,6 +15113,11 @@ function updateAIDispatch(dt, bot){
   function updateManualEntity(entity, pad, dt){
     if(!entity || !entity._aiState) return;
     const ai=entity._aiState;
+    if(typeof SurvivalMode !== 'undefined' && SurvivalMode.isActive() && (entity.hp<=0 || entity._defeated || DEATH.pDead)){
+      ai._fakeMDown=false; entity._manualAttackInput=false; entity._shieldHeld=false;
+      for(const key of ['w','a','s','d']) ai._fakeKeys[key]=false;
+      return;
+    }
     const moveX=axis(pad.axes[0],DEADZONE_MOVE);
     const moveY=axis(pad.axes[1],DEADZONE_MOVE);
     const aimX=axis(pad.axes[2],DEADZONE_AIM);
@@ -13975,15 +15175,20 @@ function updateAIDispatch(dt, bot){
   function afterEntityUpdate(entity,dt){
     if(!entity || !entity._manualControl) return;
     if(entity._manualDodgeTrailFrames > 0){
-      entity._manualDodgeTrailFrames--;
+      const trailStep = dt * 60;
+      entity._manualDodgeTrailFrames -= trailStep;
+      entity._manualDodgeTrailEmit = (entity._manualDodgeTrailEmit || 0) + trailStep;
       if(typeof DODGE_TRAIL==='undefined') window.DODGE_TRAIL=[];
-      DODGE_TRAIL.push({
-        x:entity.x+Math.random()*10-5,
-        y:entity.y+Math.random()*10-5,
-        life:14,
-        maxLife:14,
-        r:7
-      });
+      while(entity._manualDodgeTrailEmit >= 1){
+        entity._manualDodgeTrailEmit -= 1;
+        DODGE_TRAIL.push({
+          x:entity.x+Math.random()*10-5,
+          y:entity.y+Math.random()*10-5,
+          life:14,
+          maxLife:14,
+          r:7
+        });
+      }
     }
     if(entity._shieldDashCharging){
       if(!canManualShieldDash(entity)){
@@ -14138,6 +15343,16 @@ function buildArena(){
 
 function drawArena(){
   if(arenaDirty || !arenaCanvas) buildArena();
+  const border = typeof ARENA_BORDER_SIZE === 'number' ? ARENA_BORDER_SIZE : 550;
+  const cell = typeof CELL_PX === 'number' ? CELL_PX : 55;
+  ctx.save();
+  ctx.fillStyle = '#5c6268';
+  ctx.fillRect(-border, -border, WORLD_W + border * 2, WORLD_H + border * 2);
+  ctx.strokeStyle = 'rgba(47,52,57,0.8)';
+  ctx.lineWidth = 1;
+  for(let x=-border;x<=WORLD_W+border;x+=cell){ ctx.beginPath(); ctx.moveTo(x,-border); ctx.lineTo(x,WORLD_H+border); ctx.stroke(); }
+  for(let y=-border;y<=WORLD_H+border;y+=cell){ ctx.beginPath(); ctx.moveTo(-border,y); ctx.lineTo(WORLD_W+border,y); ctx.stroke(); }
+  ctx.restore();
   ctx.drawImage(arenaCanvas, 0, 0);
 }
 
@@ -15227,6 +16442,67 @@ function drawChar(ent, cscl, torsoCol, headCol){
   drawStatusEffects(ent, cscl);
 }
 
+const DEATH_ANIM_DURATION = 1.5;
+const DEATH_ANIM_DISSOLVE_AT = 0.4;
+const DEATH_ANIMS = [];
+
+function startDeathAnimation(ent){
+  if(!ent || ent._deathAnimStartedAt===GameTime) return;
+  ent._deathAnimStartedAt=GameTime;
+  const center=$.POS.body(ent);
+  const img=ent._skinImg;
+  const baseScale=sv('cscl')*(ent===P?1:sv('botscale'))*(ent._bodyScaleMult||1);
+  DEATH_ANIMS.push({x:center.x,y:center.y,img,scale:baseScale,start:GameTime,
+    angle:Number.isFinite(ent._lastDamageAngle)?ent._lastDamageAngle:Math.atan2(ent.vy||0,ent.vx||1),
+    isPlayer:ent===P||Number.isInteger(ent._playerSlot)});
+}
+
+function updateDeathAnimations(){
+  for(let i=DEATH_ANIMS.length-1;i>=0;i--) if(GameTime-DEATH_ANIMS[i].start>=DEATH_ANIM_DURATION) DEATH_ANIMS.splice(i,1);
+}
+
+function clearDeathAnimations(){ DEATH_ANIMS.length=0; }
+
+function drawDeathAnimations(){
+  for(const death of DEATH_ANIMS){
+    const age=Math.max(0,GameTime-death.start),progress=$.M.clamp(age/DEATH_ANIM_DURATION,0,1);
+    const fall=$.M.clamp(age/0.9,0,1),ease=1-Math.pow(1-fall,3);
+    const dissolve=$.M.clamp((age-DEATH_ANIM_DISSOLVE_AT)/(DEATH_ANIM_DURATION-DEATH_ANIM_DISSOLVE_AT),0,1);
+    const side=Math.abs(Math.cos(death.angle))>.15?Math.sign(Math.cos(death.angle)):Math.sign(Math.sin(death.angle)||1);
+    const img=death.img,spriteW=img&&img.naturalWidth>0&&img.naturalHeight>0?CHAR_SPRITE_H*(img.naturalWidth/img.naturalHeight):16;
+    ctx.save();ctx.translate(death.x+Math.cos(death.angle)*18*ease,death.y+Math.sin(death.angle)*8*ease);ctx.scale(death.scale,death.scale);
+    const footY=CHAR_SPRITE_OFFSET_Y+CHAR_SPRITE_H;
+    ctx.translate(0,footY);ctx.rotate(side*Math.PI*.48*ease);ctx.translate(0,-footY);
+    ctx.globalAlpha=1-dissolve*.88;ctx.shadowColor=`rgba(255,35,20,${.25+dissolve*.75})`;ctx.shadowBlur=6+dissolve*24;
+    if(img&&img.complete&&img.naturalWidth>0){
+      const strips=12,stripH=CHAR_SPRITE_H/strips;
+      for(let i=0;i<strips;i++){
+        const threshold=((i*7)%strips)/strips;
+        if(dissolve>threshold+.2) continue;
+        const sy=i/strips*img.naturalHeight;
+        ctx.drawImage(img,0,sy,img.naturalWidth,img.naturalHeight/strips,-spriteW/2+(dissolve>threshold?side*dissolve*8:0),CHAR_SPRITE_OFFSET_Y+i*stripH,spriteW,stripH+.5);
+      }
+    } else {
+      ctx.fillStyle=`rgba(${death.isPlayer?'90,160,255':'255,80,70'},${1-dissolve})`;
+      ctx.fillRect(-spriteW/2,CHAR_SPRITE_OFFSET_Y,spriteW,CHAR_SPRITE_H*(1-dissolve));
+    }
+    if(dissolve>0){
+      ctx.fillStyle=`rgba(255,45,25,${1-dissolve})`;
+      for(let i=0;i<7;i++){
+        const seed=(i*37+Math.floor(death.start*100))%101/101;
+        const px=(seed-.5)*spriteW,py=CHAR_SPRITE_OFFSET_Y+((i*29)%100)/100*CHAR_SPRITE_H-dissolve*16;
+        ctx.fillRect(px,py,1.5+dissolve*2,1.5+dissolve*2);
+      }
+    }
+    ctx.restore();
+  }
+}
+
+window.startDeathAnimation=startDeathAnimation;
+window.updateDeathAnimations=updateDeathAnimations;
+window.drawDeathAnimations=drawDeathAnimations;
+window.clearDeathAnimations=clearDeathAnimations;
+
 function drawCameraDriverDebug(ent, cscl){
   if(!ent || window.DEBUG_CAMERA_DRIVER !== ent) return;
   const center = $.POS.body(ent);
@@ -15253,7 +16529,7 @@ function drawOverheadHealthBar(ent, cscl){
   ctx.fillStyle='rgba(0,0,0,.72)';
   ctx.fillRect(x-1,y-1,width+2,height+2);
   ctx.fillStyle=ent.hp>50?'#2acc50':ent.hp>25?'#ccaa20':'#cc2020';
-  ctx.fillRect(x,y,width*Math.max(0,Math.min(100,ent.hp))/100,height);
+  ctx.fillRect(x,y,width*Math.max(0,Math.min(1,ent.hp/(ent.maxHp||100))),height);
   ctx.restore();
 }
 function drawDummy(bot = D){
@@ -15309,7 +16585,7 @@ function _drawDummySword(){
   // Если щит в той же руке что меч — рисуем меч ЗА телом
   const _dSwordBehind = shieldDef(bot) && shieldSameSideAsSword(bot);
   if(_dSwordBehind) _drawDummySword();
-  drawChar(bot, sv('cscl') * sv('botscale'), '#4a1a10', '#6a2a18');
+  drawChar(bot, sv('cscl') * sv('botscale') * (bot._bodyScaleMult || 1), '#4a1a10', '#6a2a18');
   if(!_dSwordBehind) _drawDummySword();
 
   // 🔥 РИСУЕМ СТРЕЛУ НА ЛУКЕ БОТА (поверх всего)
@@ -15354,7 +16630,20 @@ function drawFX(){
     // through the same visual preset so its size cannot vary by call site.
     const maxLife = f.maxLife || f.life || FLOATING_TEXT_LIFE;
     ctx.globalAlpha=Math.max(0,f.life/maxLife);
-    if(f.type==='bolt'){
+    if(f.type==='blockDrop'){
+      const ent = f.ent;
+      if(ent){
+        const p = 1 - f.life / maxLife;
+        const cscl = typeof sv === 'function' ? sv('cscl') : 1;
+        const bc = $.POS.body(ent);
+        ctx.font = FLOATING_TEXT_FONT;
+        ctx.fillStyle = f.col || '#88ccff';
+        ctx.shadowColor = f.col || '#88ccff';
+        ctx.shadowBlur = 8;
+        ctx.textAlign = 'center';
+        ctx.fillText(f.t || '💧', bc.x, bc.y - 28 * cscl - p * 8);
+      }
+    } else if(f.type==='bolt'){
       const p = 1 - f.life / maxLife;
       ctx.save();
       ctx.translate(f.x, f.y - p*5);
@@ -15373,60 +16662,30 @@ function drawFX(){
 }
 
 // ──────────────── END LAYER: ARENA ────────────────
-const SPARK_EMOJI_URL = 'Source/UI/T_SparkEmoj.png';
+const SPARK_EMOJI_PATH = 'Source/UI/T_SparkEmoj.png';
 let SPARK_EMOJI_IMG = null;
 function sparkEmojiImage(){
   if(SPARK_EMOJI_IMG !== null) return SPARK_EMOJI_IMG;
-  SPARK_EMOJI_IMG = new Image();
-  SPARK_EMOJI_IMG.src = SPARK_EMOJI_URL;
+  const base = (typeof PROJECT_PATH_AUDIO !== 'undefined') ? PROJECT_PATH_AUDIO : '';
+  const url = base + SPARK_EMOJI_PATH;
+  SPARK_EMOJI_IMG = typeof loadSpriteImage === 'function' ? loadSpriteImage(url) : new Image();
+  SPARK_EMOJI_IMG.crossOrigin = 'anonymous';
+  if(!SPARK_EMOJI_IMG.src) SPARK_EMOJI_IMG.src = url;
   return SPARK_EMOJI_IMG;
 }
-
 function drawSparkImageFX(ctx, f, maxLife){
   const img = sparkEmojiImage();
+  if(!img || !img.complete || !img.naturalWidth) return;
   const p = 1 - f.life / maxLife;
   const count = f.count || 1;
   const size = f.size || 16;
-  const tint = f.tint || null;
-  if(!img || !img.complete || !img.naturalWidth){
-    ctx.strokeStyle=f.col||'#ffcc44';
-    ctx.shadowColor=f.col||'#ffcc44'; ctx.shadowBlur=10;
-    ctx.lineWidth=f.width||2.4;
-    ctx.lineCap='round'; ctx.lineJoin='round';
-    for(let b=0;b<count;b++){
-      const ox=(b-(count-1)/2)*9;
-      ctx.beginPath();
-      ctx.moveTo(ox-2,-11);
-      ctx.lineTo(ox+4,-2);
-      ctx.lineTo(ox-1,-2);
-      ctx.lineTo(ox+3,10);
-      ctx.lineTo(ox-7,-4);
-      ctx.lineTo(ox-1,-4);
-      ctx.closePath();
-      ctx.stroke();
-    }
-    return;
-  }
   for(let b=0;b<count;b++){
     const ox=(b-(count-1)/2)*(size*0.55);
-    ctx.save();
-    ctx.translate(ox, -p*4);
-    ctx.scale(-1, 1);
-    ctx.drawImage(img, -size/2, -size/2, size, size);
-    ctx.restore();
-    if(tint){
-      ctx.save();
-      ctx.globalAlpha = f.tintAlpha || 0.28;
-      ctx.globalCompositeOperation = 'source-atop';
-      ctx.fillStyle = tint;
-      ctx.translate(ox, -p*4);
-      ctx.scale(-1, 1);
-      ctx.fillRect(-size/2, -size/2, size, size);
-      ctx.restore();
-    }
+    const x = ox-size/2;
+    const y = -size/2-p*4;
+    ctx.drawImage(img, x, y, size, size);
   }
 }
-
 // ════════════════════════════════════════════════════════════════════════════
 
 </script>
@@ -15582,6 +16841,7 @@ function drawSparkImageFX(ctx, f, maxLife){
 
 
 function update(dt){
+  if(typeof SurvivalMode !== 'undefined' && SurvivalMode.isActive() && (P.hp <= 0 || P._defeated)) return;
   if(DEATH.pDead) return; // dead — no update
   const step = $.M.step(dt);
   updateBuffs(P, dt);
@@ -15917,8 +17177,9 @@ const exhMult = getMod(P, 'moveSlow', 1);
   if(!P._eMX){ P._eMX = effectiveMX; P._eMY = effectiveMY; }
 
   const smoothSpd = rawMouseDist < dzone ? 0.18 : 0.45;
-  P._eMX += (effectiveMX - P._eMX) * smoothSpd;
-  P._eMY += (effectiveMY - P._eMY) * smoothSpd;
+  const slowmoAimScale = typeof getCinematicSlowmoScale === 'function' ? getCinematicSlowmoScale() : 1;
+  P._eMX += (effectiveMX - P._eMX) * smoothSpd * slowmoAimScale;
+  P._eMY += (effectiveMY - P._eMY) * smoothSpd * slowmoAimScale;
   effectiveMX = P._eMX;
   effectiveMY = P._eMY;
 
@@ -16345,7 +17606,8 @@ function loop(ts){
   let steps = 0;
   while(accumulator >= FIXED_DT && steps < maxSteps){
     accumulator -= FIXED_DT;
-    const dt = FIXED_DT * sv('gamespeed');
+    const slowmoScale = typeof getCinematicSlowmoScale === 'function' ? getCinematicSlowmoScale() : 1;
+    const dt = FIXED_DT * sv('gamespeed') * slowmoScale;
     const perfOn = perfProfilerEnabled();
     const perfStart = perfOn ? performance.now() : 0;
     const perfSpans = perfOn ? [] : null;
@@ -16383,7 +17645,10 @@ updateChargeShake(P, dt);
       for(const bot of ALL_BOTS){
         if(!revealBotIfReady(bot)) continue;
         if(bot.hp <= 0) continue;
-        if(!bot._manualControl) updateAIDispatch(dt, bot);
+        if(!bot._manualControl){
+          updateAIDispatch(dt, bot);
+          if(typeof SurvivalMode!=='undefined') SurvivalMode.adjustAI(bot);
+        }
         updateDummy(dt, bot);
         if(typeof LocalPlayerControls!=='undefined') LocalPlayerControls.afterEntityUpdate(bot,dt);
       }
@@ -16420,6 +17685,8 @@ if(dummyOn) {
     updateBalls(dt);
     updateBlood(dt);
     updateFX(dt);
+    if(typeof SurvivalMode !== 'undefined') SurvivalMode.update(dt);
+    if(typeof updateDeathAnimations==='function') updateDeathAnimations();
     if(typeof window._dodgeTick==='function') window._dodgeTick(dt);
     if(perfOn){
       perfStep('tail');
@@ -16455,7 +17722,7 @@ if(dummyOn&&isUnbalanced(D)) drawUnbalancedStars(D);
       ctx.save();
       for(let i=DODGE_TRAIL.length-1;i>=0;i--){
         const tr=DODGE_TRAIL[i];
-        tr.life-=1;
+        tr.life-=rawDt * (typeof getCinematicSlowmoScale === 'function' ? getCinematicSlowmoScale() : 1) * 60;
         if(tr.life<=0){DODGE_TRAIL.splice(i,1);continue;}
         const a=(tr.life/tr.maxLife)*0.55;
         ctx.globalAlpha=a;
@@ -16471,6 +17738,7 @@ if(dummyOn&&isUnbalanced(D)) drawUnbalancedStars(D);
     drawBoxes();
     drawBalls();
     drawDroppedWeapons();
+    if(typeof SurvivalMode !== 'undefined') SurvivalMode.drawPickups();
     drawProjectiles();
     drawWandParticles();
     drawWandExplosions();
@@ -16505,6 +17773,7 @@ if(dummyOn&&isUnbalanced(D)) drawUnbalancedStars(D);
     if(_pSwordBehind && P.hasWeapon !== false) drawSword(pivX, pivY, P.angle);
     drawPlayer();
     if(!_pSwordBehind && P.hasWeapon !== false) drawSword(pivX, pivY, P.angle);
+    if(typeof drawDeathAnimations==='function') drawDeathAnimations();
     
     if(dummyOn){
       for(const _b of ALL_BOTS){ if(_b.shield>0 && !isShieldSuppressed(_b)) drawShield(_b, P.x); }
@@ -16518,6 +17787,7 @@ if(dummyOn&&isUnbalanced(D)) drawUnbalancedStars(D);
     drawFX();
     
     ctx.setTransform(1, 0, 0, 1, 0, 0);
+    if(typeof drawOffscreenRangedThreatMarkers === 'function') drawOffscreenRangedThreatMarkers();
     drawCursor();
     if(typeof window._restoreScreenShake==='function') window._restoreScreenShake(window._shakeApplied);
   }
@@ -16537,6 +17807,11 @@ canvas.addEventListener('mousemove', e=>{
 });
 canvas.addEventListener('mousedown', e=>{
   if(e.button===0){ mDown=true; P._shieldHeld=false; return; }
+  if(e.button===1 && typeof cb === 'function' && cb('slowmommb')){
+    e.preventDefault();
+    if(typeof window.forceCinematicSlowmo === 'function') window.forceCinematicSlowmo('manual');
+    return;
+  }
   if(e.button===2 && !window.IS_MOBILE){
     e.preventDefault();
     if(P.shield>0 && !isExhausted(P) && P.stamina>0) P._shieldHeld=true;
@@ -16673,6 +17948,11 @@ window.addEventListener('keydown', e=>{
     e.preventDefault();
     return;
   }
+  if(e.code==='Home' && !e.repeat){
+    if(typeof window.forceCinematicSlowmo === 'function') window.forceCinematicSlowmo('manual');
+    e.preventDefault();
+    return;
+  }
   if((e.code==='Equal' || e.code==='NumpadAdd') && !e.repeat){
     window._keyboardCrosshairVisible = window._keyboardCrosshairVisible === false;
     e.preventDefault();
@@ -16709,15 +17989,20 @@ window.addEventListener('keydown', e=>{
   if(k==='r'||k==='к'){ window.toggleSwordStyle(); }
   if(k==='y'||k==='н'){ toggleAI(); } // Y/н (same physical key as Y) = SPAWN BOT
   if(k==='z'||k==='я'){
-    P.shield=(P.shield+1)%SHIELD_TYPES.length; setShield(P,P.shield);
-    const n=SHIELD_TYPES[P.shield]; $.FX.hit({x:P.x,y:P.y-40,t:(window.I18N?window.I18N.t('main.shieldPlayer',{name:n?n.name:window.I18N.t('main.shieldNone')}):('SHIELD P: '+(n?n.name:'none'))),life:60,big:false,col:'#88ccff'});
+    if(typeof SurvivalMode!=='undefined' && SurvivalMode.isActive()){
+      if(typeof dropShield==='function') dropShield(P);
+    } else {
+      P.shield=(P.shield+1)%SHIELD_TYPES.length; setShield(P,P.shield);
+      const n=SHIELD_TYPES[P.shield]; $.FX.hit({x:P.x,y:P.y-40,t:(window.I18N?window.I18N.t('main.shieldPlayer',{name:n?n.name:window.I18N.t('main.shieldNone')}):('SHIELD P: '+(n?n.name:'none'))),life:60,big:false,col:'#88ccff'});
+    }
   }
   if(k==='x'||k==='ч'){
+    if(typeof SurvivalMode!=='undefined' && SurvivalMode.isActive()) return;
     D.shield=(D.shield+1)%SHIELD_TYPES.length; setShield(D,D.shield);
     window._manualBotShieldType = D.shield;
     const n=SHIELD_TYPES[D.shield]; $.FX.hit({x:D.x,y:D.y-40,t:(window.I18N?window.I18N.t('main.shieldBot',{name:n?n.name:window.I18N.t('main.shieldNone')}):('SHIELD D: '+(n?n.name:'none'))),life:60,big:false,col:'#ffaa44'});
   }
-if(k==='c'||k==='с'){ // player weapon switch
+if((k==='c'||k==='с') && !(typeof SurvivalMode!=='undefined' && SurvivalMode.isActive())){ // player weapon switch
   if(P.hasWeapon !== false){
     const next=(P.weaponType+1)%WEAPON_TYPES.length; 
     setWeapon(P,next);
@@ -16728,7 +18013,7 @@ if(k==='c'||k==='с'){ // player weapon switch
   }
 }
 
-if(k==='v'||k==='м'){ // bot weapon switch
+if((k==='v'||k==='м') && !(typeof SurvivalMode!=='undefined' && SurvivalMode.isActive())){ // bot weapon switch
   if(D.hasWeapon !== false){
     const next=(D.weaponType+1)%WEAPON_TYPES.length; 
     setWeapon(D,next);
@@ -17041,6 +18326,7 @@ requestAnimationFrame(loop);
   const botShieldBtn = document.getElementById('mob-bot-shield-btn');
   botShieldBtn?.addEventListener('touchstart', e => {
     e.preventDefault();
+    if(typeof SurvivalMode!=='undefined' && SurvivalMode.isActive()) return;
     if(typeof D==='undefined' || typeof setShield!=='function') return;
     D.shield = (D.shield+1)%SHIELD_TYPES.length; setShield(D, D.shield);
     window._manualBotShieldType = D.shield;
@@ -17050,6 +18336,7 @@ requestAnimationFrame(loop);
   const botWeaponBtn = document.getElementById('mob-bot-weapon-btn');
   botWeaponBtn?.addEventListener('touchstart', e => {
     e.preventDefault();
+    if(typeof SurvivalMode!=='undefined' && SurvivalMode.isActive()) return;
     if(typeof D==='undefined' || typeof setWeapon!=='function') return;
     if(D.hasWeapon === false) return;
     D.weaponType = (D.weaponType+1)%WEAPON_TYPES.length; setWeapon(D, D.weaponType);
@@ -17325,7 +18612,11 @@ window.doRestart=function(){
   // fireDodge — works on all devices (PC + mobile)
   window.fireDodge=function(dx, dy, bypassCooldown, chargedPower){
     if(typeof P==='undefined' || P.hp<=0 || isExhausted(P) || isUnbalanced(P) || Math.hypot(dx,dy)<0.001) return;
-    if(!bypassCooldown&&window._dodgeCooldownMob>0) return;
+    if(!bypassCooldown){
+      if(typeof tryStartDodge==='function'){
+        if(!tryStartDodge(P,window._dodgeCooldownMob>0)) return;
+      } else if(window._dodgeCooldownMob>0) return;
+    }
     const len=Math.hypot(dx,dy)||1;
     const charge = Math.max(0, Math.min(1, chargedPower || 0));
     const force=8 + charge * 7;
@@ -17351,6 +18642,7 @@ window.doRestart=function(){
     $.S.play('dodgeSound');
     if(typeof DODGE_TRAIL==='undefined') window.DODGE_TRAIL=[];
     window._dodgeTrailFrames=12 + Math.round(charge * 12);
+    window._dodgeTrailEmit=0;
     if(typeof hitFX!=='undefined') $.FX.hit({x:P.x,y:P.y-30,t:charge>=0.5?(window.I18N ? window.I18N.t('runtime.fxShieldBash') : 'SHIELD BASH'):(window.I18N ? window.I18N.t('common.dodge') : 'DODGE'),life:35,big:charge>=0.5,col:charge>=0.5?'#60ccff':'rgba(200,200,200,0.6)'});
     if(charge > 0 && typeof FX_EFFECTS!=='undefined'){
       FX_EFFECTS.push({type:'shieldwave', x:P.x, y:P.y, t:0, duration:24, angle:Math.atan2(dy, dx), followEntity:P, followShield:true, cursorX:mX});
@@ -17454,7 +18746,7 @@ if(_spiked2 && typeof GameTime!=='undefined'){
   let moveId = null, moveOrigin = {x:0,y:0};
   let swordId = null, swordOrigin = {x:0,y:0};
   let lastSwordTap = 0;
-  let doubleTapLMB = false;
+  let swordFlickAttack = false;
   let _crossbowTapPending = false; // crossbow tap — shot happens on touchend
 
   function pointInElement(x, y, el){
@@ -17492,8 +18784,8 @@ if(_spiked2 && typeof GameTime!=='undefined'){
       requestAnimationFrame(() => { mDown = false; });
     }
     const _wk2 = typeof weaponKeyOf==='function' && typeof P!=='undefined' ? weaponKeyOf(P) : null;
-    if(doubleTapLMB || _wk2 === 'bow'){
-      doubleTapLMB = false;
+    if(swordFlickAttack || _wk2 === 'bow'){
+      swordFlickAttack = false;
       mDown = false;
       swordKnob.classList.remove('lmb-active');
       fixedStickKnob.classList.remove('lmb-active');
@@ -17666,6 +18958,20 @@ if(_spiked2 && typeof GameTime!=='undefined'){
     if(dist > 8){ // dead zone to prevent micro-touch jitter
       setMobileAim(angle, 1);
     }
+    maybeStartSwordFlick(dist, 65);
+  }
+
+  function maybeStartSwordFlick(distance, maxRadius){
+    if(swordFlickAttack || distance<=maxRadius) return;
+    const key=typeof weaponKeyOf==='function'&&typeof P!=='undefined'?weaponKeyOf(P):null;
+    if(key==='bow'||key==='crossbow') return;
+    if(key==='flail'){
+      const angle=Math.atan2(mouseScreenY-(worldToScreen(P.x+5,P.y-8).y),mouseScreenX-(worldToScreen(P.x+5,P.y-8).x));
+      if(window.tryMobileFlailLunge && window.tryMobileFlailLunge(P,angle)) swordFlickAttack=true;
+      return;
+    }
+    swordFlickAttack=true;mDown=true;
+    swordKnob.classList.add('lmb-active');fixedStickKnob.classList.add('lmb-active');
   }
 
   // ── RIGHT — sword / aim ────────────────────────────────────────────────
@@ -17682,26 +18988,16 @@ if(_spiked2 && typeof GameTime!=='undefined'){
     // Crossbow: shot should happen exactly on TOUCH RELEASE
     // (like trigger pull), so here mDown is NOT set — only
     // mark that a crossbow tap happened, and shoot on touchend.
-    // Magic staff and wand require holding and stay on double tap, same as
-    // melee — otherwise they'd trigger on accidental taps.
     const _wk = typeof weaponKeyOf==='function' ? weaponKeyOf(P) : null;
-    const _rangedTap = (_wk === 'bow' || _wk === 'crossbow');
+    const now = Date.now();
+    if(now-lastSwordTap<300 && typeof window.forceCinematicSlowmo==='function') window.forceCinematicSlowmo('manual');
+    lastSwordTap=now;
     if(_wk === 'bow'){
       mDown = true;
       swordKnob.classList.add('lmb-active');
       fixedStickKnob.classList.add('lmb-active');
     } else if(_wk === 'crossbow'){
       _crossbowTapPending = true;
-    } else {
-      const now = Date.now();
-      if(now - lastSwordTap < 300){
-        // Double tap: LMB held WHILE finger is down, release — released
-        doubleTapLMB = true;
-        mDown = true;
-        swordKnob.classList.add('lmb-active');
-        fixedStickKnob.classList.add('lmb-active');
-      }
-      lastSwordTap = now;
     }
 
     swordId = t.identifier;
@@ -17720,10 +19016,7 @@ if(_spiked2 && typeof GameTime!=='undefined'){
       updateSword(gp.x, gp.y);
     }
 
-    // Single tap does NOT activate LMB for melee — only controls the sword
-    // Double tap toggles LMB mode (latch). For bow —
-    // single tap already draws (see above). For crossbow — shoots
-    // on release (see touchend).
+    // Melee/staff/wand attack only after a flick beyond the stick radius.
   }, {passive:false});
 
   zoneSword.addEventListener('touchmove', e => {
@@ -17748,6 +19041,7 @@ if(_spiked2 && typeof GameTime!=='undefined'){
     const dx = cx - swordOrigin.x;
     const dy = cy - swordOrigin.y;
     const dist = Math.hypot(dx,dy);
+    maybeStartSwordFlick(dist, SWORD_R);
     const nx = dist>SWORD_R ? dx/dist*SWORD_R : dx;
     const ny = dist>SWORD_R ? dy/dist*SWORD_R : dy;
     updateSwordKnob(nx,ny);
@@ -18116,6 +19410,7 @@ const SHIELD_INFO_TEXT = [
   if(weaponBtn){
     weaponBtn.addEventListener('touchstart', e=>{
       e.preventDefault(); e.stopPropagation();
+      if(typeof SurvivalMode!=='undefined' && SurvivalMode.isActive()) return;
       if(typeof P!=='undefined' && typeof setWeapon==='function' && P.hasWeapon!==false){
         P.weaponType=(P.weaponType+1)%WEAPON_TYPES.length; setWeapon(P, P.weaponType);
       }
@@ -18430,6 +19725,7 @@ var NET_CORE = (function(){
         if(msg.type==='flailHit') NET_SYNC.onFlailHit(msg);
         if(msg.type==='projectileContact') NET_SYNC.onProjectileContact(msg);
         if(msg.type==='flailCancel') NET_SYNC.onFlailCancel(msg);
+        if(msg.type==='slowmo') NET_SYNC.onSlowmo(msg);
         if(msg.type==='pvp_reset') NET_SYNC.onPvpReset(msg);
         if(msg.type==='freeze'){ if(typeof DEATH!=='undefined'){DEATH.fadeIn=true;} }
         if(msg.type==='champion'){ if(typeof window._onChampionMsg==='function') window._onChampionMsg(msg.name); }
@@ -18978,13 +20274,16 @@ function onPvpReset(msg){
 
   let _lastProjectileContact=0;
   function onProjectileContact(msg){
+    const disbalance=msg && msg.disbalance==null ? 0 : msg.disbalance;
     if(!_active || !Number.isSafeInteger(msg.id) || msg.id<=_lastProjectileContact ||
-       ![msg.damage,msg.stamina,msg.dx,msg.dy,msg.kx,msg.ky].every(Number.isFinite) ||
+       ![msg.damage,msg.stamina,msg.dx,msg.dy,msg.kx,msg.ky,disbalance].every(Number.isFinite) ||
        msg.damage<0 || msg.damage>MAX_HP || (msg.stamina!==0 && msg.stamina!==30) ||
-       Math.hypot(msg.dx,msg.dy)>7.01 || Math.hypot(msg.kx,msg.ky)>5.01) return;
+       disbalance<0 || disbalance>1.3 ||
+       Math.hypot(msg.dx,msg.dy)>8.01 || Math.hypot(msg.kx,msg.ky)>5.01) return;
     _lastProjectileContact=msg.id;
     if(P.hp<=0) return;
     if(msg.damage>0) onHit({newHp:Math.max(0,P.hp-msg.damage),dmg:msg.damage});
+    msg.disbalance=disbalance;
     applyProjectileEffectToEntity(P,msg);
   }
   let _lastFlailHit=0;
@@ -19008,6 +20307,10 @@ function onPvpReset(msg){
       _cancelledFlailId=Math.max(_cancelledFlailId,msg.id);
       if(D._flailAttack?.id===msg.id) D._flailAttack=null;
     }
+  }
+  function onSlowmo(msg){
+    if(!_active || typeof window.applyCinematicSlowmoNet !== 'function') return;
+    window.applyCinematicSlowmoNet(msg);
   }
   function onDisconnected(){ _pendingStart=false; setNetPVP(false); NET_CHAT.log('👋 ПВП завершён'); }
 
@@ -19059,7 +20362,7 @@ function onPvpReset(msg){
     D.pvY += (_cur.pvY - D.pvY) * st;
   }
 
-  return { onConnected,onDisconnected,onState,onHit,onFlailHit,onFlailCancel,onProjectileContact,onReadyGame,onPingUpdate,startGame,disconnect,tick,
+  return { onConnected,onDisconnected,onState,onHit,onFlailHit,onFlailCancel,onProjectileContact,onSlowmo,onReadyGame,onPingUpdate,startGame,disconnect,tick,
     setPeerName(n){_peerName=n;}, get active(){return _active;}, get peerName(){return _peerName;},
     forceResync, sendReset, onPvpReset };
 })();
@@ -19294,6 +20597,89 @@ function onPvpReset(msg){
 </script>
 <script>
 // === bundled: src/network/net-effects.js ===
+(function(){
+  const DEFAULT_MIN_SCALE = 0.1;
+  const DEFAULT_DURATION = 2;
+  const COOLDOWN_MIN = 10;
+  const COOLDOWN_MAX = 20;
+  const EVENTS = { kill: 0.30, damage: 0.10, throw: 0.20, throwMid: 0.20, shotMid: 0.05 };
+  let active = null;
+  let cooldownUntil = 0;
+  let serial = 0;
+  let lastNetId = 0;
+
+  function now(){ return typeof RealTime !== 'undefined' ? RealTime : Date.now() / 1000; }
+  function enabled(){ return typeof cb !== 'function' || cb('cinematicslowmo'); }
+  function clamp(v, lo, hi){ return Math.max(lo, Math.min(hi, v)); }
+  function slowmoDuration(){
+    const v = typeof sv === 'function' ? sv('slowmoduration') : DEFAULT_DURATION;
+    return Number.isFinite(v) ? clamp(v, 0.1, 3) : DEFAULT_DURATION;
+  }
+  function slowmoScale(){
+    const v = typeof sv === 'function' ? sv('slowmoscale') : DEFAULT_MIN_SCALE;
+    return Number.isFinite(v) ? clamp(v, 0.05, 1) : DEFAULT_MIN_SCALE;
+  }
+
+  function start(reason, id, duration, scale){
+    if(!enabled()) return false;
+    const t = now();
+    active = {
+      id: id || ++serial,
+      reason: reason || 'event',
+      start: t,
+      duration: Number.isFinite(duration) ? clamp(duration, 0.1, 3) : slowmoDuration(),
+      scale: Number.isFinite(scale) ? clamp(scale, 0.05, 1) : slowmoScale()
+    };
+    cooldownUntil = t + COOLDOWN_MIN + Math.random() * (COOLDOWN_MAX - COOLDOWN_MIN);
+    if(typeof window.resetDodgeCooldowns === 'function') window.resetDodgeCooldowns();
+    if(typeof triggerHitstop === 'function') triggerHitstop(2, 3);
+    return true;
+  }
+
+  function canTrigger(){
+    return enabled() && now() >= cooldownUntil && (!active || now() >= active.start + active.duration);
+  }
+
+  window.tryCinematicSlowmo = function(reason, chance){
+    if(!canTrigger()) return false;
+    const p = Number.isFinite(chance) ? chance : EVENTS[reason];
+    if(!(p > 0) || Math.random() >= p) return false;
+    const id = ++serial;
+    if(!start(reason, id)) return false;
+    if(typeof NET_SYNC !== 'undefined' && NET_SYNC.active && typeof $ !== 'undefined' && $.NET && $.NET.active()){
+      $.NET.send({type:'slowmo', id, reason, duration:active.duration, scale:active.scale});
+    }
+    return true;
+  };
+
+  window.forceCinematicSlowmo = function(reason){
+    const id = ++serial;
+    if(!start(reason || 'manual', id)) return false;
+    if(typeof NET_SYNC !== 'undefined' && NET_SYNC.active && typeof $ !== 'undefined' && $.NET && $.NET.active()){
+      $.NET.send({type:'slowmo', id, reason:reason || 'manual', duration:active.duration, scale:active.scale});
+    }
+    return true;
+  };
+
+  window.applyCinematicSlowmoNet = function(msg){
+    if(!enabled() || !msg || !Number.isSafeInteger(msg.id) || msg.id <= lastNetId) return;
+    if(!Number.isFinite(msg.duration) || msg.duration <= 0 || msg.duration > 3) return;
+    if(!Number.isFinite(msg.scale) || msg.scale < 0.05 || msg.scale > 1) return;
+    lastNetId = msg.id;
+    start(msg.reason || 'net', msg.id, msg.duration, msg.scale);
+  };
+
+  window.getCinematicSlowmoScale = function(){
+    if(!enabled() || !active) return 1;
+    const t = (now() - active.start) / active.duration;
+    if(t >= 1){ active = null; return 1; }
+    if(t <= 0) return 1;
+    const minScale = active.scale;
+    if(t < 0.13) return 1 + (minScale - 1) * (t / 0.13);
+    if(t < 0.50) return minScale;
+    return minScale + (1 - minScale) * ((t - 0.50) / 0.50);
+  };
+})();
 // === src/network/net-effects.js ===
 
 (function(){
@@ -19324,7 +20710,7 @@ function onPvpReset(msg){
 
   window.beginDodgePress = function(source){
     if(typeof gamePaused !== 'undefined' && gamePaused) return;
-    if(_pcDodgeCooldown > 0) return;
+    if(_pcDodgeCooldown > 0 && (typeof canUseRageDodge !== 'function' || !canUseRageDodge(P))) return;
     if(canChargeShieldDash()){
       P._shieldDashCharging = true;
       P._shieldDashChargeStart = GameTime;
@@ -19336,6 +20722,7 @@ function onPvpReset(msg){
       }
       return;
     }
+    if(typeof tryStartDodge === 'function' && !tryStartDodge(P, _pcDodgeCooldown > 0)) return;
     _pcDodgeCooldown = 0.8;
     if(typeof window.doDodge === 'function') window.doDodge(true);
   };
@@ -19350,6 +20737,7 @@ function onPvpReset(msg){
     P._shieldDashChargeSource = null;
     if(typeof fadeOutSound === 'function') fadeOutSound(P._shieldDashChargeSound, 0.18);
     P._shieldDashChargeSound = null;
+    if(typeof tryStartDodge === 'function' && !tryStartDodge(P, _pcDodgeCooldown > 0)) return;
     _pcDodgeCooldown = 0.8;
     const dir = dodgeVector();
     if(typeof window.fireDodge === 'function') window.fireDodge(dir.x, dir.y, true, charge);
@@ -19390,15 +20778,33 @@ function onPvpReset(msg){
       window._dodgeCooldownMob -= rawDt;
     }
     if(typeof window._dodgeTrailFrames !== 'undefined' && window._dodgeTrailFrames > 0 && typeof P !== 'undefined'){
-      window._dodgeTrailFrames--;
+      const trailStep = rawDt * 60;
+      window._dodgeTrailFrames -= trailStep;
+      window._dodgeTrailEmit = (window._dodgeTrailEmit || 0) + trailStep;
       if(typeof DODGE_TRAIL === 'undefined') window.DODGE_TRAIL = [];
-      DODGE_TRAIL.push({
-        x: P.x + Math.random() * 10 - 5,
-        y: P.y + Math.random() * 10 - 5,
-        life: 14,
-        maxLife: 14,
-        r: 7
-      });
+      while(window._dodgeTrailEmit >= 1){
+        window._dodgeTrailEmit -= 1;
+        DODGE_TRAIL.push({
+          x: P.x + Math.random() * 10 - 5,
+          y: P.y + Math.random() * 10 - 5,
+          life: 14,
+          maxLife: 14,
+          r: 7
+        });
+      }
+    }
+  };
+
+  window.resetDodgeCooldowns = function(){
+    _pcDodgeCooldown = 0;
+    window._dodgeCooldownMob = 0;
+    const entities = [];
+    if(typeof P !== 'undefined') entities.push(P);
+    if(typeof ALL_BOTS !== 'undefined') entities.push(...ALL_BOTS);
+    for(const ent of entities){
+      if(!ent) continue;
+      ent._dodgeCD = 0;
+      ent._rageDodgeUsedForCooldown = false;
     }
   };
 })();
@@ -19696,6 +21102,7 @@ function onPvpReset(msg){
       throwWeapon: { index: 4,  action: 'throwWeapon' },
       playerBot:   { index: 8,  action: 'playerBot' },
       pause:       { index: 9,  action: 'pause' },
+      slowmo:      { index: 11, action: 'slowmo' },
       dpadUp:      { index: 12, action: 'swordStyle' },
       dpadLeft:    { index: 14, action: 'swapWeapon' },
       dpadRight:   { index: 15, action: 'shieldType' }
@@ -20547,7 +21954,7 @@ function onPvpReset(msg){
 
       const KNOWN_ACTIONS = new Set([
         'attack','dodge','swapWeapon','shield','shieldFlip','shieldType','swordStyle',
-        'throwWeapon','spawnBot','musicToggle','playerBot','pause'
+        'throwWeapon','spawnBot','musicToggle','playerBot','pause','slowmo'
       ]);
 
       for (const line of lines) {
@@ -20574,6 +21981,7 @@ function onPvpReset(msg){
         parsed.buttons.shield = { index: 6, type: parsed.buttons.shieldFlip.type || 'trigger', action: 'shield' };
         delete parsed.buttons.shieldFlip;
       }
+      parsed.buttons.slowmo = { index: 11, action: 'slowmo' };
 
       if (Object.keys(parsed.buttons).length) {
         CFG = parsed;
@@ -20598,6 +22006,7 @@ function onPvpReset(msg){
     spawnBot()    { if (!isAnyMenuOpen()) PUBLIC_API_ACTIONS.spawnBot(); },
     musicToggle() { if (!isAnyMenuOpen()) PUBLIC_API_ACTIONS.musicToggle(); },
     playerBot()   { if (!isAnyMenuOpen() && window.togglePlayerBotMode) window.togglePlayerBotMode(); },
+    slowmo()      { if (!isAnyMenuOpen() && window.forceCinematicSlowmo) window.forceCinematicSlowmo('manual'); },
     pause() {
       if (isAnyMenuOpen()) {
         const settingsOv = document.getElementById('mob-settings-overlay');

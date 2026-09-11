@@ -41,6 +41,8 @@ if(window.IS_MOBILE) document.body.classList.add('is-mobile');
 let W = canvas.width  = window.innerWidth;
 let H = canvas.height = window.innerHeight;
 let WORLD_W = W, WORLD_H = H;
+const ARENA_BORDER_CELLS = 10;
+const ARENA_BORDER_SIZE = 55 * ARENA_BORDER_CELLS;
 let CAM_X = 0, CAM_Y = 0;
 let CAM_SCALE = 1;
 let mouseScreenX = W / 2, mouseScreenY = H / 2;
@@ -62,8 +64,11 @@ function updateCameraScale(){
 function clampCamera(){
   const viewW = W / CAM_SCALE;
   const viewH = H / CAM_SCALE;
-  CAM_X = $.M ? $.M.clamp(CAM_X, 0, Math.max(0, WORLD_W - viewW)) : Math.max(0, Math.min(CAM_X, Math.max(0, WORLD_W - viewW)));
-  CAM_Y = $.M ? $.M.clamp(CAM_Y, 0, Math.max(0, WORLD_H - viewH)) : Math.max(0, Math.min(CAM_Y, Math.max(0, WORLD_H - viewH)));
+  const minCam = -ARENA_BORDER_SIZE;
+  const maxCamX = WORLD_W + ARENA_BORDER_SIZE - viewW;
+  const maxCamY = WORLD_H + ARENA_BORDER_SIZE - viewH;
+  CAM_X = $.M ? $.M.clamp(CAM_X, minCam, maxCamX) : Math.max(minCam, Math.min(CAM_X, maxCamX));
+  CAM_Y = $.M ? $.M.clamp(CAM_Y, minCam, maxCamY) : Math.max(minCam, Math.min(CAM_Y, maxCamY));
 }
 
 function screenToWorld(x, y){
@@ -134,8 +139,9 @@ function enforceCameraCage(){
   if(!subjects.length) return;
   const viewW = W / CAM_SCALE;
   const viewH = H / CAM_SCALE;
-  const maxCamX = Math.max(0, WORLD_W - viewW);
-  const maxCamY = Math.max(0, WORLD_H - viewH);
+  const minCam = -ARENA_BORDER_SIZE;
+  const maxCamX = WORLD_W + ARENA_BORDER_SIZE - viewW;
+  const maxCamY = WORLD_H + ARENA_BORDER_SIZE - viewH;
   const cageMargin = Math.min(CELL_PX * 0.5, Math.max(0, Math.min(viewW, viewH) * 0.5 - 1));
   let minAllowedX = -Infinity, maxAllowedX = Infinity;
   let minAllowedY = -Infinity, maxAllowedY = Infinity;
@@ -145,8 +151,8 @@ function enforceCameraCage(){
     minAllowedY = Math.max(minAllowedY, ent.y + cageMargin - viewH);
     maxAllowedY = Math.min(maxAllowedY, ent.y - cageMargin);
   }
-  if(minAllowedX <= maxAllowedX) CAM_X = $.M.clamp(CAM_X, Math.max(0, minAllowedX), Math.min(maxCamX, maxAllowedX));
-  if(minAllowedY <= maxAllowedY) CAM_Y = $.M.clamp(CAM_Y, Math.max(0, minAllowedY), Math.min(maxCamY, maxAllowedY));
+  if(minAllowedX <= maxAllowedX) CAM_X = $.M.clamp(CAM_X, Math.max(minCam, minAllowedX), Math.min(maxCamX, maxAllowedX));
+  if(minAllowedY <= maxAllowedY) CAM_Y = $.M.clamp(CAM_Y, Math.max(minCam, minAllowedY), Math.min(maxCamY, maxAllowedY));
   clampCamera();
   for(const ent of subjects) clampEntityToCameraView(ent, cageMargin);
   updateMouseWorld();
@@ -238,8 +244,8 @@ function updateCamera(dt){
       } else {
         c.edgeTime += step;
         c.centerRamp = $.M.clamp((c.edgeTime - centerDelay) / 0.75, 0, 1);
-        const targetX = $.M.clamp(ent.x - viewW / 2, 0, Math.max(0, WORLD_W - viewW));
-        const targetY = $.M.clamp(ent.y - viewH / 2, 0, Math.max(0, WORLD_H - viewH));
+        const targetX = $.M.clamp(ent.x - viewW / 2, -ARENA_BORDER_SIZE, WORLD_W + ARENA_BORDER_SIZE - viewW);
+        const targetY = $.M.clamp(ent.y - viewH / 2, -ARENA_BORDER_SIZE, WORLD_H + ARENA_BORDER_SIZE - viewH);
         const moveAng = Math.atan2(dy, dx);
         const aimAligned = Number.isFinite(ent.angle) && Math.abs($.M.angDiff(ent.angle, moveAng)) <= Math.PI * 70 / 180;
         const intentBoost = aimAligned ? 2 : 1;

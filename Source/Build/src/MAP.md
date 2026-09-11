@@ -21,7 +21,7 @@ First read for most `src/` tasks. Use it to avoid broad project searches.
 
 - `src/main.js`: main tick, game loop orchestration, keyboard/mouse handlers, camera, render calls, network hooks, optional `perfprof` fixed-tick profiler logs.
 - `src/combat/combat.js`: owns `P`, `D`, death/round state, melee damage, round reset.
-- `src/arena/arena.js`: arena update/draw, character rendering, visual positioning.
+- `src/arena/arena.js`: arena update/draw, character rendering, visual positioning, and the shared 1.5-second falling/dissolving death-body queue.
 - `src/ui/hud.js`: HUD refresh for solo, local PvP, online PvP, wins/health/stamina display.
 
 ## Combat
@@ -96,6 +96,7 @@ First read for most `src/` tasks. Use it to avoid broad project searches.
 - Online-only bug: relevant `src/network/net-*.js`, then the gameplay owner file.
 - Arena/camera/character drawing: `src/core/engine.js` for world/camera coordinates, then `src/arena/arena.js`, then `src/main.js`.
 - Visual effects/blood/hit text: `src/systems/fx.js`; rendered `hitFX` branches and spark image FX live in `src/arena/arena.js`; then `src/network/net-effects.js` if online differs.
+- Death animation: `src/combat/ranged.js` records the last damage direction; death entry points in `src/combat/combat.js`, `src/combat/factions.js`, and `src/modes/survival.js` enqueue a detached visual body; `src/arena/arena.js` updates/draws the fall and red dissolve; `src/main.js` runs the queue.
 - Audio/music/sfx: `src/systems/audio.js`.
 - Cinematic global slowmo: checkboxes and sliders (`cinematicslowmo`, `slowmommb`, `slowmoduration`, `slowmoscale`) in `Build.html`, labels in `src/core/i18n.js`, `dt` multiplier in `src/main.js`, controller/network receive in `src/network/net-effects.js` and `net-sync.js`, triggers in `src/combat/ranged.js`, `weapons.js`, `combat.js`.
 - Sprites/assets/missing image: `src/systems/sprites.js`, then `src/core/i18n.js` for missing-file text.

@@ -851,6 +851,7 @@ if(dummyOn) {
     updateBlood(dt);
     updateFX(dt);
     if(typeof SurvivalMode !== 'undefined') SurvivalMode.update(dt);
+    if(typeof updateDeathAnimations==='function') updateDeathAnimations();
     if(typeof window._dodgeTick==='function') window._dodgeTick(dt);
     if(perfOn){
       perfStep('tail');
@@ -937,6 +938,7 @@ if(dummyOn&&isUnbalanced(D)) drawUnbalancedStars(D);
     if(_pSwordBehind && P.hasWeapon !== false) drawSword(pivX, pivY, P.angle);
     drawPlayer();
     if(!_pSwordBehind && P.hasWeapon !== false) drawSword(pivX, pivY, P.angle);
+    if(typeof drawDeathAnimations==='function') drawDeathAnimations();
     
     if(dummyOn){
       for(const _b of ALL_BOTS){ if(_b.shield>0 && !isShieldSuppressed(_b)) drawShield(_b, P.x); }

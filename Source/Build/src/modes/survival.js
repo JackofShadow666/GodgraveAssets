@@ -23,9 +23,15 @@
   const online = () => typeof NET_SYNC !== 'undefined' && NET_SYNC.active;
   const getSlot = () => typeof LocalPlayerControls !== 'undefined' ? LocalPlayerControls.getGamepadSlot() : 0;
   const text = (key, vars) => window.I18N ? window.I18N.t(key, vars) : key;
-  const livePlayers = () => roster.filter(alive);
+  const livePlayers = () => {
+    const result=[];
+    const add=ent=>{ if(alive(ent)&&!result.includes(ent)) result.push(ent); };
+    roster.forEach(add);
+    if(Array.isArray(window.PLAYER_SLOTS)) for(const slot of window.PLAYER_SLOTS) if(slot&&slot.source) add(slot.entity);
+    return result;
+  };
   const liveEnemies = () => enemies.filter(alive);
-  const gridSnap = v => Math.round(v / CELL) * CELL;
+  const gridSnap = v => Math.floor(v / CELL) * CELL + CELL * 0.5;
   const propSprites = {
     barrel:'../Env/Props/T_Barrel.png',
     redBarrel:'../Env/Props/T_BarrelTNT.png',
@@ -155,6 +161,9 @@
       const dx=o.x-projectile.x,dy=o.y-projectile.y,dist=Math.hypot(dx,dy)||1;
       if(dist>OBJECT_RADIUS+radius) continue;
       const spd=Math.hypot(projectile.vx||0,projectile.vy||0)||1,nx=(projectile.vx||dx)/spd,ny=(projectile.vy||dy)/spd;
+      let hitNx=(projectile.x-o.x)/dist,hitNy=(projectile.y-o.y)/dist;
+      if(!Number.isFinite(hitNx)||!Number.isFinite(hitNy)||dist<=1){ hitNx=-nx;hitNy=-ny; }
+      projectile._arenaObjectHit={x:o.x,y:o.y,nx:hitNx,ny:hitNy,radius:OBJECT_RADIUS+radius};
       o.vx+=nx*Math.min(PROP_PUSH_MAX,spd*power);o.vy+=ny*Math.min(PROP_PUSH_MAX,spd*power);o.moving=true;
       o.hitTargets=new WeakSet();armRedBarrel(o);
       if(typeof spawnDust==='function')for(let i=0;i<4;i++)spawnDust(o.x,o.y,-nx*2+(Math.random()-.5)*2,-ny*2+(Math.random()-.5)*2);
@@ -370,6 +379,7 @@
     if(typeof DROPPED_WEAPONS !== 'undefined') DROPPED_WEAPONS.length = 0;
     if(typeof DROPPED_SHIELDS !== 'undefined') DROPPED_SHIELDS.length = 0;
     if(typeof BALLS !== 'undefined') BALLS.length = 0;
+    if(typeof clearDeathAnimations === 'function') clearDeathAnimations();
     pickups = []; arenaObjects=[]; arenaBursts=[]; dropAges = new WeakMap();
     DEATH.deathCross.length = 0;
   }
@@ -524,8 +534,9 @@
     if(phase==='result' || ent._defeated) return true;
     const point=body(ent);
     const player=roster.includes(ent);
+    if(typeof startDeathAnimation==='function') startDeathAnimation(ent);
     ent.hp=0; ent._defeated=true;
-    const shieldToDrop = !player && ent.shield && Math.random()<0.5;
+    const shieldToDrop = !!ent.shield;
     if(ent.hasWeapon!==false) disarmEntity(ent);
     if(shieldToDrop && typeof dropShield === 'function') dropShield(ent);
     else if(!player && ent.shield && typeof setShield === 'function') setShield(ent, 0);
@@ -543,7 +554,7 @@
     } else {
       kills++;
       lastDeathPoint={x:point.x,y:point.y};
-      if(Math.random()<(roster.length===1?0.15:0.1)) spawnHeal(lastDeathPoint);
+      if(ent._survivalBoss || Math.random()<(roster.length===1?0.15:0.1)) spawnHeal(lastDeathPoint);
     }
     // Do not splice ALL_BOTS here: projectiles/melee are iterating it.
     return true;
@@ -563,7 +574,7 @@
 
   function updatePickups(dt){
     const injured=livePlayers().filter(ent=>ent.hp<(ent.maxHp||100));
-    const radius=34*setting('cscl',1);
+    const radius=(22+19)*setting('cscl',1);
     for(let i=pickups.length-1;i>=0;i--){
       const item=pickups[i];
       item.remaining-=dt;

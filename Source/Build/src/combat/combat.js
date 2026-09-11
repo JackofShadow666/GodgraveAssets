@@ -1587,7 +1587,9 @@ function handleCombatDeath(ent){
   if(typeof FactionRules!=='undefined' && FactionRules.handleDeath(ent)) return;
   if(ent === P){ triggerDeath(P, false); return; }
   if(!isBot(ent)) return;
+  if(typeof startDeathAnimation==='function') startDeathAnimation(ent);
   if(typeof disarmEntity === 'function' && ent.hasWeapon !== false) disarmEntity(ent);
+  if(typeof dropShield === 'function' && ent.shield) dropShield(ent);
   ent._defeated = true;
   const entIndex = ALL_BOTS.indexOf(ent);
   if(entIndex !== -1) ALL_BOTS.splice(entIndex, 1);
@@ -1616,6 +1618,9 @@ function triggerDeath(ent, isBot){
   resetFlailCombat(ent);
   if(isBot && DEATH.dDead) return;
   if(!isBot && DEATH.pDead) return;
+  if(typeof startDeathAnimation==='function') startDeathAnimation(ent);
+  if(typeof disarmEntity==='function' && ent.hasWeapon!==false) disarmEntity(ent);
+  if(typeof dropShield==='function' && ent.shield) dropShield(ent);
   if(typeof tryCinematicSlowmo === 'function') tryCinematicSlowmo('kill', 0.30);
   const bc = $.POS.body(ent);
   for(let i=0;i<8;i++) spawnBlood(bc.x, bc.y, Math.cos(i*Math.PI/4), Math.sin(i*Math.PI/4));

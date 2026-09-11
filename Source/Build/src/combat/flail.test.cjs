@@ -37,6 +37,10 @@ test('inclusive rage threshold, single debit and held input',()=>{
  c.flailInput(c.P,false,0);c.P.rage=50;c.flailInput(c.P,true,0);assert.equal(c.P.rage,0);
  const id=c.P._flailAttack.id;c.flailInput(c.P,true,0);assert.equal(c.P._flailAttack.id,id);assert.equal(c.P.rage,0);
 });
+test('mobile stick lunge requires fifty rage but does not spend it',()=>{
+ const c=world();c.P.rage=49.99;assert.equal(c.tryMobileFlailLunge(c.P,0),false);assert(!c.P._flailAttack);
+ c.P.rage=50;assert.equal(c.tryMobileFlailLunge(c.P,0),true);assert(c.P._flailAttack);assert.equal(c.P.rage,50);
+});
 test('unarmed/exhausted cannot launch',()=>{
  const c=world();c.P.hasWeapon=false;c.flailInput(c.P,true,0);assert(!c.P._flailAttack);
  c.flailInput(c.P,false,0);c.P.hasWeapon=true;c.P.stamina=0;c.flailInput(c.P,true,0);assert(!c.P._flailAttack);

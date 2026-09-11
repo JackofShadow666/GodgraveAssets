@@ -139,6 +139,7 @@ function contact(a, b){
 
   function dropWeaponOnDeath(ent){
     if(typeof disarmEntity === 'function' && ent && ent.hasWeapon !== false) disarmEntity(ent);
+    if(typeof dropShield === 'function' && ent && ent.shield) dropShield(ent);
   }
 
   function addDeathFx(ent, isBot){
@@ -265,6 +266,7 @@ function contact(a, b){
     if(mode === 'survival') return false;
     if(mode !== 'survival' && !(typeof LocalPlayerControls !== 'undefined' && LocalPlayerControls.isLocalPvP())) return false;
     if(ent._defeated) return true;
+    if(typeof startDeathAnimation === 'function') startDeathAnimation(ent);
     ent._defeated = true;
     ent.hp = 0;
     dropWeaponOnDeath(ent);

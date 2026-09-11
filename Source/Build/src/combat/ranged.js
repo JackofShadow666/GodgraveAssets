@@ -635,6 +635,10 @@ function applyDamage(defender, damage, attacker, options){
     : damage;
   const balanceKey=opts.weaponDamageKey || (!isMagic && !isExplosion && !isProjectile && attacker ? weaponKeyOf(attacker) : null);
   const finalDmg = Math.round(Math.min(guardedDamage, Math.max(1, Math.round(MAX_HP * 0.70))) * weaponDamageMultiplier(balanceKey) * survivalMult); // Apply survival protection after the normal damage cap.
+  if(attacker){
+    const aC=$.POS.body(attacker);
+    defender._lastDamageAngle=Math.atan2(dC2.y-aC.y,dC2.x-aC.x);
+  }
   defender.hp = Math.max(0, defender.hp - finalDmg);
   if(typeof tryCinematicSlowmo === 'function' && finalDmg > 40) tryCinematicSlowmo('damage', 0.10);
   defender._hitCD = Math.max(defender._hitCD || -1, GameTime + 0.4);

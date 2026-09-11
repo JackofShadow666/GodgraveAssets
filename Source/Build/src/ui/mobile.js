@@ -562,7 +562,7 @@ if(_spiked2 && typeof GameTime!=='undefined'){
   let moveId = null, moveOrigin = {x:0,y:0};
   let swordId = null, swordOrigin = {x:0,y:0};
   let lastSwordTap = 0;
-  let doubleTapLMB = false;
+  let swordFlickAttack = false;
   let _crossbowTapPending = false; // crossbow tap — shot happens on touchend
 
   function pointInElement(x, y, el){
@@ -600,8 +600,8 @@ if(_spiked2 && typeof GameTime!=='undefined'){
       requestAnimationFrame(() => { mDown = false; });
     }
     const _wk2 = typeof weaponKeyOf==='function' && typeof P!=='undefined' ? weaponKeyOf(P) : null;
-    if(doubleTapLMB || _wk2 === 'bow'){
-      doubleTapLMB = false;
+    if(swordFlickAttack || _wk2 === 'bow'){
+      swordFlickAttack = false;
       mDown = false;
       swordKnob.classList.remove('lmb-active');
       fixedStickKnob.classList.remove('lmb-active');
@@ -774,6 +774,20 @@ if(_spiked2 && typeof GameTime!=='undefined'){
     if(dist > 8){ // dead zone to prevent micro-touch jitter
       setMobileAim(angle, 1);
     }
+    maybeStartSwordFlick(dist, 65);
+  }
+
+  function maybeStartSwordFlick(distance, maxRadius){
+    if(swordFlickAttack || distance<=maxRadius) return;
+    const key=typeof weaponKeyOf==='function'&&typeof P!=='undefined'?weaponKeyOf(P):null;
+    if(key==='bow'||key==='crossbow') return;
+    if(key==='flail'){
+      const angle=Math.atan2(mouseScreenY-(worldToScreen(P.x+5,P.y-8).y),mouseScreenX-(worldToScreen(P.x+5,P.y-8).x));
+      if(window.tryMobileFlailLunge && window.tryMobileFlailLunge(P,angle)) swordFlickAttack=true;
+      return;
+    }
+    swordFlickAttack=true;mDown=true;
+    swordKnob.classList.add('lmb-active');fixedStickKnob.classList.add('lmb-active');
   }
 
   // ── RIGHT — sword / aim ────────────────────────────────────────────────
@@ -790,26 +804,16 @@ if(_spiked2 && typeof GameTime!=='undefined'){
     // Crossbow: shot should happen exactly on TOUCH RELEASE
     // (like trigger pull), so here mDown is NOT set — only
     // mark that a crossbow tap happened, and shoot on touchend.
-    // Magic staff and wand require holding and stay on double tap, same as
-    // melee — otherwise they'd trigger on accidental taps.
     const _wk = typeof weaponKeyOf==='function' ? weaponKeyOf(P) : null;
-    const _rangedTap = (_wk === 'bow' || _wk === 'crossbow');
+    const now = Date.now();
+    if(now-lastSwordTap<300 && typeof window.forceCinematicSlowmo==='function') window.forceCinematicSlowmo('manual');
+    lastSwordTap=now;
     if(_wk === 'bow'){
       mDown = true;
       swordKnob.classList.add('lmb-active');
       fixedStickKnob.classList.add('lmb-active');
     } else if(_wk === 'crossbow'){
       _crossbowTapPending = true;
-    } else {
-      const now = Date.now();
-      if(now - lastSwordTap < 300){
-        // Double tap: LMB held WHILE finger is down, release — released
-        doubleTapLMB = true;
-        mDown = true;
-        swordKnob.classList.add('lmb-active');
-        fixedStickKnob.classList.add('lmb-active');
-      }
-      lastSwordTap = now;
     }
 
     swordId = t.identifier;
@@ -828,10 +832,7 @@ if(_spiked2 && typeof GameTime!=='undefined'){
       updateSword(gp.x, gp.y);
     }
 
-    // Single tap does NOT activate LMB for melee — only controls the sword
-    // Double tap toggles LMB mode (latch). For bow —
-    // single tap already draws (see above). For crossbow — shoots
-    // on release (see touchend).
+    // Melee/staff/wand attack only after a flick beyond the stick radius.
   }, {passive:false});
 
   zoneSword.addEventListener('touchmove', e => {
@@ -856,6 +857,7 @@ if(_spiked2 && typeof GameTime!=='undefined'){
     const dx = cx - swordOrigin.x;
     const dy = cy - swordOrigin.y;
     const dist = Math.hypot(dx,dy);
+    maybeStartSwordFlick(dist, SWORD_R);
     const nx = dist>SWORD_R ? dx/dist*SWORD_R : dx;
     const ny = dist>SWORD_R ? dy/dist*SWORD_R : dy;
     updateSwordKnob(nx,ny);
