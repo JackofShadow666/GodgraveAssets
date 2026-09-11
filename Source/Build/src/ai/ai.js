@@ -2247,12 +2247,6 @@ function updatePlayerBotAssistAI(dt){
     }
     return;
   }
-  if(!combatTarget){
-    ai._fakeKeys.w=ai._fakeKeys.a=ai._fakeKeys.s=ai._fakeKeys.d=false;
-    ai._fakeMDown=false;
-    return;
-  }
-
   P._aiTargetOverride = target;
   updateAI(dt, P);
   P._aiTargetOverride = null;

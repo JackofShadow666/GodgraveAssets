@@ -38,7 +38,6 @@ const SFX_FOLDERS = {
   damage:         'Source/Sound/Damage/Sword/',
   woodClink:      'Source/Sound/WoodClink/',
   destructWood:   'Source/Sound/Destructable/',
-  crateDodgeHit:  'Source/Sound/Destructable/',
   destructTnt:    'Source/Sound/Destructable/',
   heal:           'Source/Sound/Buff/',
   rage:           'Source/Sound/Rage/',
@@ -223,7 +222,6 @@ async function loadAudioDB() {
     if (type === 'uiTap')          matches = matches.filter(u => !u.toLowerCase().includes('hover') && !u.toLowerCase().includes('note') && !u.toLowerCase().includes('death') && !u.toLowerCase().includes('win') && !u.toLowerCase().includes('pickup'));
     if (type === 'death')          matches = matches.filter(u => u.toLowerCase().includes('death'));
     if (type === 'destructWood')   matches = matches.filter(u => u.toLowerCase().includes('wooddeath'));
-    if (type === 'crateDodgeHit')  matches = matches.filter(u => u.toLowerCase().includes('woodhit'));
     if (type === 'destructTnt')    matches = matches.filter(u => u.toLowerCase().includes('_tnt_'));
     if (type === 'heal')           matches = matches.filter(u => u.toLowerCase().includes('_heal_'));
     if (type === 'victory')        matches = matches.filter(u => u.toLowerCase().includes('win'));

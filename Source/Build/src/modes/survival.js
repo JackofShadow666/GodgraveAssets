@@ -173,7 +173,7 @@
     o.moving=true;o.pusher=ent;o.armed=o.type!=='redBarrel';o.hitTargets=new WeakSet();o.hitTargets.add(ent);
     o._pushLockUntil=GameTime+0.25;ent._arenaPropPushLockUntil=GameTime+0.25;
     armRedBarrel(o);
-    if(o.type==='crate'&&$.S&&$.S.play)$.S.play('crateDodgeHit');
+    if(o.type==='crate'&&$.S&&$.S.play)$.S.play('damageHammer');
     if(typeof spawnDust==='function')for(let i=0;i<5;i++)spawnDust(o.x,o.y,-o.vx*.25+(Math.random()-.5)*2,-o.vy*.25+(Math.random()-.5)*2);
     return true;
   }
@@ -280,6 +280,10 @@
     b.x=clamp(b.x+nx*overlap*.5,OBJECT_RADIUS,WORLD_W-OBJECT_RADIUS);b.y=clamp(b.y+ny*overlap*.5,OBJECT_RADIUS,WORLD_H-OBJECT_RADIUS);
     const av=(a.vx||0)*nx+(a.vy||0)*ny,bv=(b.vx||0)*nx+(b.vy||0)*ny,closing=av-bv;
     if(closing>0){
+      if(a.type==='crate'&&b.type==='crate'&&GameTime>=Math.max(a._collisionSoundUntil||0,b._collisionSoundUntil||0)){
+        if($.S&&$.S.play)$.S.play('damageHammer');
+        a._collisionSoundUntil=b._collisionSoundUntil=GameTime+0.12;
+      }
       const impulse=closing*.75;
       a.vx-=nx*impulse;a.vy-=ny*impulse;b.vx+=nx*impulse;b.vy+=ny*impulse;
       if(Math.hypot(a.vx,a.vy)>.12) a.moving=true;
@@ -316,7 +320,7 @@
         const decay=Math.pow(PROP_DECAY,step);o.vx*=decay;o.vy*=decay;
         for(const ent of ents){
           const c=body(ent),dx=c.x-o.x,dy=c.y-o.y,d=Math.hypot(dx,dy)||1;if(d>BODY_RADIUS+OBJECT_RADIUS)continue;
-          if(!o.hitTargets.has(ent)){hazardDamage(ent,PROP_DAMAGE,o,'impact');if(o.type==='crate'&&$.S&&$.S.play)$.S.play('woodClink');o.hitTargets.add(ent);armRedBarrel(o);if(o.type!=='redBarrel'&&Math.random()<.5){arenaObjects.splice(i,1);destroyWoodProp(o);o._gone=true;break;}}
+          if(!o.hitTargets.has(ent)){hazardDamage(ent,PROP_DAMAGE,o,'impact');if(o.type==='crate'&&$.S&&$.S.play)$.S.play('damageHammer');o.hitTargets.add(ent);armRedBarrel(o);if(o.type!=='redBarrel'&&Math.random()<.5){arenaObjects.splice(i,1);destroyWoodProp(o);o._gone=true;break;}}
           const vl=Math.hypot(o.vx||dx,o.vy||dy)||1,nx=(o.vx||dx)/vl,ny=(o.vy||dy)/vl;ent.x+=nx*Math.max(0,BODY_RADIUS+OBJECT_RADIUS-d);ent.y+=ny*Math.max(0,BODY_RADIUS+OBJECT_RADIUS-d);ent.vx+=o.vx*.35;ent.vy+=o.vy*.35;o.vx*=.72;o.vy*=.72;
         }
         for(const other of arenaObjects)resolveObjectCollision(o,other);
