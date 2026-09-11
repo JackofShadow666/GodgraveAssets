@@ -1,5 +1,5 @@
 ; Список файлов из папок Music и Sound
-; Создано: 11.09.2026 19:50:05
+; Создано: 11.09.2026 21:21:49
 ; Корневая папка: F:\Jack\Project\Godgrave\Public\Godgrave\Source
 
 === Папка: Music ===
@@ -94,6 +94,7 @@ Source\Sound\Dodge\SFX_Dodge_01.mp3
 Source\Sound\Dodge\SFX_Dodge_02.mp3
 Source\Sound\Dodge\SFX_Dodge_03.mp3
 Source\Sound\Empty\SFX_Empty_01.mp3
+Source\Sound\Glove\SFX_Glove_01.mp3
 Source\Sound\HammerSwing\SFX_HammerSwing_01.mp3
 Source\Sound\HammerSwing\SFX_HammerSwing_02.mp3
 Source\Sound\HammerSwing\SFX_HammerSwing_03.mp3
@@ -193,6 +194,7 @@ Source\Character\Knight\T_Character_13.png
 Source\Character\Knight\T_Character_14.png
 Source\Character\Knight\Untitled-1_02.png
 Source\Character\Knight\.mayaSwatches\T_Character_02.png_hcm.swatch
+Source\Character\Knight\.mayaSwatches\T_Character_12.png_hcm.swatch
 Source\Character\Test\T_CharTest_01.png
 Source\Character\Test\T_CharTest_02.png
 Source\Character\Test\T_CharTest_03.png

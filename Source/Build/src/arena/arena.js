@@ -156,8 +156,8 @@ botUpdateExhaustion(bot, dt);
     bot.vx = $.M.lerpDT(bot.vx, mx*maxV, 0.2, dt);
     bot.vy = $.M.lerpDT(bot.vy, my*maxV, 0.2, dt);
   } else {
-    bot.vx = $.M.decay(bot.vx, sv('inertia'), dt);
-    bot.vy = $.M.decay(bot.vy, sv('inertia'), dt);
+    bot.vx = $.M.decay(bot.vx, bot.hasWeapon === false ? 0.95 : sv('inertia'), dt);
+    bot.vy = $.M.decay(bot.vy, bot.hasWeapon === false ? 0.95 : sv('inertia'), dt);
   }
   bot.vx = $.M.clamp(bot.vx,-15,15); bot.vy = $.M.clamp(bot.vy,-15,15);
   const step = $.M.step(dt);
@@ -332,14 +332,14 @@ function updateDummy(dt, bot){
 
     const maxV = 7 * sv('botspd') * speedMult * retreatScale * dbBlockSlow * sv('globalspd') * botSpeedMult * _dShBaseMult * _dShWrongMult * weaponMoveSpeedMult(bot);
     if(_dodgeLocked){
-      bot.vx = $.M.decay(bot.vx, sv('inertia'), dt);
-      bot.vy = $.M.decay(bot.vy, sv('inertia'), dt);
+      bot.vx = $.M.decay(bot.vx, bot.hasWeapon === false ? 0.95 : sv('inertia'), dt);
+      bot.vy = $.M.decay(bot.vy, bot.hasWeapon === false ? 0.95 : sv('inertia'), dt);
     } else if(mx || my){
       bot.vx = $.M.lerpDT(bot.vx, mx*maxV, 0.22, dt);
       bot.vy = $.M.lerpDT(bot.vy, my*maxV, 0.22, dt);
     } else {
-      bot.vx = $.M.decay(bot.vx, sv('inertia'), dt);
-      bot.vy = $.M.decay(bot.vy, sv('inertia'), dt);
+      bot.vx = $.M.decay(bot.vx, bot.hasWeapon === false ? 0.95 : sv('inertia'), dt);
+      bot.vy = $.M.decay(bot.vy, bot.hasWeapon === false ? 0.95 : sv('inertia'), dt);
     }
     bot.vx = $.M.clamp(bot.vx, -15, 15); bot.vy = $.M.clamp(bot.vy, -15, 15);
     const step = $.M.step(dt);
@@ -360,12 +360,14 @@ if(ai._botDodgeCooldown>0) ai._botDodgeCooldown-=dt;
   const drc = $.POS.body(bot);
   const angToFM = Math.atan2(fmY - drc.y, fmX - drc.x);
   const opp = angToFM + Math.PI;
-  const distV = dstyle('dist');
+  const unarmedStyle = { dist:19, ex:7, ey:7, blk:0.2, adaY:true, adaD:false, adaXb:40, adaXp:73, ada12:false };
+  const distV = bot.hasWeapon === false ? unarmedStyle.dist : dstyle('dist');
   const fdist = Math.hypot(fmX-drc.x, fmY-drc.y);
   const scaledDist = distV * $.M.clamp(fdist/120,0,1);
   bot.tbx = Math.cos(opp)*scaledDist; bot.tby = Math.sin(opp)*scaledDist;
-  bot.bx = $.M.lerpDT(bot.bx, bot.tbx, sv('spd'), dt);
-  bot.by = $.M.lerpDT(bot.by, bot.tby, sv('spd'), dt);
+  const bodySpd = bot.hasWeapon === false ? 0.09 : sv('spd');
+  bot.bx = $.M.lerpDT(bot.bx, bot.tbx, bodySpd, dt);
+  bot.by = $.M.lerpDT(bot.by, bot.tby, bodySpd, dt);
 
   // Пивот бота
   bot.pvX += (bot.tpX - bot.pvX)*0.35;
@@ -391,26 +393,28 @@ if(ai._botDodgeCooldown>0) ai._botDodgeCooldown-=dt;
       // Адаптивные смещения отключаем
     } else {
       // Обычное оружие — настройки из слайдеров
-      const adaXon = dstyleCb('adaX');
+      const adaXon = bot.hasWeapon === false ? true : dstyleCb('adaX');
       if(adaXon){
         const t = Math.sin(ang)*Math.sin(ang);
-        dex = dstyle('adaXb') + (dstyle('adaXp') - dstyle('adaXb')) * t;
+        const xBase = bot.hasWeapon === false ? unarmedStyle.adaXb : dstyle('adaXb');
+        const xPeak = bot.hasWeapon === false ? unarmedStyle.adaXp : dstyle('adaXp');
+        dex = xBase + (xPeak - xBase) * t;
       } else {
-        dex = dstyle('ex');
+        dex = bot.hasWeapon === false ? unarmedStyle.ex : dstyle('ex');
       }
-      dey = dstyle('ey');
-      dblkVal = dblk();
+      dey = bot.hasWeapon === false ? unarmedStyle.ey : dstyle('ey');
+      dblkVal = bot.hasWeapon === false ? unarmedStyle.blk : dblk();
       
       // Адаптивные смещения для ближнего боя
-      const adaYon = dstyleCb('adaY');
-      const adaDon = dstyleCb('adaD');
-      const ada12on = dstyleCb('ada12');
+      const adaYon = bot.hasWeapon === false ? unarmedStyle.adaY : dstyleCb('adaY');
+      const adaDon = bot.hasWeapon === false ? unarmedStyle.adaD : dstyleCb('adaD');
+      const ada12on = bot.hasWeapon === false ? unarmedStyle.ada12 : dstyleCb('ada12');
       if(adaYon){ eyOffset -= $.M.clamp(-Math.sin(ang),0,1)*csv('adaY'); }
       if(adaDon){
         const tc = Math.cos(ang - Math.PI/2);
         eyOffset += $.M.clamp(tc*tc*(tc>0?1:0),0,1)*csv('adaD');
       }
-      if(ada12on){
+      if(ada12on && bot.hasWeapon !== false){
         eyOffset += $.M.clamp(Math.cos((ang+Math.PI/2)*2),0,1)*csv('ada12');
       }
     }
@@ -1181,66 +1185,39 @@ function drawChar(ent, cscl, torsoCol, headCol){
     ctx.fillStyle = ent===P ? 'rgba(90,160,255,0.25)' : 'rgba(255,80,70,0.25)';
     ctx.fillRect(-spriteW/2, CHAR_SPRITE_OFFSET_Y, spriteW, CHAR_SPRITE_H);
   }
-  if(ent.hasWeapon === false){
-    drawUnarmedGloves(ent, spriteW, bodyTilt);
-  }
   ctx.restore();
   drawOverheadHealthBar(ent, cscl);
   drawStatusEffects(ent, cscl);
 }
 
-function drawUnarmedGloves(ent, spriteW, bodyTilt){
+function drawUnarmedHand(ent, pivX, pivY, angle){
   const img = (typeof GLOVE_SPRITE_IMG !== 'undefined') ? GLOVE_SPRITE_IMG : null;
   const imgReady = img && img.complete && img.naturalWidth > 0 && img.naturalHeight > 0;
   const gloveH = CHAR_SPRITE_H * 0.20;
   const gloveW = imgReady ? gloveH * (img.naturalWidth / img.naturalHeight) : gloveH;
-  const baseY = CHAR_SPRITE_OFFSET_Y + CHAR_SPRITE_H * 0.64;
-  const baseX = spriteW * 0.44 + gloveW * 0.10;
+  const handOffsetX = 7;
+  const handOffsetY = 7;
   const baseGloveRot = 165 * Math.PI / 180;
-  const aim = ent.angle || 0;
-  const cursorTilt = $.M.clamp(Math.sin(aim) * 16 * Math.PI / 180, -16 * Math.PI / 180, 16 * Math.PI / 180);
-  const drawGlove = (sidePos, alpha, invertY) => {
-    const side = sidePos >= 0 ? 1 : -1;
-    const cursorX = Math.cos(aim) * side * gloveW * 0.18;
-    const cursorY = Math.sin(aim) * gloveH * (invertY ? -0.35 : 0.35);
-    const sideTilt = $.M.clamp(Math.cos(aim) * side * 5 * Math.PI / 180, -5 * Math.PI / 180, 5 * Math.PI / 180);
-    const gloveTilt = -bodyTilt * 3.2 + cursorTilt + sideTilt;
+  const scale = sv('cscl') * (isBot(ent) ? sv('botscale') * (ent._bodyScaleMult || 1) : 1);
+  const alpha = getDebuffAlpha(ent);
 
-    ctx.save();
-    ctx.globalAlpha *= alpha;
-    ctx.translate(sidePos * (baseX + cursorX), baseY + cursorY);
-    if(side > 0) ctx.scale(-1, 1);
-    ctx.rotate(baseGloveRot + gloveTilt);
-    if(imgReady){
-      ctx.drawImage(img, -gloveW/2, -gloveH/2, gloveW, gloveH);
-    } else {
-      ctx.fillStyle = 'rgba(18,18,18,0.92)';
-      ctx.strokeStyle = 'rgba(210,210,210,0.35)';
-      ctx.lineWidth = 0.8;
-      ctx.fillRect(-gloveW/2, -gloveH/2, gloveW, gloveH);
-      ctx.strokeRect(-gloveW/2, -gloveH/2, gloveW, gloveH);
-    }
-    ctx.restore();
-  };
-
-  const autoSide = Math.cos(aim) < 0 ? 1 : -1;
-  const dt = (typeof rawDt === 'number') ? rawDt : 1 / 60;
-  const spd = typeof sv === 'function' ? (sv('shieldSideSpd') || 3.3) : 3.3;
-  const hasShield = !!shieldDef(ent);
-  if(hasShield){
-    const held = typeof shieldHeld === 'function' && shieldHeld(ent);
-    const targetShieldSide = held ? -autoSide : autoSide;
-    if(ent._gloveShieldSide === undefined) ent._gloveShieldSide = targetShieldSide;
-    ent._gloveShieldSide += (targetShieldSide - ent._gloveShieldSide) * Math.min(1, dt * spd);
-    drawGlove(-$.M.clamp(ent._gloveShieldSide, -1, 1), 1);
-    return;
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.translate(pivX, pivY);
+  ctx.rotate(angle + Math.PI/2);
+  ctx.translate(handOffsetY, -handOffsetX);
+  ctx.rotate(baseGloveRot);
+  ctx.scale(scale, scale);
+  if(imgReady){
+    ctx.drawImage(img, -gloveW/2, -gloveH/2, gloveW, gloveH);
+  } else {
+    ctx.fillStyle = 'rgba(18,18,18,0.92)';
+    ctx.strokeStyle = 'rgba(210,210,210,0.35)';
+    ctx.lineWidth = 0.8;
+    ctx.fillRect(-gloveW/2, -gloveH/2, gloveW, gloveH);
+    ctx.strokeRect(-gloveW/2, -gloveH/2, gloveW, gloveH);
   }
-
-  if(ent._gloveMainSide === undefined) ent._gloveMainSide = autoSide;
-  ent._gloveMainSide += (autoSide - ent._gloveMainSide) * Math.min(1, dt * spd);
-  const mainSide = $.M.clamp(ent._gloveMainSide, -1, 1);
-  drawGlove(mainSide, 1);
-  drawGlove(-mainSide, 0.25, true);
+  ctx.restore();
 }
 const DEATH_ANIM_DURATION = 1.5;
 const DEATH_ANIM_DISSOLVE_AT = 0.4;
@@ -1384,9 +1361,11 @@ function _drawDummySword(){
 
   // Если щит в той же руке что меч — рисуем меч ЗА телом
   const _dSwordBehind = shieldDef(bot) && shieldSameSideAsSword(bot);
-  if(_dSwordBehind) _drawDummySword();
+  if(_dSwordBehind && bot.hasWeapon !== false) _drawDummySword();
+  if(_dSwordBehind && bot.hasWeapon === false) drawUnarmedHand(bot, dpivX, dpivY, bot.angle);
   drawChar(bot, sv('cscl') * sv('botscale') * (bot._bodyScaleMult || 1), '#4a1a10', '#6a2a18');
-  if(!_dSwordBehind) _drawDummySword();
+  if(!_dSwordBehind && bot.hasWeapon !== false) _drawDummySword();
+  if(!_dSwordBehind && bot.hasWeapon === false) drawUnarmedHand(bot, dpivX, dpivY, bot.angle);
 
   // 🔥 РИСУЕМ СТРЕЛУ НА ЛУКЕ БОТА (поверх всего)
   drawBowArrow(bot);

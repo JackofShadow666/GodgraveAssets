@@ -585,6 +585,30 @@ function tryApplySoftBodyContact(attacker, defender, bodyCenter, soundType) {
   return true;
 }
 
+function tryApplyUnarmedPush(attacker, defender, bodyCenter){
+  if(!attacker || attacker.hasWeapon !== false) return false;
+  if(attacker.exhausted > 0) return true;
+  if(defender._hitCD === undefined) defender._hitCD = -1;
+  if(defender._hitCD >= GameTime) return true;
+  const hand = $.POS.pivot(attacker);
+  const scale = sv('cscl') * (isBot(attacker) ? sv('botscale') * (attacker._bodyScaleMult || 1) : 1);
+  const dist = Math.hypot(bodyCenter.x - hand.x, bodyCenter.y - hand.y);
+  const hitR = 16 * scale;
+  if(dist >= hitR) return false;
+  const aC = $.POS.body(attacker);
+  const dx = bodyCenter.x - aC.x;
+  const dy = bodyCenter.y - aC.y;
+  const len = Math.hypot(dx, dy) || 1;
+  const push = Math.max(2.2, sv('bodyKB') * 0.22);
+  defender.vx += dx / len * push;
+  defender.vy += dy / len * push;
+  defender._hitCD = GameTime + 0.22;
+  defender._hitTiltAmp = (dx < 0 ? -1 : 1) * 6 * Math.PI / 180;
+  defender._hitTiltT0 = GameTime;
+  if($.S && typeof $.S.play === 'function') $.S.play('woodClink', 0.22);
+  aiNotifyContact();
+  return true;
+}
 // ─── BLADE VS BODY ──────────────────────────────────────────────────────
 // Checks if the attacker's weapon tip hits the defender's body.
 function checkBladeVsBody(attacker, defender, pivX, pivY, tipX2, tipY2) {
@@ -600,6 +624,10 @@ function checkBladeVsBody(attacker, defender, pivX, pivY, tipX2, tipY2) {
   
   const bC = $.POS.body(defender);
   const key = weaponKeyOf(attacker);
+  if(attacker.hasWeapon === false){
+    tryApplyUnarmedPush(attacker, defender, bC);
+    return;
+  }
   
   // ============================================================
   // ─── SPEAR SPECIFIC HANDLING ──────────────────────────────────

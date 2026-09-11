@@ -195,14 +195,14 @@ const exhMult = getMod(P, 'moveSlow', 1);
   const _pMoveLocked = GameTime < (P._moveLockUntil||0);
   
   if(_pMoveLocked){
-    P.vx = $.M.decay(P.vx, sv('inertia'), dt);
-    P.vy = $.M.decay(P.vy, sv('inertia'), dt);
+    P.vx = $.M.decay(P.vx, P.hasWeapon === false ? 0.95 : sv('inertia'), dt);
+    P.vy = $.M.decay(P.vy, P.hasWeapon === false ? 0.95 : sv('inertia'), dt);
   } else if(hasInput){
     P.vx = $.M.lerpDT(P.vx, mx*maxV*swordBackMult, 0.28, dt);
     P.vy = $.M.lerpDT(P.vy, my*maxV*swordBackMult, 0.28, dt);
   } else {
-    P.vx = $.M.decay(P.vx, sv('inertia'), dt);
-    P.vy = $.M.decay(P.vy, sv('inertia'), dt);
+    P.vx = $.M.decay(P.vx, P.hasWeapon === false ? 0.95 : sv('inertia'), dt);
+    P.vy = $.M.decay(P.vy, P.hasWeapon === false ? 0.95 : sv('inertia'), dt);
   }
   
   (() => {
@@ -306,7 +306,8 @@ const exhMult = getMod(P, 'moveSlow', 1);
 
   // ?? GET STYLE
   const isRanged = isRangedWeapon(P);
-  const style = isRanged ? getRangedStyle() : {
+  const unarmedStyle = { dist:19, ex:7, ey:7, blk:0.2, adaY:true, adaD:false, adaXb:40, adaXp:73, ada12:false };
+  const style = P.hasWeapon === false ? unarmedStyle : (isRanged ? getRangedStyle() : {
     dist: csv('dist'),
     ex: csv('ex'),
     ey: csv('ey'),
@@ -316,7 +317,7 @@ const exhMult = getMod(P, 'moveSlow', 1);
     adaXb: csv('adaXb'),
     adaXp: csv('adaXp'),
     ada12: cb('ada12')
-  };
+  });
 
   // --- body offset ---
   updateCamera(rawDt);
@@ -360,7 +361,7 @@ const exhMult = getMod(P, 'moveSlow', 1);
 
   // ?? BODY — slow down when exhausted
 const exhBodyMult = isExhausted(P) ? 0.3 : 1.0;
-  const bspd = sv('spd') * exhBodyMult;
+  const bspd = (P.hasWeapon === false ? 0.09 : sv('spd')) * exhBodyMult;
   P.bx = $.M.lerpDT(P.bx, P.tbx, bspd, dt);
   P.by = $.M.lerpDT(P.by, P.tby, bspd, dt);
 
@@ -407,7 +408,7 @@ const exhBodyMult = isExhausted(P) ? 0.3 : 1.0;
       eyOffset += tDown * (isRanged ? 45 : csv('adaD'));
     }
     let pivDownOffset = 0;
-    if(style.ada12){
+    if(style.ada12 && P.hasWeapon !== false){
       const ang12 = ang + Math.PI/2;
       const t12 = $.M.clamp(Math.cos(ang12 * 2), 0, 1);
       pivDownOffset = t12 * (isRanged ? 25 : csv('ada12'));
@@ -937,8 +938,10 @@ if(dummyOn&&isUnbalanced(D)) drawUnbalancedStars(D);
     
     const _pSwordBehind = shieldDef(P) && shieldSameSideAsSword(P);
     if(_pSwordBehind && P.hasWeapon !== false) drawSword(pivX, pivY, P.angle);
+    if(_pSwordBehind && P.hasWeapon === false) drawUnarmedHand(P, pivX, pivY, P.angle);
     drawPlayer();
     if(!_pSwordBehind && P.hasWeapon !== false) drawSword(pivX, pivY, P.angle);
+    if(!_pSwordBehind && P.hasWeapon === false) drawUnarmedHand(P, pivX, pivY, P.angle);
     if(typeof drawDeathAnimations==='function') drawDeathAnimations();
     
     if(dummyOn){
