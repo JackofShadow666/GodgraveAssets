@@ -1,0 +1,10 @@
+{
+  "gamepad.status.slot0": "Gamepad duplicates player 1 controls",
+  "gamepad.status.slotN": "Gamepad controls player {slot}; AI for this character is disabled",
+  "gamepad.botCountTitle": "Number of AI bots beyond local players",
+  "gamepad.addBotTitle": "Add AI bot to local PvP",
+  "gamepad.hitOrbit": "🌀 ORBIT",
+  "gamepad.hitFlick": "⚡ FLICK",
+  "gamepad.hitSwing": "⚔ SWING",
+  "gamepad.rage": "🔥 RAGE!"
+}

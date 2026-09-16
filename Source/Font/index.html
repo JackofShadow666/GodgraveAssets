@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bloody Drip — демо шрифта</title>
+<style>
+@font-face {
+  font-family: "Bloody Drip";
+  src: url("./BloodyDrip-Regular.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --bg: #0b0b0d;
+  --bg-soft: #141417;
+  --red: #c01818;
+  --red-bright: #ff2b2b;
+  --bone: #e9e4d8;
+  --bone-dim: #9a948a;
+  --line: #2a2a2e;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--bone);
+  font-family: "Georgia", "Times New Roman", serif;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+.noise {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.04;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 32px;
+}
+
+/* ===== HERO ===== */
+.hero {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  border-bottom: 1px solid var(--line);
+}
+
+.hero::before {
+  content: "";
+  position: absolute;
+  top: -20%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 140%;
+  height: 140%;
+  background: radial-gradient(ellipse at center, rgba(192,24,24,0.18) 0%, rgba(192,24,24,0) 60%);
+  pointer-events: none;
+}
+
+.hero-inner {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  padding: 80px 0;
+}
+
+.hero-eyebrow {
+  font-family: "Georgia", serif;
+  font-size: 13px;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
+  margin-bottom: 28px;
+}
+
+.hero-title {
+  font-family: "Bloody Drip", serif;
+  font-size: clamp(64px, 14vw, 180px);
+  line-height: 1;
+  color: var(--red-bright);
+  letter-spacing: 0.02em;
+  text-shadow: 0 0 40px rgba(255,43,43,0.35), 0 8px 0 rgba(0,0,0,0.6);
+  animation: flicker 6s infinite;
+}
+
+@keyframes flicker {
+  0%, 92%, 100% { filter: brightness(1); }
+  93% { filter: brightness(1.25); }
+  94% { filter: brightness(0.85); }
+  95% { filter: brightness(1.15); }
+  96% { filter: brightness(1); }
+}
+
+.hero-sub {
+  font-family: "Bloody Drip", serif;
+  font-size: clamp(24px, 4vw, 42px);
+  color: var(--bone);
+  margin-top: 12px;
+  letter-spacing: 0.04em;
+}
+
+.hero-desc {
+  max-width: 540px;
+  margin: 36px auto 0;
+  color: var(--bone-dim);
+  font-size: 17px;
+}
+
+.drip {
+  position: absolute;
+  width: 2px;
+  background: linear-gradient(to bottom, var(--red) 0%, rgba(192,24,24,0) 100%);
+  opacity: 0.5;
+  animation: drip-fall linear infinite;
+}
+
+@keyframes drip-fall {
+  0% { transform: scaleY(0); transform-origin: top; opacity: 0.6; }
+  60% { transform: scaleY(1); transform-origin: top; opacity: 0.5; }
+  100% { transform: scaleY(1); transform-origin: top; opacity: 0; }
+}
+
+/* ===== SECTION GENERAL ===== */
+section {
+  padding: 100px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.section-label {
+  font-family: "Georgia", serif;
+  font-size: 12px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--red-bright);
+  margin-bottom: 16px;
+}
+
+.section-title {
+  font-family: "Bloody Drip", serif;
+  font-size: clamp(36px, 6vw, 64px);
+  color: var(--bone);
+  margin-bottom: 48px;
+  letter-spacing: 0.02em;
+}
+
+/* ===== SPECIMEN GRID ===== */
+.specimen-block {
+  margin-bottom: 56px;
+}
+
+.specimen-label {
+  font-size: 12px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
+  margin-bottom: 14px;
+}
+
+.specimen-row {
+  font-family: "Bloody Drip", serif;
+  color: var(--red-bright);
+  word-break: break-all;
+  line-height: 1.35;
+}
+
+.specimen-row.large { font-size: clamp(28px, 5vw, 56px); }
+.specimen-row.medium { font-size: clamp(20px, 3.5vw, 36px); color: var(--bone); }
+
+/* ===== SCALE ===== */
+.scale-list {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.scale-item {
+  display: grid;
+  grid-template-columns: 90px 1fr;
+  align-items: baseline;
+  gap: 24px;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 20px;
+}
+
+.scale-size {
+  font-family: "Georgia", serif;
+  font-size: 13px;
+  color: var(--bone-dim);
+  letter-spacing: 0.05em;
+}
+
+.scale-text {
+  font-family: "Bloody Drip", serif;
+  color: var(--red-bright);
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+/* ===== USAGE EXAMPLE ===== */
+.usage-card {
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  padding: 56px;
+  text-align: center;
+}
+
+.usage-title {
+  font-family: "Bloody Drip", serif;
+  font-size: clamp(40px, 7vw, 80px);
+  color: var(--red-bright);
+  margin-bottom: 8px;
+  letter-spacing: 0.03em;
+}
+
+.usage-meta {
+  font-family: "Bloody Drip", serif;
+  font-size: clamp(16px, 2.5vw, 22px);
+  color: var(--bone);
+  letter-spacing: 0.06em;
+  margin-bottom: 28px;
+}
+
+.usage-body {
+  max-width: 580px;
+  margin: 0 auto;
+  color: var(--bone-dim);
+  font-size: 16px;
+}
+
+/* ===== CSS USAGE CODE ===== */
+.code-block {
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--red);
+  padding: 28px 32px;
+  font-family: "Courier New", monospace;
+  font-size: 14px;
+  color: var(--bone-dim);
+  overflow-x: auto;
+  white-space: pre;
+  line-height: 1.7;
+}
+
+.code-block .tok-key { color: #ff8c8c; }
+.code-block .tok-str { color: #e9e4d8; }
+.code-block .tok-comment { color: #5a5a5e; }
+
+/* ===== CHARACTER MAP ===== */
+.charmap {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(48px, 1fr));
+  gap: 4px;
+}
+
+.charmap span {
+  font-family: "Bloody Drip", serif;
+  font-size: 28px;
+  color: var(--red-bright);
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1;
+  transition: background 0.15s, color 0.15s;
+}
+
+.charmap span:hover {
+  background: var(--red);
+  color: var(--bone);
+}
+
+/* ===== FOOTER ===== */
+footer {
+  padding: 48px 0;
+  text-align: center;
+  color: var(--bone-dim);
+  font-size: 13px;
+  letter-spacing: 0.1em;
+}
+
+footer .footer-title {
+  font-family: "Bloody Drip", serif;
+  font-size: 28px;
+  color: var(--bone);
+  margin-bottom: 12px;
+}
+
+@media (max-width: 640px) {
+  .scale-item {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .usage-card { padding: 32px 20px; }
+  .code-block { font-size: 12px; padding: 20px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-title { animation: none; }
+  .drip { animation: none; opacity: 0; }
+}
+</style>
+</head>
+<body>
+
+<div class="noise"></div>
+
+<!-- HERO -->
+<header class="hero">
+  <div class="drip" style="left: 8%; height: 40vh; animation-duration: 7s; animation-delay: -2s;"></div>
+  <div class="drip" style="left: 22%; height: 60vh; animation-duration: 9s; animation-delay: -5s;"></div>
+  <div class="drip" style="left: 78%; height: 50vh; animation-duration: 8s; animation-delay: -1s;"></div>
+  <div class="drip" style="left: 91%; height: 35vh; animation-duration: 6s; animation-delay: -4s;"></div>
+  <div class="container hero-inner">
+    <div class="hero-eyebrow">Шрифт · Дисплей · Хоррор</div>
+    <h1 class="hero-title">Bloody Drip</h1>
+    <div class="hero-sub">Кириллица &amp; Latin · Заглавные, строчные, цифры</div>
+    <p class="hero-desc">
+      Рваные, окровавленные засечки для афиш фильмов ужасов, обложек метал-альбомов,
+      хеллоуинских приглашений и любых надписей, которым нужен укус.
+    </p>
+  </div>
+</header>
+
+<!-- SPECIMEN -->
+<section>
+  <div class="container">
+    <div class="section-label">01 — Образцы</div>
+    <h2 class="section-title">Алфавит</h2>
+
+    <div class="specimen-block">
+      <div class="specimen-label">Латиница, прописные</div>
+      <div class="specimen-row large">ABCDEFGHIJKLMNOPQRSTUVWXYZ</div>
+    </div>
+
+    <div class="specimen-block">
+      <div class="specimen-label">Латиница, строчные</div>
+      <div class="specimen-row large">abcdefghijklmnopqrstuvwxyz</div>
+    </div>
+
+    <div class="specimen-block">
+      <div class="specimen-label">Кириллица, прописные</div>
+      <div class="specimen-row large">АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ</div>
+    </div>
+
+    <div class="specimen-block">
+      <div class="specimen-label">Кириллица, строчные</div>
+      <div class="specimen-row large">абвгдежзийклмнопрстуфхцчшщъыьэюя</div>
+    </div>
+
+    <div class="specimen-block">
+      <div class="specimen-label">Цифры и знаки</div>
+      <div class="specimen-row medium">0123456789 — !?:;,.()[]{}/\|+=%@#&amp;*^~&lt;&gt;$€£¥</div>
+    </div>
+  </div>
+</section>
+
+<!-- SCALE -->
+<section>
+  <div class="container">
+    <div class="section-label">02 — Кегли</div>
+    <h2 class="section-title">Шкала размеров</h2>
+
+    <div class="scale-list">
+      <div class="scale-item">
+        <div class="scale-size">120px</div>
+        <div class="scale-text" style="font-size: clamp(36px, 11vw, 120px);">FEAR</div>
+      </div>
+      <div class="scale-item">
+        <div class="scale-size">80px</div>
+        <div class="scale-text" style="font-size: clamp(28px, 8vw, 80px);">ужас 666</div>
+      </div>
+      <div class="scale-item">
+        <div class="scale-size">52px</div>
+        <div class="scale-text" style="font-size: clamp(22px, 6vw, 52px);">Открытие в полночь</div>
+      </div>
+      <div class="scale-item">
+        <div class="scale-size">32px</div>
+        <div class="scale-text" style="font-size: clamp(16px, 4vw, 32px);">Не входить после захода солнца</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- USAGE EXAMPLE -->
+<section>
+  <div class="container">
+    <div class="section-label">03 — Применение</div>
+    <h2 class="section-title">Пример афиши</h2>
+
+    <div class="usage-card">
+      <div class="usage-title">КРОВЬ И ТЕНИ</div>
+      <div class="usage-meta">премьера · 31 октября · полночь</div>
+      <p class="usage-body">
+        Фильм ужасов о доме, который помнит каждого, кто в нём умер.
+        Билеты в продаже с пятницы. Зрителям младше 16 лет вход воспрещён.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- CSS CODE -->
+<section>
+  <div class="container">
+    <div class="section-label">04 — Подключение</div>
+    <h2 class="section-title">CSS</h2>
+
+    <div class="code-block"><span class="tok-key">@font-face</span> {
+  <span class="tok-key">font-family</span>: <span class="tok-str">"Bloody Drip"</span>;
+  <span class="tok-key">src</span>: <span class="tok-str">url("./BloodyDrip-Regular.ttf")</span> <span class="tok-str">format("truetype")</span>;
+  <span class="tok-key">font-weight</span>: normal;
+  <span class="tok-key">font-style</span>: normal;
+  <span class="tok-key">font-display</span>: swap;
+}
+
+<span class="tok-comment">/* применение */</span>
+<span class="tok-key">.title</span> {
+  <span class="tok-key">font-family</span>: <span class="tok-str">"Bloody Drip"</span>, serif;
+}</div>
+  </div>
+</section>
+
+<!-- CHARACTER MAP -->
+<section>
+  <div class="container">
+    <div class="section-label">05 — Карта символов</div>
+    <h2 class="section-title">Поддерживаемые знаки</h2>
+    <div class="charmap" id="charmap"></div>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <div class="footer-title">Bloody Drip</div>
+    Сгенерирован из пользовательского изображения · BloodyDrip-Regular.ttf
+  </div>
+</footer>
+
+<script>
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzАБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдежзийклмнопрстуфхцчшщъыьэюя0123456789!?:;,.()[]{}/\\|-_+=%@#&*^~<>$€£¥";
+  const map = document.getElementById('charmap');
+  for (const ch of chars) {
+    const span = document.createElement('span');
+    span.textContent = ch;
+    map.appendChild(span);
+  }
+</script>
+
+</body>
+</html>

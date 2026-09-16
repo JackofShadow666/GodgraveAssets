@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Godgrave | Редактор персонажа (с плащом)</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+        body {
+            background: #030108;
+            font-family: 'Courier New', monospace;
+            padding: 12px;
+            background-image: radial-gradient(ellipse at 20% 30%, #150f1a 0%, #020005 100%);
+        }
+        .main-layout {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+            align-items: flex-start;
+        }
+        .left-panel {
+            flex: 1;
+            min-width: 300px;
+            max-width: 380px;
+            background: rgba(5, 3, 12, 0.65);
+            border-radius: 28px;
+            padding: 14px;
+            backdrop-filter: blur(4px);
+            border: 1px solid #5a3a7a;
+        }
+        .armor-unit {
+            background: #0d0718;
+            border-radius: 48px;
+            padding: 4px 10px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 6px;
+            border: 1px solid #6a4a8a;
+        }
+        .armor-unit span:first-child { color: #b980e0; font-size: 11px; font-weight: bold; min-width: 65px; }
+        .armor-unit .value {
+            color: #e6cf9e;
+            font-size: 11px;
+            background: #1f1530;
+            padding: 2px 8px;
+            border-radius: 40px;
+            cursor: pointer;
+            flex: 1;
+            text-align: center;
+            border-bottom: 1px solid #9a6bc0;
+        }
+        .armor-unit button {
+            background: #1f1530;
+            border: none;
+            color: #eeddbb;
+            font-size: 14px;
+            width: 26px;
+            height: 26px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .armor-unit button:hover { background: #342855; }
+        .weapon-group {
+            background: #0d0718;
+            border-radius: 48px;
+            padding: 8px 12px;
+            margin-bottom: 10px;
+            border: 1px solid #6a4a8a;
+        }
+        .weapon-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 6px;
+        }
+        .weapon-row span:first-child { color: #b980e0; font-size: 11px; font-weight: bold; width: 65px; }
+        .weapon-row .value {
+            color: #e6cf9e;
+            font-size: 11px;
+            background: #1f1530;
+            padding: 2px 8px;
+            border-radius: 40px;
+            cursor: pointer;
+            flex: 1;
+            text-align: center;
+        }
+        .weapon-row button {
+            background: #1f1530;
+            border: none;
+            color: #eeddbb;
+            font-size: 14px;
+            width: 26px;
+            height: 26px;
+            border-radius: 30px;
+            cursor: pointer;
+        }
+        .shield-unit {
+            background: #0d0718;
+            border-radius: 48px;
+            padding: 4px 10px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 6px;
+            border: 1px solid #6a4a8a;
+        }
+        .slider-group {
+            background: #0d0718;
+            border-radius: 60px;
+            padding: 4px 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid #6a4a8a;
+            margin-top: 8px;
+        }
+        .slider-group label { font-size: 11px; color: #e6cf9e; }
+        input[type="range"] { width: 120px; background: #2a1a3a; height: 3px; }
+        .btn {
+            background: #1f1530;
+            border: none;
+            border-bottom: 2px solid #9a6bc0;
+            color: #eeddbb;
+            padding: 5px 10px;
+            border-radius: 50px;
+            font-family: monospace;
+            font-size: 10px;
+            cursor: pointer;
+            flex: 1;
+            text-align: center;
+        }
+        .btn:hover { background: #342855; }
+        .canvas-area { flex: 2; min-width: 300px; text-align: center; }
+        canvas {
+            display: block;
+            margin: 0 auto;
+            border-radius: 24px;
+            box-shadow: 0 0 25px #000;
+            cursor: pointer;
+            width: 100%;
+            height: auto;
+            max-width: 550px;
+            aspect-ratio: 560 / 570;
+            background: #030108;
+        }
+        .legend {
+            text-align: center;
+            margin-top: 12px;
+            font-size: 9px;
+            color: #9a82b0;
+            background: rgba(0,0,0,0.6);
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 40px;
+        }
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #2a2040dd;
+            backdrop-filter: blur(12px);
+            color: #ffdd99;
+            padding: 6px 16px;
+            border-radius: 60px;
+            font-size: 11px;
+            pointer-events: none;
+            opacity: 0;
+            transition: 0.2s;
+            white-space: nowrap;
+        }
+        .toast.show { opacity: 1; }
+        .loading-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .loading-spinner {
+            width: 60px; height: 60px;
+            border: 4px solid #3a2a3a;
+            border-top-color: #b980e0;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .copy-id-area {
+            font-size: 9px;
+            text-align: center;
+            margin-top: 10px;
+            background: #0b0618aa;
+            border-radius: 40px;
+            padding: 3px 10px;
+            display: inline-block;
+        }
+        .debug-toggle {
+            background: #2a1a3a;
+            border: 1px solid #ffaa44;
+            color: #ffaa44;
+            margin-top: 8px;
+        }
+        .debug-toggle.active {
+            background: #5a3a3a;
+            border-color: #ff6644;
+            color: #ff6644;
+        }
+        .skeleton-panel {
+            margin-top: 12px;
+            background: #0d0718;
+            border-radius: 16px;
+            padding: 8px;
+            display: none;
+        }
+        .skeleton-panel.active {
+            display: block;
+        }
+        .skeleton-panel h4 {
+            color: #ffaa44;
+            font-size: 10px;
+            margin-bottom: 6px;
+        }
+        .skeleton-json {
+            background: #1a1525;
+            border-radius: 8px;
+            padding: 6px;
+            font-size: 8px;
+            font-family: monospace;
+            color: #88ff88;
+            word-break: break-all;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+        .skeleton-controls {
+            display: flex;
+            gap: 6px;
+            margin-top: 6px;
+        }
+        .skeleton-controls button {
+            background: #2a1a3a;
+            border: none;
+            color: #eeddbb;
+            padding: 3px 8px;
+            border-radius: 20px;
+            font-size: 9px;
+            cursor: pointer;
+        }
+        .drag-note {
+            font-size: 8px;
+            color: #ffaa66;
+            margin-top: 5px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+<div class="main-layout">
+    <div class="left-panel">
+        <div class="armor-unit"><span>🧥Плащ</span><button class="prevCape">◀</button><span class="value capeVal">--</span><button class="nextCape">▶</button></div>
+        <div class="armor-unit"><span>⚔️Шлем</span><button class="prevHelm">◀</button><span class="value helmVal">--</span><button class="nextHelm">▶</button></div>
+        <div class="armor-unit"><span>🛡️Плечо Л</span><button class="prevLShoulder">◀</button><span class="value lShoulderVal">--</span><button class="nextLShoulder">▶</button></div>
+        <div class="armor-unit"><span>🛡️Плечо П</span><button class="prevRShoulder">◀</button><span class="value rShoulderVal">--</span><button class="nextRShoulder">▶</button></div>
+        <div class="armor-unit"><span>🧥Торс</span><button class="prevBody">◀</button><span class="value bodyVal">--</span><button class="nextBody">▶</button></div>
+        <div class="armor-unit"><span>👢Ноги</span><button class="prevLegs">◀</button><span class="value legsVal">--</span><button class="nextLegs">▶</button></div>
+        <div class="armor-unit"><span>📦Сет</span><button class="prevSet">◀</button><span class="value setVal">--</span><button class="nextSet">▶</button><button class="saveSet" style="width:36px;">💾</button></div>
+
+        <div class="weapon-group">
+            <div class="weapon-row"><span>🗡️Тип</span><button class="prevWeaponType">◀</button><span class="value weaponTypeVal">--</span><button class="nextWeaponType">▶</button></div>
+            <div class="weapon-row"><span>🔪Вар.</span><button class="prevVariant">◀</button><span class="value variantVal">--</span><button class="nextVariant">▶</button></div>
+        </div>
+
+        <div class="shield-unit"><span>🛡️Щит</span><button class="prevShield">◀</button><span class="value shieldVal">НЕТ</span><button class="nextShield">▶</button></div>
+        <div class="slider-group"><label>🔍Масштаб тела</label><input type="range" id="scaleSlider" min="0.5" max="1.8" step="0.01" value="1.0"><span id="scaleValue">1.0</span></div>
+
+        <div style="display: flex; gap: 8px; margin-top: 8px;">
+            <button class="btn" id="exportBtn">📦 ЭКСПОРТ</button>
+            <button class="btn" id="importBtn">📥 ИМПОРТ</button>
+            <button class="btn debug-toggle" id="debugBtn">🔍 ОТЛАДКА</button>
+        </div>
+
+        <div id="skeletonPanel" class="skeleton-panel">
+            <h4>🦴 РЕДАКТОР СКЕЛЕТА</h4>
+            <div class="skeleton-json" id="skeletonJson"></div>
+            <div class="skeleton-controls">
+                <button id="copySkeletonBtn">📋 КОПИРОВАТЬ</button>
+                <button id="resetSkeletonBtn">🔄 СБРОСИТЬ</button>
+                <button id="applySkeletonBtn">💾 ПРИМЕНИТЬ</button>
+            </div>
+            <div class="drag-note">✋ ПЕРЕТАСКИВАЙ ТОЧКИ НА ХОЛСТЕ</div>
+        </div>
+
+        <div class="copy-id-area" id="lastCopied">📋 последний ID: —</div>
+        <div class="legend">🔥 КЛИК ПО НАЗВАНИЮ — КОПИРОВАТЬ ID | ЛКМ/ПКМ по холсту — след. вариация/щит</div>
+    </div>
+
+    <div class="canvas-area">
+        <canvas id="galleryCanvas" width="560" height="570"></canvas>
+    </div>
+</div>
+<div id="toastMsg" class="toast">✨ скопировано ✨</div>
+<div id="loadingOverlay" class="loading-overlay"><div class="loading-spinner"></div><div id="loadProgress" style="color:#b980e0;">⚔️ ЗАГРУЗКА...</div></div>
+
+<script>
+    // ============================================================
+    // GODGRAVE РЕДАКТОР — НОВЫЙ ДЕФОЛТНЫЙ СКЕЛЕТ
+    // ============================================================
+    
+    const IMG_BASE = "https://raw.githubusercontent.com/JackofShadow666/GodgraveAssets/main/Build/CharacterSet/";
+    const META_URL = "https://raw.githubusercontent.com/JackofShadow666/GodgraveAssets/main/Build/CharacterSet/sprites.json";
+    
+    const canvas = document.getElementById('galleryCanvas');
+    const ctx = canvas.getContext('2d');
+    const toast = document.getElementById('toastMsg');
+    let charScale = 1.0;
+    let debugMode = false;
+    
+    document.getElementById('scaleSlider').oninput = e => { 
+        charScale = parseFloat(e.target.value); 
+        document.getElementById('scaleValue').innerText = charScale.toFixed(2);
+    };
+
+    function showToast(msg) {
+        toast.innerText = msg;
+        toast.classList.add("show");
+        setTimeout(() => toast.classList.remove("show"), 1500);
+    }
+
+    // ========== НОВЫЕ ДЕФОЛТНЫЕ ПИВОТЫ ==========
+    let BASE_PIVOTS = {
+        body:    { x: 292.1124105084356, y: 368.5917059143773, name: "Торс" },
+        helm:    { x: 292.8165473445808, y: 322.81658817124537, name: "Шлем" },
+        legs:    { x: 292.1124105084356, y: 363.3787938134154, name: "Ноги" },
+        lShoulder: { x: 281.82824192050055, y: 332.0414704281132, name: "Плечо Л" },
+        rShoulder: { x: 304.5089896048061, y: 332.74561747092457, name: "Плечо П" },
+        weapon:  { x: 320, y: 340.77511774313206, name: "Оружие" },
+        shield:  { x: 262.88758949156437, y: 342.1834118287547, name: "Щит" }
+    };
+    
+    // Копия для сброса
+    const DEFAULT_PIVOTS = JSON.parse(JSON.stringify(BASE_PIVOTS));
+    
+    // Плащ крепится к шее (та же точка, что и шлем)
+    const CAPE_PIVOT = { x: 292.8165473445808, y: 322.81658817124537 };
+    
+    let dragging = false;
+    let dragBone = null;
+    let dragOffsetX = 0, dragOffsetY = 0;
+    
+    function getScaledPivots(scale) {
+        const scaled = {};
+        const centerX = 290;
+        const centerY = 360;
+        for (const [key, pivot] of Object.entries(BASE_PIVOTS)) {
+            scaled[key] = {
+                x: centerX + (pivot.x - centerX) * scale,
+                y: centerY + (pivot.y - centerY) * scale,
+                name: pivot.name
+            };
+        }
+        return scaled;
+    }
+    
+    function getScaledCapePivot(scale) {
+        const centerX = 290;
+        const centerY = 360;
+        return {
+            x: centerX + (CAPE_PIVOT.x - centerX) * scale,
+            y: centerY + (CAPE_PIVOT.y - centerY) * scale
+        };
+    }
+    
+    function updateSkeletonPanel() {
+        if (!debugMode) return;
+        const panel = document.getElementById('skeletonPanel');
+        const jsonDiv = document.getElementById('skeletonJson');
+        if (panel && jsonDiv) {
+            panel.classList.add('active');
+            const exportData = {};
+            for (const [key, pivot] of Object.entries(BASE_PIVOTS)) {
+                exportData[key] = { x: pivot.x, y: pivot.y };
+            }
+            jsonDiv.innerText = JSON.stringify(exportData, null, 2);
+        }
+    }
+    
+    function resetSkeleton() {
+        for (const key of Object.keys(BASE_PIVOTS)) {
+            if (DEFAULT_PIVOTS[key]) {
+                BASE_PIVOTS[key].x = DEFAULT_PIVOTS[key].x;
+                BASE_PIVOTS[key].y = DEFAULT_PIVOTS[key].y;
+            }
+        }
+        showToast("🦴 Скелет сброшен к стандартным значениям");
+        updateSkeletonPanel();
+    }
+    
+    function applySkeleton() {
+        for (const key of Object.keys(BASE_PIVOTS)) {
+            DEFAULT_PIVOTS[key].x = BASE_PIVOTS[key].x;
+            DEFAULT_PIVOTS[key].y = BASE_PIVOTS[key].y;
+        }
+        showToast("💾 Новые позиции костей сохранены как стандарт");
+        updateSkeletonPanel();
+    }
+    
+    function copySkeletonJSON() {
+        const exportData = {};
+        for (const [key, pivot] of Object.entries(BASE_PIVOTS)) {
+            exportData[key] = { x: pivot.x, y: pivot.y };
+        }
+        navigator.clipboard.writeText(JSON.stringify(exportData, null, 2));
+        showToast("📋 JSON скелета скопирован!");
+    }
+    
+    function getBoneAt(mouseX, mouseY, scale) {
+        const pivots = getScaledPivots(scale);
+        const threshold = 12;
+        for (const [key, pivot] of Object.entries(pivots)) {
+            const dx = mouseX - pivot.x;
+            const dy = mouseY - pivot.y;
+            if (Math.hypot(dx, dy) < threshold) {
+                return key;
+            }
+        }
+        return null;
+    }
+    
+    function onMouseDown(e) {
+        if (!debugMode) return;
+        e.preventDefault();
+        
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        let clientX, clientY;
+        
+        if (e.touches) {
+            clientX = e.touches[0].clientX;
+            clientY = e.touches[0].clientY;
+        } else {
+            clientX = e.clientX;
+            clientY = e.clientY;
+        }
+        
+        const canvasX = (clientX - rect.left) * scaleX;
+        const canvasY = (clientY - rect.top) * scaleY;
+        
+        const bone = getBoneAt(canvasX, canvasY, charScale);
+        if (bone) {
+            dragging = true;
+            dragBone = bone;
+            const pivots = getScaledPivots(charScale);
+            dragOffsetX = pivots[bone].x - canvasX;
+            dragOffsetY = pivots[bone].y - canvasY;
+            canvas.style.cursor = 'grabbing';
+            e.preventDefault();
+        }
+    }
+    
+    function onMouseMove(e) {
+        if (!debugMode || !dragging || !dragBone) return;
+        e.preventDefault();
+        
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        let clientX, clientY;
+        
+        if (e.touches) {
+            clientX = e.touches[0].clientX;
+            clientY = e.touches[0].clientY;
+        } else {
+            clientX = e.clientX;
+            clientY = e.clientY;
+        }
+        
+        const canvasX = (clientX - rect.left) * scaleX;
+        const canvasY = (clientY - rect.top) * scaleY;
+        
+        const centerX = 290;
+        const centerY = 360;
+        const newX = centerX + (canvasX + dragOffsetX - centerX) / charScale;
+        const newY = centerY + (canvasY + dragOffsetY - centerY) / charScale;
+        
+        BASE_PIVOTS[dragBone].x = Math.min(500, Math.max(80, newX));
+        BASE_PIVOTS[dragBone].y = Math.min(500, Math.max(200, newY));
+        
+        updateSkeletonPanel();
+    }
+    
+    function onMouseUp(e) {
+        if (!debugMode) return;
+        dragging = false;
+        dragBone = null;
+        canvas.style.cursor = 'default';
+    }
+    
+    // ========== ДАННЫЕ ==========
+    let sprites = {};
+    let capes = [], helms = [], lShoulders = [], rShoulders = [], bodies = [], legs = [];
+    let weaponTypes = [], weaponVariants = {};
+    let shieldTypes = [];
+    let armorSets = [];
+    
+    let currentCapeIdx = 0, currentHelmIdx = 0, currentLShoulderIdx = 0, currentRShoulderIdx = 0;
+    let currentBodyIdx = 0, currentLegsIdx = 0;
+    let currentSetIdx = 0;
+    let currentWeaponTypeIdx = 0, currentWeaponVariantIdx = 0;
+    let currentShieldIdx = 0;
+    
+    async function loadSprites() {
+        const progress = document.getElementById('loadProgress');
+        progress.innerText = '⚔️ Загрузка метаданных...';
+        
+        try {
+            const response = await fetch(META_URL);
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            const meta = await response.json();
+            
+            const ids = Object.keys(meta);
+            progress.innerText = `📦 Загрузка ${ids.length} спрайтов...`;
+            
+            let loaded = 0;
+            const loadPromises = ids.map(id => {
+                return new Promise((resolve) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        sprites[id] = {
+                            img: img,
+                            pivotX: meta[id].pivotX,
+                            pivotY: meta[id].pivotY,
+                            width: meta[id].width,
+                            height: meta[id].height
+                        };
+                        loaded++;
+                        progress.innerText = `📦 Загрузка: ${loaded}/${ids.length}`;
+                        resolve();
+                    };
+                    img.onerror = () => {
+                        console.warn(`Не удалось загрузить: ${id}`);
+                        loaded++;
+                        progress.innerText = `📦 Загрузка: ${loaded}/${ids.length}`;
+                        resolve();
+                    };
+                    img.src = IMG_BASE + id + '.png';
+                });
+            });
+            
+            await Promise.all(loadPromises);
+            
+            for (const id of ids) {
+                if (id.startsWith('hd_')) capes.push(id);
+                else if (id.startsWith('helm_')) helms.push(id);
+                else if (id.startsWith('sh_') && !id.includes('shield') && !id.includes('sh_sr') && !id.includes('sh_m') && !id.includes('sh_t')) {
+                    lShoulders.push(id);
+                    rShoulders.push(id);
+                }
+                else if (id.startsWith('body_')) bodies.push(id);
+                else if (id.startsWith('legs_')) legs.push(id);
+                else if (id.startsWith('sw_') || id.startsWith('axe_') || id.startsWith('staff_') || id.startsWith('mstaff_')) {
+                    let type = 'sword';
+                    if (id.startsWith('axe_')) type = 'axe';
+                    else if (id.startsWith('staff_')) type = 'staff';
+                    else if (id.startsWith('mstaff_')) type = 'staff';
+                    else type = 'sword';
+                    if (!weaponVariants[type]) weaponVariants[type] = [];
+                    weaponVariants[type].push(id);
+                }
+                else if (id.startsWith('sh_sr') || id.startsWith('sh_sb') || 
+                         id.startsWith('sh_mk') || id.startsWith('sh_mh') ||
+                         id.startsWith('sh_tp') || id.startsWith('sh_tg')) {
+                    shieldTypes.push(id);
+                }
+            }
+            
+            capes.unshift('none');
+            helms.unshift('none');
+            lShoulders.unshift('none');
+            rShoulders.unshift('none');
+            bodies.unshift('none');
+            legs.unshift('none');
+            shieldTypes.unshift('none');
+            
+            weaponTypes = Object.keys(weaponVariants);
+            
+            armorSets = [
+                { name: "Рыцарь пепла", cape: "none", helm: "helm_horned", lShoulder: "sh_spikes", rShoulder: "sh_spikes", body: "body_plate", legs: "legs_plate" },
+                { name: "Демонический", cape: "none", helm: "helm_abyss", lShoulder: "sh_jagged(1)", rShoulder: "sh_jagged(1)", body: "body_abyss", legs: "legs_spiked" }
+            ];
+            
+            currentCapeIdx = capes.indexOf('none');
+            currentHelmIdx = helms.indexOf('helm_horned');
+            currentLShoulderIdx = lShoulders.indexOf('sh_spikes');
+            currentRShoulderIdx = rShoulders.indexOf('sh_spikes');
+            currentBodyIdx = bodies.indexOf('body_plate');
+            currentLegsIdx = legs.indexOf('legs_plate');
+            currentWeaponTypeIdx = 0;
+            currentWeaponVariantIdx = 0;
+            currentShieldIdx = 0;
+            
+            updateUI();
+            document.getElementById('loadingOverlay').style.display = 'none';
+            renderMain();
+            
+        } catch(e) {
+            progress.innerText = '❌ Ошибка загрузки!';
+            console.error(e);
+            showToast('Ошибка загрузки ассетов');
+        }
+    }
+    
+    function getCurrentCape() { return capes[currentCapeIdx] || 'none'; }
+    function getCurrentHelm() { return helms[currentHelmIdx] || 'none'; }
+    function getCurrentLShoulder() { return lShoulders[currentLShoulderIdx] || 'none'; }
+    function getCurrentRShoulder() { return rShoulders[currentRShoulderIdx] || 'none'; }
+    function getCurrentBody() { return bodies[currentBodyIdx] || 'none'; }
+    function getCurrentLegs() { return legs[currentLegsIdx] || 'none'; }
+    function getCurrentWeapon() {
+        const type = weaponTypes[currentWeaponTypeIdx];
+        const variant = weaponVariants[type]?.[currentWeaponVariantIdx] || null;
+        return { type, id: variant };
+    }
+    function getCurrentShield() { return shieldTypes[currentShieldIdx] || 'none'; }
+    function getCurrentSet() { return armorSets[currentSetIdx] || armorSets[0]; }
+    
+    function drawSprite(ctx, id, x, y, scale = 1, rotation = 0, mirror = false) {
+        const s = sprites[id];
+        if (!s) return;
+        
+        ctx.save();
+        if (rotation !== 0 || mirror) {
+            ctx.translate(x, y);
+            if (rotation !== 0) ctx.rotate(rotation);
+            if (mirror) ctx.scale(-1, 1);
+            ctx.drawImage(s.img, -s.pivotX * scale, -s.pivotY * scale, s.width * scale, s.height * scale);
+        } else {
+            const drawX = x - s.pivotX * scale;
+            const drawY = y - s.pivotY * scale;
+            ctx.drawImage(s.img, drawX, drawY, s.width * scale, s.height * scale);
+        }
+        ctx.restore();
+    }
+    
+    function drawSkeleton(ctx, pivots) {
+        if (!debugMode) return;
+        
+        ctx.save();
+        ctx.globalAlpha = 0.9;
+        
+        const points = [
+            { key: "body", name: "Торс", color: "#44ff44" },
+            { key: "helm", name: "Шлем", color: "#ff4444" },
+            { key: "legs", name: "Ноги", color: "#44ff88" },
+            { key: "lShoulder", name: "Плечо Л", color: "#ffaa44" },
+            { key: "rShoulder", name: "Плечо П", color: "#ffaa44" },
+            { key: "weapon", name: "Оружие", color: "#ff88ff" },
+            { key: "shield", name: "Щит", color: "#88aaff" }
+        ];
+        
+        ctx.beginPath();
+        ctx.moveTo(pivots.body.x, pivots.body.y);
+        ctx.lineTo(pivots.helm.x, pivots.helm.y);
+        ctx.strokeStyle = "#ff8888";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        
+        ctx.beginPath();
+        ctx.moveTo(pivots.body.x, pivots.body.y);
+        ctx.lineTo(pivots.legs.x, pivots.legs.y);
+        ctx.strokeStyle = "#88ff88";
+        ctx.stroke();
+        
+        ctx.beginPath();
+        ctx.moveTo(pivots.helm.x, pivots.helm.y);
+        ctx.lineTo(pivots.lShoulder.x, pivots.lShoulder.y);
+        ctx.lineTo(pivots.weapon.x, pivots.weapon.y);
+        ctx.strokeStyle = "#ffaa88";
+        ctx.stroke();
+        
+        ctx.beginPath();
+        ctx.moveTo(pivots.helm.x, pivots.helm.y);
+        ctx.lineTo(pivots.rShoulder.x, pivots.rShoulder.y);
+        ctx.lineTo(pivots.shield.x, pivots.shield.y);
+        ctx.stroke();
+        
+        for (const p of points) {
+            const pivot = pivots[p.key];
+            if (!pivot) continue;
+            ctx.beginPath();
+            ctx.arc(pivot.x, pivot.y, 8, 0, Math.PI * 2);
+            ctx.fillStyle = p.color;
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(pivot.x, pivot.y, 4, 0, Math.PI * 2);
+            ctx.fillStyle = "#ffffff";
+            ctx.fill();
+            
+            ctx.font = "bold 10px monospace";
+            ctx.fillStyle = p.color;
+            ctx.shadowBlur = 0;
+            ctx.fillText(p.name, pivot.x + 10, pivot.y - 5);
+        }
+        
+        ctx.restore();
+    }
+    
+    function renderMain() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#030108";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        const pivots = getScaledPivots(charScale);
+        const capePivot = getScaledCapePivot(charScale);
+        
+        ctx.save();
+        ctx.shadowBlur = 4;
+        ctx.shadowColor = "rgba(0,0,0,0.8)";
+        
+        ctx.beginPath();
+        ctx.ellipse(pivots.body.x + 5 * charScale, pivots.body.y + 40 * charScale, 50 * charScale, 15 * charScale, 0, 0, Math.PI * 2);
+        ctx.fillStyle = "#00000055";
+        ctx.fill();
+        
+        // === СЛОЙ 1: ПЛАЩ (задний слой) ===
+        const capeId = getCurrentCape();
+        if (capeId !== 'none') {
+            drawSprite(ctx, capeId, capePivot.x, capePivot.y, charScale);
+        }
+        
+        // === СЛОЙ 2: ТОРС ===
+        const bodyId = getCurrentBody();
+        if (bodyId !== 'none') drawSprite(ctx, bodyId, pivots.body.x, pivots.body.y, charScale);
+        
+        // === СЛОЙ 3: НОГИ ===
+        const legsId = getCurrentLegs();
+        if (legsId !== 'none') drawSprite(ctx, legsId, pivots.legs.x, pivots.legs.y, charScale);
+        
+        // === СЛОЙ 4: ПЛЕЧИ ===
+        const lShoulderId = getCurrentLShoulder();
+        if (lShoulderId !== 'none') drawSprite(ctx, lShoulderId, pivots.lShoulder.x, pivots.lShoulder.y, charScale, 0, true);
+        
+        const rShoulderId = getCurrentRShoulder();
+        if (rShoulderId !== 'none') drawSprite(ctx, rShoulderId, pivots.rShoulder.x, pivots.rShoulder.y, charScale, 0, false);
+        
+        // === СЛОЙ 5: ШЛЕМ ===
+        const helmId = getCurrentHelm();
+        if (helmId !== 'none') drawSprite(ctx, helmId, pivots.helm.x, pivots.helm.y, charScale);
+        
+        // === СЛОЙ 6: ОРУЖИЕ ===
+        const weapon = getCurrentWeapon();
+        if (weapon.id && sprites[weapon.id]) drawSprite(ctx, weapon.id, pivots.weapon.x, pivots.weapon.y, charScale * 0.9, -Math.PI / 3);
+        
+        // === СЛОЙ 7: ЩИТ ===
+        const shieldId = getCurrentShield();
+        if (shieldId !== 'none') drawSprite(ctx, shieldId, pivots.shield.x, pivots.shield.y, charScale * 0.9);
+        
+        ctx.restore();
+        
+        drawSkeleton(ctx, pivots);
+        
+        ctx.font = "bold 11px monospace";
+        ctx.fillStyle = "#decfa6";
+        const set = getCurrentSet();
+        ctx.fillText(`✦ ${set?.name || "?"} ✦`, 18, 42);
+        
+        const weaponType = weaponTypes[currentWeaponTypeIdx] || "?";
+        const weaponName = weapon.id?.replace(/^[^_]+_/, '') || "?";
+        ctx.fillText(`⚔ ${weaponType.toUpperCase()} · ${weaponName} ⚔`, 18, 62);
+        
+        if (debugMode) {
+            ctx.fillStyle = "#ffaa44";
+            ctx.fillText(`🔍 ОТЛАДКА: перетаскивай точки | ПКМ для сброса`, 18, 82);
+        } else {
+            const shieldDisplay = shieldId !== 'none' ? shieldId.replace(/^sh_/, '').toUpperCase() : "НЕТ";
+            ctx.fillText(`🛡️ ${shieldDisplay}`, 18, 82);
+        }
+        
+        requestAnimationFrame(renderMain);
+    }
+    
+    function updateUI() {
+        document.querySelector(".capeVal").innerText = getCurrentCape().replace(/^hd_/, '').replace(/_/g, ' ') || "Нет";
+        document.querySelector(".helmVal").innerText = getCurrentHelm().replace(/^helm_/, '').replace(/_/g, ' ') || "Нет";
+        document.querySelector(".lShoulderVal").innerText = getCurrentLShoulder().replace(/^sh_/, '').replace(/_/g, ' ') || "Нет";
+        document.querySelector(".rShoulderVal").innerText = getCurrentRShoulder().replace(/^sh_/, '').replace(/_/g, ' ') || "Нет";
+        document.querySelector(".bodyVal").innerText = getCurrentBody().replace(/^body_/, '').replace(/_/g, ' ') || "Нет";
+        document.querySelector(".legsVal").innerText = getCurrentLegs().replace(/^legs_/, '').replace(/_/g, ' ') || "Нет";
+        document.querySelector(".setVal").innerText = getCurrentSet()?.name || "?";
+        
+        const weapon = getCurrentWeapon();
+        const weaponType = weaponTypes[currentWeaponTypeIdx] || "?";
+        const weaponName = weapon.id?.replace(/^[^_]+_/, '') || "?";
+        document.querySelector(".weaponTypeVal").innerText = weaponType.toUpperCase();
+        document.querySelector(".variantVal").innerText = weaponName;
+        
+        const shieldId = getCurrentShield();
+        document.querySelector(".shieldVal").innerText = shieldId !== 'none' ? shieldId.replace(/^sh_/, '').toUpperCase() : "НЕТ";
+    }
+    
+    function applyCurrentSet() {
+        const set = armorSets[currentSetIdx];
+        if (set) {
+            currentCapeIdx = capes.indexOf(set.cape);
+            if (currentCapeIdx === -1) currentCapeIdx = 0;
+            currentHelmIdx = helms.indexOf(set.helm);
+            if (currentHelmIdx === -1) currentHelmIdx = 0;
+            currentLShoulderIdx = lShoulders.indexOf(set.lShoulder);
+            if (currentLShoulderIdx === -1) currentLShoulderIdx = 0;
+            currentRShoulderIdx = rShoulders.indexOf(set.rShoulder);
+            if (currentRShoulderIdx === -1) currentRShoulderIdx = 0;
+            currentBodyIdx = bodies.indexOf(set.body);
+            if (currentBodyIdx === -1) currentBodyIdx = 0;
+            currentLegsIdx = legs.indexOf(set.legs);
+            if (currentLegsIdx === -1) currentLegsIdx = 0;
+            updateUI();
+        }
+    }
+    
+    function saveCurrentSet() {
+        if (armorSets[currentSetIdx]) {
+            armorSets[currentSetIdx] = {
+                name: armorSets[currentSetIdx].name,
+                cape: getCurrentCape(),
+                helm: getCurrentHelm(),
+                lShoulder: getCurrentLShoulder(),
+                rShoulder: getCurrentRShoulder(),
+                body: getCurrentBody(),
+                legs: getCurrentLegs()
+            };
+            showToast("💾 Сет сохранён!");
+        }
+    }
+    
+    function initNavigation() {
+        document.querySelector(".nextCape").onclick = () => { currentCapeIdx = (currentCapeIdx + 1) % capes.length; updateUI(); };
+        document.querySelector(".prevCape").onclick = () => { currentCapeIdx = (currentCapeIdx - 1 + capes.length) % capes.length; updateUI(); };
+        document.querySelector(".nextHelm").onclick = () => { currentHelmIdx = (currentHelmIdx + 1) % helms.length; updateUI(); };
+        document.querySelector(".prevHelm").onclick = () => { currentHelmIdx = (currentHelmIdx - 1 + helms.length) % helms.length; updateUI(); };
+        document.querySelector(".nextLShoulder").onclick = () => { currentLShoulderIdx = (currentLShoulderIdx + 1) % lShoulders.length; updateUI(); };
+        document.querySelector(".prevLShoulder").onclick = () => { currentLShoulderIdx = (currentLShoulderIdx - 1 + lShoulders.length) % lShoulders.length; updateUI(); };
+        document.querySelector(".nextRShoulder").onclick = () => { currentRShoulderIdx = (currentRShoulderIdx + 1) % rShoulders.length; updateUI(); };
+        document.querySelector(".prevRShoulder").onclick = () => { currentRShoulderIdx = (currentRShoulderIdx - 1 + rShoulders.length) % rShoulders.length; updateUI(); };
+        document.querySelector(".nextBody").onclick = () => { currentBodyIdx = (currentBodyIdx + 1) % bodies.length; updateUI(); };
+        document.querySelector(".prevBody").onclick = () => { currentBodyIdx = (currentBodyIdx - 1 + bodies.length) % bodies.length; updateUI(); };
+        document.querySelector(".nextLegs").onclick = () => { currentLegsIdx = (currentLegsIdx + 1) % legs.length; updateUI(); };
+        document.querySelector(".prevLegs").onclick = () => { currentLegsIdx = (currentLegsIdx - 1 + legs.length) % legs.length; updateUI(); };
+        
+        document.querySelector(".nextSet").onclick = () => { currentSetIdx = (currentSetIdx + 1) % armorSets.length; applyCurrentSet(); };
+        document.querySelector(".prevSet").onclick = () => { currentSetIdx = (currentSetIdx - 1 + armorSets.length) % armorSets.length; applyCurrentSet(); };
+        document.querySelector(".saveSet").onclick = saveCurrentSet;
+        
+        document.querySelector(".nextWeaponType").onclick = () => {
+            currentWeaponTypeIdx = (currentWeaponTypeIdx + 1) % weaponTypes.length;
+            currentWeaponVariantIdx = 0;
+            updateUI();
+        };
+        document.querySelector(".prevWeaponType").onclick = () => {
+            currentWeaponTypeIdx = (currentWeaponTypeIdx - 1 + weaponTypes.length) % weaponTypes.length;
+            currentWeaponVariantIdx = 0;
+            updateUI();
+        };
+        document.querySelector(".nextVariant").onclick = () => {
+            const type = weaponTypes[currentWeaponTypeIdx];
+            const variants = weaponVariants[type] || [];
+            if (variants.length) currentWeaponVariantIdx = (currentWeaponVariantIdx + 1) % variants.length;
+            updateUI();
+        };
+        document.querySelector(".prevVariant").onclick = () => {
+            const type = weaponTypes[currentWeaponTypeIdx];
+            const variants = weaponVariants[type] || [];
+            if (variants.length) currentWeaponVariantIdx = (currentWeaponVariantIdx - 1 + variants.length) % variants.length;
+            updateUI();
+        };
+        
+        document.querySelector(".nextShield").onclick = () => {
+            currentShieldIdx = (currentShieldIdx + 1) % shieldTypes.length;
+            updateUI();
+        };
+        document.querySelector(".prevShield").onclick = () => {
+            currentShieldIdx = (currentShieldIdx - 1 + shieldTypes.length) % shieldTypes.length;
+            updateUI();
+        };
+    }
+    
+    function exportData() {
+        const data = {
+            cape: currentCapeIdx, helm: currentHelmIdx, lShoulder: currentLShoulderIdx, rShoulder: currentRShoulderIdx,
+            body: currentBodyIdx, legs: currentLegsIdx,
+            weaponType: currentWeaponTypeIdx, weaponVariant: currentWeaponVariantIdx,
+            shield: currentShieldIdx, set: currentSetIdx, scale: charScale,
+            skeleton: (() => {
+                const sk = {};
+                for (const [key, pivot] of Object.entries(BASE_PIVOTS)) {
+                    sk[key] = { x: pivot.x, y: pivot.y };
+                }
+                return sk;
+            })()
+        };
+        navigator.clipboard.writeText(JSON.stringify(data, null, 2));
+        showToast("📦 Данные (включая скелет) скопированы!");
+    }
+    
+    function importData() {
+        const text = prompt("📥 Вставьте JSON:");
+        if (!text) return;
+        try {
+            const data = JSON.parse(text);
+            if (data.cape !== undefined) currentCapeIdx = Math.min(data.cape, capes.length - 1);
+            if (data.helm !== undefined) currentHelmIdx = Math.min(data.helm, helms.length - 1);
+            if (data.lShoulder !== undefined) currentLShoulderIdx = Math.min(data.lShoulder, lShoulders.length - 1);
+            if (data.rShoulder !== undefined) currentRShoulderIdx = Math.min(data.rShoulder, rShoulders.length - 1);
+            if (data.body !== undefined) currentBodyIdx = Math.min(data.body, bodies.length - 1);
+            if (data.legs !== undefined) currentLegsIdx = Math.min(data.legs, legs.length - 1);
+            if (data.weaponType !== undefined) currentWeaponTypeIdx = Math.min(data.weaponType, weaponTypes.length - 1);
+            if (data.weaponVariant !== undefined) {
+                const type = weaponTypes[currentWeaponTypeIdx];
+                const variants = weaponVariants[type] || [];
+                currentWeaponVariantIdx = Math.min(data.weaponVariant, variants.length - 1);
+            }
+            if (data.shield !== undefined) currentShieldIdx = Math.min(data.shield, shieldTypes.length - 1);
+            if (data.set !== undefined) currentSetIdx = Math.min(data.set, armorSets.length - 1);
+            if (data.scale !== undefined) {
+                charScale = data.scale;
+                document.getElementById('scaleSlider').value = charScale;
+                document.getElementById('scaleValue').innerText = charScale;
+            }
+            if (data.skeleton) {
+                for (const [key, pos] of Object.entries(data.skeleton)) {
+                    if (BASE_PIVOTS[key]) {
+                        BASE_PIVOTS[key].x = pos.x;
+                        BASE_PIVOTS[key].y = pos.y;
+                    }
+                }
+                updateSkeletonPanel();
+            }
+            applyCurrentSet();
+            updateUI();
+            showToast("✅ Импортировано (включая скелет)!");
+        } catch(e) { showToast("❌ Ошибка JSON"); }
+    }
+    
+    function toggleDebug() {
+        debugMode = !debugMode;
+        const btn = document.getElementById('debugBtn');
+        const panel = document.getElementById('skeletonPanel');
+        btn.classList.toggle('active', debugMode);
+        btn.innerText = debugMode ? "🔍 ОТЛАДКА (ВКЛ)" : "🔍 ОТЛАДКА";
+        if (debugMode) {
+            panel.classList.add('active');
+            updateSkeletonPanel();
+            canvas.addEventListener('mousedown', onMouseDown);
+            canvas.addEventListener('mousemove', onMouseMove);
+            canvas.addEventListener('mouseup', onMouseUp);
+            canvas.addEventListener('touchstart', onMouseDown);
+            canvas.addEventListener('touchmove', onMouseMove);
+            canvas.addEventListener('touchend', onMouseUp);
+        } else {
+            panel.classList.remove('active');
+            canvas.removeEventListener('mousedown', onMouseDown);
+            canvas.removeEventListener('mousemove', onMouseMove);
+            canvas.removeEventListener('mouseup', onMouseUp);
+            canvas.removeEventListener('touchstart', onMouseDown);
+            canvas.removeEventListener('touchmove', onMouseMove);
+            canvas.removeEventListener('touchend', onMouseUp);
+            dragging = false;
+            dragBone = null;
+            canvas.style.cursor = 'default';
+        }
+        showToast(debugMode ? "Режим отладки включён — перетаскивай кости" : "Режим отладки выключен");
+    }
+    
+    function copyId(t, l) { 
+        navigator.clipboard.writeText(t).then(() => { 
+            showToast(`📋 скопировано: ${l}`); 
+            document.getElementById("lastCopied").innerHTML = `📋 последний ID: ${t}`;
+        }); 
+    }
+    
+    document.getElementById('exportBtn').onclick = exportData;
+    document.getElementById('importBtn').onclick = importData;
+    document.getElementById('debugBtn').onclick = toggleDebug;
+    document.getElementById('copySkeletonBtn').onclick = copySkeletonJSON;
+    document.getElementById('resetSkeletonBtn').onclick = resetSkeleton;
+    document.getElementById('applySkeletonBtn').onclick = applySkeleton;
+    
+    document.querySelector(".weaponTypeVal").onclick = () => copyId(weaponTypes[currentWeaponTypeIdx], "тип оружия");
+    document.querySelector(".variantVal").onclick = () => copyId(getCurrentWeapon().id || "none", "вариация");
+    document.querySelector(".shieldVal").onclick = () => copyId(getCurrentShield(), "щит");
+    
+    canvas.onclick = () => {
+        if (debugMode) return;
+        const type = weaponTypes[currentWeaponTypeIdx];
+        const variants = weaponVariants[type] || [];
+        if (variants.length) currentWeaponVariantIdx = (currentWeaponVariantIdx + 1) % variants.length;
+        updateUI();
+    };
+    canvas.oncontextmenu = (e) => {
+        e.preventDefault();
+        if (debugMode) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const canvasX = (e.clientX - rect.left) * scaleX;
+            const canvasY = (e.clientY - rect.top) * scaleY;
+            const bone = getBoneAt(canvasX, canvasY, charScale);
+            if (bone && DEFAULT_PIVOTS[bone]) {
+                BASE_PIVOTS[bone].x = DEFAULT_PIVOTS[bone].x;
+                BASE_PIVOTS[bone].y = DEFAULT_PIVOTS[bone].y;
+                updateSkeletonPanel();
+                showToast(`🦴 ${BASE_PIVOTS[bone].name} сброшен`);
+            }
+        } else {
+            currentShieldIdx = (currentShieldIdx + 1) % shieldTypes.length;
+            updateUI();
+        }
+    };
+    
+    loadSprites();
+    initNavigation();
+</script>
+</body>
+</html>

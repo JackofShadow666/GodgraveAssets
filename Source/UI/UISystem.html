@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Cracked Bars — Final: edge+line frame, fitted fills</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      user-select: none;
+    }
+
+    .game-background {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background-image: var(--tex-bg, none);
+      background-size: cover;
+      background-position: center;
+      filter: brightness(0.85);
+      z-index: -2;
+    }
+    body {
+      background: transparent;
+      min-height: 100vh;
+      font-family: monospace;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    :root {
+      --ui-opacity: 0.9;
+      /* Имя шрифта намеренно специфичное (namespaced), чтобы не
+         конфликтовать со шрифтами хост-игры при вставке этого модуля. */
+      --gg-font-bloody-drip: "GodgraveBloodyDrip", monospace;
+      /* размеры текстуры L (бар) */
+      --l-width: 56px;
+      --l-height: 32px;
+      /* размеры текстуры M (бар) */
+      --m-height: 32px;
+      /* инсет заливки относительно высоты M, в px (рассчитывается по пропорции) */
+      --fill-inset: 4px;
+      /* размер уголка T_BarEdge для панели */
+      --edge-size: 24px;
+      /* толщина линии T_BarLine для панели */
+      --line-thickness: 8px;
+    }
+
+    .boss-bar-container,
+    .player-bars,
+    .controls-panel {
+      opacity: var(--ui-opacity);
+      transition: opacity 0.1s;
+    }
+
+    /* ----- БОСС БАР ----- */
+    .boss-bar-container {
+      position: fixed;
+      top: 32px;
+      left: 15%;
+      right: 15%;
+      width: 70%;
+      z-index: 8;
+      transition: opacity 0.35s ease-in-out, visibility 0.35s;
+      visibility: visible;
+    }
+    .boss-bar-container.hidden {
+      opacity: 0;
+      visibility: hidden;
+    }
+    .boss-frame {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      width: 100%;
+    }
+    .boss-l, .boss-r {
+      width: var(--l-width, 56px);
+      height: var(--l-height, 32px);
+      background-size: auto 100%;
+      background-repeat: no-repeat;
+      background-position: left center;
+      flex-shrink: 0;
+      z-index: 10;
+    }
+    /* Плотное прилегание: убираем зазор полностью */
+    .boss-l { background-image: var(--tex-l); margin-right: 0; }
+    .boss-r { background-image: var(--tex-l); transform: scaleX(-1); margin-left: 0; }
+
+    .boss-mid {
+      position: relative;
+      flex: 1;
+      height: var(--m-height, 32px);
+      overflow: hidden;
+      align-self: center;
+    }
+    .boss-bg-dark {
+      position: absolute;
+      top: var(--fill-inset);
+      bottom: var(--fill-inset);
+      left: 0; right: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 1;
+    }
+    .boss-gradient {
+      position: absolute;
+      top: var(--fill-inset);
+      bottom: var(--fill-inset);
+      left: 0; right: 0;
+      background: linear-gradient(90deg, rgba(140,30,30,0) 0%, rgba(140,30,30,0) 90%, rgba(140,30,30,0.8) 100%);
+      opacity: var(--boss-grad-opacity, 0);
+      z-index: 2;
+      transition: opacity 0.1s;
+    }
+    .boss-fill {
+      position: absolute;
+      top: var(--fill-inset);
+      bottom: var(--fill-inset);
+      left: 0;
+      width: calc(100% * var(--boss-pct, 1));
+      background: linear-gradient(180deg, #b33a3a 0%, #8b1a1a 50%, #5a0a0a 100%);
+      mask-image: linear-gradient(90deg, black 0%, black calc(100% - 30px), transparent 100%);
+      -webkit-mask-image: linear-gradient(90deg, black 0%, black calc(100% - 30px), transparent 100%);
+      z-index: 3;
+      transition: width 0.2s;
+    }
+    .boss-m {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-image: var(--tex-m);
+      background-size: auto 100%;
+      background-repeat: repeat-x;
+      background-position: left center;
+      z-index: 4;
+      pointer-events: none;
+    }
+
+    /* ----- ИГРОКИ ----- */
+    .player-bars {
+      position: fixed;
+      bottom: 28px;
+      left: 20px;
+      right: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      z-index: 10;
+      max-width: 700px;
+      margin: 0 auto;
+    }
+    .hp-wrapper { width: 100%; }
+    .double-row { display: flex; gap: 12px; width: 100%; }
+    .stam-wrapper, .rage-wrapper { flex: 1; }
+
+    .bar-frame {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      width: 100%;
+    }
+    .bar-l-left, .bar-l-right {
+      width: var(--l-width, 56px);
+      height: var(--l-height, 28px);
+      background-size: auto 100%;
+      background-repeat: no-repeat;
+      background-position: left center;
+      flex-shrink: 0;
+      z-index: 20;
+      pointer-events: none;
+    }
+    /* Плотное прилегание: без зазора */
+    .bar-l-left { background-image: var(--tex-l); margin-right: 0; }
+    .bar-l-right { background-image: var(--tex-l); transform: scaleX(-1); margin-left: 0; }
+
+    .bar-m-container {
+      position: relative;
+      height: var(--m-height, 28px);
+      flex: 1;
+      overflow: hidden;
+      align-self: center;
+    }
+    .bar-m {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-image: var(--tex-m);
+      background-size: auto 100%;
+      background-repeat: repeat-x;
+      background-position: left center;
+      z-index: 15;
+      pointer-events: none;
+    }
+    .bg-dark {
+      position: absolute;
+      top: var(--fill-inset);
+      bottom: var(--fill-inset);
+      left: 0; right: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 1;
+    }
+    .gradient-layer {
+      position: absolute;
+      top: var(--fill-inset);
+      bottom: var(--fill-inset);
+      left: 0; right: 0;
+      background: linear-gradient(90deg, rgba(140,30,30,0) 0%, rgba(140,30,30,0) 90%, rgba(140,30,30,0.8) 100%);
+      opacity: var(--grad-opacity, 0);
+      z-index: 2;
+      transition: opacity 0.1s;
+      pointer-events: none;
+    }
+    .gradient-stam { background: linear-gradient(90deg, rgba(180,90,20,0) 0%, rgba(180,90,20,0) 90%, rgba(180,90,20,0.8) 100%); }
+    .gradient-rage { background: linear-gradient(90deg, rgba(140,60,200,0) 0%, rgba(140,60,200,0) 90%, rgba(140,60,200,0.8) 100%); }
+
+    /* Заливка строго внутри M по высоте: top/bottom = --fill-inset (вычисляется из текстуры) */
+    .fill-normal {
+      position: absolute;
+      top: var(--fill-inset);
+      bottom: var(--fill-inset);
+      left: 0;
+      width: calc(100% * var(--pct, 0));
+      z-index: 3;
+      transition: width 0.12s;
+      mask-image: linear-gradient(90deg, black 0%, black calc(100% - 20px), transparent 100%);
+      -webkit-mask-image: linear-gradient(90deg, black 0%, black calc(100% - 20px), transparent 100%);
+    }
+    .fill-hp { background: linear-gradient(180deg, #aa4a4a 0%, #7a2020 50%, #4a0f0f 100%); }
+    .fill-stam { background: linear-gradient(180deg, #e8a870 0%, #c46a2a 50%, #a03a0a 100%); }
+    .fill-rage { background: linear-gradient(180deg, #bbbbbb, #777777, #444444); transition: background 0.1s; }
+    .fill-rage.rage-viable { background: linear-gradient(180deg, #c97bff, #9b30ff, #5e0eaa); }
+
+    .panel-backdrop {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0);
+      z-index: 150;
+      pointer-events: none;
+      transition: background 0.2s;
+    }
+    .panel-backdrop.open {
+      background: rgba(0, 0, 0, 0.55);
+      pointer-events: auto;
+    }
+
+    /* ----- ПАНЕЛЬ УПРАВЛЕНИЯ (рамка из T_BarEdge + T_BarLine) ----- */
+    .controls-panel {
+      font-family: var(--gg-font-bloody-drip);
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.95);
+      width: 340px;
+      z-index: 200;
+      pointer-events: auto;
+      opacity: 0;
+      visibility: hidden;
+      transition: 0.2s;
+      /* padding оставляет место под рамку */
+      padding: var(--edge-size) var(--edge-size) var(--edge-size) var(--edge-size);
+    }
+    .controls-panel.open {
+      opacity: var(--ui-opacity, 0.9);
+      visibility: visible;
+      transform: translate(-50%, -50%) scale(1);
+    }
+
+    /* Фон содержимого панели — чуть шире рамки, чтобы избежать зазоров.
+       Затухание к прозрачности у краёв (имитация "разблюренной" границы):
+       сплошной цвет в центре, плавно уходит в прозрачность к краям через
+       mask-image, не теряя резкости самого фона/блюра. */
+    .panel-inner {
+      position: absolute;
+      top: -2px; left: -2px; right: -2px; bottom: -2px;
+      background: rgba(20, 16, 16, 0.95);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      mask-image: radial-gradient(ellipse at center, black 55%, transparent 100%);
+      -webkit-mask-image: radial-gradient(ellipse at center, black 55%, transparent 100%);
+      z-index: 1;
+    }
+    .panel-content {
+      position: relative;
+      z-index: 2;
+      padding: 12px 16px;
+    }
+
+    /* Рамка: 4 линии (тайлятся T_BarLine) */
+    .panel-frame {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      pointer-events: none;
+      z-index: 5;
+    }
+    .panel-edge {
+      position: absolute;
+      width: var(--edge-size);
+      height: var(--edge-size);
+      background-image: var(--tex-edge);
+      background-size: 100% 100%;
+      background-repeat: no-repeat;
+    }
+    /* Левый верхний — оригинал */
+    .panel-edge.tl { top: 0; left: 0; }
+    /* Правый верхний — поворот 90° */
+    .panel-edge.tr { top: 0; right: 0; transform: rotate(90deg); }
+    /* Правый нижний — поворот 180° */
+    .panel-edge.br { bottom: 0; right: 0; transform: rotate(180deg); }
+    /* Левый нижний — поворот 270° */
+    .panel-edge.bl { bottom: 0; left: 0; transform: rotate(270deg); }
+
+    .panel-line {
+      position: absolute;
+      background-image: var(--tex-line);
+      background-repeat: repeat;
+    }
+    /* Верхняя и нижняя — горизонтальная линия, тайлится по X */
+    .panel-line.top, .panel-line.bottom {
+      left: var(--edge-size);
+      right: var(--edge-size);
+      height: var(--line-thickness);
+      background-size: var(--panel-line-tile-w, auto) var(--line-thickness);
+      background-repeat: repeat-x;
+    }
+    .panel-line.top { top: 0; }
+    .panel-line.bottom { bottom: 0; transform: rotate(180deg); }
+    /* Левая и правая — та же линия, повёрнута на 90°, тайлится по Y */
+    .panel-line.left, .panel-line.right {
+      top: var(--edge-size);
+      bottom: var(--edge-size);
+      width: var(--line-thickness);
+      overflow: hidden;
+      background-image: none;
+      background-repeat: no-repeat;
+    }
+    .panel-line.left { left: 0; }
+    .panel-line.right { right: 0; }
+    /* Текстура T_BarLine горизонтальна и тайлится по X.
+       Для вертикальных сторон создаём слой, у которого ширина/высота
+       переставлены местами (равны высоте/ширине контейнера), заполняем
+       его горизонтальным тайлом линии, затем поворачиваем на 90°
+       вокруг центра — после поворота слой точно покрывает контейнер,
+       а тайлинг идёт вдоль вертикальной стороны. */
+    .panel-line.left::before, .panel-line.right::before {
+      content: "";
+      position: absolute;
+      top: 50%; left: 50%;
+      width: var(--panel-side-h, 200px);
+      height: var(--line-thickness);
+      background-image: var(--tex-line);
+      background-repeat: repeat-x;
+      background-size: var(--panel-line-tile-w, auto) var(--line-thickness);
+      transform: translate(-50%, -50%) rotate(90deg);
+      transform-origin: center;
+    }
+    /* Левая сторона повёрнута дополнительно на 180° */
+    .panel-line.left::before {
+      transform: translate(-50%, -50%) rotate(270deg);
+    }
+    .panel-line.left, .panel-line.right {
+      position: absolute;
+    }
+
+    .control-group { margin-bottom: 18px; }
+    .control-group label { display: flex; justify-content: space-between; font-size: 12px; font-weight: bold; margin-bottom: 5px; }
+    .hp-label { color: #ff7777; }
+    .stam-label { color: #f5b042; }
+    .rage-label { color: #cc88ff; }
+    .boss-label-panel { color: #ff8866; margin-top: 10px; border-top: 1px solid #333; padding-top: 12px; }
+    .ui-opacity-label { color: #aaa; margin-top: 12px; border-top: 1px solid #333; padding-top: 12px; }
+    input[type="range"] { width: 100%; cursor: pointer; background: #2c2c2c; height: 4px; border-radius: 10px; }
+    .value-display { font-family: monospace; background: #1e1e1e; padding: 2px 8px; border-radius: 40px; font-size: 11px; }
+    .close-hint { text-align: center; margin-top: 14px; font-size: 10px; color: #aaa; cursor: pointer; background: #222; display: inline-block; width: 100%; padding: 5px; border-radius: 60px; }
+    .status { position: fixed; bottom: 8px; left: 12px; font-size: 9px; color: #6acc6a; background: #00000088; padding: 2px 8px; border-radius: 20px; z-index: 200; pointer-events: none; max-width: 90vw; }
+  </style>
+</head>
+<body>
+
+<div class="game-background" id="gameBg"></div>
+
+<!-- БОСС БАР -->
+<div class="boss-bar-container" id="bossBarContainer">
+  <div class="boss-frame">
+    <div class="boss-l"></div>
+    <div class="boss-mid">
+      <div class="boss-bg-dark"></div>
+      <div class="boss-gradient" id="bossGradient"></div>
+      <div class="boss-fill" id="bossFill" style="--boss-pct:1;"></div>
+      <div class="boss-m"></div>
+    </div>
+    <div class="boss-r"></div>
+  </div>
+</div>
+
+<!-- ТРИ ШКАЛЫ ИГРОКА -->
+<div class="player-bars">
+  <div class="hp-wrapper">
+    <div class="bar-frame">
+      <div class="bar-l-left"></div>
+      <div class="bar-m-container">
+        <div class="bg-dark"></div>
+        <div class="gradient-layer" id="hpGrad"></div>
+        <div class="fill-normal fill-hp" id="fillHp" style="--pct:0;"></div>
+        <div class="bar-m"></div>
+      </div>
+      <div class="bar-l-right"></div>
+    </div>
+  </div>
+  <div class="double-row">
+    <div class="stam-wrapper">
+      <div class="bar-frame">
+        <div class="bar-l-left"></div>
+        <div class="bar-m-container">
+          <div class="bg-dark"></div>
+          <div class="gradient-layer gradient-stam" id="stamGrad"></div>
+          <div class="fill-normal fill-stam" id="fillStam" style="--pct:0;"></div>
+          <div class="bar-m"></div>
+        </div>
+        <div class="bar-l-right"></div>
+      </div>
+    </div>
+    <div class="rage-wrapper">
+      <div class="bar-frame">
+        <div class="bar-l-left"></div>
+        <div class="bar-m-container">
+          <div class="bg-dark"></div>
+          <div class="gradient-layer gradient-rage" id="rageGrad"></div>
+          <div class="fill-normal fill-rage" id="fillRage" style="--pct:0;"></div>
+          <div class="bar-m"></div>
+        </div>
+        <div class="bar-l-right"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ПАНЕЛЬ УПРАВЛЕНИЯ -->
+<div class="panel-backdrop" id="panelBackdrop"></div>
+<div class="controls-panel" id="controlsPanel">
+  <div class="panel-frame">
+    <div class="panel-edge tl"></div>
+    <div class="panel-edge tr"></div>
+    <div class="panel-edge br"></div>
+    <div class="panel-edge bl"></div>
+    <div class="panel-line top"></div>
+    <div class="panel-line bottom"></div>
+    <div class="panel-line left"></div>
+    <div class="panel-line right"></div>
+  </div>
+  <div class="panel-inner"></div>
+  <div class="panel-content">
+    <div class="control-group">
+      <label class="hp-label"><span>❤️ HEALTH</span><span id="hpVal" class="value-display">65%</span></label>
+      <input type="range" id="hpSlider" min="0" max="100" value="65">
+    </div>
+    <div class="control-group">
+      <label class="stam-label"><span>⚡ STAMINA</span><span id="stamVal" class="value-display">42%</span></label>
+      <input type="range" id="stamSlider" min="0" max="100" value="42">
+    </div>
+    <div class="control-group">
+      <label class="rage-label"><span>💢 RAGE</span><span id="rageVal" class="value-display">27%</span></label>
+      <input type="range" id="rageSlider" min="0" max="100" value="27">
+    </div>
+    <div class="control-group boss-label-panel">
+      <label><span>👑 BOSS HP</span><span id="bossVal" class="value-display">100%</span></label>
+      <input type="range" id="bossSlider" min="0" max="100" value="100">
+    </div>
+    <div class="control-group">
+      <label><span>🎬 Видимость босс-бара</span></label>
+      <button id="toggleBossBtn" style="width:100%; padding:6px; background:#2c2c2c; border:1px solid #555; color:#ffaa88; border-radius:60px; cursor:pointer;">Спрятать</button>
+    </div>
+    <div class="control-group ui-opacity-label">
+      <label><span>✨ Прозрачность UI</span><span id="opacityVal" class="value-display">90%</span></label>
+      <input type="range" id="uiOpacitySlider" min="0.3" max="1" step="0.01" value="0.9">
+    </div>
+    <div class="close-hint" id="closePanelBtn">✖ закрыть</div>
+  </div>
+</div>
+<div class="status" id="status">Загрузка текстур...</div>
+
+<script>
+  const PROJECT_PATH = "https://raw.githubusercontent.com/JackofShadow666/GodgraveAssets/main/";
+  const URL_L    = PROJECT_PATH + "Source/UI/T_BarLeft.png";
+  const URL_M    = PROJECT_PATH + "Source/UI/T_BarMiddle.png";
+  const URL_EDGE = PROJECT_PATH + "Source/UI/T_BarEdge.png";
+  const URL_LINE = PROJECT_PATH + "Source/UI/T_BarLine.png";
+  const URL_BG   = PROJECT_PATH + "Source/UI/T_LocationPreview.png";
+  const URL_FONT = PROJECT_PATH + "Source/Font/BloodyDrip-Regular.ttf";
+
+  function loadAsDataUri(url) {
+    return fetch(url)
+      .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.blob(); })
+      .then(blob => new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      }));
+  }
+
+  function getImageSize(url) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve({ width: img.width, height: img.height });
+      img.onerror = reject;
+      img.src = url;
+    });
+  }
+
+  const root = document.documentElement;
+  let errors = [];
+  let statusParts = [];
+
+  // Размеры L определяют ширину/высоту рамки бара
+  getImageSize(URL_L)
+    .then(size => {
+      root.style.setProperty('--l-width', size.width + 'px');
+      root.style.setProperty('--l-height', size.height + 'px');
+      statusParts.push(`L: ${size.width}x${size.height}`);
+    })
+    .catch(e => errors.push('L size: ' + e.message));
+
+  // Размеры M определяют высоту "канала" заливки и высоту bar-m-container.
+  getImageSize(URL_M)
+    .then(size => {
+      root.style.setProperty('--m-height', size.height + 'px');
+      statusParts.push(`M: ${size.width}x${size.height}`);
+      // Инсет заливки — небольшая доля от высоты самой M (не L!),
+      // т.к. видимая внутренняя область M меньше её полной высоты.
+      const ratio = 0.2; // регулируемая доля рамки M по высоте (увеличь, если заливка всё ещё выходит за M)
+      const inset = Math.max(2, size.height * ratio);
+      root.style.setProperty('--fill-inset', inset + 'px');
+    })
+    .catch(e => errors.push('M size: ' + e.message));
+
+  // Размеры Edge определяют размер уголка рамки панели
+  getImageSize(URL_EDGE)
+    .then(size => {
+      root.style.setProperty('--edge-size', size.width + 'px');
+      statusParts.push(`Edge: ${size.width}x${size.height}`);
+      if (panelVisible) updatePanelSideHeight();
+    })
+    .catch(e => errors.push('Edge size: ' + e.message));
+
+  // Размеры Line определяют толщину линии рамки панели (по высоте текстуры)
+  getImageSize(URL_LINE)
+    .then(size => {
+      root.style.setProperty('--line-thickness', size.height + 'px');
+      statusParts.push(`Line: ${size.width}x${size.height}`);
+      lineTileRatio = size.width / size.height;
+      root.style.setProperty('--panel-line-tile-w', size.width + 'px');
+      if (panelVisible) updatePanelSideHeight();
+    })
+    .catch(e => errors.push('Line size: ' + e.message));
+
+  // ----- Шрифт BloodyDrip-Regular -----
+  // Модуль может быть вставлен в игру несколько раз (или соседствовать с
+  // другими копиями этого UI). Используем глобальный флаг на window,
+  // чтобы @font-face регистрировался и файл шрифта грузился только один
+  // раз за всю страницу, независимо от количества экземпляров модуля.
+  const FONT_FAMILY_NAME = 'GodgraveBloodyDrip';
+  function loadBloodyDripFont() {
+    if (window.__ggFontBloodyDripLoaded) {
+      return window.__ggFontBloodyDripLoaded;
+    }
+    window.__ggFontBloodyDripLoaded = loadAsDataUri(URL_FONT)
+      .then(uri => {
+        const fontFace = new FontFace(FONT_FAMILY_NAME, `url(${uri})`);
+        return fontFace.load().then(loaded => {
+          document.fonts.add(loaded);
+          statusParts.push(`Font: ${FONT_FAMILY_NAME} OK`);
+        });
+      })
+      .catch(e => {
+        errors.push('Font: ' + e.message);
+        throw e;
+      });
+    return window.__ggFontBloodyDripLoaded;
+  }
+
+  Promise.all([
+    loadAsDataUri(URL_L).then(uri => root.style.setProperty('--tex-l', `url('${uri}')`)).catch(e => errors.push('L: ' + e.message)),
+    loadAsDataUri(URL_M).then(uri => root.style.setProperty('--tex-m', `url('${uri}')`)).catch(e => errors.push('M: ' + e.message)),
+    loadAsDataUri(URL_EDGE).then(uri => root.style.setProperty('--tex-edge', `url('${uri}')`)).catch(e => errors.push('Edge: ' + e.message)),
+    loadAsDataUri(URL_LINE).then(uri => root.style.setProperty('--tex-line', `url('${uri}')`)).catch(e => errors.push('Line: ' + e.message)),
+    loadAsDataUri(URL_BG).then(uri => {
+      document.getElementById('gameBg').style.backgroundImage = `url('${uri}')`;
+    }).catch(e => errors.push('BG: ' + e.message)),
+    loadBloodyDripFont().catch(() => {}) // ошибка уже записана в errors
+  ]).finally(() => {
+    const base = statusParts.join(' | ');
+    if (errors.length) document.getElementById('status').innerHTML = `⚠ ${base} || ${errors.join(' | ')}`;
+    else document.getElementById('status').innerHTML = `✅ ${base} — L прижат к M, заливка внутри M, рамка панели из Edge+Line`;
+  });
+
+  // Общая прозрачность
+  const opacitySlider = document.getElementById('uiOpacitySlider');
+  const opacityVal = document.getElementById('opacityVal');
+  opacitySlider.addEventListener('input', () => {
+    const val = parseFloat(opacitySlider.value);
+    opacityVal.innerText = Math.round(val * 100) + '%';
+    root.style.setProperty('--ui-opacity', val);
+  });
+
+  // БОСС
+  const bossSlider = document.getElementById('bossSlider');
+  const bossVal = document.getElementById('bossVal');
+  const bossFill = document.getElementById('bossFill');
+  const bossGrad = document.getElementById('bossGradient');
+  function updateBoss() {
+    const val = parseInt(bossSlider.value);
+    const pct = val / 100;
+    bossVal.innerText = val + '%';
+    bossFill.style.setProperty('--boss-pct', pct);
+    let grad = 0;
+    if (pct > 0.9) grad = (pct - 0.9) / 0.1;
+    bossGrad.style.opacity = Math.min(1, grad);
+  }
+  bossSlider.addEventListener('input', updateBoss);
+  updateBoss();
+
+  // Босс-бар: плавное появление/исчезновение
+  const bossBar = document.getElementById('bossBarContainer');
+  const toggleBtn = document.getElementById('toggleBossBtn');
+  let bossVisible = true;
+  toggleBtn.addEventListener('click', () => {
+    bossVisible = !bossVisible;
+    if (bossVisible) {
+      bossBar.classList.remove('hidden');
+      toggleBtn.textContent = 'Спрятать';
+    } else {
+      bossBar.classList.add('hidden');
+      toggleBtn.textContent = 'Показать';
+    }
+  });
+
+  // ИГРОКИ
+  const hpSlider = document.getElementById('hpSlider');
+  const hpVal = document.getElementById('hpVal');
+  const fillHp = document.getElementById('fillHp');
+  const hpGrad = document.getElementById('hpGrad');
+
+  const stamSlider = document.getElementById('stamSlider');
+  const stamVal = document.getElementById('stamVal');
+  const fillStam = document.getElementById('fillStam');
+  const stamGrad = document.getElementById('stamGrad');
+
+  const rageSlider = document.getElementById('rageSlider');
+  const rageVal = document.getElementById('rageVal');
+  const fillRage = document.getElementById('fillRage');
+  const rageGrad = document.getElementById('rageGrad');
+
+  function updatePlayer(slider, valueSpan, fillEl, gradEl, isRage = false) {
+    const val = parseInt(slider.value);
+    const pct = val / 100;
+    valueSpan.innerText = val + '%';
+    fillEl.style.setProperty('--pct', pct);
+    let grad = 0;
+    if (pct > 0.9) grad = (pct - 0.9) / 0.1;
+    gradEl.style.opacity = Math.min(1, grad);
+    if (isRage) {
+      if (val >= 50) fillRage.classList.add('rage-viable');
+      else fillRage.classList.remove('rage-viable');
+    }
+  }
+
+  function bind(slider, span, fill, grad, isRage) {
+    const handler = () => updatePlayer(slider, span, fill, grad, isRage);
+    slider.addEventListener('input', handler);
+    handler();
+  }
+  bind(hpSlider, hpVal, fillHp, hpGrad, false);
+  bind(stamSlider, stamVal, fillStam, stamGrad, false);
+  bind(rageSlider, rageVal, fillRage, rageGrad, true);
+
+  // Панель по клику
+  const panel = document.getElementById('controlsPanel');
+  let panelVisible = false;
+
+  let lineTileRatio = null; // natural width/height ratio of T_BarLine
+
+  function updatePanelSideHeight() {
+    // Высота боковой линии = высота panel-frame минус 2*edge-size.
+    // offsetHeight (а не getBoundingClientRect) не зависит от CSS
+    // transform: scale(...) на родителе, поэтому даёт верный результат
+    // сразу, без ожидания завершения анимации открытия панели.
+    const frame = panel.querySelector('.panel-frame');
+    if (!frame) return;
+    const h = frame.offsetHeight;
+    const edge = parseFloat(getComputedStyle(root).getPropertyValue('--edge-size')) || 0;
+    let sideLen = Math.max(0, h - edge * 2);
+
+    if (lineTileRatio) {
+      const lineThickness = parseFloat(getComputedStyle(root).getPropertyValue('--line-thickness')) || 1;
+      const tileWidth = lineThickness * lineTileRatio; // ширина одного тайла линии при текущей толщине
+      if (tileWidth > 0) {
+        const tiles = Math.max(1, Math.round(sideLen / tileWidth));
+        sideLen = tiles * tileWidth;
+      }
+    }
+
+    root.style.setProperty('--panel-side-h', sideLen + 'px');
+  }
+
+  const panelBackdrop = document.getElementById('panelBackdrop');
+
+  function showPanel() {
+    panel.classList.add('open');
+    panelBackdrop.classList.add('open');
+    panelVisible = true;
+    updatePanelSideHeight();
+  }
+  function hidePanel() {
+    panel.classList.remove('open');
+    panelBackdrop.classList.remove('open');
+    panelVisible = false;
+  }
+  window.addEventListener('resize', () => { if (panelVisible) updatePanelSideHeight(); });
+
+  // Пересчёт после завершения transition (scale 0.95 -> 1), т.к. во время
+  // анимации getBoundingClientRect() даёт промежуточные размеры.
+  panel.addEventListener('transitionend', (e) => {
+    if (panelVisible && (e.propertyName === 'transform' || e.propertyName === 'opacity')) {
+      updatePanelSideHeight();
+    }
+  });
+
+  // ResizeObserver как доп. подстраховка — реагирует на любое изменение
+  // фактического размера panel-frame (включая смену текстур после загрузки).
+  if (typeof ResizeObserver !== 'undefined') {
+    const frameEl = panel.querySelector('.panel-frame');
+    if (frameEl) {
+      const ro = new ResizeObserver(() => { if (panelVisible) updatePanelSideHeight(); });
+      ro.observe(frameEl);
+    }
+  }
+
+  document.addEventListener('click', (e) => {
+    if (panel.contains(e.target) && e.target.id !== 'closePanelBtn') return;
+    if (e.target.id === 'closePanelBtn') { hidePanel(); return; }
+    if (!panelVisible) showPanel();
+    else hidePanel();
+  });
+  panel.addEventListener('click', (e) => e.stopPropagation());
+  document.getElementById('closePanelBtn').addEventListener('click', (e) => { e.stopPropagation(); hidePanel(); });
+  hidePanel();
+  updatePanelSideHeight();
+</script>
+</body>
+</html>

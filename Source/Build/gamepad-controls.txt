@@ -1,0 +1,10 @@
+{
+  "gamepad.diagnostic.noApi": "🎮 navigator.getGamepads not available in this browser",
+  "gamepad.diagnostic.pressButton": "🎮 Press any button on the gamepad\n(getGamepads() still returns empty)",
+  "gamepad.diagnostic.detectedNotHeld": "🎮 Detected but not picked up:\n{devices}",
+  "gamepad.virtualKeyboard.hint": "A — enter · B — back · Y — space · X — backspace",
+  "gamepad.virtualKeyboard.special.abc": "ABC/RUS",
+  "gamepad.virtualKeyboard.special.space": "SPACE",
+  "gamepad.virtualKeyboard.special.backspace": "⌫",
+  "gamepad.virtualKeyboard.special.done": "DONE"
+}

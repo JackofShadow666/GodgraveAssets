@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Процедурные мечи: корректный градиент узкости</title>
+
+<style>
+body{
+    margin:0;
+    padding:20px;
+    background:#121214;
+    color:white;
+    font-family:Arial;
+    text-align:center;
+}
+
+.grid{
+    display:grid;
+    grid-template-columns:repeat(10,80px);
+    gap:8px;
+    justify-content:center;
+}
+
+.cell{
+    width:80px;
+    height:90px;
+    background:#252529;
+    border:1px solid #444;
+    border-radius:8px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    position:relative;
+}
+
+svg{width:85%;height:85%;}
+
+.id{
+    position:absolute;
+    bottom:2px;
+    right:4px;
+    font-size:9px;
+    color:#888;
+}
+</style>
+</head>
+
+<body>
+
+<h1>Мечи: узкость у гарды (исправленный градиент)</h1>
+
+<div class="grid" id="grid"></div>
+
+<script>
+
+const grid = document.getElementById("grid");
+
+function r(i,s){
+    let x = Math.sin(i*12.9898 + s*78.233) * 43758.5453;
+    return x - Math.floor(x);
+}
+
+function pos(i){
+    return { x: i % 10, y: Math.floor(i / 10) };
+}
+
+// ↘ шипастость
+function spikiness(i){
+    const p = pos(i);
+    return 1 - Math.abs(p.x - p.y) / 9;
+}
+
+// ↙ деформация силуэта
+function silhouetteNoise(i){
+    const p = pos(i);
+    return (p.x + p.y) / 18;
+}
+
+// 🎯 пористость
+function distCenter(i){
+    const p = pos(i);
+    const cx = 4.5, cy = 4.5;
+    const dx = p.x - cx;
+    const dy = p.y - cy;
+    return Math.max(0, 1 - Math.sqrt(dx*dx + dy*dy) / 6.5);
+}
+
+// ⚖️ градиент узкости (центр X → узкий у гарды)
+function narrowAtCoreX(i){
+    const p = pos(i);
+    return Math.abs(p.x - 4.5) / 4.5; // 0 центр → 1 края
+}
+
+// ------------------ КЛИНОК ------------------
+function blade(i){
+
+    const p = pos(i);
+
+    const spike = spikiness(i);
+    const noise = silhouetteNoise(i);
+    const porosity = distCenter(i);
+    const narrow = narrowAtCoreX(i);
+
+    const baseW = 2 + p.y * 0.6;
+    const steps = 12;
+
+    let left = [];
+    let right = [];
+
+    for(let k=0;k<=steps;k++){
+
+        const t = k / steps;
+        const y = 2 + t * 28;
+
+        // базовая форма клинка
+        let curve = baseW * t;
+
+        // 🔥 ИСПРАВЛЕННЫЙ ГРАДИЕНТ:
+        // влияет только у гарды (t=0), исчезает к середине
+        const influence = 1 - t;
+        const startModifier = 1 + narrow * 0.8;
+
+        const width = curve * (1 + (startModifier - 1) * influence);
+
+        const jitter = (r(i,k*3) - 0.5) * noise * 4;
+
+        const spikeOffset =
+            (r(i,k*7) < spike)
+            ? spike * (r(i,k) - 0.5) * 2
+            : 0;
+
+        left.push([
+            25 - width + jitter - spikeOffset,
+            y
+        ]);
+
+        right.push([
+            25 + width - jitter + spikeOffset,
+            y
+        ]);
+    }
+
+    const outline = [...left, ...right.reverse()];
+
+    // ------------------ ДЫРКИ ------------------
+    let holes = "";
+
+    const holeCount = Math.floor(porosity * 7);
+
+    for(let k=0;k<holeCount;k++){
+
+        const t = (k + 1) / (holeCount + 1);
+        const y = 4 + t * 24;
+
+        const hx = 25 + (r(i,k*5) - 0.5) * 0.6;
+        const hy = y;
+
+        holes += `
+        <ellipse cx="${hx}" cy="${hy}"
+                 rx="${0.6 + porosity * 1.2}"
+                 ry="${1 + porosity * 1.8}"
+                 fill="#121214"
+                 opacity="0.95"/>`;
+    }
+
+    return `
+        <g>
+            <polygon points="${outline.map(p=>p.join(",")).join(" ")}" fill="white"/>
+            ${holes}
+        </g>
+    `;
+}
+
+// ------------------ ГАРДА ------------------
+function guard(i){
+    const p = pos(i);
+    const c = p.x + p.y;
+    const w = 8 + p.y * 0.5;
+
+    if(c<5) return `<rect x="${25-w/2}" y="28" width="${w}" height="2"/>`;
+    if(c<10) return `<ellipse cx="25" cy="29" rx="${w/2}" ry="2.5"/>`;
+    return `<path d="M${25-w} 28 L25 22 L${25+w} 28 Z"/>`;
+}
+
+// ------------------ РУКОЯТЬ ------------------
+function handle(i){
+    const p = pos(i);
+    const h = 4 + p.y * 0.2;
+    return `<rect x="24" y="30" width="2" height="${h}"/>`;
+}
+
+// ------------------ НАВЕРШИЕ ------------------
+function pommel(i){
+    const c = (pos(i).x + pos(i).y) % 4;
+
+    if(c===0) return `<circle cx="25" cy="40" r="1.5"/>`;
+    if(c===1) return `<rect x="24" y="38" width="2" height="2"/>`;
+    if(c===2) return `<polygon points="25,38 27,42 23,42"/>`;
+    return `<path d="M25 38 L28 42 L25 41 L22 42 Z"/>`;
+}
+
+// ------------------ СБОРКА ------------------
+for(let i=0;i<100;i++){
+
+    const svg =
+`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50">
+${blade(i)}
+${guard(i)}
+${handle(i)}
+${pommel(i)}
+</svg>`;
+
+    const cell = document.createElement("div");
+    cell.className="cell";
+    cell.innerHTML = svg + `<div class="id">${i+1}</div>`;
+    grid.appendChild(cell);
+}
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,476 @@
+; –°–ø–∏—Å–æ–∫ —Ñ–∞–π–ª–æ–≤ –∏–∑ –ø–∞–ø–æ–∫ Music –∏ Sound
+; –°–æ–∑–¥–∞–Ω–æ: 16.09.2026 4:21:21
+; –ö–æ—Ä–Ω–µ–≤–∞—è –ø–∞–ø–∫–∞: F:\Jack\Project\Godgrave\Public\Godgrave\Source
+
+=== –ü–∞–ø–∫–∞: Music ===
+Source\Music\Battle\Bleak Cold Cathedral.mp3
+Source\Music\Battle\Bleak Cold CathedralC.mp3
+Source\Music\Battle\Dance of the DemonA.mp3
+Source\Music\Battle\Dance of the DemonB.mp3
+Source\Music\Battle\DarkEpicTechno.mp3
+Source\Music\Battle\DarkTechno.mp3
+Source\Music\Battle\EpicBattleA.mp3
+Source\Music\Battle\Fog Factory Siren.mp3
+Source\Music\Battle\Fog Gate.mp3
+Source\Music\Battle\IrishTechno.mp3
+Source\Music\Battle\IrishTechnoB.mp3
+Source\Music\Battle\Iron Creaks and Sirens.mp3
+Source\Music\Battle\Iron Creaks and SirensB.mp3
+Source\Music\Battle\Iron Creaks and SirensC.mp3
+Source\Music\Battle\MusicCyber.mp3
+Source\Music\Battle\MusicEpic.mp3
+Source\Music\Battle\MusicSad.mp3
+Source\Music\Battle\Rust Belt Echo.mp3
+Source\Music\Battle\Rust in the Boiler Room.mp3
+Source\Music\Battle\TechnoFolk.mp3
+Source\Music\Battle\The Elder Abyss(1).mp3
+Source\Music\Battle\The Elder Abyss.mp3
+Source\Music\Battle\The Hollow Cathedral.mp3
+Source\Music\Battle\The Hollow CathedralB.mp3
+Source\Music\Battle\The Hollow CathedralD.mp3
+Source\Music\Battle\The Hollow CathedralE.mp3
+Source\Music\Battle\The Hollowed Throne.mp3
+Source\Music\Battle\The Hollowed ThroneB.mp3
+Source\Music\Battle\The Iron Abyss.mp3
+Source\Music\Battle\The Ritual of the Neon Shaman.mp3
+
+=== –ü–∞–ø–∫–∞: Sound ===
+Source\Sound\Arrow\SFX_ArrowHit_01.mp3
+Source\Sound\Arrow\SFX_ArrowHit_02.mp3
+Source\Sound\Arrow\SFX_ArrowHit_03.mp3
+Source\Sound\Arrow\SFX_ArrowHit_04.mp3
+Source\Sound\Arrow\SFX_ArrowHit_05.mp3
+Source\Sound\Arrow\SFX_ArrowHit_06.mp3
+Source\Sound\Arrow\SFX_ArrowPush_01.mp3
+Source\Sound\Arrow\SFX_ArrowPush_02.mp3
+Source\Sound\Arrow\SFX_ArrowPush_03.mp3
+Source\Sound\Arrow\SFX_ArrowPush_04.mp3
+Source\Sound\Arrow\SFX_CrossbowReloading_01.mp3
+Source\Sound\Arrow\SFX_CrossbowReloading_02.mp3
+Source\Sound\Bow\BowPush\SFX_BowPush_01.mp3
+Source\Sound\Bow\BowPush\SFX_BowPush_02.mp3
+Source\Sound\Bow\BowPush\SFX_BowPush_03.mp3
+Source\Sound\Bow\BowPush\SFX_BowPush_04.mp3
+Source\Sound\Bow\BowReload\SFX_BowReload_01.mp3
+Source\Sound\Bow\BowReload\SFX_BowReload_02.mp3
+Source\Sound\Bow\BowTension\SFX_BowTension.mp3
+Source\Sound\Buff\SFX_Heal_01.mp3
+Source\Sound\Damage\Bash\SFX_Bash_01.mp3
+Source\Sound\Damage\Bash\SFX_Bash_02.mp3
+Source\Sound\Damage\Bash\SFX_Bash_03.mp3
+Source\Sound\Damage\Bones\SFX_BonesBreak_01.mp3
+Source\Sound\Damage\Bones\SFX_BonesBreak_02.mp3
+Source\Sound\Damage\Bones\SFX_BonesBreak_03.mp3
+Source\Sound\Damage\Hummer\clinkwood.mp3
+Source\Sound\Damage\Hummer\SFX_DamageHummer_01.mp3
+Source\Sound\Damage\Hummer\SFX_DamageHummer_02.mp3
+Source\Sound\Damage\Hummer\SFX_DamageHummer_03.mp3
+Source\Sound\Damage\Hummer\SFX_DamageHummer_04.mp3
+Source\Sound\Damage\Hummer\SFX_DamageHummer_05.mp3
+Source\Sound\Damage\Hummer\SFX_DamageHummer_06.mp3
+Source\Sound\Damage\Hummer\SFX_DamageHummer_07.mp3
+Source\Sound\Damage\Hummer\SFX_DamageHummer_08.mp3
+Source\Sound\Damage\Sword\SFX_DamageSword_01.mp3
+Source\Sound\Damage\Sword\SFX_DamageSword_02.mp3
+Source\Sound\Damage\Sword\SFX_DamageSword_03.mp3
+Source\Sound\Damage\Sword\SFX_DamageSword_04.mp3
+Source\Sound\Damage\Sword\SFX_DamageSword_05.mp3
+Source\Sound\Damage\Sword\SFX_DamageSword_06.mp3
+Source\Sound\Damage\Sword\SFX_DamageSword_07.mp3
+Source\Sound\Damage\Sword\SFX_DamageSword_08.mp3
+Source\Sound\Damage\Sword\SFX_DamageSword_09.mp3
+Source\Sound\Damage\Sword\SFX_DamageSword_10.mp3
+Source\Sound\Damage\Sword\SFX_DamageSword_11.mp3
+Source\Sound\Damage\Sword\SFX_DamageSword_12.mp3
+Source\Sound\Damage\Sword\SFX_DamageSword_13.mp3
+Source\Sound\Damage\Sword\SFX_DamageSword_14.mp3
+Source\Sound\Damage\Sword\SFX_DamageSword_15.mp3
+Source\Sound\Destructable\kling_20260710_Text_to_Audio_Dark_fanta_1708_0.mp3
+Source\Sound\Destructable\kling_20260710_Text_to_Audio_Dark_fanta_1708_1.mp3
+Source\Sound\Destructable\kling_20260710_Text_to_Audio_Dark_fanta_1708_2.mp3
+Source\Sound\Destructable\kling_20260710_Text_to_Audio_Dark_fanta_1708_3.mp3
+Source\Sound\Destructable\SFX_TNT_01.mp3
+Source\Sound\Destructable\SFX_WoodDeath_01.mp3
+Source\Sound\Destructable\SFX_WoodDeath_02.mp3
+Source\Sound\Destructable\SFX_WoodDeath_03.mp3
+Source\Sound\Destructable\SFX_WoodDeath_04.mp3
+Source\Sound\Destructable\SFX_WoodDeath_05.mp3
+Source\Sound\Destructable\SFX_WoodHit_01.mp3
+Source\Sound\Dodge\SFX_Dodge_01.mp3
+Source\Sound\Dodge\SFX_Dodge_02.mp3
+Source\Sound\Dodge\SFX_Dodge_03.mp3
+Source\Sound\Empty\SFX_Empty_01.mp3
+Source\Sound\Glove\SFX_Glove_01.mp3
+Source\Sound\HammerSwing\SFX_HammerSwing_01.mp3
+Source\Sound\HammerSwing\SFX_HammerSwing_02.mp3
+Source\Sound\HammerSwing\SFX_HammerSwing_03.mp3
+Source\Sound\HammerSwing\SFX_HammerSwing_04.mp3
+Source\Sound\HammerSwing\SFX_HammerSwing_05.mp3
+Source\Sound\HammerSwing\SFX_HammerSwing_06.mp3
+Source\Sound\Magic\SFX_MagicEnergy_01.mp3
+Source\Sound\Magic\SFX_MagicEnergy_02.mp3
+Source\Sound\Magic\SFX_MagicExplode_01.mp3
+Source\Sound\Magic\SFX_MagicHit_01.mp3
+Source\Sound\Magic\SFX_MagicHit_02.mp3
+Source\Sound\Magic\SFX_MagicLoop.wav
+Source\Sound\Magic\SFX_MagicPush_01.mp3
+Source\Sound\Magic\SFX_MagicPush_02.mp3
+Source\Sound\Magic\SFX_MagicPush_03.mp3
+Source\Sound\Other\SFX_Heartbit_01.mp3
+Source\Sound\Other\teleport.mp3
+Source\Sound\Rage\SFX_Rage_01.mp3
+Source\Sound\Ref\bleedingA.mp3
+Source\Sound\Ref\bleedingB.mp3
+Source\Sound\Ref\bleedingC.mp3
+Source\Sound\Ref\chainig.mp3
+Source\Sound\Ref\DarkMagic.mp3
+Source\Sound\Ref\Gate.mp3
+Source\Sound\Ref\kling_20260909_Text_to_Audio____________4332_1.mp3
+Source\Sound\Ref\openchest.mp3
+Source\Sound\Ref\step.mp3
+Source\Sound\Ref\takeswordA.mp3
+Source\Sound\Ref\takeswordB.mp3
+Source\Sound\Rock\kling_20260710_Text_to_Audio_fantasy_wa_1677_0.mp3
+Source\Sound\Rock\kling_20260710_Text_to_Audio_fantasy_wa_1677_1.mp3
+Source\Sound\Rock\kling_20260710_Text_to_Audio_fantasy_wa_1677_2.mp3
+Source\Sound\Rock\kling_20260710_Text_to_Audio_fantasy_wa_1677_3.mp3
+Source\Sound\Shield\SFX_Shield_01.mp3
+Source\Sound\Shield\SFX_Shield_02.mp3
+Source\Sound\Shield\SFX_Shield_03.mp3
+Source\Sound\Shield\SFX_Shield_04.mp3
+Source\Sound\Shield\SFX_Shield_05.mp3
+Source\Sound\ShieldPush\ShieldPush.mp3
+Source\Sound\Sword\SwordClink\SFX_SwordClink_01.mp3
+Source\Sound\Sword\SwordClink\SFX_SwordClink_02.mp3
+Source\Sound\Sword\SwordClink\SFX_SwordClink_03.mp3
+Source\Sound\Sword\SwordClink\SFX_SwordClink_04.mp3
+Source\Sound\Sword\SwordClink\SFX_SwordClink_05.mp3
+Source\Sound\Sword\SwordClink\SFX_SwordClink_06.mp3
+Source\Sound\Sword\SwordHit\SFX_SwordHitRare_01.mp3
+Source\Sound\Sword\SwordHit\SFX_SwordHit_01.mp3
+Source\Sound\Sword\SwordHit\SFX_SwordHit_02.mp3
+Source\Sound\Sword\SwordHit\SFX_SwordHit_03.mp3
+Source\Sound\Sword\SwordHit\SFX_SwordHit_05.mp3
+Source\Sound\Sword\SwordHit\SFX_SwordHit_06.mp3
+Source\Sound\Sword\SwordHit\SFX_SwordHit_07.mp3
+Source\Sound\Sword\SwordSwing\SFX_SwordSwingAgressive_01.mp3
+Source\Sound\Sword\SwordSwing\SFX_SwordSwingAgressive_02.mp3
+Source\Sound\Sword\SwordSwing\SFX_SwordSwingAgressive_03.mp3
+Source\Sound\Sword\SwordSwing\SFX_SwordSwing_01.mp3
+Source\Sound\Sword\SwordSwing\SFX_SwordSwing_02.mp3
+Source\Sound\Sword\SwordSwing\SFX_SwordSwing_03.mp3
+Source\Sound\Sword\SwordSwing\SFX_SwordSwing_04.mp3
+Source\Sound\Sword\SwordSwing\SFX_SwordSwing_05.mp3
+Source\Sound\Sword\SwordSwing\SFX_SwordSwing_06.mp3
+Source\Sound\Throw\SFX_Throw_01.mp3
+Source\Sound\Throw\SFX_Throw_02.mp3
+Source\Sound\Throw\SFX_Throw_03.mp3
+Source\Sound\Ui\SFX_UI_Death_01.mp3
+Source\Sound\Ui\SFX_UI_Death_02.mp3
+Source\Sound\Ui\SFX_UI_Hover_01.mp3
+Source\Sound\Ui\SFX_UI_Hover_02.mp3
+Source\Sound\Ui\SFX_UI_Hover_03.mp3
+Source\Sound\Ui\SFX_UI_NextLevel_01.mp3
+Source\Sound\Ui\SFX_UI_Note_01.mp3
+Source\Sound\Ui\SFX_UI_Pickdown_01.mp3
+Source\Sound\Ui\SFX_UI_Pickup_01.mp3
+Source\Sound\Ui\SFX_UI_Tap_01.mp3
+Source\Sound\Ui\SFX_UI_Tap_02.mp3
+Source\Sound\Ui\SFX_UI_Win_01.mp3
+Source\Sound\WoodClink\SFX_WoodClink_01.mp3
+Source\Sound\WoodClink\SFX_WoodClink_02.mp3
+Source\Sound\WoodClink\SFX_WoodClink_03.mp3
+Source\Sound\WoodClink\SFX_WoodClink_04.mp3
+Source\Sound\WoodClink\SFX_WoodClink_05.mp3
+Source\Sound\WoodClink\SFX_WoodClink_06.mp3
+
+=== –ü–∞–ø–∫–∞: Character ===
+Source\Character\Knight\T_Character_01.png
+Source\Character\Knight\T_Character_02.png
+Source\Character\Knight\T_Character_03.png
+Source\Character\Knight\T_Character_04.png
+Source\Character\Knight\T_Character_05.png
+Source\Character\Knight\T_Character_06.png
+Source\Character\Knight\T_Character_07.png
+Source\Character\Knight\T_Character_08.png
+Source\Character\Knight\T_Character_09.png
+Source\Character\Knight\T_Character_10.png
+Source\Character\Knight\T_Character_11.png
+Source\Character\Knight\T_Character_12.png
+Source\Character\Knight\T_Character_13.png
+Source\Character\Knight\T_Character_14.png
+Source\Character\Knight\Untitled-1_02.png
+Source\Character\Knight\.mayaSwatches\T_Character_02.png_hcm.swatch
+Source\Character\Knight\.mayaSwatches\T_Character_12.png_hcm.swatch
+Source\Character\Test\T_CharTest_01.png
+Source\Character\Test\T_CharTest_02.png
+Source\Character\Test\T_CharTest_03.png
+Source\Character\Test\T_CharTest_04.png
+Source\Character\Test\T_CharTest_05.png
+Source\Character\Test\T_CharTest_06.png
+Source\Character\Test\T_CharTest_07.png
+
+=== –ü–∞–ø–∫–∞: Weapon ===
+Source\Weapon\Arrow\T_Arrow_01.png
+Source\Weapon\Axe\T_Axe_01.png
+Source\Weapon\Axe\T_Axe_02.png
+Source\Weapon\Axe\T_Axe_03.png
+Source\Weapon\Axe\T_Axe_04.png
+Source\Weapon\Axe\T_Axe_05.png
+Source\Weapon\Axe\T_Axe_06.png
+Source\Weapon\Axe\T_Axe_07.png
+Source\Weapon\Axe\T_Axe_08.png
+Source\Weapon\BigSword\T_BigSword_01.png
+Source\Weapon\Bow\T_Bow_01.png
+Source\Weapon\Bow\T_Bow_02.png
+Source\Weapon\Bow\T_Bow_03.png
+Source\Weapon\Bow\T_Bow_04.png
+Source\Weapon\Bow\T_Bow_05.png
+Source\Weapon\Claws\T_Claws_01.png
+Source\Weapon\Claws\T_Claws_02.png
+Source\Weapon\Claws\T_Claws_03.png
+Source\Weapon\Claws\.mayaSwatches\T_Claws_01.png_hcm.swatch
+Source\Weapon\Crossbow\T_Crrossbow_01.png
+Source\Weapon\Crossbow\T_Crrossbow_02.png
+Source\Weapon\Crossbow\T_Crrossbow_03.png
+Source\Weapon\Flail\Ring\T_FlailChain_01.png
+Source\Weapon\Flail\Ring\T_FlailChain_02.png
+Source\Weapon\Flail\Tip\T_Flail_01.png
+Source\Weapon\Flail\Tip\T_Flail_02.png
+Source\Weapon\Flail\Tip\T_Flail_03.png
+Source\Weapon\Flail\Tip\T_Flail_04.png
+Source\Weapon\Flail\Tip\T_Flail_05.png
+Source\Weapon\Flail\Tip\T_Flail_06.png
+Source\Weapon\Flail\Tip\T_Flail_07.png
+Source\Weapon\Flail\Tip\T_Flail_08.png
+Source\Weapon\Flail\Tip\T_Flail_09.png
+Source\Weapon\Flail\Tip\T_Flail_10.png
+Source\Weapon\Glove\T_Glove_01.png
+Source\Weapon\Halberd\T_Halberd_01.png
+Source\Weapon\Halberd\T_Halberd_02.png
+Source\Weapon\Halberd\T_Halberd_03.png
+Source\Weapon\Halberd\T_Halberd_04.png
+Source\Weapon\Halberd\T_Halberd_05.png
+Source\Weapon\Halberd\T_Halberd_06.png
+Source\Weapon\Halberd\T_Halberd_07.png
+Source\Weapon\Hammer\T_Hammer_01.png
+Source\Weapon\Hammer\T_Hammer_02.png
+Source\Weapon\Hammer\T_Hammer_03.png
+Source\Weapon\Hammer\T_Hammer_04.png
+Source\Weapon\Hammer\T_Hammer_05.png
+Source\Weapon\Hammer\T_Hammer_06.png
+Source\Weapon\Hammer\T_Hammer_07.png
+Source\Weapon\Knife\T_Knife_01.png
+Source\Weapon\Mace\T_Mace_01.png
+Source\Weapon\Mace\T_Mace_02.png
+Source\Weapon\Mace\T_Mace_03.png
+Source\Weapon\Mace\T_Mace_04.png
+Source\Weapon\Mace\T_Mace_05.png
+Source\Weapon\Mace\T_Mace_06.png
+Source\Weapon\Mace\T_Mace_07.png
+Source\Weapon\Mace\T_Mace_08.png
+Source\Weapon\Mace\T_Mace_09.png
+Source\Weapon\Magicstaff\T_Magicstaff_01.png
+Source\Weapon\Magicstaff\T_Magicstaff_02.png
+Source\Weapon\Magicstaff\T_Magicstaff_03.png
+Source\Weapon\Magicstaff\T_Magicstaff_04.png
+Source\Weapon\Magicstaff\T_Magicstaff_05.png
+Source\Weapon\Magicstaff\T_Magicstaff_06.png
+Source\Weapon\Magicstaff\T_Magicstaff_07.png
+Source\Weapon\Magicstaff\T_Magicstaff_08.png
+Source\Weapon\Magicstaff\T_Magicstaff_09.png
+Source\Weapon\Rapier\gude-2026-07-13.log
+Source\Weapon\Rapier\T_Rapier_01.png
+Source\Weapon\Rapier\T_Rapier_02.png
+Source\Weapon\Rapier\T_Rapier_03.png
+Source\Weapon\Rapier\T_Rapier_04.png
+Source\Weapon\Rapier\T_Rapier_05.png
+Source\Weapon\Scythe\T_Scythe_01.png
+Source\Weapon\Scythe\.mayaSwatches\T_Scythe_01.png_hcm.swatch
+Source\Weapon\Shield\T_Shield_01.png
+Source\Weapon\Shield\T_Shield_02.png
+Source\Weapon\Shield\T_Shield_03.png
+Source\Weapon\ShieldSpike\T_ShieldSpike_01.png
+Source\Weapon\ShieldSpike\T_ShieldSpike_02.png
+Source\Weapon\ShieldSpike\T_ShieldSpike_03.png
+Source\Weapon\Spear\T_Spear_01.png
+Source\Weapon\Spear\T_Spear_02.png
+Source\Weapon\Spear\T_Spear_03.png
+Source\Weapon\Spear\T_Spear_04.png
+Source\Weapon\Spear\T_Spear_05.png
+Source\Weapon\Spear\T_Spear_06.png
+Source\Weapon\Spear\T_Spear_07.png
+Source\Weapon\Spear\T_Spear_08.png
+Source\Weapon\Spear\T_Spear_09.png
+Source\Weapon\Staff\T_Staff_01.png
+Source\Weapon\Staff\T_Staff_02.png
+Source\Weapon\Staff\T_Staff_03.png
+Source\Weapon\Staff\T_Staff_04.png
+Source\Weapon\Staff\T_Staff_05.png
+Source\Weapon\Staff\T_Staff_06.png
+Source\Weapon\Staff\T_Staff_07.png
+Source\Weapon\Staff\T_Staff_08.png
+Source\Weapon\Staff\T_Staff_09.png
+Source\Weapon\Sword\T_Sword_01.png
+Source\Weapon\Sword\T_Sword_02.png
+Source\Weapon\Sword\T_Sword_03.png
+Source\Weapon\Sword\T_Sword_04.png
+Source\Weapon\Sword\T_Sword_05.png
+Source\Weapon\Sword\T_Sword_06.png
+Source\Weapon\Sword\T_Sword_07.png
+Source\Weapon\Sword\T_Sword_08.png
+Source\Weapon\Sword\T_Sword_09.png
+Source\Weapon\Sword\T_Sword_10.png
+Source\Weapon\Sword\T_Sword_11.png
+Source\Weapon\Sword\T_Sword_12.png
+Source\Weapon\Sword\.mayaSwatches\T_Sword_11.png_hcm.swatch
+Source\Weapon\Sword\.mayaSwatches\T_Sword_12.png_hcm.swatch
+Source\Weapon\Tapesword\T_TapeswordFull.png
+Source\Weapon\Tapesword\T_TapeswordHand.png
+Source\Weapon\Tapesword\T_TapeswordRing.png
+Source\Weapon\Wand\T_Wand_01.png
+Source\Weapon\Wand\T_Wand_02.png
+Source\Weapon\Wand\T_Wand_03.png
+Source\Weapon\Wand\T_Wand_04.png
+Source\Weapon\Wand\T_Wand_05.png
+Source\Weapon\Wand\T_Wand_06.png
+Source\Weapon\Wand\T_Wand_07.png
+Source\Weapon\Whip\T_Whip_01.png
+Source\Weapon\Whip\T_Whip_02.png
+Source\Weapon\Whip\T_Whip_03.png
+Source\Weapon\Whip\T_Whip_04.png
+Source\Weapon\Whip\T_Whip_05.png
+Source\Weapon\Whip\T_Whip_06.png
+Source\Weapon\Whip\T_Whip_07.png
+
+=== –ü–∞–ø–∫–∞: UI ===
+Source\UI\Bar.psd
+Source\UI\T_BarA.psd
+Source\UI\T_BarEdge.png
+Source\UI\T_BarLeft.png
+Source\UI\T_BarLine.png
+Source\UI\T_BarMiddle.png
+Source\UI\T_LocationPreview.png
+Source\UI\T_MaskA ó ÍÓÔËˇ.png
+Source\UI\T_MaskA.png
+Source\UI\T_SparkEmoj.png
+Source\UI\UISystem.html
+
+=== –ü–∞–ø–∫–∞: Font ===
+Source\Font\BloodyDrip-Regular.ttf
+Source\Font\Font.png
+Source\Font\index.html
+Source\Font\MedievalSharp-Regular.ttf
+
+=== –ü–∞–ø–∫–∞: Env ===
+Source\Env\Editor\Editor.html
+Source\Env\Foliadge\ChatGPT Image 4 ‡‚„. 2026 „., 01_12_14.png
+Source\Env\Foliadge\ChatGPT Image 4 ‡‚„. 2026 „., 01_12_36 (1).png
+Source\Env\Foliadge\ChatGPT Image 4 ‡‚„. 2026 „., 01_12_36 (2).png
+Source\Env\Foliadge\ChatGPT Image 4 ‡‚„. 2026 „., 01_12_49.png
+Source\Env\Foliadge\ChatGPT Image 4 ‡‚„. 2026 „., 01_12_57.png
+Source\Env\Foliadge\ChatGPT Image 4 ‡‚„. 2026 „., 01_13_10.png
+Source\Env\Foliadge\T_Env_Bush.json
+Source\Env\Foliadge\T_Env_Bush.png
+Source\Env\Foliadge\T_Env_Bush_Desert.json
+Source\Env\Foliadge\T_Env_Bush_Desert.png
+Source\Env\Foliadge\T_Env_Decal_Bones.json
+Source\Env\Foliadge\T_Env_Decal_Bones.png
+Source\Env\Foliadge\T_Env_Decal_Brunch.json
+Source\Env\Foliadge\T_Env_Decal_Brunch.png
+Source\Env\Foliadge\T_Env_Decal_Leaf.json
+Source\Env\Foliadge\T_Env_Decal_Leaf.png
+Source\Env\Foliadge\T_Env_Decal_Mix.json
+Source\Env\Foliadge\T_Env_Decal_Mix.png
+Source\Env\Foliadge\T_Env_Decal_Moss.json
+Source\Env\Foliadge\T_Env_Decal_Moss.png
+Source\Env\Foliadge\T_Env_Decal_Moss_Deset.json
+Source\Env\Foliadge\T_Env_Decal_Moss_Deset.png
+Source\Env\Foliadge\T_Env_Decal_Mush.json
+Source\Env\Foliadge\T_Env_Decal_Mush.png
+Source\Env\Foliadge\T_Env_Decal_Plant_Desert.json
+Source\Env\Foliadge\T_Env_Decal_Plant_Desert.png
+Source\Env\Foliadge\T_Env_Decal_Stone.json
+Source\Env\Foliadge\T_Env_Decal_Stone.png
+Source\Env\Foliadge\T_Env_Decal_Stone_Desert.json
+Source\Env\Foliadge\T_Env_Decal_Stone_Desert.png
+Source\Env\Foliadge\T_Env_Grass_Fern.json
+Source\Env\Foliadge\T_Env_Grass_Fern.png
+Source\Env\Foliadge\T_Env_Grass_Wood.json
+Source\Env\Foliadge\T_Env_Grass_Wood.png
+Source\Env\Foliadge\T_Env_PlantA.json
+Source\Env\Foliadge\T_Env_PlantA.png
+Source\Env\Foliadge\T_Env_Plant_Desert.json
+Source\Env\Foliadge\T_Env_Plant_Desert.png
+Source\Env\Foliadge\T_Env_Plant_DesertB.json
+Source\Env\Foliadge\T_Env_Plant_DesertB.png
+Source\Env\Foliadge\T_Env_Rock.json
+Source\Env\Foliadge\T_Env_Rock.png
+Source\Env\Foliadge\T_Env_RockDesert.json
+Source\Env\Foliadge\T_Env_RockDesert.png
+Source\Env\Foliadge\T_Env_RockSnow.json
+Source\Env\Foliadge\T_Env_RockSnow.png
+Source\Env\Foliadge\T_Env_Stone.json
+Source\Env\Foliadge\T_Env_Stone.png
+Source\Env\Foliadge\T_Env_Tree_Dead.json
+Source\Env\Foliadge\T_Env_Tree_Dead.png
+Source\Env\Foliadge\T_Env_Tree_Snow.json
+Source\Env\Foliadge\T_Env_Tree_Snow.png
+Source\Env\Foliadge\T_Env_Tree_Swamp.json
+Source\Env\Foliadge\T_Env_Tree_Swamp.png
+Source\Env\Foliadge\T_Env_Tree_WoodA.json
+Source\Env\Foliadge\T_Env_Tree_WoodA.png
+Source\Env\Foliadge\T_Env_Tree_WoodB.json
+Source\Env\Foliadge\T_Env_Tree_WoodB.png
+Source\Env\Foliadge\T_Env_Tree_WoodC.json
+Source\Env\Foliadge\T_Env_Tree_WoodC.png
+Source\Env\FX\T_Cloud.json
+Source\Env\FX\T_Cloud.png
+Source\Env\Props\T_Barrel.png
+Source\Env\Props\T_BarrelTNT.png
+Source\Env\Props\T_Box.png
+Source\Env\Props\T_FloorSpike.png
+Source\Env\Props\T_Potion.png
+Source\Env\Terrain\TerrainAtlas.png
+Source\Env\Terrain\TerrainAtlas.psd
+Source\Env\Terrain\TerrainAtlasB.png
+Source\Env\Terrain\TerrainAtlasD.png
+Source\Env\Terrain\TerrainAtlasE.png
+Source\Env\Terrain\TerrainAtlasF.png
+Source\Env\Terrain\T_BiomTIle.png
+Source\Env\Terrain\T_GroundClay_01.png
+Source\Env\Terrain\T_GroundDarkDirt_01.png
+Source\Env\Terrain\T_GroundGrassDark_01.png
+Source\Env\Terrain\T_GroundGrass_01.png
+Source\Env\Terrain\T_GroundGrass_All.png
+Source\Env\Terrain\T_GroundLight_01.png
+Source\Env\Terrain\T_GroundStone_01.png
+Source\Env\Terrain\Ref\ChatGPT Image 28 Ë˛Î. 2026 „., 20_49_25.png
+Source\Env\Terrain\Ref\ChatGPT Image 28 Ë˛Î. 2026 „., 20_54_12.png
+Source\Env\Terrain\Ref\ChatGPT Image 28 Ë˛Î. 2026 „., 21_04_09.png
+Source\Env\Terrain\Ref\ChatGPT Image 28 Ë˛Î. 2026 „., 21_16_59.png
+Source\Env\Terrain\Ref\ChatGPT Image 28 Ë˛Î. 2026 „., 21_23_46.png
+Source\Env\Terrain\Ref\ChatGPT Image 28 Ë˛Î. 2026 „., 21_28_39.png
+Source\Env\Terrain\Ref\ChatGPT Image 28 Ë˛Î. 2026 „., 22_52_10.png
+Source\Env\Terrain\Ref\gemini-3.1-flash-lite-image (nano-banana-2-lite)_a_˝ÚÓ_ËÁÓÏÂÚË˜ÂÒÍËÈ_Ú.jpeg
+Source\Env\Terrain\Ref\Pack.psd
+Source\Env\Terrain\Ref\TerrainAtlasAB.png
+Source\Env\Terrain\Ref\TerrainAtlasB ó ÍÓÔËˇ.png
+Source\Env\Terrain\Ref\TerrainAtlas_6x6(1).png
+Source\Env\Terrain\Ref\TerrainAtlas_6x6.png
+Source\Env\Terrain\Ref\TerrainAtlas¿¿.png
+Source\Env\Terrain\Ref\T_Tile.png
+
+=== –ü–∞–ø–∫–∞: VFX ===
+Source\VFX\T_Dust_Large.json
+Source\VFX\T_Dust_Large.png
+Source\VFX\T_Dust_Small.json
+Source\VFX\T_Dust_Small.png
+Source\VFX\T_Lightning.png
+Source\VFX\T_Magicball.png
+Source\VFX\T_Magicshield.png
+Source\VFX\VFX_Explosion.png
+Source\VFX\VFX_SpawnPointRune.png
+Source\VFX\VFX_WoodPart.json
+Source\VFX\VFX_WoodPart.png
+

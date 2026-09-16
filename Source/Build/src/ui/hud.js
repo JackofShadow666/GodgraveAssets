@@ -1,0 +1,202 @@
+// === src/ui/hud.js ===
+(function(){
+  'use strict';
+
+  function t(key, fallback, vars){
+    return window.I18N ? window.I18N.t(key, vars) : fallback;
+  }
+
+  function clampPercent(value, max){
+    const limit = Number(max) > 0 ? Number(max) : 100;
+    const safeValue = Number(value) || 0;
+    return Math.max(0, Math.min(100, (safeValue / limit) * 100));
+  }
+
+  function setBarWidth(selector, value, max){
+    const el = document.querySelector(selector);
+    if(el) el.style.width = clampPercent(value, max).toFixed(1) + '%';
+  }
+
+  function setRageBar(el, value){
+    if(!el) return;
+    const rage = Number(value) || 0;
+    el.style.width = clampPercent(rage, 100).toFixed(1) + '%';
+    el.style.background = rage >= 50 ? '#2f8cff' : '#777f88';
+  }
+
+  function setTextIfPresent(selector, text){
+    const el = document.querySelector(selector);
+    if(el) el.textContent = text || '';
+  }
+
+  function entityStatusText(entity){
+    if(!entity) return '';
+    if(typeof isUnbalanced === 'function' && isUnbalanced(entity)){
+      return t('hud.unbalanced', 'UNBALANCED');
+    }
+    if(typeof isExhausted === 'function' && isExhausted(entity)){
+      return t('hud.botExhausted', 'EXHAUSTED');
+    }
+    if(entity._debuffActive){
+      return t('hud.debuff', 'DEBUFF');
+    }
+    return '';
+  }
+
+  function botPhaseText(bot){
+    if(!bot) return '';
+    const ai = bot._aiState || {};
+    const style = ai.style || ai.profile || '';
+    const phase = ai.phase || ai.state || '';
+    if(style === 'probing'){
+      const probingMap = {
+        approach: 'hud.probingApproach',
+        strike: 'hud.probingStrike',
+        retreat: 'hud.probingRetreat',
+        pause: 'hud.probingPause',
+        mirrorBlock: 'hud.probingMirrorBlock'
+      };
+      return t('hud.probingPhase', 'PROBING', {
+        state: t(probingMap[phase] || 'hud.probingPause', 'PAUSE')
+      });
+    }
+    if(style === 'harass'){
+      const harassMap = {
+        approach: 'hud.harassApproach',
+        strike: 'hud.harassStrike',
+        orbit: 'hud.harassOrbit'
+      };
+      return t('hud.harassPhase', 'HARASS', {
+        phase: t(harassMap[phase] || 'hud.harassApproach', 'APPROACH')
+      });
+    }
+    const genericMap = {
+      attack: 'hud.phaseAttack',
+      retreat: 'hud.phaseRetreat',
+      rest: 'hud.phaseRest'
+    };
+    return genericMap[phase] ? t(genericMap[phase], '') : '';
+  }
+
+  function cleanAiName(value, fallback){
+    if(!value) return fallback || '-';
+    return String(value).replace(/^SWORD_STYLE_/, '').replace(/^COMBAT_/, '').replace(/_/g, ' ');
+  }
+
+  function escapeBotDebugHtml(value){
+    return String(value).replace(/[&<>\"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));
+  }
+
+  function botDebugHtml(bot){
+    const text = botDebugStateText(bot);
+    if(!text) return '';
+    const weapon = typeof weaponKeyOf === 'function' ? weaponKeyOf(bot) : '';
+    const ai = bot && bot._aiState;
+    const tapeLmb = weapon === 'tapesword' && (bot._tapeswordHeld || (ai && ai._fakeMDown));
+    const safe = escapeBotDebugHtml(text);
+    return tapeLmb ? safe.replace('weapon=tapesword', 'weapon=<span style="color:#ff4040">tapesword</span>') : safe;
+  }
+
+  function botDebugStateText(bot){
+    if(!bot || !bot._aiState) return '';
+    const ai = bot._aiState;
+    const mode = ai._mode || (bot === D ? 'attack' : 'defence');
+    const active = [];
+    if(ai._probingActive) active.push('probing:' + cleanAiName(ai._probingPhase, ''));
+    if(ai._harassPhase && ai.tactic === 'COMBAT_HARASS') active.push('harass:' + cleanAiName(ai._harassPhase, ''));
+    if(ai._lungeActive) active.push('lunge:' + cleanAiName(ai._lungePhase, ''));
+    if(ai._feintActive) active.push('feint');
+    if(ai._spinActive) active.push('spin');
+    if(ai._pokeDodgeActive) active.push('poke-dodge');
+    if(ai._heavyAttackActive) active.push('heavy:' + cleanAiName(ai._heavyAttackPhase, ''));
+    if(ai._shieldHeld) active.push('shield');
+    if(ai._fakeMDown) active.push('attack-held');
+    const canMeasure = typeof P !== 'undefined' && typeof $ !== 'undefined' && $.POS && $.POS.body;
+    const dist = canMeasure ? Math.round(Math.hypot($.POS.body(P).x - $.POS.body(bot).x, $.POS.body(P).y - $.POS.body(bot).y)) : 0;
+    return [
+      'BOT AI DEBUG',
+      'mode=' + mode,
+      'phase=' + cleanAiName(ai.phase, '-'),
+      'tactic=' + cleanAiName(ai.tactic, '-'),
+      'style=' + cleanAiName(ai.swordStyle, '-'),
+      'sub=' + (active.length ? active.join(',') : '-'),
+      'weapon=' + (typeof weaponKeyOf === 'function' ? weaponKeyOf(bot) : '-'),
+      'dist=' + dist,
+      'hp=' + Math.round(bot.hp || 0),
+      'stam=' + Math.round(bot.stamina || 0)
+    ].join(' | ');
+  }
+
+  function updateBotDebugHint(){
+    const el = document.getElementById('hint');
+    if(!el) return;
+    if(typeof cb !== 'function' || !cb('botstatedbg')){
+      el.innerHTML = '';
+      return;
+    }
+    const bot = window._lastPlayerTargetingBot || (typeof D !== 'undefined' ? D : null);
+    el.innerHTML = botDebugHtml(bot);
+  }
+  function updateMainHudEntity(prefix, entity, options){
+    if(!entity) return;
+    const maxHp = entity.maxHp || 100;
+    const maxStam = entity.stamMax || 100;
+    setBarWidth('#' + prefix + '-hp', entity.hp, maxHp);
+    setBarWidth('#' + prefix + '-stam', entity.stamina, maxStam);
+    setRageBar(document.querySelector('#' + prefix + '-rage'), entity.rage);
+    if(options && options.statusSelector){
+      setTextIfPresent(options.statusSelector, entityStatusText(entity));
+    }
+    if(options && options.buffSelector){
+      const rageActive = (entity.rageBuffEnd || 0) > (typeof GameTime !== 'undefined' ? GameTime : 0);
+      setTextIfPresent(options.buffSelector, rageActive ? t('hud.rageBuff', 'RAGE 2x') : '');
+    }
+  }
+
+  function updateLocalSlotHud(slotEl, entity){
+    if(!slotEl) return;
+    slotEl.style.display = entity ? 'block' : 'none';
+    if(!entity) return;
+    const hpBar = slotEl.querySelector('[data-hp]');
+    const stamBar = slotEl.querySelector('[data-stam]');
+    const rageBar = slotEl.querySelector('[data-rage]');
+    if(hpBar) hpBar.style.width = clampPercent(entity.hp, entity.maxHp || 100).toFixed(1) + '%';
+    if(stamBar) stamBar.style.width = clampPercent(entity.stamina, entity.stamMax || 100).toFixed(1) + '%';
+    setRageBar(rageBar, entity.rage);
+  }
+
+  function updateHUD(){
+    if(typeof P !== 'undefined'){
+      updateMainHudEntity('hud-p', P, {
+        statusSelector: '#hud-p-status',
+        buffSelector: '#hud-p-buff'
+      });
+    }
+
+    const botHud = document.getElementById('hud-bot');
+    const survivalPlayer2 = typeof SurvivalMode !== 'undefined' && SurvivalMode.isActive && SurvivalMode.isActive() && SurvivalMode.getPlayer
+      ? SurvivalMode.getPlayer(1)
+      : null;
+    const hudEntity2 = survivalPlayer2 || (typeof D !== 'undefined' ? D : null);
+    const hasDummy = typeof dummyOn !== 'undefined' && dummyOn && !!hudEntity2;
+    if(botHud){
+      botHud.style.opacity = hasDummy ? '1' : '0';
+    }
+    if(hasDummy){
+      updateMainHudEntity('hud-b', hudEntity2, {
+        statusSelector: '#hud-b-status'
+      });
+      const manualSlot = hudEntity2._manualControl && Number.isInteger(hudEntity2._playerSlot) ? hudEntity2._playerSlot : -1;
+      setTextIfPresent('#hud-b-label', manualSlot >= 0 ? `PLAYER ${manualSlot + 1}` : t('hud.botLabel', 'BOT'));
+      setTextIfPresent('#hud-b-phase', manualSlot >= 0 ? '' : botPhaseText(hudEntity2));
+    }
+
+    const localPvp = typeof LocalPlayerControls !== 'undefined' && LocalPlayerControls.isLocalPvP();
+    const slots = localPvp && Array.isArray(window.PLAYER_SLOTS) ? window.PLAYER_SLOTS : [];
+    updateLocalSlotHud(document.getElementById('hud-player-3'), slots[2] && slots[2].source ? slots[2].entity : null);
+    updateLocalSlotHud(document.getElementById('hud-player-4'), slots[3] && slots[3].source ? slots[3].entity : null);
+    updateBotDebugHint();
+  }
+
+  window.updateHUD = updateHUD;
+})();
