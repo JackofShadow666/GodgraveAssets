@@ -1195,6 +1195,7 @@ body.is-mobile #mob-slowmo-btn{display:flex;}
     'weapon.longsword': 'Длинный меч',
     'weapon.greatsword': 'Двуручный меч',
     'weapon.hammer': 'Молот',
+    'weapon.mace': 'Булава',
     'weapon.staff': 'Посох',
     'weapon.magicstaff': 'Магический посох',
     'weapon.flail': 'Цеп',
@@ -2907,7 +2908,7 @@ function drawBlood(){
 const FX_EFFECTS = [];
 const DUST_FX = []; // пыль под ногами игрока
 let LIGHTNING_HIT_FX = []; // молнии при попадании
-const LIGHTNING_HIT_TEXTURE_URL = '../VFX/T_Lightning.png';
+const LIGHTNING_HIT_TEXTURE_URL = 'https://raw.githubusercontent.com/JackofShadow666/GodgraveAssets/main/Source/VFX/T_Lightning.png';
 let LIGHTNING_HIT_TEXTURE_IMG = null;
 
 function lightningHitTexture(){
@@ -3317,21 +3318,22 @@ return key;
 
 function getMod(ent, key, fallback){
 const m = ent._mods && ent._mods[key];
+const wandBarrierSlow = key === 'moveSlow' && ent && GameTime < (ent._wandBarrierSlowUntil || 0) ? 0.5 : 1;
 
 if(key === 'moveSlow' && ent && ent._postDodgeSlowStart && GameTime >= ent._postDodgeSlowStart && GameTime < (ent._postDodgeSlowUntil || 0)){
-return Math.min(m && GameTime < m.until ? m.value : fallback, 0.1);
+return Math.min(m && GameTime < m.until ? m.value : fallback, 0.1, wandBarrierSlow);
 }
 
 if(!m){
-return fallback;
+return key === 'moveSlow' ? Math.min(fallback, wandBarrierSlow) : fallback;
 }
 
 if(GameTime >= m.until){
 delete ent._mods[key];
-return fallback;
+return key === 'moveSlow' ? Math.min(fallback, wandBarrierSlow) : fallback;
 }
 
-return m.value;
+return key === 'moveSlow' ? Math.min(m.value, wandBarrierSlow) : m.value;
 }
 
 function hasMod(ent, key){
@@ -4280,7 +4282,20 @@ document.addEventListener('click', e=>{
 const SFX_FIXED_URLS={
   heal:[PROJECT_PATH_AUDIO+'Source/Sound/Buff/SFX_Heal_01.mp3'],
   gloveHit:[PROJECT_PATH_AUDIO+'Source/Sound/Glove/SFX/_Glove_01.mp3'],
-  magicLoop:[PROJECT_PATH_AUDIO+'Source/Sound/Magic/SFX_MagicLoop.wav']
+  magicLoop:[PROJECT_PATH_AUDIO+'Source/Sound/Magic/SFX_MagicLoop.wav'],
+  // Mace disbalance impact: use the prepared Bash files directly so this works
+  // even when an older BuildList/assets cache is still present.
+  bashDamage:[
+    PROJECT_PATH_AUDIO+'Source/Sound/Damage/Bash/SFX_Bash_01.mp3',
+    PROJECT_PATH_AUDIO+'Source/Sound/Damage/Bash/SFX_Bash_02.mp3',
+    PROJECT_PATH_AUDIO+'Source/Sound/Damage/Bash/SFX_Bash_03.mp3'
+  ],
+  // Extra heavy-hit layer, rolled only after real HP damage was dealt.
+  bonesBreak:[
+    PROJECT_PATH_AUDIO+'Source/Sound/Damage/Bones/SFX_BonesBreak_01.mp3',
+    PROJECT_PATH_AUDIO+'Source/Sound/Damage/Bones/SFX_BonesBreak_02.mp3',
+    PROJECT_PATH_AUDIO+'Source/Sound/Damage/Bones/SFX_BonesBreak_03.mp3'
+  ]
 };
 
 function playSound(sfxType, volume) {
@@ -4591,6 +4606,7 @@ const SPRITE_FOLDERS = {
     halberd:    'Source/Weapon/Halberd/', 
     axe:        'Source/Weapon/Axe/',
     hammer:     'Source/Weapon/Hammer/',
+    mace:       'Source/Weapon/Mace/',
     staff:      'Source/Weapon/Staff/',
     magicstaff: 'Source/Weapon/Magicstaff/',
     arrow:      'Source/Weapon/Arrow/',
@@ -4737,6 +4753,15 @@ function calcShieldModifiers(entity){
   return { baseMult, wrongMult, weight, wrongSide };
 }
 
+// Survival-specific enemy movement modifier. The mode owns the condition;
+// generic AI only consumes the resulting multiplier. This keeps hidden arena
+// assistance out of individual bot behaviours.
+function survivalEnemyMoveSpeedMult(entity){
+  if(typeof SurvivalMode==='undefined' || !SurvivalMode || typeof SurvivalMode.enemySpeedMultiplier!=='function') return 1;
+  const value=SurvivalMode.enemySpeedMultiplier(entity);
+  return Number.isFinite(value) ? Math.max(0,value) : 1;
+}
+
 // Рассчитывает все множители скорости
 function calcSpeedMultipliers(entity, isPlayer){
 const exhMult = getMod(entity, 'moveSlow', 1);
@@ -4750,7 +4775,7 @@ const unbMult = 1; // disbalance no longer blanket-slows movement; it only hits 
   if(!isPlayer){
     const botCount = ALL_BOTS.filter(b => b.hp > 0).length;
     const botSpeedMult = Math.max(0.5, 1 - (botCount - 1) * 0.08);
-    maxV *= sv('botspd') * botSpeedMult;
+    maxV *= sv('botspd') * botSpeedMult * survivalEnemyMoveSpeedMult(entity);
   }
 
   return maxV;
@@ -4785,7 +4810,7 @@ const WEAPON_TYPES = [
   { key:'axe',         name:'Топор',            category:'axe',        throwSpeed: 14,     scale: 0.9, dmgBase: 12, dmgPerSpeed: 6, maxDmgPercent: 0.30, spinMin: 0.24, spinMax: 0.24, weight: 1.2, staminaMult: 1.3,  cutMult: 1.7,  pierceMult: 0.2,  collision:'full', flags:'',                            lmbStaminaMult: 1.0 },
 
   { key:'longsword',   name:'Длинный меч',      category:'sword',      throwSpeed: 8, scale: 1.3, dmgBase: 8,  dmgPerSpeed: 6, maxDmgPercent: 0.20, spinMin: 0.1,  spinMax: 0.24, weight: 1.2, staminaMult: 1.0,  cutMult: 1.1,  pierceMult: 1.2,  collision:'full', flags:'',                            lmbStaminaMult: 1.0 },
-  //{ key:'mace',   name:'Булава',      category:'hammer',      throwSpeed: 6, scale: 1.3, dmgBase: 4,  dmgPerSpeed: 6, maxDmgPercent: 0.20, spinMin: 0.1,  spinMax: 0.24, weight: 1.0, staminaMult: 1.2,  cutMult: 1.5,  pierceMult: 0.2,  collision:'full', flags:'',                            lmbStaminaMult: 1.0 },
+  { key:'mace',       name:'Булава',           category:'mace',        throwSpeed: 6, scale: 1.04, dmgBase: 4,  dmgPerSpeed: 6, maxDmgPercent: 0.20, spinMin: 0.1,  spinMax: 0.24, weight: 1.5, staminaMult: 1.2,  cutMult: 1.5,  pierceMult: 0.2,  collision:'full', flags:'',                            lmbStaminaMult: 0.5, lmbHoldStaminaMult: 0.5 },
 
   { key:'greatsword',  name:'Огромный меч',     category:'sword',      throwSpeed: 3.5,  scale: 1.7, dmgBase: 8,  dmgPerSpeed: 6, maxDmgPercent: 0.20, spinMin: 0.05, spinMax: 0.1,  weight: 1.4, staminaMult: 1.9,  cutMult: 1.5,  pierceMult: 1.2,  collision:'full', flags:'',                            lmbStaminaMult: 1.0 },
 
@@ -4864,6 +4889,12 @@ function applyCutSwingPenalty(ent, damage){
 function weaponLmbStaminaMult(ent){
   const d = weaponDefFor(ent);
   return (d && d.lmbStaminaMult != null) ? d.lmbStaminaMult : 1.0;
+}
+// Множитель постоянного расхода стамины при удержании ЛКМ.
+// Отдельный от стоимости первого нажатия, чтобы оружие могло настраивать оба расхода независимо.
+function weaponLmbHoldStaminaMult(ent){
+  const d = weaponDefFor(ent);
+  return (d && d.lmbHoldStaminaMult != null) ? d.lmbHoldStaminaMult : 1.0;
 }
 function weaponCollisionType(ent){
   const d = weaponDefFor(ent);
@@ -5079,7 +5110,7 @@ function setWeapon(ent, typeIdx, options) {
   }
   
   // ── ОБЫЧНОЕ ОРУЖИЕ ──
-  const url = pickRandomSprite(def.category);
+  const url = pickRandomSprite(def.category) || (def.key === 'mace' ? pickRandomSprite('hammer') : null);
   ent._weaponUrl = url || ent._weaponUrl;
   ent._weaponImg = ent._weaponUrl ? loadSpriteImage(ent._weaponUrl) : null;
   
@@ -5802,12 +5833,12 @@ function weaponKeyOf(ent){
 // ✅ Цеп добавлен в список: раньше звучал как меч (whoosh/damage), теперь
 // звук кручения/удара цепа — как у молота (более тяжёлый, гулкий).
 function isHeavySwingWeapon(ent){
-  return $.IS(ent, 'hammer', 'staff', 'wand', 'spear', 'flail', 'halberd');
+  return $.IS(ent, 'hammer', 'mace', 'staff', 'wand', 'spear', 'flail', 'halberd');
 }
 function isHeavySwingWeaponType(weaponTypeIdx){
   const d = WEAPON_TYPES[weaponTypeIdx];
   const k = d ? d.key : null;
-  return $.ISK(k, 'hammer', 'staff', 'wand', 'spear', 'flail', 'halberd', 'magicstaff');
+  return $.ISK(k, 'hammer', 'mace', 'staff', 'wand', 'spear', 'flail', 'halberd', 'magicstaff');
 }
 function isRangedWeapon(ent){
   return $.IS(ent, 'crossbow', 'bow', 'magicstaff');
@@ -5839,6 +5870,7 @@ function canUseRageDodge(ent){
 }
 function tryStartDodge(ent, cooldownActive){
   if(!ent) return false;
+  if(typeof isStunned === 'function' && isStunned(ent)) return false;
   if(!cooldownActive){
     ent._rageDodgeUsedForCooldown = false;
     return true;
@@ -7790,7 +7822,7 @@ const PROJECTILE_PREDODGE_CHANCE = 0.25;
 
 let PROJECTILES = []; // {kind:'wand'|'arrow', x,y,vx,vy,rot,owner,dmg,ownerImmuneUntil,bornAt,fade,img}
 let WAND_PARTICLES = []; // {x,y,tx,ty,life,maxLife,owner} — particles during charging, attracted to wand tip
-const WAND_PROJECTILE_TEXTURE_URL = '../VFX/T_Magicball.png';
+const WAND_PROJECTILE_TEXTURE_URL = 'https://raw.githubusercontent.com/JackofShadow666/GodgraveAssets/main/Source/VFX/T_Magicball.png';
 let WAND_PROJECTILE_TEXTURE_IMG = null;
 
 function wandProjectileTexture(){
@@ -8491,6 +8523,11 @@ function applyDamage(defender, damage, attacker, options){
     defender._lastDamageAngle=Math.atan2(dC2.y-aC.y,dC2.x-aC.x);
   }
   defender.hp = Math.max(0, defender.hp - finalDmg);
+  // Bone crack is an additional layer on successful heavy-weapon damage.
+  // Use balanceKey so thrown hammer/flail/mace hits get the same probability.
+  if(finalDmg > 0 && typeof maybePlayHeavyBoneBreakSound === 'function'){
+    maybePlayHeavyBoneBreakSound(balanceKey, finalDmg);
+  }
   if(finalDmg>0 && attacker && attacker.hasWeapon!==false && weaponKeyOf(attacker)==='dagger' && defender.hp>0){
     defender._mods = defender._mods || {};
     defender._mods.moveSlow = {value:0.5, until:GameTime+3};
@@ -9392,6 +9429,13 @@ if (state.hasFired && !state._penaltyApplied && state._penaltyTimer > 0) {
 }
 }
 
+const WAND_BARRIER_SLOW_DURATION = 3;
+const WAND_BARRIER_SLOW_MULT = 0.5;
+function applyWandBarrierSlow(ent){
+  if(!ent) return;
+  ent._wandBarrierSlowUntil = Math.max(ent._wandBarrierSlowUntil || 0, GameTime + WAND_BARRIER_SLOW_DURATION);
+}
+
 function wandBarrierHeld(ent){
   return !!(ent && ent._wandBarrierActive && ent.hasWeapon!==false && weaponKeyOf(ent)==='wand' && !isExhausted(ent));
 }
@@ -9957,7 +10001,7 @@ function updateCrossbowBotAI(dt, bot){
   const botSpeedMult = Math.max(0.5, 1 - (botCount - 1) * 0.08);
   const retreatScale = bot._cbPanicState ? 1.0 : 0.85;
   const dbBlockSlow = (bot._blockSlow||0) > GameTime ? sv('blockSlowMult') : 1;
-  const maxV = 6 * sv('botspd') * speedMult * retreatScale * dbBlockSlow * sv('globalspd') * botSpeedMult * _dShBaseMult * _dShWrongMult * weaponMoveSpeedMult(bot);
+  const maxV = 6 * sv('botspd') * speedMult * retreatScale * dbBlockSlow * sv('globalspd') * botSpeedMult * _dShBaseMult * _dShWrongMult * weaponMoveSpeedMult(bot) * survivalEnemyMoveSpeedMult(bot);
   
   bot.vx = $.M.lerpDT(bot.vx, mx*maxV, 0.16, dt);
   bot.vy = $.M.lerpDT(bot.vy, my*maxV, 0.16, dt);
@@ -10001,7 +10045,13 @@ function updateCrossbowBotAI(dt, bot){
   updateRangedWeaponFire(bot, ready, aimAngle);
 
   if(_wKey === 'bow' && bot._rangedShotCD > _prevRangedCD){
-    bot._rangedShotCD = Math.max(bot._rangedShotCD, GameTime + randRange(BOW_BOT_SHOT_PAUSE_MIN, BOW_BOT_SHOT_PAUSE_MAX));
+    // Arena/Survival AI archer fires 2x less often: its normal 1..3s pause becomes 2..6s.
+    // Other AI bow users keep the original 1..3s timing.
+    const bowShotPauseMult = bot._survivalArcher ? 2 : 1;
+    bot._rangedShotCD = Math.max(
+      bot._rangedShotCD,
+      GameTime + randRange(BOW_BOT_SHOT_PAUSE_MIN, BOW_BOT_SHOT_PAUSE_MAX) * bowShotPauseMult
+    );
   }
 
   // ─── CROSSBOW: add random delay (40% chance) ────────────────────────
@@ -10350,8 +10400,13 @@ const impactImpulse=(wand || arrow)
   const disarm=wand && ent.hp>0 && ent.hasWeapon!==false && Math.random()<0.3;
   // Same drag as normal disarm, half its initial velocity => approximately half travel.
   const kick=disarm ? (6+Math.random()*4)*0.5 : 0;
+  // Arena/Survival AI archer arrows cost 2x less stamina to block.
+  // Normal arrows keep the original 30 stamina block cost.
+  const blockStaminaCost = blocked
+    ? (arrow && projectile.owner && projectile.owner._survivalArcher ? 15 : 30)
+    : 0;
   const effect={type:'projectileContact',id:++projectileContactSerial,damage:Math.max(0,damage||0),
-    stamina:blocked?30:0,dx:dx*impactImpulse,dy:dy*impactImpulse,disarm,kx:dx*kick,ky:dy*kick,
+    stamina:blockStaminaCost,dx:dx*impactImpulse,dy:dy*impactImpulse,disarm,kx:dx*kick,ky:dy*kick,
     disbalance:thrown?thrownWeaponDisbalanceDuration(projectile):0};
   if(remote){
     $.NET.send(effect);
@@ -10863,7 +10918,7 @@ function updateDisbalanceCombo(attacker, defender){
 }
 function blockClashSoundFor(defender){
   const key = typeof weaponKeyOf === 'function' ? weaponKeyOf(defender) : null;
-  return $.ISK(key, 'staff', 'magicstaff', 'wand', 'spear', 'hammer') ? 'woodClink' : 'clash';
+  return $.ISK(key, 'staff', 'magicstaff', 'wand', 'spear', 'hammer', 'mace') ? 'woodClink' : 'clash';
 }
 
 const LMB_REFUND_WINDOW = 0.6;
@@ -11165,12 +11220,59 @@ function applyInterruptingKnockback(defender, dirX, dirY, power, unbalanceDur){
   defender.unbalanced = Math.max(defender.unbalanced || 0, unbalanceDur || 0);
 }
 
+// ─── MACE IMPACT ────────────────────────────────────────────────────
+// The mace does not use the normal symmetric bladeKB response.
+// A blocked mace strike throws only the blocker away with force 7 and
+// applies a random 0.5-1.0 s DISBALANCE. A clean body hit keeps that base force
+// and adds enough impulse to travel roughly 1.5 extra arena cells.
+const MACE_IMPACT_KNOCKBACK = 7;
+const MACE_BLOCK_DISBALANCE_MIN = 0.5;
+const MACE_BLOCK_DISBALANCE_MAX = 1.0;
+const MACE_DAMAGE_EXTRA_CELLS = 1.5;
+function maceDamageKnockbackForce(){
+  const cell = (typeof CELL_PX === 'number' && CELL_PX > 0) ? CELL_PX : 55;
+  // _dv impulses travel about 26 legacy ticks before decay; this converts
+  // an exact world-space distance in cells into the matching extra impulse.
+  return MACE_IMPACT_KNOCKBACK + (cell * MACE_DAMAGE_EXTRA_CELLS / 26);
+}
+function applyMaceImpact(attacker, defender, blocked){
+  if(!attacker || !defender) return;
+  const aC = $.POS.body(attacker);
+  const dC = $.POS.body(defender);
+  const dx = dC.x - aC.x;
+  const dy = dC.y - aC.y;
+  const len = Math.hypot(dx, dy) || 1;
+  const power = blocked ? MACE_IMPACT_KNOCKBACK : maceDamageKnockbackForce();
+  applyInterruptingKnockback(defender, dx / len, dy / len, power, 0);
+  if(blocked && !isUnbalanced(defender)){
+    const disbalanceDuration = MACE_BLOCK_DISBALANCE_MIN +
+      Math.random() * (MACE_BLOCK_DISBALANCE_MAX - MACE_BLOCK_DISBALANCE_MIN);
+    // Play Bash only when the mace actually applies a fresh DISBALANCE.
+    if(applyDisbalance(defender, attacker, disbalanceDuration)){
+      $.S.play('bashDamage');
+    }
+  }
+}
+
+const HEAVY_BONE_BREAK_CHANCE = Object.freeze({
+  hammer: 0.30,
+  flail: 0.30,
+  mace: 0.60
+});
+function maybePlayHeavyBoneBreakSound(weaponKey, finalDamage){
+  if(!(finalDamage > 0)) return false;
+  const chance = HEAVY_BONE_BREAK_CHANCE[weaponKey] || 0;
+  if(chance <= 0 || Math.random() >= chance) return false;
+  $.S.play('bonesBreak');
+  return true;
+}
+
 function damageSoundForWeapon(ent){
   return weaponKeyOf(ent) === 'spear' ? 'damage' : (isHeavySwingWeapon(ent) ? 'damageHammer' : 'damage');
 }
 
 function isSoftBodyContactWeaponKey(key) {
-  return key === 'hammer' || key === 'flail' || key === 'wand' || key === 'staff';
+  return key === 'hammer' || key === 'mace' || key === 'flail' || key === 'wand' || key === 'staff';
 }
 
 function tryApplySoftBodyContact(attacker, defender, bodyCenter, soundType) {
@@ -11187,7 +11289,7 @@ function tryApplySoftBodyContact(attacker, defender, bodyCenter, soundType) {
   const dy = bodyCenter.y - aC.y;
   const len = Math.hypot(dx, dy) || 1;
   const key = weaponKeyOf(attacker);
-  const base = key === 'hammer' ? 3.0 : (key === 'staff' ? 2.2 : 1.8);
+  const base = (key === 'hammer' || key === 'mace') ? 3.0 : (key === 'staff' ? 2.2 : 1.8);
   const kb = Math.max(base, sv('bodyKB') * 0.18);
   defender.vx += dx / len * kb;
   defender.vy += dy / len * kb;
@@ -11243,6 +11345,7 @@ function checkBladeVsBody(attacker, defender, pivX, pivY, tipX2, tipY2) {
     applyShieldBlockFX(mx,my,attacker,defender,{hitstopMag:3,waveDuration:22,unbalanceAmt:1.2,textLife:35});
     const dx=tipX2-pivX,dy=tipY2-pivY,len=Math.hypot(dx,dy)||1;
     attacker.vx-=dx/len*2; attacker.vy-=dy/len*2;
+    if(typeof applyWandBarrierSlow==='function') applyWandBarrierSlow(attacker);
     if(attacker.hasWeapon!==false && Math.random()<0.3 && typeof disarmEntity==='function') disarmEntity(attacker,-dx/len*3,-dy/len*3);
     if(attacker._aiState){
       attacker._aiState._wandBarrierFlankTarget=defender;
@@ -11341,7 +11444,9 @@ function checkBladeVsBody(attacker, defender, pivX, pivY, tipX2, tipY2) {
             attacker.vx -= _bvx / _bl * 3;
             attacker.vy -= _bvy / _bl * 3;
             
-            if (weaponHasFlag(attacker, 'knockback_hammer')) {
+            if (key === 'mace') {
+              applyMaceImpact(attacker, defender, true);
+            } else if (weaponHasFlag(attacker, 'knockback_hammer')) {
               applyInterruptingKnockback(defender, -_bvx / _bl, -_bvy / _bl, 18, 0.8);
             }
             if (weaponHasFlag(attacker, 'knockback_staff')) {
@@ -11686,7 +11791,9 @@ if (defender === D && attacker === P && typeof AI !== 'undefined' && AI.enabled 
       const kbf = sv('bodyKB') * 0.5;
       const defenderShieldKbMult = (typeof shieldHeld === 'function' && shieldHeld(defender)) ? 0.5 : 1;
       const _noDoubleKB = (attacker._clashFrame || 0) > GameTime - 0.05;
-      if (kbf > 0 && !_noDoubleKB) {
+      if (key === 'mace' && !_noDoubleKB) {
+        applyMaceImpact(attacker, defender, false);
+      } else if (kbf > 0 && !_noDoubleKB) {
         const _bkX = bC.x - $.POS.body(attacker).x;
         const _bkY = bC.y - $.POS.body(attacker).y;
         const _bkL = Math.hypot(_bkX, _bkY) || 1;
@@ -11695,13 +11802,20 @@ if (defender === D && attacker === P && typeof AI !== 'undefined' && AI.enabled 
       }
       
       // ─── DISARM ──────────────────────────────────────────────────
-      if (!_isPoke && defender.hasWeapon !== false && attacker.hasWeapon !== false) {
-        const swingPower = canUseSwingBonus(attacker) ? Math.abs(attacker.vel) / sv('swthresh') : 0;
-        let disarmChance = 0.03 + swingPower * 0.07;
-        if (weaponHasFlag(attacker, 'disarm')) disarmChance += 0.15;
-        if (attacker.rageBuffEnd > GameTime) disarmChance += 0.10;
-        // Disarm chance caps at 30% for unbalanced targets, otherwise 50%
-        disarmChance = isUnbalanced(defender) ? 0.30 : Math.min(disarmChance, 0.50) * 0.5;
+      // Булава при любом реальном попадании имеет фиксированные 30% на выбивание
+      // оружия. Для остальных типов остаётся прежняя формула от скорости/ярости.
+      if ((key === 'mace' || !_isPoke) && defender.hasWeapon !== false && attacker.hasWeapon !== false) {
+        let disarmChance;
+        if (key === 'mace') {
+          disarmChance = 0.30;
+        } else {
+          const swingPower = canUseSwingBonus(attacker) ? Math.abs(attacker.vel) / sv('swthresh') : 0;
+          disarmChance = 0.03 + swingPower * 0.07;
+          if (weaponHasFlag(attacker, 'disarm')) disarmChance += 0.15;
+          if (attacker.rageBuffEnd > GameTime) disarmChance += 0.10;
+          // Disarm chance caps at 30% for unbalanced targets, otherwise 50%
+          disarmChance = isUnbalanced(defender) ? 0.30 : Math.min(disarmChance, 0.50) * 0.5;
+        }
         
         if (Math.random() < disarmChance) {
           const _dkX = bC.x - $.POS.body(attacker).x;
@@ -11863,6 +11977,23 @@ function applyDebuff(ent, type, duration, intensity) {
     if (type === 'stun') {
         ent.stunned = duration;
         ent._stunUntil = GameTime + duration;
+        // A stun is a hard movement lock: cancel an already-started dodge/dash
+        // and prevent stale AI movement from carrying the target across the arena.
+        ent._moveLockUntil = Math.max(ent._moveLockUntil || 0, GameTime + duration);
+        ent._dodgeActiveUntil = Math.min(ent._dodgeActiveUntil || 0, GameTime);
+        ent._dvx = 0;
+        ent._dvy = 0;
+        ent.vx = 0;
+        ent.vy = 0;
+        ent._shieldDashCharging = false;
+        ent._shieldDashBashActiveUntil = 0;
+        if(ent._aiState){
+            ent._aiState._fakeMDown = false;
+            ent._aiState._dodgeLockUntil = Math.max(ent._aiState._dodgeLockUntil || 0, GameTime + duration);
+            if(ent._aiState._fakeKeys){
+                ent._aiState._fakeKeys.w = ent._aiState._fakeKeys.a = ent._aiState._fakeKeys.s = ent._aiState._fakeKeys.d = false;
+            }
+        }
     }
     
     // Visual feedback
@@ -12491,28 +12622,35 @@ function doClash(entA, entB, res, strongSwing, lmbRefundClash){
   defr.vel = $.M.clamp(-atkSign * 1.5 * defrRecoilMult, -8, 8);  // defender rebounds slightly less
 
   // ─── KNOCKBACK ──────────────────────────────────────────────────
-  // Apply a physical push that separates the two fighters (like a real clash).
-  const push = Math.min(sv('bladeKB'), 25);
-  if(push > 0){
-    const bodyLen = Math.hypot(entB.x-entA.x, entB.y-entA.y) || 1;
-    const bodyAng = Math.atan2(entB.y-entA.y, entB.x-entA.x);
-    // Apply knockback in the direction of the swing (with a 30° bias)
-    const swordBias = Math.atan2(
-      Math.sin(atkr.angle)*0.5, Math.cos(atkr.angle)*0.5
-    );
-    const finalAng = bodyAng + $.M.clamp($.M.angDiff(swordBias, bodyAng), -Math.PI/6, Math.PI/6);
-    const pushX = Math.cos(finalAng), pushY = Math.sin(finalAng);
-    // Separate knockback impulse cannot be overwritten by held movement.
-    entA._dvx = (entA._dvx || 0) - pushX*push;
-    entA._dvy = (entA._dvy || 0) - pushY*push;
-    entB._dvx = (entB._dvx || 0) + pushX*push;
-    entB._dvy = (entB._dvy || 0) + pushY*push;
-    entA._moveLockUntil = Math.max(entA._moveLockUntil || 0, GameTime + 0.35);
-    entB._moveLockUntil = Math.max(entB._moveLockUntil || 0, GameTime + 0.35);
+  // Mace is asymmetric: when its strike is blocked, ONLY the blocker is
+  // thrown away with fixed force 7 and receives 0.5-1.0 s DISBALANCE.
+  const maceBlocked = weaponKeyOf(atkr) === 'mace';
+  if(maceBlocked){
+    applyMaceImpact(atkr, defr, true);
+  } else {
+    // Normal weapons keep the symmetric bladeKB separation.
+    const push = Math.min(sv('bladeKB'), 25);
+    if(push > 0){
+      const bodyLen = Math.hypot(entB.x-entA.x, entB.y-entA.y) || 1;
+      const bodyAng = Math.atan2(entB.y-entA.y, entB.x-entA.x);
+      // Apply knockback in the direction of the swing (with a 30° bias)
+      const swordBias = Math.atan2(
+        Math.sin(atkr.angle)*0.5, Math.cos(atkr.angle)*0.5
+      );
+      const finalAng = bodyAng + $.M.clamp($.M.angDiff(swordBias, bodyAng), -Math.PI/6, Math.PI/6);
+      const pushX = Math.cos(finalAng), pushY = Math.sin(finalAng);
+      // Separate knockback impulse cannot be overwritten by held movement.
+      entA._dvx = (entA._dvx || 0) - pushX*push;
+      entA._dvy = (entA._dvy || 0) - pushY*push;
+      entB._dvx = (entB._dvx || 0) + pushX*push;
+      entB._dvy = (entB._dvy || 0) + pushY*push;
+      entA._moveLockUntil = Math.max(entA._moveLockUntil || 0, GameTime + 0.35);
+      entB._moveLockUntil = Math.max(entB._moveLockUntil || 0, GameTime + 0.35);
+    }
   }
 
 // ─── BLOCK KNOCKBACK ──────────────────────────────────────────────
-  if(blockKnockOn){
+  if(blockKnockOn && !maceBlocked){
     const bkb = sv('blockKB');
     // Attacker (aggressor) pushes defender (blocker) backward
     const atkr = entA.isAttacker ? entA : entB;
@@ -12619,6 +12757,7 @@ function checkShieldVsBlade(attacker, defender, bx1,by1, tx1,ty1){
     applyShieldBlockFX(mx,my,attacker,defender,{hitstopMag:3,waveDuration:22,unbalanceAmt:1.2,textLife:35});
     const dx=tx1-bx1,dy=ty1-by1,len=Math.hypot(dx,dy)||1;
     attacker.vx-=dx/len*2; attacker.vy-=dy/len*2;
+    if(typeof applyWandBarrierSlow==='function') applyWandBarrierSlow(attacker);
     if(attacker.hasWeapon!==false && Math.random()<0.3 && typeof disarmEntity==='function') disarmEntity(attacker,-dx/len*3,-dy/len*3);
     if(attacker._aiState){
       attacker._aiState._wandBarrierFlankTarget=defender;
@@ -12664,6 +12803,7 @@ function checkShieldVsBlade(attacker, defender, bx1,by1, tx1,ty1){
   const _bvx=(tx1-bx1), _bvy=(ty1-by1), _bl=Math.hypot(_bvx,_bvy)||1;
   attacker.vx -= _bvx/_bl*4;
   attacker.vy -= _bvy/_bl*4;
+  if(weaponKeyOf(attacker) === 'mace') applyMaceImpact(attacker, defender, true);
   return true;
 }
 
@@ -13299,6 +13439,7 @@ const BOT_RANDOM_WEAPON_WEIGHTS = [
   ['bow', 10],
   ['halberd', 8],
   ['hammer', 8],
+  ['mace', 7],
   ['greatsword', 7],
   ['crossbow', 6],
   ['flail', 5],
@@ -13676,8 +13817,8 @@ const PROBING_WEAPON_KEYS = [
   'dagger', 'rapier', 'sword', 'longsword', 'greatsword',
   'staff', 'halberd', 'spear'
 ];
-const NO_THRUST_WEAPON_KEYS = ['axe', 'hammer', 'flail', 'wand', 'tapesword'];
-const SWING_ONLY_WEAPON_KEYS = ['axe', 'hammer', 'flail', 'wand'];
+const NO_THRUST_WEAPON_KEYS = ['axe', 'hammer', 'mace', 'flail', 'wand', 'tapesword'];
+const SWING_ONLY_WEAPON_KEYS = ['axe', 'hammer', 'mace', 'flail', 'wand'];
 const SWING_BURST_WEAPON_KEYS = ['sword', 'tapesword', 'longsword', 'greatsword', 'staff', 'magicstaff', 'wand'];
 const HEAVY_SWING_SPIN_INTERVAL_MULT = 1 / 3;
 const HEAVY_SWING_DODGE_INTERVAL_MULT = 0.5;
@@ -14202,7 +14343,7 @@ function aiResolveShieldHeld(ai, bot, wantShield){
 // ── Бросок оружия ботом по уставшему игроку ─────────────────────────────
 // Виды оружия, которые бот готов метнуть (список по запросу): молот, топор,
 // копьё, кинжал, меч.
-const THROWABLE_MELEE_KEYS = ['hammer','axe','spear','dagger','sword'];
+const THROWABLE_MELEE_KEYS = ['hammer','mace','axe','spear','dagger','sword'];
 // Общий (на всех ботов) таймер — защищает от того, чтобы несколько ботов
 // подряд закидали игрока оружием один за другим.
 let GLOBAL_THROW_COOLDOWN_UNTIL = 0;
@@ -15557,6 +15698,15 @@ function updateAIDispatch(dt, bot){
   if(!bot || bot.hp <= 0 || !dummyOn) return;
   bot._rangedMovementHandled = false; // сброс каждый кадр (см. ФИКС 2)
 
+  if(typeof isStunned==='function' && isStunned(bot)){
+    if(bot._aiState){
+      bot._aiState._fakeMDown=false;
+      if(bot._aiState._fakeKeys) bot._aiState._fakeKeys.w=bot._aiState._fakeKeys.a=bot._aiState._fakeKeys.s=bot._aiState._fakeKeys.d=false;
+    }
+    bot.vx=0; bot.vy=0; bot._dvx=0; bot._dvy=0;
+    return;
+  }
+
   if(!bot._aiState || !bot._aiState.enabled){ updateAI(dt, bot); return; }
 
   // Безоружный бот (выбили лук/арбалет/жезл/что угодно) — всегда через
@@ -15617,8 +15767,8 @@ function updateAIDispatch(dt, bot){
   const PROP_PUSH_MIN = 9, PROP_PUSH_MAX = 15, PROP_DECAY = 0.96;
   const SPIKE_ENTRY_DAMAGE = 20, SPIKE_DPS = 3, SPIKE_REENTRY = 1;
   const PROP_DAMAGE = 30, EXPLOSION_DAMAGE = 30, RED_FUSE = 3, EXPLOSION_RADIUS = CELL * 3.75;
-  const ENEMY_WEAPON_KEYS = ['tapesword','sword','rapier','dagger','spear','halberd','axe','longsword','staff','flail'];
-  const PLAYER_START_WEAPON_KEYS = ['sword','spear','halberd','wand','axe'];
+  const ENEMY_WEAPON_KEYS = ['tapesword','sword','rapier','dagger','spear','halberd','axe','longsword','mace','staff','flail'];
+  const PLAYER_START_WEAPON_KEYS = ['sword','spear','halberd','wand','axe','mace'];
   let active = false, ready = document.readyState !== 'loading';
   let phase = 'inactive', elapsed = 0, phaseLeft = 0, wave = 0, kills = 0, forceBotResumeAt = 0;
   let ordinarySinceBoss = 0, boss = false, result = null;
@@ -15956,6 +16106,7 @@ function updateAIDispatch(dt, bot){
   }
   function adjustAI(bot){
     if(!isActive()||!alive(bot)||!bot._aiState)return;
+    if(typeof isStunned==='function' && isStunned(bot)) return;
     const k=bot._aiState._fakeKeys,c=body(bot);let dx=(k.d?1:0)-(k.a?1:0),dy=(k.s?1:0)-(k.w?1:0),ax=0,ay=0;
     for(const o of arenaObjects){if(o.type!=='spikes')continue;const ox=c.x-o.x,oy=c.y-o.y,d=Math.hypot(ox,oy)||1;if(d<CELL*1.45&&(d<CELL*.85||(ox*dx+oy*dy)<0)){ax+=ox/d*(CELL*1.5-d);ay+=oy/d*(CELL*1.5-d);}}
     if(ax||ay){dx+=ax*.08;dy+=ay*.08;k.a=dx<-.2;k.d=dx>.2;k.w=dy<-.2;k.s=dy>.2;}
@@ -16388,6 +16539,18 @@ function updateAIDispatch(dt, bot){
     selectMain(); updateHud();
   }
 
+  // Hidden "last survivor" assistance. Keep arena difficulty rules here rather
+  // than baking them into every AI controller. When exactly one player is alive
+  // and below 50% HP, arena enemies move 30% slower. The modifier disappears
+  // immediately after healing to >=50% HP or when another player respawns.
+  function enemySpeedMultiplier(ent){
+    if(!isActive() || phase==='result' || !ent || !ent._survivalEnemy) return 1;
+    const players=livePlayers();
+    if(players.length!==1) return 1;
+    const survivor=players[0];
+    return survivor.hp<(survivor.maxHp||100)*0.5 ? 0.7 : 1;
+  }
+
   function damageMultiplier(defender){
     if(!isActive()) return 1;
     if(phase==='result') return 0;
@@ -16631,7 +16794,7 @@ function updateAIDispatch(dt, bot){
   },true);
   document.addEventListener('DOMContentLoaded',()=>{ ready=true; initHud(); });
   window.SurvivalMode={update,drawGroundHazards,drawPickups,handleDeath,setActive,restart,onRoundReset(){ if(active) newMatch(); },
-    onRosterChange,isActive,damageMultiplier,getState,getPlayer,adjustAI,isSafeSpawn:safePoint,tryThrowObject,projectileHitObject,segmentHitObject};
+    onRosterChange,isActive,damageMultiplier,enemySpeedMultiplier,getState,getPlayer,adjustAI,isSafeSpawn:safePoint,tryThrowObject,projectileHitObject,segmentHitObject};
 })();
 
 </script>
@@ -16809,7 +16972,7 @@ function updateAIDispatch(dt, bot){
     setShield(entity, ((entity.shield || 0) + 1) % SHIELD_TYPES.length);
   }
   function dodge(entity, moveX, moveY, charge){
-    if(!entity || entity.hp<=0 || isExhausted(entity) || isUnbalanced(entity)) return;
+    if(!entity || entity.hp<=0 || isExhausted(entity) || isUnbalanced(entity) || (typeof isStunned==='function' && isStunned(entity))) return;
     const cooldownActive=(entity._dodgeCD || 0) > GameTime;
     if(cooldownActive && typeof tryStartDodge!=='function') return;
     if(typeof tryStartDodge==='function' && !tryStartDodge(entity,cooldownActive)) return;
@@ -16840,11 +17003,11 @@ function updateAIDispatch(dt, bot){
   }
 
   function canManualShieldDash(entity){
-    return !!(entity && entity.shield>0 && !isExhausted(entity) && typeof shieldHeld==='function' && shieldHeld(entity) && entity.stamina>0);
+    return !!(entity && entity.shield>0 && !isExhausted(entity) && !(typeof isStunned==='function' && isStunned(entity)) && typeof shieldHeld==='function' && shieldHeld(entity) && entity.stamina>0);
   }
 
   function beginManualDodgePress(entity, moveX, moveY){
-    if(!entity || isExhausted(entity) || isUnbalanced(entity)) return;
+    if(!entity || isExhausted(entity) || isUnbalanced(entity) || (typeof isStunned==='function' && isStunned(entity))) return;
     if((entity._dodgeCD || 0) > GameTime && (typeof canUseRageDodge!=='function' || !canUseRageDodge(entity))) return;
     if(canManualShieldDash(entity)){
       entity._shieldDashCharging=true;
@@ -16892,7 +17055,7 @@ function updateAIDispatch(dt, bot){
         const initial=entity.stamMax*(sv('lmbcost')/100)*weaponLmbStaminaMult(entity);
         if(entity.stamina>=initial){
           drainStamina(entity,initial);
-          state.holdDrain=Math.max(0,entity.stamina);
+          state.holdDrain=Math.max(0,entity.stamina) * weaponLmbHoldStaminaMult(entity);
         }
       } else if(state.holdDrain>0){
         drainStamina(entity,state.holdDrain*dt);
@@ -16994,11 +17157,11 @@ function updateAIDispatch(dt, bot){
               entity.rageBuffEnd=GameTime+1.0;
               entity._rageTextShown=false;
               $.S.play('rage');
-              state.holdDrain=Math.max(0,entity.stamina);
+              state.holdDrain=Math.max(0,entity.stamina) * weaponLmbHoldStaminaMult(entity);
             } else if(entity.stamina>=lmbStaminaCost){
               drainStamina(entity,lmbStaminaCost);
               entity._lmbRefundCost=lmbStaminaCost;
-              state.holdDrain=Math.max(0,entity.stamina);
+              state.holdDrain=Math.max(0,entity.stamina) * weaponLmbHoldStaminaMult(entity);
             }
           }
         } else if((entity.rageBuffEnd||0)<=GameTime && state.holdDrain>0){
@@ -17293,7 +17456,7 @@ let arenaCanvas = null, arenaCtx = null, arenaDirty = true;
 let arenaBgImg = null; // фон, загружаемый из файла (см. ARENA_BG_FOLDER)
 
 const ARENA_BG_FOLDER = 'Source/Background/';
-const WAND_BARRIER_TEXTURE_URL = '../VFX/T_Magicshield.png';
+const WAND_BARRIER_TEXTURE_URL = 'https://raw.githubusercontent.com/JackofShadow666/GodgraveAssets/main/Source/VFX/T_Magicshield.png';
 let WAND_BARRIER_TEXTURE_IMG = null;
 // SPRITE_LISTS.background заполняется в loadAudioDB (см. MODULE: SPRITES)
 
@@ -17425,8 +17588,8 @@ botUpdateExhaustion(bot, dt);
     botSpawnDust(bot, dt);
     return;
   }  if(typeof isStunned==='function' && isStunned(bot)){
-    bot.vx=$.M.decay(bot.vx,0.65,dt);
-    bot.vy=$.M.decay(bot.vy,0.65,dt);
+    bot.vx=0; bot.vy=0; bot._dvx=0; bot._dvy=0;
+    bot._dodgeActiveUntil=Math.min(bot._dodgeActiveUntil||0,GameTime);
     return;
   }
 
@@ -17540,6 +17703,14 @@ function updateDummy(dt, bot){
   // Баффы и реген должны обновляться до любых ранних веток ИИ.
   botUpdateExhaustion(bot, dt);
   botRegenStamina(bot, dt);
+  if(typeof isStunned==='function' && isStunned(bot)){
+    ai._fakeMDown=false;
+    if(ai._fakeKeys) ai._fakeKeys.w=ai._fakeKeys.a=ai._fakeKeys.s=ai._fakeKeys.d=false;
+    bot.vx=0; bot.vy=0; bot._dvx=0; bot._dvy=0;
+    bot._dodgeActiveUntil=Math.min(bot._dodgeActiveUntil||0,GameTime);
+    bot._rangedMovementHandled=false;
+    return;
+  }
   if(ai.enabled === false){
     ai._fakeKeys.w=ai._fakeKeys.a=ai._fakeKeys.s=ai._fakeKeys.d=false;
     ai._fakeMDown=false;
@@ -17582,7 +17753,7 @@ function updateDummy(dt, bot){
     const dx = targetX - bot.x;
     const dy = targetY - bot.y;
     const d = Math.hypot(dx, dy) || 1;
-    const maxV = 7 * sv('botspd') * sv('globalspd') * getMod(bot, 'moveSlow', 1);
+    const maxV = 7 * sv('botspd') * sv('globalspd') * getMod(bot, 'moveSlow', 1) * survivalEnemyMoveSpeedMult(bot);
     bot.vx = $.M.lerpDT(bot.vx, (dx/d) * maxV, 0.22, dt);
     bot.vy = $.M.lerpDT(bot.vy, (dy/d) * maxV, 0.22, dt);
     const step = $.M.step(dt);
@@ -17643,7 +17814,7 @@ function updateDummy(dt, bot){
     const botCount = ALL_BOTS.filter(b => b.hp > 0).length;
     const botSpeedMult = Math.max(0.5, 1 - (botCount - 1) * 0.08);
 
-    const maxV = 7 * sv('botspd') * speedMult * retreatScale * dbBlockSlow * sv('globalspd') * botSpeedMult * _dShBaseMult * _dShWrongMult * weaponMoveSpeedMult(bot);
+    const maxV = 7 * sv('botspd') * speedMult * retreatScale * dbBlockSlow * sv('globalspd') * botSpeedMult * _dShBaseMult * _dShWrongMult * weaponMoveSpeedMult(bot) * survivalEnemyMoveSpeedMult(bot);
     if(_dodgeLocked){
       bot.vx = $.M.decay(bot.vx, bot.hasWeapon === false ? 0.95 : sv('inertia'), dt);
       bot.vy = $.M.decay(bot.vy, bot.hasWeapon === false ? 0.95 : sv('inertia'), dt);
@@ -19046,7 +19217,12 @@ function update(dt){
   if(playerBotRangedHandled){ mx=0; my=0; }
   if(mx||my){ const l=Math.hypot(mx,my); mx/=l; my/=l; }
   const pStunned = typeof isStunned === 'function' && isStunned(P);
-  if(pStunned){ mx=0; my=0; mDown=false; P._shieldHeld=false; }
+  if(pStunned){
+    mx=0; my=0; mDown=false; P._shieldHeld=false;
+    P.vx=0; P.vy=0; P._dvx=0; P._dvy=0;
+    P._dodgeActiveUntil=Math.min(P._dodgeActiveUntil||0,GameTime);
+    P._shieldDashCharging=false; P._shieldDashBashActiveUntil=0;
+  }
   if(P._shieldDashCharging){
     mx = 0; my = 0;
     P.vx = 0; P.vy = 0;
@@ -19150,12 +19326,12 @@ if(shieldDrainActive){
             P._rageTextShown = false;
             $.S.play('rage');
             // During rage activation LMB does not drain stamina.
-            P._lmbHoldDrainRate = P.stamina;
+            P._lmbHoldDrainRate = P.stamina * weaponLmbHoldStaminaMult(P);
           } else {
             drainStamina(P, lmbStaminaCost);
             P._lmbRefundCost = lmbStaminaCost;
             // Fixed remainder should be exactly enough for one second of hold.
-            P._lmbHoldDrainRate = P.stamina;
+            P._lmbHoldDrainRate = P.stamina * weaponLmbHoldStaminaMult(P);
           }
         }
       }
@@ -20816,7 +20992,7 @@ window.doRestart=function(){
 
   // fireDodge — works on all devices (PC + mobile)
   window.fireDodge=function(dx, dy, bypassCooldown, chargedPower){
-    if(typeof P==='undefined' || P.hp<=0 || isExhausted(P) || isUnbalanced(P) || Math.hypot(dx,dy)<0.001) return;
+    if(typeof P==='undefined' || P.hp<=0 || isExhausted(P) || isUnbalanced(P) || (typeof isStunned==='function' && isStunned(P)) || Math.hypot(dx,dy)<0.001) return;
     if(!bypassCooldown){
       if(typeof tryStartDodge==='function'){
         if(!tryStartDodge(P,window._dodgeCooldownMob>0)) return;
@@ -23142,6 +23318,7 @@ var NET_RELAY = (function(){
 
   window.beginDodgePress = function(source){
     if(typeof gamePaused !== 'undefined' && gamePaused) return;
+    if(typeof isStunned==='function' && isStunned(P)) return;
     if(_pcDodgeCooldown > 0 && (typeof canUseRageDodge !== 'function' || !canUseRageDodge(P))) return;
     if(canChargeShieldDash()){
       P._shieldDashCharging = true;
