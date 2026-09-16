@@ -1,0 +1,10 @@
+{
+  "name": "dual-cloud-room-chat-yandex",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "@ydbjs/core": "latest",
+    "@ydbjs/query": "latest",
+    "@ydbjs/auth": "latest"
+  }
+}

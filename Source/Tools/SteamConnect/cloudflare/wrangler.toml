@@ -1,0 +1,11 @@
+name = "dual-cloud-room-chat"
+main = "worker.mjs"
+compatibility_date = "2026-09-01"
+
+[[durable_objects.bindings]]
+name = "HUB"
+class_name = "Hub"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["Hub"]
