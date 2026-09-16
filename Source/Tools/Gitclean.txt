@@ -1,0 +1,20 @@
+# 1. Создаем чистую временную ветку
+git checkout --orphan latest_branch
+
+# 2. Добавляем все файлы игры
+git add -A
+
+# 3. Делаем один чистый коммит
+git commit -am "Initial commit"
+
+# 4. Сохраняем имя вашей текущей главной ветки в переменную
+DEFAULT_BRANCH=$(git remote show origin | grep 'HEAD branch' | cut -d' ' -f5)
+
+# 5. Удаляем старую ветку с историей локально
+git branch -D $DEFAULT_BRANCH
+
+# 6. Переименовываем нашу чистую ветку в правильное имя
+git branch -m $DEFAULT_BRANCH
+
+# 7. Принудительно отправляем на GitHub
+git push origin $DEFAULT_BRANCH --force
