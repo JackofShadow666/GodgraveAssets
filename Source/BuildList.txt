@@ -1,5 +1,5 @@
 ; Список файлов из папок Music и Sound
-; Создано: 16.09.2026 4:21:21
+; Создано: 16.09.2026 9:56:10
 ; Корневая папка: F:\Jack\Project\Godgrave\Public\Godgrave\Source
 
 === Папка: Music ===
@@ -335,13 +335,9 @@ Source\Weapon\Wand\T_Wand_04.png
 Source\Weapon\Wand\T_Wand_05.png
 Source\Weapon\Wand\T_Wand_06.png
 Source\Weapon\Wand\T_Wand_07.png
-Source\Weapon\Whip\T_Whip_01.png
-Source\Weapon\Whip\T_Whip_02.png
-Source\Weapon\Whip\T_Whip_03.png
-Source\Weapon\Whip\T_Whip_04.png
-Source\Weapon\Whip\T_Whip_05.png
-Source\Weapon\Whip\T_Whip_06.png
-Source\Weapon\Whip\T_Whip_07.png
+Source\Weapon\Whip\T_WhipBlade.png
+Source\Weapon\Whip\T_WhipHand.png
+Source\Weapon\Whip\T_WhipRope.png
 
 === Папка: UI ===
 Source\UI\Bar.psd
