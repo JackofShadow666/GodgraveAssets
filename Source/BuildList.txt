@@ -1,5 +1,5 @@
 ; Список файлов из папок Music и Sound
-; Создано: 17.09.2026 5:41:20
+; Создано: 17.09.2026 10:47:44
 ; Корневая папка: F:\Jack\Project\Godgrave\Public\Godgrave\Source
 
 === Папка: Music ===
@@ -507,6 +507,10 @@ Source\VFX\T_Magicball.png
 Source\VFX\T_Magicshield.png
 Source\VFX\VFX_BloodA.png
 Source\VFX\VFX_BloodB.png
+Source\VFX\VFX_BloodPartDrop.png
+Source\VFX\VFX_BloodPartLarge.png
+Source\VFX\VFX_BloodPartSmall.png
+Source\VFX\VFX_Bones.png
 Source\VFX\VFX_Explosion.png
 Source\VFX\VFX_SpawnPointRune.png
 Source\VFX\VFX_WoodPart.json
