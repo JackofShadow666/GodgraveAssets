@@ -1,5 +1,5 @@
 ; Список файлов из папок Music и Sound
-; Создано: 17.09.2026 3:27:23
+; Создано: 17.09.2026 4:21:08
 ; Корневая папка: F:\Jack\Project\Godgrave\Public\Godgrave\Source
 
 === Папка: Music ===
@@ -161,6 +161,17 @@ Source\Sound\Shield\SFX_Shield_03.mp3
 Source\Sound\Shield\SFX_Shield_04.mp3
 Source\Sound\Shield\SFX_Shield_05.mp3
 Source\Sound\ShieldPush\ShieldPush.mp3
+Source\Sound\Step\SFX_Step_01.mp3
+Source\Sound\Step\SFX_Step_02.mp3
+Source\Sound\Step\SFX_Step_03.mp3
+Source\Sound\Step\SFX_Step_04.mp3
+Source\Sound\Step\SFX_Step_05.mp3
+Source\Sound\Step\SFX_Step_06.mp3
+Source\Sound\Step\SFX_Step_07.mp3
+Source\Sound\Step\SFX_Step_08.mp3
+Source\Sound\Step\SFX_Step_09.mp3
+Source\Sound\Step\SFX_Step_10.mp3
+Source\Sound\Step\SFX_Step_11.mp3
 Source\Sound\Sword\SwordClink\SFX_SwordClink_01.mp3
 Source\Sound\Sword\SwordClink\SFX_SwordClink_02.mp3
 Source\Sound\Sword\SwordClink\SFX_SwordClink_03.mp3
