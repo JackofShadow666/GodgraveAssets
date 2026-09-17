@@ -1,5 +1,5 @@
 ; Список файлов из папок Music и Sound
-; Создано: 16.09.2026 15:38:49
+; Создано: 17.09.2026 3:27:23
 ; Корневая папка: F:\Jack\Project\Godgrave\Public\Godgrave\Source
 
 === Папка: Music ===
@@ -54,6 +54,10 @@ Source\Sound\Bow\BowPush\SFX_BowPush_04.mp3
 Source\Sound\Bow\BowReload\SFX_BowReload_01.mp3
 Source\Sound\Bow\BowReload\SFX_BowReload_02.mp3
 Source\Sound\Bow\BowTension\SFX_BowTension.mp3
+Source\Sound\Breath\SFX_Breath_01.mp3
+Source\Sound\Breath\SFX_Breath_02.mp3
+Source\Sound\Breath\SFX_Breath_03.mp3
+Source\Sound\Breath\SFX_Breath_04.mp3
 Source\Sound\Buff\SFX_Heal_01.mp3
 Source\Sound\Damage\Bash\SFX_Bash_01.mp3
 Source\Sound\Damage\Bash\SFX_Bash_02.mp3
@@ -116,6 +120,23 @@ Source\Sound\Magic\SFX_MagicLoop.wav
 Source\Sound\Magic\SFX_MagicPush_01.mp3
 Source\Sound\Magic\SFX_MagicPush_02.mp3
 Source\Sound\Magic\SFX_MagicPush_03.mp3
+Source\Sound\Move\SFX_Move_01.mp3
+Source\Sound\Move\SFX_Move_02.mp3
+Source\Sound\Move\SFX_Move_03.mp3
+Source\Sound\Move\SFX_Move_04.mp3
+Source\Sound\Move\SFX_Move_05.mp3
+Source\Sound\Move\SFX_Move_06.mp3
+Source\Sound\Move\SFX_Move_07.mp3
+Source\Sound\Move\SFX_Move_08.mp3
+Source\Sound\Move\SFX_Move_09.mp3
+Source\Sound\Move\SFX_Move_10.mp3
+Source\Sound\Move\SFX_Move_11.mp3
+Source\Sound\Move\SFX_Move_12.mp3
+Source\Sound\Move\SFX_Move_13.mp3
+Source\Sound\Move\SFX_Move_14.mp3
+Source\Sound\Move\SFX_Move_15.mp3
+Source\Sound\Move\SFX_Move_16.mp3
+Source\Sound\Move\SFX_Move_17.mp3
 Source\Sound\Other\SFX_Heartbit_01.mp3
 Source\Sound\Other\teleport.mp3
 Source\Sound\Rage\SFX_Rage_01.mp3

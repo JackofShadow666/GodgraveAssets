@@ -6,15 +6,31 @@ const rl=readline.createInterface({input:process.stdin,output:process.stdout});
 const ask=q=>new Promise(r=>rl.question(q,r));
 function exe(name){return process.platform==='win32'?name+'.cmd':name}
 function run(cmd,args=[],opt={}){
- let file=cmd, finalArgs=args;
+ let r;
  if(process.platform==='win32' && /\.(cmd|bat)$/i.test(cmd)){
    const comspec=process.env.ComSpec || 'C:\\Windows\\System32\\cmd.exe';
-   const quote=v => '"' + String(v).replace(/"/g,'\\"') + '"';
-   const line=[quote(cmd),...args.map(quote)].join(' ');
-   file=comspec;
-   finalArgs=['/d','/s','/c',line];
+   const esc=v=>{
+     const x=String(v);
+     if(!/[\s"&|<>^()]/.test(x)) return x;
+     return '"' + x.replace(/"/g,'""') + '"';
+   };
+   const line=[cmd,...args].map(esc).join(' ');
+   r=spawnSync(comspec,['/d','/s','/c',line],{
+     cwd:opt.cwd||ROOT,
+     encoding:'utf8',
+     stdio:opt.capture?'pipe':'inherit',
+     shell:false,
+     env:process.env
+   });
+ }else{
+   r=spawnSync(cmd,args,{
+     cwd:opt.cwd||ROOT,
+     encoding:'utf8',
+     stdio:opt.capture?'pipe':'inherit',
+     shell:false,
+     env:process.env
+   });
  }
- const r=spawnSync(file,finalArgs,{cwd:opt.cwd||ROOT,encoding:'utf8',stdio:opt.capture?'pipe':'inherit',shell:false,env:process.env});
  if(opt.capture){if(r.stdout)process.stdout.write(r.stdout);if(r.stderr)process.stderr.write(r.stderr)}
  if(r.error)throw r.error;
  if(r.status!==0 && !opt.allowFail)throw new Error(cmd+' завершился с кодом '+r.status);
@@ -40,6 +56,13 @@ function save(part){
 async function setupCloudflare(){
  console.log('\n=== Cloudflare ===');
  const npx=process.platform==='win32'?'npx.cmd':'npx';
+ if(process.platform==='win32'){
+   const check=spawnSync(process.env.ComSpec||'cmd.exe',['/d','/s','/c','where npx'],{encoding:'utf8'});
+   if(check.status!==0){
+     throw new Error('npx не найден. Переустанови Node.js с npm или открой новый CMD после установки Node.js.');
+   }
+   console.log('npx: '+String(check.stdout||'').trim().split(/\r?\n/)[0]);
+ }
  console.log('Сейчас откроется авторизация Cloudflare (если еще не выполнена).');
  run(npx,['--yes','wrangler@latest','login']);
  console.log('Разворачиваю relay...');
