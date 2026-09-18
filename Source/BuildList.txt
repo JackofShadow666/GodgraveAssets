@@ -1,5 +1,5 @@
 ; Список файлов из папок Music и Sound
-; Создано: 18.09.2026 19:10:30
+; Создано: 19.09.2026 1:33:20
 ; Корневая папка: F:\Jack\Project\Godgrave\Public\Godgrave\Source
 
 === Папка: Music ===
@@ -401,6 +401,37 @@ Source\UI\T_MaskA � �����.png
 Source\UI\T_MaskA.png
 Source\UI\T_SparkEmoj.png
 Source\UI\UISystem.html
+Source\UI\Market\T_ItemAxe.png
+Source\UI\Market\T_ItemBow.png
+Source\UI\Market\T_ItemCrossbow.png
+Source\UI\Market\T_ItemFlail.png
+Source\UI\Market\T_ItemFork.png
+Source\UI\Market\T_ItemGreatsword.png
+Source\UI\Market\T_ItemHammer.png
+Source\UI\Market\T_ItemKnife.png
+Source\UI\Market\T_ItemLongsword.png
+Source\UI\Market\T_ItemMace.png
+Source\UI\Market\T_ItemNoShield.png
+Source\UI\Market\T_ItemPotionBlack.png
+Source\UI\Market\T_ItemPotionLarge.png
+Source\UI\Market\T_ItemPotionLife.png
+Source\UI\Market\T_ItemPotionRage.png
+Source\UI\Market\T_ItemPotionStamina.png
+Source\UI\Market\T_ItemRapier.png
+Source\UI\Market\T_ItemScrollDefence.png
+Source\UI\Market\T_ItemScrollTeleportation.png
+Source\UI\Market\T_ItemShieldSpike_01.png
+Source\UI\Market\T_ItemShieldSpike_02.png
+Source\UI\Market\T_ItemShieldSpike_03.png
+Source\UI\Market\T_ItemShield_01.png
+Source\UI\Market\T_ItemShield_02.png
+Source\UI\Market\T_ItemShield_03.png
+Source\UI\Market\T_ItemSpear.png
+Source\UI\Market\T_ItemSword.png
+Source\UI\Market\T_ItemTapesword.png
+Source\UI\Market\T_UnitAssasin.png
+Source\UI\Market\T_UnitGolem.png
+Source\UI\Market\T_UnitMelee.png
 
 === Папка: Font ===
 Source\Font\BloodyDrip-Regular.ttf
