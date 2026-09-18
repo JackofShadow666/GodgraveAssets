@@ -1,5 +1,5 @@
 ; Список файлов из папок Music и Sound
-; Создано: 17.09.2026 21:53:19
+; Создано: 18.09.2026 10:52:54
 ; Корневая папка: F:\Jack\Project\Godgrave\Public\Godgrave\Source
 
 === Папка: Music ===
@@ -377,6 +377,7 @@ Source\Weapon\Sword\.mayaSwatches\T_Sword_12.png_hcm.swatch
 Source\Weapon\Tapesword\T_TapeswordFull.png
 Source\Weapon\Tapesword\T_TapeswordHand.png
 Source\Weapon\Tapesword\T_TapeswordRing.png
+Source\Weapon\Towerbow\T_Towerbow_01.png
 Source\Weapon\Wand\T_Wand_01.png
 Source\Weapon\Wand\T_Wand_02.png
 Source\Weapon\Wand\T_Wand_03.png
@@ -408,6 +409,10 @@ Source\Font\index.html
 Source\Font\MedievalSharp-Regular.ttf
 
 === Папка: Env ===
+Source\Env\Building\T_BigTower_Blue.png
+Source\Env\Building\T_BigTower_Red.png
+Source\Env\Building\T_Tower_Blue.png
+Source\Env\Building\T_Tower_Red.png
 Source\Env\Editor\Editor.html
 Source\Env\Foliadge\ChatGPT Image 4 ���. 2026 �., 01_12_14.png
 Source\Env\Foliadge\ChatGPT Image 4 ���. 2026 �., 01_12_36 (1).png
