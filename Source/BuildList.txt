@@ -1,5 +1,5 @@
 ; Список файлов из папок Music и Sound
-; Создано: 19.09.2026 2:27:15
+; Создано: 21.09.2026 14:33:54
 ; Корневая папка: F:\Jack\Project\Godgrave\Public\Godgrave\Source
 
 === Папка: Music ===
@@ -172,6 +172,12 @@ Source\Sound\Step\SFX_Step_08.mp3
 Source\Sound\Step\SFX_Step_09.mp3
 Source\Sound\Step\SFX_Step_10.mp3
 Source\Sound\Step\SFX_Step_11.mp3
+Source\Sound\Sword\HeavySwing\SFX_HeavySwing_01.mp3
+Source\Sound\Sword\HeavySwing\SFX_HeavySwing_02.mp3
+Source\Sound\Sword\HeavySwing\SFX_HeavySwing_03.mp3
+Source\Sound\Sword\HeavySwing\SFX_HeavySwing_04.mp3
+Source\Sound\Sword\HeavySwing\SFX_HeavySwing_05.mp3
+Source\Sound\Sword\HeavySwing\SFX_HeavySwing_06.mp3
 Source\Sound\Sword\SwordClink\SFX_SwordClink_01.mp3
 Source\Sound\Sword\SwordClink\SFX_SwordClink_02.mp3
 Source\Sound\Sword\SwordClink\SFX_SwordClink_03.mp3
@@ -433,7 +439,9 @@ Source\UI\Market\T_ItemSpear.png
 Source\UI\Market\T_ItemStaff.png
 Source\UI\Market\T_ItemSword.png
 Source\UI\Market\T_ItemTapesword.png
+Source\UI\Market\T_ItemTrap.png
 Source\UI\Market\T_ItemWand.png
+Source\UI\Market\T_ItemWeb.png
 Source\UI\Market\T_UnitAssasin.png
 Source\UI\Market\T_UnitGolem.png
 Source\UI\Market\T_UnitMelee.png
