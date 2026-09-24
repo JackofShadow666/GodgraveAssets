@@ -1,5 +1,5 @@
 ; Список файлов из папок Music и Sound
-; Создано: 24.09.2026 3:29:33
+; Создано: 24.09.2026 4:01:06
 ; Корневая папка: F:\Jack\Project\Godgrave\Public\Godgrave\Source
 
 === Папка: Music ===
@@ -403,7 +403,6 @@ Source\Weapon\Trophy\T_Trophy_09.png
 Source\Weapon\Trophy\T_Trophy_10.png
 Source\Weapon\Trophy\T_Trophy_11.png
 Source\Weapon\Trophy\T_Trophy_12.png
-Source\Weapon\Trophy\T_Trophy_13.png
 Source\Weapon\Wand\T_Wand_01.png
 Source\Weapon\Wand\T_Wand_02.png
 Source\Weapon\Wand\T_Wand_03.png
