@@ -1,5 +1,5 @@
 ; Список файлов из папок Music и Sound
-; Создано: 24.09.2026 6:04:33
+; Создано: 25.09.2026 3:46:15
 ; Корневая папка: F:\Jack\Project\Godgrave\Public\Godgrave\Source
 
 === Папка: Music ===
@@ -245,8 +245,22 @@ Source\Character\T_CharacterAtlas_10.png
 Source\Character\Head\T_HeadHuman_01.png
 Source\Character\Head\T_HeadHuman_02.png
 Source\Character\Head\T_HeadOrc_01.png
-Source\Character\Head\T_HeadOrc_02.png
 Source\Character\Head\T_HeadOrc_03.png
+Source\Character\Head\T_Head_Helm_01.png
+Source\Character\Head\T_Head_Helm_02.png
+Source\Character\Head\T_Head_Helm_03.png
+Source\Character\Head\T_Head_Helm_04.png
+Source\Character\Head\T_Head_Helm_05.png
+Source\Character\Head\T_Head_Helm_06.png
+Source\Character\Head\T_Head_Helm_07.png
+Source\Character\Head\T_Head_Human_01.png
+Source\Character\Head\T_Head_Human_02.png
+Source\Character\Head\T_Head_Orc_01 copy.psd
+Source\Character\Head\T_Head_Orc_01.png
+Source\Character\Head\T_Head_Orc_02.png
+Source\Character\Head\T_Head_Orc_03.png
+Source\Character\Head\T_Head_Shadow.png
+Source\Character\Head\T_Head_Undead_01.png
 Source\Character\Knight\T_Character_01.png
 Source\Character\Knight\T_Character_02.png
 Source\Character\Knight\T_Character_03.png
@@ -265,6 +279,9 @@ Source\Character\Knight\Untitled-1_02.png
 Source\Character\Knight\.mayaSwatches\T_Character_02.png_hcm.swatch
 Source\Character\Knight\.mayaSwatches\T_Character_09.png_hcm.swatch
 Source\Character\Knight\.mayaSwatches\T_Character_12.png_hcm.swatch
+Source\Character\Test\T_CharacterAtlas_02.psd
+Source\Character\Test\T_CharacterAtlas_02_Colored.png
+Source\Character\Test\T_CharacterAtlas_08.png
 Source\Character\Test\T_CharTest_01.png
 Source\Character\Test\T_CharTest_02.png
 Source\Character\Test\T_CharTest_03.png
