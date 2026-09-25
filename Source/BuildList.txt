@@ -1,5 +1,5 @@
 ; Список файлов из папок Music и Sound
-; Создано: 25.09.2026 5:10:54
+; Создано: 25.09.2026 12:50:33
 ; Корневая папка: F:\Jack\Project\Godgrave\Public\Godgrave\Source
 
 === Папка: Music ===
@@ -242,6 +242,7 @@ Source\Character\T_CharacterAtlas_07.png
 Source\Character\T_CharacterAtlas_08.png
 Source\Character\T_CharacterAtlas_09.png
 Source\Character\T_CharacterAtlas_10.png
+Source\Character\T_CharacterAtlas_11.png
 Source\Character\Head\T_HeadHuman_01.png
 Source\Character\Head\T_HeadHuman_02.png
 Source\Character\Head\T_HeadOrc_01.png
@@ -256,8 +257,12 @@ Source\Character\Head\T_Head_Helm_07.png
 Source\Character\Head\T_Head_Helm_08.png
 Source\Character\Head\T_Head_Helm_09.png
 Source\Character\Head\T_Head_Helm_10.png
+Source\Character\Head\T_Head_Helm_11.png
 Source\Character\Head\T_Head_Human_01.png
 Source\Character\Head\T_Head_Human_02.png
+Source\Character\Head\T_Head_Human_03.png
+Source\Character\Head\T_Head_Human_04.png
+Source\Character\Head\T_Head_Human_05.png
 Source\Character\Head\T_Head_Orc_01 copy.psd
 Source\Character\Head\T_Head_Orc_01.png
 Source\Character\Head\T_Head_Orc_02.png
@@ -268,6 +273,7 @@ Source\Character\Head\T_Head_Tatoo_02.png
 Source\Character\Head\T_Head_Tatoo_03.png
 Source\Character\Head\T_Head_Tatoo_04.png
 Source\Character\Head\T_Head_Undead_01.png
+Source\Character\Head\T_Head_Zombie_01.png
 Source\Character\Knight\T_Character_01.png
 Source\Character\Knight\T_Character_02.png
 Source\Character\Knight\T_Character_03.png
