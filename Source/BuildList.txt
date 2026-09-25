@@ -1,5 +1,5 @@
 ; Список файлов из папок Music и Sound
-; Создано: 25.09.2026 12:50:33
+; Создано: 25.09.2026 15:00:25
 ; Корневая папка: F:\Jack\Project\Godgrave\Public\Godgrave\Source
 
 === Папка: Music ===
@@ -243,6 +243,7 @@ Source\Character\T_CharacterAtlas_08.png
 Source\Character\T_CharacterAtlas_09.png
 Source\Character\T_CharacterAtlas_10.png
 Source\Character\T_CharacterAtlas_11.png
+Source\Character\T_CharacterAtlas_12.png
 Source\Character\Head\T_HeadHuman_01.png
 Source\Character\Head\T_HeadHuman_02.png
 Source\Character\Head\T_HeadOrc_01.png
@@ -273,6 +274,7 @@ Source\Character\Head\T_Head_Tatoo_02.png
 Source\Character\Head\T_Head_Tatoo_03.png
 Source\Character\Head\T_Head_Tatoo_04.png
 Source\Character\Head\T_Head_Undead_01.png
+Source\Character\Head\T_Head_Undead_02.png
 Source\Character\Head\T_Head_Zombie_01.png
 Source\Character\Knight\T_Character_01.png
 Source\Character\Knight\T_Character_02.png
@@ -319,6 +321,7 @@ Source\Weapon\Bow\T_Bow_02.png
 Source\Weapon\Bow\T_Bow_03.png
 Source\Weapon\Bow\T_Bow_04.png
 Source\Weapon\Bow\T_Bow_05.png
+Source\Weapon\Bow\T_Bow_06.png
 Source\Weapon\Claws\T_Claws_01.png
 Source\Weapon\Claws\T_Claws_02.png
 Source\Weapon\Claws\T_Claws_03.png
