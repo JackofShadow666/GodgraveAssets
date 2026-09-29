@@ -1,5 +1,5 @@
 ; Список файлов из папок Music и Sound
-; Создано: 25.09.2026 21:51:31
+; Создано: 29.09.2026 11:45:29
 ; Корневая папка: F:\Jack\Project\Godgrave\Public\Godgrave\Source
 
 === Папка: Music ===
@@ -233,6 +233,7 @@ Source\Sound\WoodClink\SFX_WoodClink_06.mp3
 === Папка: Character ===
 Source\Character\T_CharacterAtlasBoss_01.png
 Source\Character\T_CharacterAtlasBoss_02.png
+Source\Character\T_CharacterAtlasBoss_03.png
 Source\Character\T_CharacterAtlas_00.png
 Source\Character\T_CharacterAtlas_01.png
 Source\Character\T_CharacterAtlas_02.png
@@ -246,12 +247,15 @@ Source\Character\T_CharacterAtlas_09.png
 Source\Character\T_CharacterAtlas_10.png
 Source\Character\T_CharacterAtlas_11.png
 Source\Character\T_CharacterAtlas_12.png
+Source\Character\T_DemonBody_01.png
+Source\Character\Head\T_Demon_Head_01.png
 Source\Character\Head\T_HeadHuman_01.png
 Source\Character\Head\T_HeadHuman_02.png
 Source\Character\Head\T_HeadOrc_01.png
 Source\Character\Head\T_HeadOrc_03.png
 Source\Character\Head\T_Head_Boss_01.png
 Source\Character\Head\T_Head_Boss_02.png
+Source\Character\Head\T_Head_Boss_03.png
 Source\Character\Head\T_Head_Helm_01.png
 Source\Character\Head\T_Head_Helm_02.png
 Source\Character\Head\T_Head_Helm_03.png
