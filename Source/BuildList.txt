@@ -1,5 +1,5 @@
 ; Список файлов из папок Music и Sound
-; Создано: 02.10.2026 1:36:02
+; Создано: 02.10.2026 3:31:46
 ; Корневая папка: F:\Jack\Project\Godgrave\Public\Godgrave\Source
 
 === Папка: Music ===
@@ -232,6 +232,7 @@ Source\Sound\WoodClink\SFX_WoodClink_06.mp3
 
 === Папка: Character ===
 Source\Character\Butcher_parts_atlas.png
+Source\Character\Butcher_parts_atlas_v2.png
 Source\Character\T_CharacterAtlasBoss_01.png
 Source\Character\T_CharacterAtlasBoss_02.png
 Source\Character\T_CharacterAtlasBoss_03.png
