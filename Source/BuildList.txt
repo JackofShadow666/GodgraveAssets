@@ -1,5 +1,5 @@
 ; Список файлов из папок Music и Sound
-; Создано: 02.10.2026 10:49:10
+; Создано: 06.10.2026 4:43:13
 ; Корневая папка: F:\Jack\Project\Godgrave\Public\Godgrave\Source
 
 === Папка: Music ===
@@ -251,6 +251,8 @@ Source\Character\T_CharacterAtlas_11.png
 Source\Character\T_CharacterAtlas_12.png
 Source\Character\T_DemonBody_01.png
 Source\Character\T_DemonBody_02.png
+Source\Character\T_Tail_01.png
+Source\Character\T_Tail_02.png
 Source\Character\Head\T_Demon_HeadBeholder_01.png
 Source\Character\Head\T_Demon_Head_01.png
 Source\Character\Head\T_Demon_Head_02.png
